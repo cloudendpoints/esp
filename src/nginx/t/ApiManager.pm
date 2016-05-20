@@ -227,13 +227,14 @@ sub get_grpc_test_service_config {
 sub get_transcoding_test_service_config {
   my ($host_name, $service_control_address) = @_;
   my $path = $ENV{TEST_SRCDIR} . '/test/transcoding/service.json';
-  my $service_config_json = read_file_using_full_path($path);
-
-  my $service_config = decode_json($service_config_json);
-  $service_config->{producerProjectId} = 'endpoints-transcoding-test';
-  $service_config->{name} = $host_name;
-  $service_config->{control}->{environment} = $service_control_address;
-  return encode_json($service_config);
+  my $service_config = read_file_using_full_path($path);
+  # Replace the host name
+  $service_config =~ s/<YOUR_PROJECT_ID>.appspot.com/$host_name/;
+  # Replace the project id
+  $service_config =~ s/<YOUR_PROJECT_ID>/endpoints-transcoding-test/;
+  # Replace the service control address
+  $service_config =~ s/endpoints-servicecontrol.sandbox.googleapis.com/$service_control_address/;
+  return $service_config;
 }
 
 sub get_metadata_response_body {

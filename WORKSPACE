@@ -30,14 +30,10 @@ load("//third_party/nginx:build.bzl", "nginx_repositories")
 
 nginx_repositories(bind = True)
 
+# Required by gRPC.
 bind(
-    name = "protobuf_compiler",
-    actual = "//google/protobuf:protoc_lib",
-)
-
-bind(
-    name = "protobuf_clib",
-    actual = "//google/protobuf:protobuf_lite",
+    name = "libssl",
+    actual = "@boringssl//:ssl",
 )
 
 git_repository(
@@ -67,14 +63,44 @@ bind(
 )
 
 bind(
-    name = "grpc++_reflection",
+    name = "grpc_lib",
     actual = "@grpc_git//:grpc++_reflection",
 )
 
-# Required by gRPC.
+git_repository(
+    name = "protobuf_git",
+    commit = "56855f6f002eeee8cf03021eaf2ece2adff2a297", # 3.0.0-beta-4
+    remote = "https://github.com/google/protobuf.git",
+)
+
 bind(
-    name = "libssl",
-    actual = "@boringssl//:ssl",
+    name = "protoc",
+    actual = "@protobuf_git//:protoc",
+)
+
+bind(
+    name = "protobuf",
+    actual = "@protobuf_git//:protobuf",
+)
+
+bind(
+    name = "cc_wkt_protos",
+    actual = "@protobuf_git//:cc_wkt_protos",
+)
+
+bind(
+    name = "cc_wkt_protos_genproto",
+    actual = "@protobuf_git//:cc_wkt_protos_genproto",
+)
+
+bind(
+    name = "protobuf_compiler",
+    actual = "@protobuf_git//:protoc_lib",
+)
+
+bind(
+    name = "protobuf_clib",
+    actual = "@protobuf_git//:protobuf_lite",
 )
 
 new_git_repository(

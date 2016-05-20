@@ -6,10 +6,6 @@
 	path = third_party/nginx-tests
 	url = https://nginx.googlesource.com/nginx-tests
 	ignore = untracked
-[submodule "google/protobuf"]
-	path = google/protobuf
-	url = https://github.com/google/protobuf.git
-	ignore = untracked
 [submodule "third_party/service-control-client-cxx"]
 	path = third_party/service-control-client-cxx
 	url = https://github.com/cloudendpoints/service-control-client-cxx.git

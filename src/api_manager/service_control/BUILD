@@ -26,8 +26,6 @@
 #
 package(default_visibility = ["//src/api_manager:__subpackages__"])
 
-load("/google/protobuf/protobuf", "cc_proto_library")
-
 cc_library(
     name = "service_control",
     srcs = [
@@ -54,8 +52,8 @@ cc_library(
     deps = [
         "//external:googletest_prod",
         "//external:grpc++",
-        "//google/protobuf",
-        "//google/protobuf:cc_wkt_protos",
+        "//external:protobuf",
+        "//external:cc_wkt_protos",
         "//src/api_manager:impl_headers",
         "//src/api_manager:server_config_proto",
         "//src/api_manager/auth/lib",

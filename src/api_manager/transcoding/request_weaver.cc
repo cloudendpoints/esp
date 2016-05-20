@@ -202,7 +202,7 @@ void RequestWeaver::Bind(std::vector<const pb::Field*> field_path,
 void RequestWeaver::WeaveTree(RequestWeaver::WeaveInfo* info) {
   for (const auto& data : info->bindings) {
     pbconv::ObjectWriter::RenderDataPieceTo(
-        pbconv::DataPiece(pb::StringPiece(data.second)),
+        pbconv::DataPiece(pb::StringPiece(data.second), true),
         pb::StringPiece(data.first->name()), ow_);
   }
   info->bindings.clear();
@@ -225,7 +225,7 @@ void RequestWeaver::CollisionCheck(pb::StringPiece name) {
     if (name == it->first->name()) {
       if (it->first->cardinality() == pb::Field::CARDINALITY_REPEATED) {
         pbconv::ObjectWriter::RenderDataPieceTo(
-            pbconv::DataPiece(pb::StringPiece(it->second)), name, ow_);
+            pbconv::DataPiece(pb::StringPiece(it->second), true), name, ow_);
       } else {
         // TODO: Report collision error. For now we just ignore
         // the conflicting binding.

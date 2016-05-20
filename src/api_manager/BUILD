@@ -26,14 +26,15 @@
 #
 package(default_visibility = [":__subpackages__"])
 
-load("/google/protobuf/protobuf", "cc_proto_library")
+load("@protobuf_git//:protobuf.bzl", "cc_proto_library")
 
 cc_proto_library(
     name = "server_config_proto",
     srcs = [
         "proto/server_config.proto",
     ],
-    include = ".",
+    protoc = "//external:protoc",
+    default_runtime = "//external:protobuf",
 )
 
 cc_proto_library(
@@ -43,6 +44,8 @@ cc_proto_library(
     ],
     include = ".",
     visibility = ["//src/nginx:__subpackages__"],
+    protoc = "//external:protoc",
+    default_runtime = "//external:protobuf",
 )
 
 cc_library(
@@ -119,8 +122,8 @@ cc_library(
         ":server_config_proto",
         "//external:googletest_prod",
         "//external:grpc++",
-        "//google/protobuf",
-        "//google/protobuf:cc_wkt_protos",
+        "//external:protobuf",
+        "//external:cc_wkt_protos",
         "//src/api_manager/auth",
         "//src/api_manager/cloud_trace",
         "//src/api_manager/context",

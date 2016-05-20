@@ -61,7 +61,7 @@ std::string GetTypeUrl(const Message& message) {
 }
 
 Status ProtoToJson(const Message& message, std::string* result, int options) {
-  ::google::protobuf::util::JsonOptions json_options;
+  ::google::protobuf::util::JsonPrintOptions json_options;
   if (options & JsonOptions::PRETTY_PRINT) {
     json_options.add_whitespace = true;
   }
@@ -79,7 +79,7 @@ Status ProtoToJson(const Message& message, std::string* result, int options) {
 Status ProtoToJson(const Message& message,
                    ::google::protobuf::io::ZeroCopyOutputStream* json,
                    int options) {
-  ::google::protobuf::util::JsonOptions json_options;
+  ::google::protobuf::util::JsonPrintOptions json_options;
   if (options & JsonOptions::PRETTY_PRINT) {
     json_options.add_whitespace = true;
   }
@@ -98,10 +98,12 @@ Status ProtoToJson(const Message& message,
 }
 
 Status JsonToProto(const std::string& json, Message* message) {
+  ::google::protobuf::util::JsonParseOptions options;
+  options.ignore_unknown_fields = true;
   std::string binary;
   ::google::protobuf::util::Status status =
       ::google::protobuf::util::JsonToBinaryString(
-          GetTypeResolver(), GetTypeUrl(*message), json, &binary);
+          GetTypeResolver(), GetTypeUrl(*message), json, &binary, options);
   if (!status.ok()) {
     return Status::FromProto(status);
   }
@@ -115,11 +117,13 @@ Status JsonToProto(const std::string& json, Message* message) {
 
 Status JsonToProto(::google::protobuf::io::ZeroCopyInputStream* json,
                    ::google::protobuf::Message* message) {
+  ::google::protobuf::util::JsonParseOptions options;
+  options.ignore_unknown_fields = true;
   std::string binary;
   ::google::protobuf::io::StringOutputStream output(&binary);
   ::google::protobuf::util::Status status =
       ::google::protobuf::util::JsonToBinaryStream(
-          GetTypeResolver(), GetTypeUrl(*message), json, &output);
+          GetTypeResolver(), GetTypeUrl(*message), json, &output, options);
 
   if (!status.ok()) {
     return Status::FromProto(status);

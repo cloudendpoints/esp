@@ -26,8 +26,6 @@
 #
 package(default_visibility = ["//src/api_manager:__subpackages__"])
 
-load("/google/protobuf/protobuf", "cc_proto_library")
-
 cc_library(
     name = "auth",
     srcs = [

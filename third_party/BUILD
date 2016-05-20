@@ -26,7 +26,7 @@
 #
 load("/perl", "perl_library")
 load("/nginx", "nginx_suite")
-load("/google/protobuf/protobuf", "cc_proto_library")
+load("@protobuf_git//:protobuf.bzl", "cc_proto_library")
 
 perl_library(
     name = "nginx_test",
@@ -78,8 +78,10 @@ cc_proto_library(
     include = "googleapis",
     visibility = ["//visibility:public"],
     deps = [
-        "//google/protobuf:cc_wkt_protos",
+        "//external:cc_wkt_protos",
     ],
+    protoc = "//external:protoc",
+    default_runtime = "//external:protobuf",
 )
 
 cc_proto_library(
@@ -91,6 +93,8 @@ cc_proto_library(
     visibility = ["//visibility:public"],
     deps = [
         ":service_config",
-        "//google/protobuf:cc_wkt_protos",
+        "//external:cc_wkt_protos",
     ],
+    protoc = "//external:protoc",
+    default_runtime = "//external:protobuf",
 )

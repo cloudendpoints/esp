@@ -1,6 +1,6 @@
 licenses(["notice"])
 
-load("/google/protobuf/protobuf", "cc_proto_library")
+load("@protobuf_git//:protobuf.bzl", "cc_proto_library")
 
 cc_proto_library(
     name = "servicecontrol",
@@ -23,4 +23,6 @@ cc_proto_library(
     deps = [
         "//third_party:service_config",
     ],
+    protoc = "//external:protoc",
+    default_runtime = "//external:protobuf",
 )

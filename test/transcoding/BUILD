@@ -24,22 +24,27 @@
 #
 ################################################################################
 #
-load("/grpc", "cc_grpc_library")
+package(default_visibility = [
+    "//src/nginx/t:__pkg__",
+])
 
-cc_grpc_library(
+load("@protobuf_git//:protobuf.bzl", "cc_proto_library")
+
+cc_proto_library(
     name = "bookstore",
-    services = ["bookstore.proto"],
-    visibility = ["//visibility:public"],
+    srcs = ["bookstore.proto"],
+    use_grpc_plugin = True,
     deps = [
-       "//google/protobuf:cc_wkt_protos",
+       "//external:cc_wkt_protos",
     ],
+    protoc = "//external:protoc",
+    default_runtime = "//external:protobuf",
 )
 
 cc_binary(
     name = "bookstore-server",
     testonly = 1,
     srcs = ["bookstore-server.cc"],
-    visibility = ["//visibility:public"],
     deps = [":bookstore"],
 )
 
@@ -47,14 +52,12 @@ cc_binary(
     name = "bookstore-client",
     testonly = 1,
     srcs = ["bookstore-client.cc"],
-    visibility = ["//visibility:public"],
     linkopts = ["-lm"],
     deps = [
         ":bookstore",
-        "//google/protobuf",
+        "//external:protobuf",
     ],
 )
 
 # Export service.json such that the tests can use it
 exports_files(["service.json"])
-

@@ -24,7 +24,7 @@
 #
 ################################################################################
 #
-load("/google/protobuf/protobuf", "cc_proto_library")
+load("@protobuf_git//:protobuf.bzl", "cc_proto_library")
 
 cc_proto_library(
     name = "status_proto",
@@ -32,9 +32,11 @@ cc_proto_library(
         "proto/status.proto",
     ],
     deps = [
-        "//google/protobuf:cc_wkt_protos",
         "//src/api_manager:status_proto",
+        "//external:cc_wkt_protos",
     ],
+    protoc = "//external:protoc",
+    default_runtime = "//external:protobuf",
 )
 
 cc_library(
@@ -83,7 +85,7 @@ cc_library(
         ":status_proto",
         "//external:grpc",
         "//external:grpc++",
-        "//google/protobuf",
+        "//external:protobuf",
         "//include:api_manager",
         "//src/api_manager/grpc",
         "//src/api_manager/grpc:zero_copy_stream",

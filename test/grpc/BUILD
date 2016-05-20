@@ -29,11 +29,14 @@ package(default_visibility = [
     "//src/nginx/t:__pkg__",
 ])
 
-load("/grpc", "cc_grpc_library")
+load("@protobuf_git//:protobuf.bzl", "cc_proto_library")
 
-cc_grpc_library(
+cc_proto_library(
     name = "grpc-test_proto",
-    services = ["grpc-test.proto"],
+    srcs = ["grpc-test.proto"],
+    use_grpc_plugin = True,
+    protoc = "//external:protoc",
+    default_runtime = "//external:protobuf",
 )
 
 cc_library(

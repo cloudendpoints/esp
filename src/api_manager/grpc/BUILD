@@ -48,7 +48,7 @@ cc_library(
     deps = [
         "//external:grpc",
         "//external:grpc++",
-        "//google/protobuf",
+        "//external:protobuf",
         "//src/api_manager",
         "//third_party/config:servicecontrol",
     ],
@@ -68,7 +68,7 @@ cc_library(
     deps = [
         "//external:grpc",
         "//external:grpc++",
-        "//google/protobuf",
+        "//external:protobuf",
     ],
 )
 

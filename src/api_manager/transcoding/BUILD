@@ -26,7 +26,7 @@
 #
 package(default_visibility = ["//visibility:private"])
 
-load("/google/protobuf/protobuf", "cc_proto_library")
+load("@protobuf_git//:protobuf.bzl", "cc_proto_library")
 
 cc_library(
     name = "prefix_writer",
@@ -37,7 +37,7 @@ cc_library(
         "prefix_writer.h",
     ],
     deps = [
-        "//google/protobuf",
+        "//external:protobuf",
     ],
 )
 
@@ -50,7 +50,7 @@ cc_library(
         "request_weaver.h",
     ],
     deps = [
-        "//google/protobuf",
+        "//external:protobuf",
     ],
 )
 
@@ -63,7 +63,7 @@ cc_library(
         "type_helper.h",
     ],
     deps = [
-        "//google/protobuf",
+        "//external:protobuf",
     ],
 )
 
@@ -76,7 +76,7 @@ cc_library(
         "message_stream.h",
     ],
     deps = [
-        "//google/protobuf",
+        "//external:protobuf",
     ],
 )
 
@@ -92,7 +92,7 @@ cc_library(
         ":message_stream",
         ":prefix_writer",
         ":request_weaver",
-        "//google/protobuf",
+        "//external:protobuf",
     ],
 )
 
@@ -106,7 +106,7 @@ cc_library(
     ],
     deps = [
         ":request_message_translator",
-        "//google/protobuf",
+        "//external:protobuf",
     ],
 )
 
@@ -121,7 +121,7 @@ cc_library(
     deps = [
         ":request_message_translator",
         ":request_stream_translator",
-        "//google/protobuf",
+        "//external:protobuf",
     ],
 )
 
@@ -134,7 +134,7 @@ cc_library(
         "message_reader.h",
     ],
     deps = [
-        "//google/protobuf",
+        "//external:protobuf",
     ],
 )
 
@@ -149,7 +149,7 @@ cc_library(
     deps = [
         ":message_reader",
         ":message_stream",
-        "//google/protobuf",
+        "//external:protobuf",
     ],
 )
 
@@ -167,7 +167,7 @@ cc_library(
         ":message_stream",
         ":response_to_json_translator",
         ":type_helper",
-        "//google/protobuf",
+        "//external:protobuf",
         "//include:headers_only",
         "//src/api_manager:method_call_info",
         "//third_party:service_config",
@@ -219,10 +219,11 @@ cc_proto_library(
     name = "bookstore_test_proto",
     testonly = 1,
     srcs = ["bookstore.proto"],
-    include = ".",
     deps = [
-        "//google/protobuf:cc_wkt_protos",
+        "//external:cc_wkt_protos",
     ],
+    protoc = "//external:protoc",
+    default_runtime = "//external:protobuf",
 )
 
 cc_library(
@@ -232,7 +233,7 @@ cc_library(
     hdrs = ["test_common.h"],
     deps = [
         "//external:googletest",
-        "//google/protobuf",
+        "//external:protobuf",
         "//third_party:service_config",
     ],
 )
@@ -254,7 +255,7 @@ cc_library(
         ":test_common",
         ":type_helper",
         "//external:googletest",
-        "//google/protobuf",
+        "//external:protobuf",
         "//third_party:service_config",
     ],
 )

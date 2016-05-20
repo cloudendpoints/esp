@@ -29,7 +29,7 @@ package(default_visibility = [
     "//test/grpc:__subpackages__",
 ])
 
-load("/google/protobuf/protobuf", "cc_proto_library")
+load("@protobuf_git//:protobuf.bzl", "cc_proto_library")
 
 cc_library(
     name = "utils",
@@ -51,8 +51,8 @@ cc_library(
         ],
     }),
     deps = [
-        "//google/protobuf",
-        "//google/protobuf:cc_wkt_protos",
+        "//external:protobuf",
+        "//external:cc_wkt_protos",
         "//include:headers_only",
         "//third_party/config:servicecontrol",  # for google/rpc/status.proto
     ],
