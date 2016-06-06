@@ -20,6 +20,10 @@ operation {
     value: "referer"
   }
   labels {
+    key: "servicecontrol.googleapis.com/service_agent"
+    value: "ESP"
+  }
+  labels {
     key: "servicecontrol.googleapis.com/user_agent"
     value: "ESP"
   }

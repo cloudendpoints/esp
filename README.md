@@ -18,8 +18,6 @@ ESP provides:
 
 * **Superb performance and scalability**: low latency and high throughput
 
-[TOC]
-
 ## ESP can Run Anywhere ##
 
 However, the initial development was done on Google App Engine Flexible

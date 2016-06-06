@@ -127,6 +127,7 @@ my $expected_check_body = {
      'operationName' => 'CorsShelves',
      'labels' => {
         'servicecontrol.googleapis.com/caller_ip' => '127.0.0.1',
+        'servicecontrol.googleapis.com/service_agent' => 'ESP',
         'servicecontrol.googleapis.com/user_agent' => 'ESP',
         'servicecontrol.googleapis.com/referer' => 'http://google.com/bookstore/root',
      }

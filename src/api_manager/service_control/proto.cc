@@ -333,6 +333,8 @@ const int supported_metrics_count =
 const char kServiceControlCallerIp[] =
     "servicecontrol.googleapis.com/caller_ip";
 const char kServiceControlReferer[] = "servicecontrol.googleapis.com/referer";
+const char kServiceControlServiceAgent[] =
+    "servicecontrol.googleapis.com/service_agent";
 const char kServiceControlUserAgent[] =
     "servicecontrol.googleapis.com/user_agent";
 
@@ -608,6 +610,9 @@ const char kConsumerIdProject[] = "project:";
 // Now it is configured as "ESP".
 const char kUserAgent[] = "ESP";
 
+// Service agent label value
+const char kServiceAgent[] = "ESP";
+
 // Following names for for Log struct_playload field names:
 const char kLogFieldNameTimestamp[] = "timestamp";
 const char kLogFieldNameApiName[] = "api_name";
@@ -809,6 +814,7 @@ Status Proto::FillCheckRequest(const CheckRequestInfo& info,
     (*labels)[kServiceControlReferer] = info.referer;
   }
   (*labels)[kServiceControlUserAgent] = kUserAgent;
+  (*labels)[kServiceControlServiceAgent] = kServiceAgent;
   return Status::OK;
 }
 
