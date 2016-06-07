@@ -171,6 +171,7 @@ nginx_suite(
         "no_service_control.t",
         "report_3xx.t",
         "report_4xx.t",
+        "report_compute_platform.t",
         "report_failed_request.t",
         "report_with_geo.t",
         "statistics.t",

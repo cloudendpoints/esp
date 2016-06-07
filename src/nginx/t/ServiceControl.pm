@@ -127,6 +127,12 @@ sub gen_report_labels {
   $labels->{'/error_type'} = $in->{error_type} if exists $in->{error_type};
   $labels->{'/protocol'} = $in->{protocol} if exists $in->{protocol};
 
+  if (exists $in->{platform}) {
+    $labels->{'servicecontrol.googleapis.com/platform'} = $in->{platform};
+  } else {
+    $labels->{'servicecontrol.googleapis.com/platform'} = 'unknown';
+  }
+
   if (exists $in->{api_key}) {
     $labels->{'/credential_id'} = 'apiKey:' . $in->{api_key};
   } elsif (exists $in->{jwtAuth}) {

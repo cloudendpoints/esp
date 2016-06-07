@@ -32,6 +32,10 @@ operations {
     value: "0"
   }
   labels {
+    key: "servicecontrol.googleapis.com/platform"
+    value: "unknown"
+  }
+  labels {
     key: "servicecontrol.googleapis.com/service_agent"
     value: "ESP"
   }

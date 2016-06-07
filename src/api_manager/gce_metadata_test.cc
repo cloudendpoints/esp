@@ -34,45 +34,27 @@ namespace api_manager {
 
 namespace {
 
-const char metadata[] =
-    "{\n"
-    "  \"instance\": {\n"
-    "    \"attributes\": {\n"
-    "      \"gae_app_container\": \"app\", \n"
-    "      \"gae_app_fullname\": "
-    "\"test-app_20150921t180445-387321214075436208\", \n"
-    "      \"gae_backend_instance\": \"0\", \n"
-    "      \"gae_backend_minor_version\": \"387321214075436208\", \n"
-    "      \"gae_backend_name\": \"default\", \n"
-    "      \"gae_backend_version\": \"20150921t180445\", \n"
-    "      \"gae_partition\": \"s\", \n"
-    "      \"gae_project\": \"test-app\", \n"
-    "      \"gcm-pool\": \"gae-default-20150921t180445\", \n"
-    "      \"gcm-replica\": \"gae-default-20150921t180445-inqp\" \n"
-    "    }, \n"
-    "    \"hostname\": "
-    "\"gae-default-20150921t180445-inqp.c.test-app.internal\", \n"
-    "    \"id\": 3296474103533342935, \n"
-    "    \"zone\": \"projects/23479234856/zones/us-central1-f\"\n"
-    "  }, \n"
-    "  \"project\": {\n"
-    "    \"attributes\": {\n"
-    "      \"google-compute-default-region\": \"us-central1\", \n"
-    "      \"google-compute-default-zone\": \"us-central1-f\" \n"
-    "    }, \n"
-    "    \"numericProjectId\": 23479234856, \n"
-    "    \"projectId\": \"test-app\"\n"
-    "  }\n"
-    "}";
+const char metadata[] = R"(
+{
+  "instance": {
+    "attributes": {
+      "gae_server_software": "Google App Engine/1.9.38",
+      "kube-env": "Kubernetes environment"
+    },
+    "zone": "projects/23479234856/zones/us-central1-f"
+  },
+  "project": {
+    "numericProjectId": 23479234856,
+    "projectId": "esp-test-app"
+  }
+})";
 
-const char partial_metadata[] =
-    "{\n"
-    "  \"instance\": {\n"
-    "    \"hostname\": "
-    "\"gae-default-20150921t180445-inqp.c.test-app.internal\", \n"
-    "    \"zone\": \"projects/23479234856/zones/us-central1-f\"\n"
-    "  }\n"
-    "}";
+const char partial_metadata[] = R"(
+{
+  "instance": {
+    "zone": "projects/23479234856/zones/us-central1-f"
+  }
+})";
 
 TEST(Metadata, ExtractPropertyValue) {
   GceMetadata env;
@@ -80,12 +62,10 @@ TEST(Metadata, ExtractPropertyValue) {
   Status status = env.ParseFromJson(&meta_str);
   ASSERT_TRUE(status.ok());
 
-  ASSERT_EQ("gae-default-20150921t180445-inqp.c.test-app.internal",
-            env.hostname());
   ASSERT_EQ("us-central1-f", env.zone());
-  ASSERT_EQ("default", env.gae_backend_name());
-  ASSERT_EQ("20150921t180445", env.gae_backend_version());
-  ASSERT_EQ("test-app", env.project_id());
+  ASSERT_EQ("Google App Engine/1.9.38", env.gae_server_software());
+  ASSERT_EQ("Kubernetes environment", env.kube_env());
+  ASSERT_EQ("esp-test-app", env.project_id());
 }
 
 TEST(Metadata, ExtractSomePropertyValues) {
@@ -93,9 +73,9 @@ TEST(Metadata, ExtractSomePropertyValues) {
   std::string meta_str(partial_metadata);
   Status status = env.ParseFromJson(&meta_str);
   ASSERT_TRUE(status.ok());
-  ASSERT_EQ("gae-default-20150921t180445-inqp.c.test-app.internal",
-            env.hostname());
   ASSERT_EQ("us-central1-f", env.zone());
+  ASSERT_TRUE(env.gae_server_software().empty());
+  ASSERT_TRUE(env.kube_env().empty());
 }
 
 TEST(Metadata, ExtractErrors) {

@@ -96,6 +96,9 @@ class RequestContext {
   // Fill location info.
   void FillLocation(service_control::ReportRequestInfo *info);
 
+  // Fill compute platform information.
+  void FillComputePlatform(service_control::ReportRequestInfo *info);
+
   // Fill log message.
   void FillLogMessage(service_control::ReportRequestInfo *info);
 

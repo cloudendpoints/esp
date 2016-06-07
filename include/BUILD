@@ -53,6 +53,7 @@ filegroup(
         "api_manager/auth.h",
         "api_manager/transcoder.h",
         "api_manager/env_interface.h",
+        "api_manager/compute_platform.h",
         "api_manager/http_request.h",
         "api_manager/periodic_timer.h",
         "api_manager/protocol.h",

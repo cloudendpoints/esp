@@ -23,53 +23,33 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#ifndef API_MANAGER_GCE_METADATA_H_
-#define API_MANAGER_GCE_METADATA_H_
-
-#include "include/api_manager/utils/status.h"
+#ifndef API_MANAGER_COMPUTE_PLATFORM_H_
+#define API_MANAGER_COMPUTE_PLATFORM_H_
 
 namespace google {
 namespace api_manager {
 
-// An environment information extracted from the Google Compute Engine metadata
-// server.
-class GceMetadata {
- public:
-  enum STATE {
-    // Data is invalid
-    INVALID_STATE = 0,
-    // Fetching,
-    FETCHING_STATE,
-    // Fetch failed
-    FAILED_STATE,
-    // Data is good
-    DONE_STATE,
-  };
-  GceMetadata() : state_(INVALID_STATE) {}
+namespace compute_platform {
 
-  STATE state() const { return state_; }
-  void set_state(STATE state) { state_ = state; }
-  bool need_fetch() const { return state_ == INVALID_STATE; }
-  bool has_valid_data() const { return state_ == DONE_STATE; }
+enum ComputePlatform { UNKNOWN = 0, GAE = 1, GCE = 2, GKE = 3 };
 
-  utils::Status ParseFromJson(std::string* json);
-
-  const std::string& project_id() const { return project_id_; }
-  const std::string& zone() const { return zone_; }
-  const std::string& gae_server_software() const {
-    return gae_server_software_;
+inline const char *ToString(ComputePlatform p) {
+  switch (p) {
+    case GAE:
+      return "GAE";
+    case GCE:
+      return "GCE";
+    case GKE:
+      return "GKE";
+    case UNKNOWN:
+    default:
+      return "unknown";
   }
-  const std::string& kube_env() const { return kube_env_; }
+}
 
- private:
-  STATE state_;
-  std::string project_id_;
-  std::string zone_;
-  std::string gae_server_software_;
-  std::string kube_env_;
-};
+}  // namespace compute_platform
 
 }  // namespace api_manager
 }  // namespace google
 
-#endif  // API_MANAGER_GCE_METADATA_H_
+#endif  // API_MANAGER_COMPUTE_PLATFORM_H_

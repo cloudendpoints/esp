@@ -32,6 +32,7 @@
 #include <memory>
 #include <string>
 
+#include "include/api_manager/compute_platform.h"
 #include "include/api_manager/protocol.h"
 #include "include/api_manager/service_control.h"
 #include "include/api_manager/utils/status.h"
@@ -121,12 +122,16 @@ struct ReportRequestInfo : public OperationInfo {
   // HTTP method. all-caps string such as "GET", "POST" etc.
   std::string method;
 
+  // A recognized cmopute platform (GAE, GCE, GKE).
+  compute_platform::ComputePlatform compute_platform;
+
   ReportRequestInfo()
       : response_code(200),
         status(utils::Status::OK),
         request_size(-1),
         response_size(-1),
-        protocol(protocol::UNKNOWN) {}
+        protocol(protocol::UNKNOWN),
+        compute_platform(compute_platform::UNKNOWN) {}
 };
 
 // Stores the information substracted from the check response.

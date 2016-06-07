@@ -178,6 +178,26 @@ void RequestContext::FillLocation(service_control::ReportRequestInfo *info) {
   }
 }
 
+void RequestContext::FillComputePlatform(
+    service_control::ReportRequestInfo *info) {
+  compute_platform::ComputePlatform cp;
+
+  GceMetadata *metadata = service_context()->gce_metadata();
+  if (metadata == nullptr || !metadata->has_valid_data()) {
+    cp = compute_platform::UNKNOWN;
+  } else {
+    if (!metadata->gae_server_software().empty()) {
+      cp = compute_platform::GAE;
+    } else if (!metadata->kube_env().empty()) {
+      cp = compute_platform::GKE;
+    } else {
+      cp = compute_platform::GCE;
+    }
+  }
+
+  info->compute_platform = cp;
+}
+
 void RequestContext::FillLogMessage(service_control::ReportRequestInfo *info) {
   if (method()) {
     const std::string &method_name = method()->name();
@@ -208,6 +228,7 @@ void RequestContext::FillReportRequestInfo(
     Response *response, service_control::ReportRequestInfo *info) {
   FillOperationInfo(info);
   FillLocation(info);
+  FillComputePlatform(info);
 
   info->url = request_->GetUnparsedRequestPath();
   info->method = request_->GetRequestHTTPMethod();

@@ -57,12 +57,10 @@ Status GceMetadata::ParseFromJson(std::string *json_str) {
   const grpc_json *attributes = GetProperty(instance, "attributes");
 
   project_id_ = SafeAssign(GetStringValue(project, "projectId"));
-  hostname_ = SafeAssign(GetStringValue(instance, "hostname"));
   zone_ = SafeAssign(GetStringValue(instance, "zone"));
-  gae_backend_name_ =
-      SafeAssign(GetStringValue(attributes, "gae_backend_name"));
-  gae_backend_version_ =
-      SafeAssign(GetStringValue(attributes, "gae_backend_version"));
+  gae_server_software_ =
+      SafeAssign(GetStringValue(attributes, "gae_server_software"));
+  kube_env_ = SafeAssign(GetStringValue(attributes, "kube-env"));
 
   grpc_json_destroy(json);
 

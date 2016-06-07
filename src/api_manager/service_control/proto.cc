@@ -337,6 +337,7 @@ const char kServiceControlServiceAgent[] =
     "servicecontrol.googleapis.com/service_agent";
 const char kServiceControlUserAgent[] =
     "servicecontrol.googleapis.com/user_agent";
+const char kServiceControlPlatform[] = "servicecontrol.googleapis.com/platform";
 
 // User agent label value
 // The value for kUserAgent should be configured at service control server.
@@ -473,7 +474,14 @@ Status set_api_version(const SupportedLabel& l, const ReportRequestInfo& info,
   return Status::OK;
 }
 
-// serviceruntime.googleapis.com/service_agent
+// servicecontrol.googleapis.com/platform
+Status set_platform(const SupportedLabel& l, const ReportRequestInfo& info,
+                    Map<std::string, std::string>* labels) {
+  (*labels)[l.name] = compute_platform::ToString(info.compute_platform);
+  return Status::OK;
+}
+
+// servicecontrol.googleapis.com/service_agent
 Status set_service_agent(const SupportedLabel& l, const ReportRequestInfo& info,
                          Map<std::string, std::string>* labels) {
   (*labels)[l.name] = kServiceAgent;
@@ -612,6 +620,11 @@ const SupportedLabel supported_labels[] = {
         kServiceControlUserAgent,
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::SYSTEM,
         set_user_agent,
+    },
+    {
+        kServiceControlPlatform,
+        ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::SYSTEM,
+        set_platform,
     },
 };
 
