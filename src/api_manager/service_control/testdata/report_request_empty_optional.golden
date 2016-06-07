@@ -31,6 +31,14 @@ operations {
     key: "/status_code"
     value: "0"
   }
+  labels {
+    key: "servicecontrol.googleapis.com/service_agent"
+    value: "ESP"
+  }
+  labels {
+    key: "servicecontrol.googleapis.com/user_agent"
+    value: "ESP"
+  }
   metric_value_sets {
     metric_name: "serviceruntime.googleapis.com/api/consumer/request_count"
     metric_values {

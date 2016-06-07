@@ -112,6 +112,8 @@ sub gen_report_labels {
   my $in = shift;
 
   my $labels = {
+    'servicecontrol.googleapis.com/service_agent' => 'ESP',
+    'servicecontrol.googleapis.com/user_agent' => 'ESP',
     'serviceruntime.googleapis.com/api_version' => $in->{api_name},
     'serviceruntime.googleapis.com/api_method' => $in->{api_method},
     'cloud.googleapis.com/location' => $in->{location},

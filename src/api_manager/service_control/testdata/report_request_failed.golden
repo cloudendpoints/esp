@@ -44,6 +44,14 @@ operations {
     value: "us-central"
   }
   labels {
+    key: "servicecontrol.googleapis.com/service_agent"
+    value: "ESP"
+  }
+  labels {
+    key: "servicecontrol.googleapis.com/user_agent"
+    value: "ESP"
+  }
+  labels {
     key: "serviceruntime.googleapis.com/api_method"
     value: "api-method"
   }

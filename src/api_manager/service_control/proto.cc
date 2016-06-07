@@ -338,6 +338,14 @@ const char kServiceControlServiceAgent[] =
 const char kServiceControlUserAgent[] =
     "servicecontrol.googleapis.com/user_agent";
 
+// User agent label value
+// The value for kUserAgent should be configured at service control server.
+// Now it is configured as "ESP".
+const char kUserAgent[] = "ESP";
+
+// Service agent label value
+const char kServiceAgent[] = "ESP";
+
 // /credential_id
 Status set_credential_id(const SupportedLabel& l, const ReportRequestInfo& info,
                          Map<std::string, std::string>* labels) {
@@ -465,6 +473,20 @@ Status set_api_version(const SupportedLabel& l, const ReportRequestInfo& info,
   return Status::OK;
 }
 
+// serviceruntime.googleapis.com/service_agent
+Status set_service_agent(const SupportedLabel& l, const ReportRequestInfo& info,
+                         Map<std::string, std::string>* labels) {
+  (*labels)[l.name] = kServiceAgent;
+  return Status::OK;
+}
+
+// serviceruntime.googleapis.com/user_agent
+Status set_user_agent(const SupportedLabel& l, const ReportRequestInfo& info,
+                      Map<std::string, std::string>* labels) {
+  (*labels)[l.name] = kUserAgent;
+  return Status::OK;
+}
+
 const SupportedLabel supported_labels[] = {
     {
         "/credential_id", ::google::api::LabelDescriptor_ValueType_STRING,
@@ -582,9 +604,14 @@ const SupportedLabel supported_labels[] = {
         SupportedLabel::SYSTEM, nullptr,
     },
     {
+        kServiceControlServiceAgent,
+        ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::SYSTEM,
+        set_service_agent,
+    },
+    {
         kServiceControlUserAgent,
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::SYSTEM,
-        nullptr,
+        set_user_agent,
     },
 };
 
@@ -604,14 +631,6 @@ const int supported_labels_count =
 // Define Service Control constant strings
 const char kConsumerIdApiKey[] = "api_key:";
 const char kConsumerIdProject[] = "project:";
-
-// User agent label value
-// The value for kUserAgent should be configured at service control server.
-// Now it is configured as "ESP".
-const char kUserAgent[] = "ESP";
-
-// Service agent label value
-const char kServiceAgent[] = "ESP";
 
 // Following names for for Log struct_playload field names:
 const char kLogFieldNameTimestamp[] = "timestamp";
