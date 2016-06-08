@@ -150,7 +150,7 @@ my $expected_check_body = {
      'operationName' => 'test.grpc.Test.EchoStream',
      'labels' => {
         'servicecontrol.googleapis.com/caller_ip' => '127.0.0.1',
-        'servicecontrol.googleapis.com/service_agent' => 'ESP',
+        'servicecontrol.googleapis.com/service_agent' => ServiceControl::service_agent(),
         'servicecontrol.googleapis.com/user_agent' => 'ESP',
      }
   }

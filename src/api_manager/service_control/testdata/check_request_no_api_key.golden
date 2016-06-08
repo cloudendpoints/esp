@@ -13,7 +13,7 @@ operation {
   }
   labels {
     key: "servicecontrol.googleapis.com/service_agent"
-    value: "ESP"
+    value: "ESP/{{service_agent_version}}"
   }
   labels {
     key: "servicecontrol.googleapis.com/user_agent"

@@ -112,7 +112,7 @@ sub gen_report_labels {
   my $in = shift;
 
   my $labels = {
-    'servicecontrol.googleapis.com/service_agent' => 'ESP',
+    'servicecontrol.googleapis.com/service_agent' => service_agent(),
     'servicecontrol.googleapis.com/user_agent' => 'ESP',
     'serviceruntime.googleapis.com/api_version' => $in->{api_name},
     'serviceruntime.googleapis.com/api_method' => $in->{api_method},
@@ -310,6 +310,19 @@ sub compare_json {
   my %ignore_keys = map { $_ => "1" } qw(
     startTime endTime timestamp operationId request_latency_in_ms);
   return ApiManager::compare($json_obj, $expected, "", \%ignore_keys);
+}
+
+sub service_agent {
+  return "ESP/" . get_version();
+}
+
+sub get_version {
+  my $version_file = $ENV{TEST_SRCDIR} . "/include/version";
+  open F, '<', $version_file or die "Can't open ${version_file}: $!";
+  my $content = <F>;
+  close F;
+  chomp $content;
+  return $content;
 }
 
 # A function to convert service control proto data format.

@@ -129,8 +129,8 @@ sub run_test_case {
   my $report_json = decode_json(ServiceControl::convert_proto($r->{body}, 'report_request', 'json'));
   my $operations = $report_json->{operations};
   is(@{$operations}, 1, "${name}: There is one operation");
-  is($operations->[0]->{labels}->{'servicecontrol.googleapis.com/service_agent'}, 'ESP',
-     "${name}: service_agent is correct.");
+  is($operations->[0]->{labels}->{'servicecontrol.googleapis.com/service_agent'},
+     ServiceControl::service_agent(), "${name}: service_agent is correct.");
   is($operations->[0]->{labels}->{'servicecontrol.googleapis.com/platform'},
      $test_case->{platform}, "${name}: Platform is correct ($test_case->{platform}).");
 

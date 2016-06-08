@@ -34,6 +34,7 @@
 #include "google/api/metric.pb.h"
 #include "google/protobuf/timestamp.pb.h"
 #include "include/api_manager/service_control.h"
+#include "include/api_manager/version.h"
 #include "src/api_manager/auth/lib/auth_token.h"
 #include "src/api_manager/auth/lib/base64.h"
 #include "third_party/service-control-client-cxx/utils/distribution_helper.h"
@@ -345,7 +346,7 @@ const char kServiceControlPlatform[] = "servicecontrol.googleapis.com/platform";
 const char kUserAgent[] = "ESP";
 
 // Service agent label value
-const char kServiceAgent[] = "ESP";
+const char kServiceAgent[] = "ESP/" API_MANAGER_VERSION_STRING;
 
 // /credential_id
 Status set_credential_id(const SupportedLabel& l, const ReportRequestInfo& info,

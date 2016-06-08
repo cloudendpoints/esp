@@ -34,6 +34,8 @@
 #include "google/protobuf/struct.pb.h"
 #include "google/protobuf/text_format.h"
 
+#include "include/api_manager/version.h"
+
 namespace gasv1 = ::google::api::servicecontrol::v1;
 using ::google::api_manager::utils::Status;
 using ::google::protobuf::util::error::Code;
@@ -47,7 +49,7 @@ namespace {
 
 const char kTestdata[] = "src/api_manager/service_control/testdata/";
 
-std::string ReadTextFile(const char* input_file_name) {
+std::string ReadTestBaseline(const char* input_file_name) {
   std::string file_name = std::string(kTestdata) + input_file_name;
 
   std::string contents;
@@ -59,6 +61,16 @@ std::string ReadTextFile(const char* input_file_name) {
   input_file.seekg(0, std::ios::beg);
   contents.assign((std::istreambuf_iterator<char>(input_file)),
                   (std::istreambuf_iterator<char>()));
+
+  // Replace instances of {{service_agent_version}} with the expected service
+  // agent version.
+  std::string placeholder = "{{service_agent_version}}";
+  std::string value = API_MANAGER_VERSION_STRING;
+  size_t current = 0;
+  while ((current = contents.find(placeholder, current)) != std::string::npos) {
+    contents.replace(current, placeholder.length(), value);
+    current += value.length();
+  }
   return contents;
 }
 
@@ -152,7 +164,7 @@ TEST_F(ProtoTest, FillGoodCheckRequestTest) {
   ASSERT_TRUE(scp_.FillCheckRequest(info, &request).ok());
 
   std::string text = CheckRequestToString(&request);
-  std::string expected_text = ReadTextFile("check_request.golden");
+  std::string expected_text = ReadTestBaseline("check_request.golden");
   ASSERT_EQ(expected_text, text);
 }
 
@@ -167,7 +179,8 @@ TEST_F(ProtoTest, FillNoApiKeyCheckRequestTest) {
   ASSERT_TRUE(scp_.FillCheckRequest(info, &request).ok());
 
   std::string text = CheckRequestToString(&request);
-  std::string expected_text = ReadTextFile("check_request_no_api_key.golden");
+  std::string expected_text =
+      ReadTestBaseline("check_request_no_api_key.golden");
   ASSERT_EQ(expected_text, text);
 }
 
@@ -210,7 +223,7 @@ TEST_F(ProtoTest, FillGoodReportRequestTest) {
   ASSERT_TRUE(scp_.FillReportRequest(info, &request).ok());
 
   std::string text = ReportRequestToString(&request);
-  std::string expected_text = ReadTextFile("report_request.golden");
+  std::string expected_text = ReadTestBaseline("report_request.golden");
   ASSERT_EQ(expected_text, text);
 }
 
@@ -232,7 +245,7 @@ TEST_F(ProtoTest, FillReportRequestFailedTest) {
   ASSERT_TRUE(scp_.FillReportRequest(info, &request).ok());
 
   std::string text = ReportRequestToString(&request);
-  std::string expected_text = ReadTextFile("report_request_failed.golden");
+  std::string expected_text = ReadTestBaseline("report_request_failed.golden");
   ASSERT_EQ(expected_text, text);
 }
 
@@ -245,7 +258,7 @@ TEST_F(ProtoTest, FillReportRequestEmptyOptionalTest) {
 
   std::string text = ReportRequestToString(&request);
   std::string expected_text =
-      ReadTextFile("report_request_empty_optional.golden");
+      ReadTestBaseline("report_request_empty_optional.golden");
   ASSERT_EQ(expected_text, text);
 }
 

@@ -31,6 +31,7 @@ perl_library(
     name = "perl_library",
     srcs = glob(["*.pm"]),
     data = [
+        "//include:version",
         "//src/tools:auth_token_gen",
         "//src/tools:service_control_json_gen",
     ] + glob(["testdata/*"]),
