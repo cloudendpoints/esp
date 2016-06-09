@@ -266,3 +266,23 @@ nginx_suite(
         ":perl_library",
     ],
 )
+
+nginx_suite(
+    size = "small",
+    data = [
+        "testdata/grpc_tsan_suppressions",
+        "//test/transcoding:bookstore-server",
+        "//test/transcoding:service.json",
+    ],
+    env = {
+        "TSAN_OPTIONS": "suppressions=$TEST_SRCDIR/src/nginx/t/testdata/grpc_tsan_suppressions",
+    },
+    nginx = "//src/nginx/main:nginx-esp",
+    tests = [
+        "transcoding.t",
+        "transcoding_streaming.t",
+    ],
+    deps = [
+        ":perl_library",
+    ],
+)

@@ -38,6 +38,7 @@ use FindBin;
 use JSON::PP;
 use Data::Dumper;
 use MIME::Base64;
+use Test::More;
 
 sub repo_root {
   my $testdir = $FindBin::Bin;
@@ -179,13 +180,18 @@ sub compare_user_info {
   return compare($json_obj, $expected, "", {});
 }
 
-sub read_test_file {
-  my ($name) = @_;
+sub read_file_using_full_path {
+  my ($full_path) = @_;
   local $/;
-  open F, '<', $ApiManager::TestDir . '/' . $name or die "Can't open $name: $!";
+  open F, '<', $full_path or die "Can't open $full_path $!";
   my $content = <F>;
   close F;
   return $content;
+}
+
+sub read_test_file {
+  my ($name) = @_;
+  return read_file_using_full_path($ApiManager::TestDir . '/' . $name);
 }
 
 sub write_file_expand {
@@ -216,6 +222,18 @@ sub get_echo_service_config {
 
 sub get_grpc_test_service_config {
   return read_test_file("testdata/grpc_test_service_config.pb.txt");
+}
+
+sub get_transcoding_test_service_config {
+  my ($host_name, $service_control_address) = @_;
+  my $path = $ENV{TEST_SRCDIR} . '/test/transcoding/service.json';
+  my $service_config_json = read_file_using_full_path($path);
+
+  my $service_config = decode_json($service_config_json);
+  $service_config->{producerProjectId} = 'endpoints-transcoding-test';
+  $service_config->{name} = $host_name;
+  $service_config->{control}->{environment} = $service_control_address;
+  return encode_json($service_config);
 }
 
 sub get_metadata_response_body {
@@ -255,6 +273,25 @@ sub grpc_test_server {
   my ($t, @args) = @_;
   my $server = $ENV{TEST_SRCDIR} . '/test/grpc/grpc-test-server';
   exec $server, @args;
+}
+
+sub transcoding_test_server {
+  my ($t, @args) = @_;
+  my $server = $ENV{TEST_SRCDIR} . '/test/transcoding/bookstore-server';
+  exec $server, @args;
+}
+
+# Runs the gRPC server for testing transcoding and redirects the output to a
+# file.
+sub run_transcoding_test_server {
+  my ($t, $output_file, @args) = @_;
+  my $redirect_file = $t->{_testdir}.'/'.$output_file;
+
+  # redirect, fork & run, restore
+  open ORIGINAL, ">&", \*STDOUT;
+  open STDOUT, ">", $redirect_file;
+  $t->run_daemon(\&transcoding_test_server, $t, @args);
+  open STDOUT, ">&", \*ORIGINAL;
 }
 
 sub run_grpc_test {
@@ -340,6 +377,18 @@ sub read_http_stream {
   }
 
   return @requests;
+}
+
+# Checks that response Content-Type header is application/json and matches the
+# response body with the expected JSON.
+sub compare_http_response_json_body {
+  my ($response, $expected_body) = @_;
+
+  # Parse out the body
+  my ($headers, $actual_body) = split /\r\n\r\n/, $response, 2;
+
+  like($headers, qr/content-type:(\s)*application\/json/i, 'Response is JSON');
+  ok(compare_json($actual_body, $expected_body), 'Response matches');
 }
 
 1;

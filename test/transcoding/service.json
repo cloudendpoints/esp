@@ -1,0 +1,1121 @@
+{
+  "producerProjectId": "<YOUR_PROJECT_ID>",
+  "name": "<YOUR_PROJECT_ID>.appspot.com",
+  "control": {
+    "environment": "endpoints-servicecontrol.sandbox.googleapis.com"
+  },
+  "title": "Bookstore API",
+  "apis": [{
+    "name": "endpoints.examples.bookstore.Bookstore",
+    "methods": [{
+      "name": "ListShelves",
+      "requestTypeUrl": "type.googleapis.com/endpoints.examples.bookstore.Empty",
+      "responseTypeUrl": "type.googleapis.com/endpoints.examples.bookstore.ListShelvesResponse",
+      "options": [{
+        "name": "google.protobuf.MethodOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }]
+    }, {
+      "name": "CreateShelf",
+      "requestTypeUrl": "type.googleapis.com/endpoints.examples.bookstore.CreateShelfRequest",
+      "responseTypeUrl": "type.googleapis.com/endpoints.examples.bookstore.Shelf",
+      "options": [{
+        "name": "google.protobuf.MethodOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }]
+    }, {
+      "name": "GetShelf",
+      "requestTypeUrl": "type.googleapis.com/endpoints.examples.bookstore.GetShelfRequest",
+      "responseTypeUrl": "type.googleapis.com/endpoints.examples.bookstore.Shelf",
+      "options": [{
+        "name": "google.protobuf.MethodOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }]
+    }, {
+      "name": "DeleteShelf",
+      "requestTypeUrl": "type.googleapis.com/endpoints.examples.bookstore.DeleteShelfRequest",
+      "responseTypeUrl": "type.googleapis.com/endpoints.examples.bookstore.Empty",
+      "options": [{
+        "name": "google.protobuf.MethodOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }]
+    }, {
+      "name": "BulkCreateShelf",
+      "requestTypeUrl": "type.googleapis.com/endpoints.examples.bookstore.CreateShelfRequest",
+      "requestStreaming": true,
+      "responseTypeUrl": "type.googleapis.com/endpoints.examples.bookstore.Shelf",
+      "responseStreaming": true,
+      "options": [{
+        "name": "google.protobuf.MethodOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }]
+    }, {
+      "name": "ListBooks",
+      "requestTypeUrl": "type.googleapis.com/endpoints.examples.bookstore.ListBooksRequest",
+      "responseTypeUrl": "type.googleapis.com/endpoints.examples.bookstore.ListBooksResponse",
+      "options": [{
+        "name": "google.protobuf.MethodOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }]
+    }, {
+      "name": "CreateBook",
+      "requestTypeUrl": "type.googleapis.com/endpoints.examples.bookstore.CreateBookRequest",
+      "responseTypeUrl": "type.googleapis.com/endpoints.examples.bookstore.Book",
+      "options": [{
+        "name": "google.protobuf.MethodOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }]
+    }, {
+      "name": "GetBook",
+      "requestTypeUrl": "type.googleapis.com/endpoints.examples.bookstore.GetBookRequest",
+      "responseTypeUrl": "type.googleapis.com/endpoints.examples.bookstore.Book",
+      "options": [{
+        "name": "google.protobuf.MethodOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }]
+    }, {
+      "name": "DeleteBook",
+      "requestTypeUrl": "type.googleapis.com/endpoints.examples.bookstore.DeleteBookRequest",
+      "responseTypeUrl": "type.googleapis.com/endpoints.examples.bookstore.Empty",
+      "options": [{
+        "name": "google.protobuf.MethodOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }]
+    }],
+    "options": [{
+      "name": "google.protobuf.ServiceOptions.deprecated",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }],
+    "version": "v1",
+    "sourceContext": {
+      "fileName": "bookstore.proto"
+    },
+    "syntax": "SYNTAX_PROTO3"
+  }],
+  "types": [{
+    "name": "endpoints.examples.bookstore.Shelf",
+    "fields": [{
+      "kind": "TYPE_INT64",
+      "cardinality": "CARDINALITY_OPTIONAL",
+      "number": 1,
+      "name": "id",
+      "options": [{
+        "name": "google.protobuf.FieldOptions.ctype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "STRING"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.jstype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "JS_NORMAL"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.lazy",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.weak",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }],
+      "jsonName": "id"
+    }, {
+      "kind": "TYPE_STRING",
+      "cardinality": "CARDINALITY_OPTIONAL",
+      "number": 2,
+      "name": "theme",
+      "options": [{
+        "name": "google.protobuf.FieldOptions.ctype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "STRING"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.jstype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "JS_NORMAL"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.lazy",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.weak",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }],
+      "jsonName": "theme"
+    }],
+    "options": [{
+      "name": "google.protobuf.MessageOptions.message_set_wire_format",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.no_standard_descriptor_accessor",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.deprecated",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }],
+    "sourceContext": {
+      "fileName": "bookstore.proto"
+    },
+    "syntax": "SYNTAX_PROTO3"
+  }, {
+    "name": "endpoints.examples.bookstore.Book",
+    "fields": [{
+      "kind": "TYPE_INT64",
+      "cardinality": "CARDINALITY_OPTIONAL",
+      "number": 1,
+      "name": "id",
+      "options": [{
+        "name": "google.protobuf.FieldOptions.ctype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "STRING"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.jstype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "JS_NORMAL"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.lazy",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.weak",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }],
+      "jsonName": "id"
+    }, {
+      "kind": "TYPE_STRING",
+      "cardinality": "CARDINALITY_OPTIONAL",
+      "number": 2,
+      "name": "author",
+      "options": [{
+        "name": "google.protobuf.FieldOptions.ctype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "STRING"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.jstype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "JS_NORMAL"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.lazy",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.weak",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }],
+      "jsonName": "author"
+    }, {
+      "kind": "TYPE_STRING",
+      "cardinality": "CARDINALITY_OPTIONAL",
+      "number": 3,
+      "name": "title",
+      "options": [{
+        "name": "google.protobuf.FieldOptions.ctype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "STRING"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.jstype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "JS_NORMAL"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.lazy",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.weak",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }],
+      "jsonName": "title"
+    }],
+    "options": [{
+      "name": "google.protobuf.MessageOptions.message_set_wire_format",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.no_standard_descriptor_accessor",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.deprecated",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }],
+    "sourceContext": {
+      "fileName": "bookstore.proto"
+    },
+    "syntax": "SYNTAX_PROTO3"
+  }, {
+    "name": "endpoints.examples.bookstore.ListShelvesResponse",
+    "fields": [{
+      "kind": "TYPE_MESSAGE",
+      "cardinality": "CARDINALITY_REPEATED",
+      "number": 1,
+      "name": "shelves",
+      "typeUrl": "type.googleapis.com/endpoints.examples.bookstore.Shelf",
+      "options": [{
+        "name": "google.protobuf.FieldOptions.ctype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "STRING"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.jstype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "JS_NORMAL"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.lazy",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.weak",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }],
+      "jsonName": "shelves"
+    }],
+    "options": [{
+      "name": "google.protobuf.MessageOptions.message_set_wire_format",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.no_standard_descriptor_accessor",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.deprecated",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }],
+    "sourceContext": {
+      "fileName": "bookstore.proto"
+    },
+    "syntax": "SYNTAX_PROTO3"
+  }, {
+    "name": "endpoints.examples.bookstore.CreateShelfRequest",
+    "fields": [{
+      "kind": "TYPE_MESSAGE",
+      "cardinality": "CARDINALITY_OPTIONAL",
+      "number": 1,
+      "name": "shelf",
+      "typeUrl": "type.googleapis.com/endpoints.examples.bookstore.Shelf",
+      "options": [{
+        "name": "google.protobuf.FieldOptions.ctype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "STRING"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.jstype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "JS_NORMAL"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.lazy",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.weak",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }],
+      "jsonName": "shelf"
+    }],
+    "options": [{
+      "name": "google.protobuf.MessageOptions.message_set_wire_format",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.no_standard_descriptor_accessor",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.deprecated",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }],
+    "sourceContext": {
+      "fileName": "bookstore.proto"
+    },
+    "syntax": "SYNTAX_PROTO3"
+  }, {
+    "name": "endpoints.examples.bookstore.GetShelfRequest",
+    "fields": [{
+      "kind": "TYPE_INT64",
+      "cardinality": "CARDINALITY_OPTIONAL",
+      "number": 1,
+      "name": "shelf",
+      "options": [{
+        "name": "google.protobuf.FieldOptions.ctype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "STRING"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.jstype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "JS_NORMAL"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.lazy",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.weak",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }],
+      "jsonName": "shelf"
+    }],
+    "options": [{
+      "name": "google.protobuf.MessageOptions.message_set_wire_format",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.no_standard_descriptor_accessor",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.deprecated",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }],
+    "sourceContext": {
+      "fileName": "bookstore.proto"
+    },
+    "syntax": "SYNTAX_PROTO3"
+  }, {
+    "name": "endpoints.examples.bookstore.DeleteShelfRequest",
+    "fields": [{
+      "kind": "TYPE_INT64",
+      "cardinality": "CARDINALITY_OPTIONAL",
+      "number": 1,
+      "name": "shelf",
+      "options": [{
+        "name": "google.protobuf.FieldOptions.ctype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "STRING"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.jstype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "JS_NORMAL"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.lazy",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.weak",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }],
+      "jsonName": "shelf"
+    }],
+    "options": [{
+      "name": "google.protobuf.MessageOptions.message_set_wire_format",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.no_standard_descriptor_accessor",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.deprecated",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }],
+    "sourceContext": {
+      "fileName": "bookstore.proto"
+    },
+    "syntax": "SYNTAX_PROTO3"
+  }, {
+    "name": "endpoints.examples.bookstore.ListBooksRequest",
+    "fields": [{
+      "kind": "TYPE_INT64",
+      "cardinality": "CARDINALITY_OPTIONAL",
+      "number": 1,
+      "name": "shelf",
+      "options": [{
+        "name": "google.protobuf.FieldOptions.ctype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "STRING"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.jstype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "JS_NORMAL"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.lazy",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.weak",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }],
+      "jsonName": "shelf"
+    }],
+    "options": [{
+      "name": "google.protobuf.MessageOptions.message_set_wire_format",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.no_standard_descriptor_accessor",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.deprecated",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }],
+    "sourceContext": {
+      "fileName": "bookstore.proto"
+    },
+    "syntax": "SYNTAX_PROTO3"
+  }, {
+    "name": "endpoints.examples.bookstore.ListBooksResponse",
+    "fields": [{
+      "kind": "TYPE_MESSAGE",
+      "cardinality": "CARDINALITY_REPEATED",
+      "number": 1,
+      "name": "books",
+      "typeUrl": "type.googleapis.com/endpoints.examples.bookstore.Book",
+      "options": [{
+        "name": "google.protobuf.FieldOptions.ctype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "STRING"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.jstype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "JS_NORMAL"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.lazy",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.weak",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }],
+      "jsonName": "books"
+    }],
+    "options": [{
+      "name": "google.protobuf.MessageOptions.message_set_wire_format",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.no_standard_descriptor_accessor",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.deprecated",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }],
+    "sourceContext": {
+      "fileName": "bookstore.proto"
+    },
+    "syntax": "SYNTAX_PROTO3"
+  }, {
+    "name": "endpoints.examples.bookstore.CreateBookRequest",
+    "fields": [{
+      "kind": "TYPE_INT64",
+      "cardinality": "CARDINALITY_OPTIONAL",
+      "number": 1,
+      "name": "shelf",
+      "options": [{
+        "name": "google.protobuf.FieldOptions.ctype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "STRING"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.jstype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "JS_NORMAL"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.lazy",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.weak",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }],
+      "jsonName": "shelf"
+    }, {
+      "kind": "TYPE_MESSAGE",
+      "cardinality": "CARDINALITY_OPTIONAL",
+      "number": 2,
+      "name": "book",
+      "typeUrl": "type.googleapis.com/endpoints.examples.bookstore.Book",
+      "options": [{
+        "name": "google.protobuf.FieldOptions.ctype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "STRING"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.jstype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "JS_NORMAL"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.lazy",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.weak",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }],
+      "jsonName": "book"
+    }],
+    "options": [{
+      "name": "google.protobuf.MessageOptions.message_set_wire_format",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.no_standard_descriptor_accessor",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.deprecated",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }],
+    "sourceContext": {
+      "fileName": "bookstore.proto"
+    },
+    "syntax": "SYNTAX_PROTO3"
+  }, {
+    "name": "endpoints.examples.bookstore.GetBookRequest",
+    "fields": [{
+      "kind": "TYPE_INT64",
+      "cardinality": "CARDINALITY_OPTIONAL",
+      "number": 1,
+      "name": "shelf",
+      "options": [{
+        "name": "google.protobuf.FieldOptions.ctype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "STRING"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.jstype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "JS_NORMAL"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.lazy",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.weak",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }],
+      "jsonName": "shelf"
+    }, {
+      "kind": "TYPE_INT64",
+      "cardinality": "CARDINALITY_OPTIONAL",
+      "number": 2,
+      "name": "book",
+      "options": [{
+        "name": "google.protobuf.FieldOptions.ctype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "STRING"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.jstype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "JS_NORMAL"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.lazy",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.weak",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }],
+      "jsonName": "book"
+    }],
+    "options": [{
+      "name": "google.protobuf.MessageOptions.message_set_wire_format",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.no_standard_descriptor_accessor",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.deprecated",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }],
+    "sourceContext": {
+      "fileName": "bookstore.proto"
+    },
+    "syntax": "SYNTAX_PROTO3"
+  }, {
+    "name": "endpoints.examples.bookstore.DeleteBookRequest",
+    "fields": [{
+      "kind": "TYPE_INT64",
+      "cardinality": "CARDINALITY_OPTIONAL",
+      "number": 1,
+      "name": "shelf",
+      "options": [{
+        "name": "google.protobuf.FieldOptions.ctype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "STRING"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.jstype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "JS_NORMAL"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.lazy",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.weak",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }],
+      "jsonName": "shelf"
+    }, {
+      "kind": "TYPE_INT64",
+      "cardinality": "CARDINALITY_OPTIONAL",
+      "number": 2,
+      "name": "book",
+      "options": [{
+        "name": "google.protobuf.FieldOptions.ctype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "STRING"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.jstype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "JS_NORMAL"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.lazy",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.weak",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }],
+      "jsonName": "book"
+    }],
+    "options": [{
+      "name": "google.protobuf.MessageOptions.message_set_wire_format",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.no_standard_descriptor_accessor",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.deprecated",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }],
+    "sourceContext": {
+      "fileName": "bookstore.proto"
+    },
+    "syntax": "SYNTAX_PROTO3"
+  }, {
+    "name": "endpoints.examples.bookstore.Empty",
+    "options": [{
+      "name": "google.protobuf.MessageOptions.message_set_wire_format",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.no_standard_descriptor_accessor",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.deprecated",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }],
+    "sourceContext": {
+      "fileName": "bookstore.proto"
+    },
+    "syntax": "SYNTAX_PROTO3"
+  }],
+  "documentation": {
+    "rules": [{
+      "selector": "endpoints.examples.bookstore",
+      "description": "Copyright (C) Endpoints Server Proxy Authors\nAll rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions\nare met:\n1. Redistributions of source code must retain the above copyright\n   notice, this list of conditions and the following disclaimer.\n2. Redistributions in binary form must reproduce the above copyright\n   notice, this list of conditions and the following disclaimer in the\n   documentation and/or other materials provided with the distribution.\n\nTHIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND\nANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE\nIMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE\nARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE\nFOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL\nDAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS\nOR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)\nHOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT\nLIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY\nOUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF\nSUCH DAMAGE.\n\n//////////////////////////////////////////////////////////////////////////////"
+    }, {
+      "selector": "endpoints.examples.bookstore.Empty",
+      "description": "Our custom grpc() Bazel rule doesn't support importing other proto files. So\nwe just inline \"google/protobuf/empty.proto\" here.\nTODO: Import & use the actual \"google/protobuf/empty.proto\" when ESP\n      upgrades to protobuf 3.0.0-beta-3 (which adds gRPC support for\n      cc_proto_library() Bazel rule).\n\nFrom \"google/protobuf/empty.proto\"\n\nA generic empty message that you can re-use to avoid defining duplicated\nempty messages in your APIs. A typical example is to use it as the request\nor the response type of an API method. For instance:\n\n    service Foo {\n      rpc Bar(google.protobuf.Empty) returns (google.protobuf.Empty);\n    }\n\nThe JSON representation for `Empty` is empty JSON object `{}`."
+    }]
+  },
+  "http": {
+    "rules": [{
+      "selector": "endpoints.examples.bookstore.Bookstore.ListShelves",
+      "get": "/shelves"
+    }, {
+      "selector": "endpoints.examples.bookstore.Bookstore.CreateShelf",
+      "post": "/shelves",
+      "body": "shelf"
+    }, {
+      "selector": "endpoints.examples.bookstore.Bookstore.GetShelf",
+      "get": "/shelves/{shelf}"
+    }, {
+      "selector": "endpoints.examples.bookstore.Bookstore.DeleteShelf",
+      "delete": "/shelves/{shelf}"
+    }, {
+      "selector": "endpoints.examples.bookstore.Bookstore.BulkCreateShelf",
+      "post": "/bulk/shelves",
+      "body": "shelf"
+    }, {
+      "selector": "endpoints.examples.bookstore.Bookstore.ListBooks",
+      "get": "/shelves/{shelf}/books"
+    }, {
+      "selector": "endpoints.examples.bookstore.Bookstore.CreateBook",
+      "post": "/shelves/{shelf}/books",
+      "body": "book"
+    }, {
+      "selector": "endpoints.examples.bookstore.Bookstore.GetBook",
+      "get": "/shelves/{shelf}/books/{book}"
+    }, {
+      "selector": "endpoints.examples.bookstore.Bookstore.DeleteBook",
+      "delete": "/shelves/{shelf}/books/{book}"
+    }]
+  },
+  "authentication": {
+  },
+  "context": {
+  },
+  "usage": {
+  },
+  "configVersion": 3,
+  "systemParameters": {
+  }
+}
