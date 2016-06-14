@@ -15,7 +15,10 @@ build:tsan --copt -g
 build:tsan --copt -fno-omit-frame-pointer
 build:tsan --linkopt -fsanitize=thread
 build:tsan --linkopt -pie
-build:tsan --linkopt -ltsan
+# Use -Wl,-ltsan instead of -ltsan to make Bazel link libtsan before all other
+# libs. TSAN on Ubuntu 12.04 (used by Travis) doesn't work if -lpthread is
+# specified before -ltsan.
+build:tsan --linkopt -Wl,-ltsan
 
 # Release builds
 build:release -c opt
