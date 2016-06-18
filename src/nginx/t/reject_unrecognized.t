@@ -47,12 +47,12 @@ my $BackendPort = 8081;
 my $ServiceControlPort = 8082;
 my $MetadataPort = 8083;
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(25);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(16);
 
-$t->write_file(
-    'service.pb.txt',
-    ApiManager::get_bookstore_service_config_allow_all_http_requests() .
-    ApiManager::read_test_file('testdata/logs_metrics.pb.txt') . <<"EOF");
+$t->write_file('service.pb.txt',
+               ApiManager::get_bookstore_service_config() .
+               ApiManager::read_test_file('testdata/logs_metrics.pb.txt') .
+               <<"EOF");
 control {
   environment: "http://127.0.0.1:${ServiceControlPort}"
 }
@@ -107,63 +107,36 @@ $t->stop_daemons();
 
 # Verify the response body.
 my ($response_headers, $response_body) = split /\r\n\r\n/, $response, 2;
-like($response_headers, qr/HTTP\/1\.1 200 OK/,
-     'API call returned HTTP 200.');
-like($response_body, qr/"Fiction-Fantasy"/,
-     'A merged shelf fiction-fantasy was returned.');
-
-# Verify metadata server was called.
-my @metadata_requests = ApiManager::read_http_stream($t, 'metadata.log');
-is(scalar @metadata_requests, 2, 'Metadata was called twice');
-
-my $r = shift @metadata_requests;
-is($r->{verb}, 'GET', 'Metadata request was a get');
-is($r->{uri}, '/computeMetadata/v1/?recursive=true', 'Metadata was retrieved');
-
-$r = shift @metadata_requests;
-is($r->{verb}, 'GET', 'Service account token request was a get');
-is($r->{uri}, '/computeMetadata/v1/instance/service-accounts/default/token',
-   'Service account token was retrieved');
+like($response_headers, qr/HTTP\/1\.1 404 Not Found/,
+     'API call returned HTTP 404.');
+like($response_body, qr/"Method does not exist."/, 'Response container an error.');
 
 # Verify service control :check was not called and :report was.
 my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
-is(scalar @servicecontrol_requests, 2, 'Service control was called twice.');
-
-# :check
-$r = shift @servicecontrol_requests;
-is($r->{verb}, 'POST', ':check was a POST');
-is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:check',
-    ':check was called');
+is(scalar @servicecontrol_requests, 1, 'Service control was called once.');
 
 # :report
-$r = shift @servicecontrol_requests;
+my $r = shift @servicecontrol_requests;
 is($r->{verb}, 'POST', ':report was a POST');
-is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:report',
-   ':report was called');
+like($r->{uri}, qr/:report$/, ':report was called');
 
 # Verify the :report body contents.
 my $report_json = decode_json(ServiceControl::convert_proto($r->{body}, 'report_request', 'json'));
 
 is($report_json->{operations}[0]->{consumerId}, 'project:esp-test-app',
    'Project ID from metadata server was used for :report.');
-is($report_json->{operations}[0]->{operationName}, 'Default.Get',
-   'An unknown operation name was used.');
+is($report_json->{operations}[0]->{operationName}, '<Unknown Operation Name>',
+   'Method was not recognized.');
 
 my $log = $report_json->{operations}[0]->{logEntries}[0];
 is($log->{name}, 'endpoints_log', 'Log entry was written into endpoints_log');
 my $payload = $log->{structPayload};
 is($payload->{http_method}, 'GET', 'Logged HTTP verb is GET');
 is($payload->{url}, '/shelves/1:merge?other=2', 'Logged URL is correct');
-is($payload->{log_message}, 'Method: Default.Get', 'Logged message is as expected');
+like($payload->{log_message}, qr/an unrecognized HTTP call/, 'Logged message is as expected');
 
-# Verify backend was called.
-my @bookstore_requests = ApiManager::read_http_stream($t, 'bookstore.log');
-is(scalar @bookstore_requests, 1, 'Backend was called.');
-
-$r = shift @bookstore_requests;
-is($r->{verb}, 'GET', 'Backend request was a get');
-is($r->{uri}, '/shelves/1:merge?other=2',
-   'Backend /shelves/1:merge?other=2 API was called');
+# Verify backend was not called.
+is($t->read_file('bookstore.log'), '', 'Backend was not called.');
 
 ################################################################################
 
@@ -202,16 +175,7 @@ sub bookstore {
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
 
-  $server->on('GET', '/shelves/1:merge?other=2', <<'EOF');
-HTTP/1.1 200 OK
-Content-Type: application/json
-
-{
-  "shelves": [
-    { "name": "shelves/1", "theme": "Fiction-Fantasy" }
-  }
-}
-EOF
+  # Backend is not expected to receive a call.
 
   $server->run();
 }

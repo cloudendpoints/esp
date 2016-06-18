@@ -35,6 +35,8 @@ use ApiManager;   # Must be first (sets up import path to the Nginx test module)
 use Test::Nginx;  # Imports Nginx's test module
 use Test::More;   # And the test framework
 use HttpServer;
+use ServiceControl;
+use JSON::PP;
 
 ################################################################################
 
@@ -46,7 +48,10 @@ my $HttpBackendPort = 8085;
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(4);
 
-$t->write_file('service.pb.txt', ApiManager::get_bookstore_service_config . <<"EOF");
+$t->write_file(
+    'service.pb.txt',
+    ApiManager::get_bookstore_service_config_allow_all_http_requests . <<"EOF");
+producer_project_id: "endpoints-test"
 control {
   environment: "http://127.0.0.1:${ServiceControlPort}"
 }
@@ -77,7 +82,7 @@ http {
 }
 EOF
 
-$t->run_daemon(\&service_control, $t, $ServiceControlPort, 'requests.log');
+$t->run_daemon(\&service_control, $t, $ServiceControlPort, 'servicecontrol.log');
 $t->run_daemon(\&ApiManager::grpc_test_server, $t, "127.0.0.1:${GrpcBackendPort}");
 is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control socket ready.');
 is($t->waitforsocket("127.0.0.1:${GrpcBackendPort}"), 1, 'GRPC test server socket ready.');
@@ -110,9 +115,31 @@ is($test_results, $test_results_expected, 'Client tests completed as expected.')
 ################################################################################
 
 sub service_control {
-  my ($t, $port, $file) = @_;
+  my ($t, $port, $file, $done) = @_;
   my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
     or die "Can't create test server socket: $!\n";
+  local $SIG{PIPE} = 'IGNORE';
+
+  $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:check', sub {
+    my ($headers, $body, $client) = @_;
+    print $client <<'EOF';
+HTTP/1.1 200 OK
+Connection: close
+
+EOF
+  });
+
+  $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:report', sub {
+    my ($headers, $body, $client) = @_;
+    print $client <<'EOF';
+HTTP/1.1 200 OK
+Connection: close
+
+EOF
+
+    $t->write_file($done, ':report done');
+  });
+
   $server->run();
 }
 

@@ -173,6 +173,7 @@ nginx_suite(
         "metadata_fail.t",
         "metadata_timeout.t",
         "no_service_control.t",
+        "reject_unrecognized.t",
         "report_3xx.t",
         "report_4xx.t",
         "report_failed.t",

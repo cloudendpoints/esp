@@ -1,0 +1,92 @@
+name: "endpoints-test.cloudendpointsapis.com"
+http {
+  rules {
+    selector: "ListShelves"
+    get: "/shelves"
+  }
+  rules {
+    selector: "CorsShelves"
+    custom: {
+      kind: "OPTIONS"
+      path: "/shelves"
+    }
+  }
+  rules {
+    selector: "CreateShelf"
+    post: "/shelves"
+  }
+  rules {
+    selector: "GetShelf"
+    get: "/shelves/{shelf}"
+  }
+  rules {
+    selector: "DeleteShelf"
+    delete: "/shelves/{shelf}"
+  }
+  rules {
+    selector: "ListBooks"
+    get: "/shelves/{shelf}/books"
+  }
+  rules {
+    selector: "CreateBook"
+    post: "/shelves/{shelf}/books"
+  }
+  rules {
+    selector: "GetBook"
+    get: "/shelves/{shelf}/books/{book}"
+  }
+  rules {
+    selector: "DeleteBook"
+    delete: "/shelves/{shelf}/books/{book}"
+  }
+  rules {
+    selector: "Default.Delete"
+    delete: "/**"
+  }
+  rules {
+    selector: "Default.Get"
+    get: "/**"
+  }
+  rules {
+    selector: "Default.Patch"
+    patch: "/**"
+  }
+  rules {
+    selector: "Default.Post"
+    post: "/**"
+  }
+  rules {
+    selector: "Default.Put"
+    put: "/**"
+  }
+}
+usage {
+  rules {
+    selector: "Default.Get"
+    allow_unregistered_calls: true
+  }
+  rules {
+    selector: "Default.Patch"
+    allow_unregistered_calls: true
+  }
+  rules {
+    selector: "Default.Post"
+    allow_unregistered_calls: true
+  }
+  rules {
+    selector: "Default.Put"
+    allow_unregistered_calls: true
+  }
+  rules {
+    selector: "GetShelf"
+    allow_unregistered_calls: true
+  }
+  rules {
+    selector: "ListBooks"
+    allow_unregistered_calls: false
+  }
+  rules {
+    selector: "GetBook"
+    allow_unregistered_calls: false
+  }
+}
