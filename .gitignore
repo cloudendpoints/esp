@@ -1,0 +1,6 @@
+.*.swp
+.idea/
+.project
+.cproject
+
+/bazel-*

@@ -1,0 +1,114 @@
+#!/bin/bash
+#
+# Copyright (C) Endpoints Server Proxy Authors
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+################################################################################
+#
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+. ${ROOT}/script/all-utilities || { echo "Cannot load Bash utilities" ; exit 1 ; }
+
+while getopts m arg; do
+  case ${arg} in
+    m) echo "-m is deprecated and a noop";;
+    ?) exit 1;;
+  esac
+done
+
+( echo "Checking license headers."
+  "${ROOT}/script/check-license-headers"
+
+) || error_exit "License headers check failed."
+
+( echo "Checking coding styles."
+  "${ROOT}/script/robot-style"
+
+) || error_exit "Code style check failed."
+
+( echo "Bazel test third_party/service-control-client-cxx."
+  cd ${ROOT}/third_party/service-control-client-cxx
+
+  bazel clean \
+    || error_exit "Failed to bazel clean before the build."
+
+  bazel test --test_output=errors :all \
+    || error_exit "Bazel test failed for :all."
+
+) || error_exit "Bazel build failed."
+
+( echo "Building with Bazel."
+
+  bazel clean \
+    || error_exit "Failed to bazel clean before the build."
+
+  bazel build //src/... \
+    || error_exit "Bazel build failed for //src/..."
+
+  bazel build //third_party/nginx:nginx \
+    || error_exit "Bazel build failed for //third_party/nginx:nginx"
+
+  bazel build //third_party/config/... \
+    || error_exit "Bazel build failed for //third_party/config/..."
+
+  # Test Perl test rules.
+
+  bazel test //test/perl:test_pass \
+    || error_exit "Perl test expected to pass failed."
+
+  bazel test //test/perl:test_fail
+  [[ $? -ne 0 ]] || error_exit "Perl test expected to fail passed."
+
+  # Tests
+
+  bazel test --test_output=errors //src/... \
+    || error_exit "Bazel test failed for //src/..."
+
+  bazel test --test_output=errors //third_party:all \
+    || error_exit "Bazel test failed for //third_party:all (nginx tests)."
+
+  # Run the rest of the tests on release build.
+  bazel clean \
+    || error_exit "Failed to bazel clean before the release build."
+
+  bazel test --config=release --test_output=errors \
+      //src/... \
+      //third_party:all \
+    || error_exit "Failed release tests."
+
+  # Docker test.
+  bazel build --config=release //src/nginx/main:endpoints-server-proxy \
+    || error_exit "Bazel build failed for //src/nginx/main:endpoints-server-proxy"
+
+  ${ROOT}/test/docker/docker_test.sh \
+      -d "${ROOT}/bazel-bin/src/nginx/main/endpoints-server-proxy.deb" \
+    || error_exit "Docker presubmit test failed."
+
+  ${ROOT}/test/docker/generic_docker_test.sh \
+      -d "${ROOT}/bazel-bin/src/nginx/main/endpoints-server-proxy.deb" \
+    || error_exit "Generic Docker presubmit test failed."
+
+) || error_exit "Bazel build failed."
+
+echo "Presubmit tests completed successfully."

@@ -1,0 +1,12 @@
+/var/log/nginx/*.log {
+        daily
+        missingok
+        rotate 52
+        compress
+        delaycompress
+        notifempty
+        sharedscripts
+        postrotate
+                [ -f /usr/logs/nginx.pid ] && kill -USR1 `cat /usr/logs/nginx.pid`
+        endscript
+}

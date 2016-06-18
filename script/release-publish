@@ -1,0 +1,119 @@
+#!/bin/bash
+#
+# Copyright (C) Endpoints Server Proxy Authors
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+################################################################################
+#
+
+# This script will:
+#   * download the debian package with the given SHA and
+#     add it to Debian package repository
+#   * download a Docker image with the given SHA, re-tag it with
+#     release version and publish it in Cloud Container Registry.
+#
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+. ${ROOT}/script/all-utilities || { echo "Cannot load Bash utilities"; exit 1; }
+
+function usage() {
+  [[ -n "${1}" ]] && echo "${1}"
+  cat <<EOF
+usage: ${BASH_SOURCE[0]} -s <commit sha> [options]"
+
+options are:
+  -g <path_to_gcloud>
+  -u <path_to_gsutil>
+EOF
+  exit 1
+}
+
+PREFIX='google-cloud-endpoints-jessie'
+GSUTIL="$(which gsutil)" || GSUTIL=~/google-cloud-sdk/bin/gsutil
+GCLOUD="$(which gcloud)" || GCLOUD=~/google-cloud-sdk/bin/gcloud
+SHA=""
+
+while getopts :g:u:s: arg; do
+  case ${arg} in
+    g) GCLOUD="${OPTARG}";;
+    u) GSUTIL="${OPTARG}";;
+    s) SHA="${OPTARG}";;
+    *) usage "Invalid option: -${OPTARG}";;
+  esac
+done
+
+[[ -n "${SHA}" ]] \
+  || usage "Must provide commit sha via '-s' parameter."
+[[ "${SHA}" =~ ^[0-9a-f]{40}$ ]] \
+  || usage "Invalid SHA: ${SHA}."
+[[ -x "${GCLOUD}" ]] \
+  || usage "Cannot find gcloud (${GCLOUD}), provide it via '-g' flag."
+[[ -x "${GSUTIL}" ]] \
+  || usage "Cannot find gsutil (${GSUTIL}), provide it via '-u' flag."
+
+which rapture > /dev/null 2>&1 \
+  || error_exit "rapture client not installed on this machine."
+
+set -x
+
+VERSION="$(command cat ${ROOT}/include/version)" \
+  || error_exit "Cannot find release version (${ROOT}/include/version)"
+SOURCE_IMAGE="gcr.io/endpointsv2/endpoints-runtime:debian-git-${SHA}"
+TARGET_IMAGE="b.gcr.io/endpoints/endpoints-runtime:${VERSION}"
+
+if RELEASE_BRANCH_SHA="$(git rev-parse origin/release-${VERSION})"; then
+  if [[ "${SHA}" != "${RELEASE_BRANCH_SHA}" ]]; then
+    printf "\e[31m
+WARNING: Release branch commit (${RELEASE_BRANCH_SHA}) doesn't match ${SHA}.
+\e[0m"
+  fi
+else
+  printf "\e[31m
+WARNING: Cannot find release branch origin/release-${VERSION}.
+\e[0m"
+fi
+
+docker_tag "${SOURCE_IMAGE}" "${TARGET_IMAGE}"
+
+echo "Pushing ${TARGET_IMAGE} to Cloud Container Registry."
+"${GCLOUD}" docker push "${TARGET_IMAGE}" \
+  || error_exit "Cloud Container Registry push failed."
+
+SOURCE_PKG="gs://endpoints-robot-temp/${SHA}/endpoints-runtime-amd64.deb"
+TARGET_PKG="$(command mktemp -d)/endpoints-runtime-amd64.deb"
+"${GSUTIL}" cp "${SOURCE_PKG}" "${TARGET_PKG}"
+
+OUTPUT="$(rapture --universe=cloud-apt addpkg ${PREFIX} ${TARGET_PKG})"
+DIRECT_REPO=$(echo "${OUTPUT}" | grep "(direct):" | cut -d ' ' -f 1)
+
+echo "${OUTPUT}"
+echo
+echo "The following direct package repository was created by rapture: "
+echo "DIRECT_REPO=${DIRECT_REPO}"
+
+printf '\e[31m
+***************************************************************************
+*      Please paste the script output verbatim into the release bug.      *
+***************************************************************************
+\e[0m'

@@ -1,0 +1,180 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "version": "1.0.0",
+        "title": "echo",
+        "description": "A simple Echo example."
+    },
+    "host": "echo-${PROJECT}.cloudendpointsapis.com",
+    "securityDefinitions": {
+        "api_key": {
+            "type": "apiKey",
+            "name": "key",
+            "in": "query"
+        },
+        "test_jwk": {
+            "type": "oauth2",
+            "authorizationUrl": "",
+            "flow": "implicit",
+            "x-issuer": "loadtest@esp-test-client.iam.gserviceaccount.com",
+            "x-jwks_uri": "https://www.googleapis.com/service_accounts/v1/jwk/loadtest@esp-test-client.iam.gserviceaccount.com"
+        },
+        "test_x509": {
+            "type": "oauth2",
+            "authorizationUrl": "",
+            "flow": "implicit",
+            "x-issuer": "account-1@esp-echo.iam.gserviceaccount.com",
+            "x-jwks_uri": "https://www.googleapis.com/service_accounts/v1/metadata/x509/account-1@esp-echo.iam.gserviceaccount.com"
+        },
+        "test_symmetric": {
+            "type": "oauth2",
+            "authorizationUrl": "",
+            "flow": "implicit",
+            "x-issuer": "https://test.echo.client",
+            "x-jwks_uri": "http://169.254.169.254/computeMetadata/v1/project/attributes/auth-key-test_echo_client"
+        }
+    },
+    "security": [
+        {
+            "api_key": []
+        }
+    ],
+    "basePath": "/",
+    "schemes": [
+        "http"
+    ],
+    "consumes": [
+        "application/json"
+    ],
+    "produces": [
+        "application/json"
+    ],
+    "paths": {
+        "/echo": {
+            "delete": {
+                "description": "Delete Message",
+                "operationId": "deleteMessage",
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "204": {
+                        "description": "delete message response"
+                    }
+                }
+            },
+            "get": {
+                "description": "Get Message",
+                "operationId": "getMessage",
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "get message response"
+                    }
+                }
+            },
+            "patch": {
+                "description": "Patch Message",
+                "operationId": "patchMessage",
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "patch message response"
+                    }
+                }
+            },
+            "post": {
+                "description": "Post Message",
+                "operationId": "postMessage",
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "post message response"
+                    }
+                }
+            },
+            "put": {
+                "description": "Put Message",
+                "operationId": "putMessage",
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "put message response"
+                    }
+                }
+            }
+        },
+        "/echo/auth": {
+            "get": {
+                "description": "Get Message Authed",
+                "operationId": "getMessageAuthed",
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "get message response"
+                    }
+                },
+                "x-security": [
+                    {
+                        "test_jwk":  {
+                            "audiences":[]
+                        }
+                    },
+                    {
+                        "test_x509": {
+                            "audiences":[]
+                        }
+                    },
+                    {
+                        "test_symmetric": {
+                            "audiences": [
+                                "test.echo.audience"
+                            ]
+                        }
+                    }
+                ]
+            },
+            "post": {
+                "description": "Post Message Authed",
+                "operationId": "postMessageAuthed",
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "post message response"
+                    }
+                },
+                "x-security": [
+                    {
+                        "test_jwk":  {
+                            "audiences":[]
+                        }
+                    },
+                    {
+                        "test_x509": {
+                            "audiences":[]
+                        }
+                    },
+                    {
+                        "test_symmetric": {
+                            "audiences": [
+                                "test.echo.audience"
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}

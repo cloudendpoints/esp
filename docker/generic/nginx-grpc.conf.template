@@ -1,0 +1,62 @@
+daemon off;
+
+user nginx nginx;
+
+worker_processes 1;
+
+error_log  /var/log/nginx/error.log error;
+
+events {
+  worker_connections  32;
+}
+
+http {
+  include /etc/nginx/mime.types;
+  client_body_timeout 600s;
+  client_header_timeout 600s;
+  proxy_send_timeout 600s;
+  proxy_read_timeout 600s;
+
+  endpoints {
+     api /etc/nginx/endpoints/service.json;
+     metadata_server;
+  }
+
+  # http2 for gRPC
+  server {
+    listen ${PORT} http2;
+
+    include ssl.conf;
+    access_log /var/log/nginx/access.log;
+
+    location / {
+      endpoints {
+        on;
+      }
+      proxy_set_header X-Endpoint-API-UserInfo $endpoints_api_userinfo;
+
+      grpc_pass {
+        proxy_pass http://www.google.com/;
+      }
+
+      grpc_backend_address_override ${SERVER_ADDRESS};
+    }
+  }
+
+  server {
+    # expose /nginx_status and /endpoints_status but on a different port to
+    # avoid external visibility / conflicts with the app.
+    listen ${NGINX_STATUS_PORT};
+    location /nginx_status {
+      stub_status on;
+      access_log off;
+    }
+    location /endpoints_status {
+      endpoints_status;
+      access_log off;
+    }
+    location / {
+      root /dev/null;
+    }
+  }
+}

@@ -1,0 +1,77 @@
+#!/bin/bash
+#
+# Copyright (C) Endpoints Server Proxy Authors
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+################################################################################
+#
+
+if [[ "$(uname)" != "Linux" ]]; then
+  echo "Run on Linux only."
+  exit 1
+fi
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+. ${ROOT}/script/all-utilities || { echo "Cannot load Bash utilities"; exit 1; }
+
+echo "Redirecting /bin/sh to bash."
+${SUDO} debconf-set-selections <<< "debconf dash/sh select false" \
+  && ${SUDO} dpkg-reconfigure -fnoninteractive dash \
+  || error_exit "Cannot redirect /bin/sh to bash."
+
+echo "Initializing Bazel sandboxing."
+if SANDBOX=$(cat /proc/sys/kernel/unprivileged_userns_clone); then
+  [[ "${SANDBOX}" -eq 1 ]] \
+    || ${SUDO} sysctl kernel.unprivileged_userns_clone=1 \
+    || echo "Cannot enable Bazel sandbox."
+fi
+
+echo "Creating directories required by NGINX process."
+${SUDO} mkdir --parents --mode=777 \
+    /var/log/nginx \
+    /var/cache/nginx/client_temp \
+    /var/cache/nginx/proxy_temp \
+  || error_exit "Cannot create NGINX directories."
+
+# Create an nginx user and group. NGINX uses them to reduce privilege
+# after startup.
+if ! ${SUDO} getent group nginx >/dev/null 2>&1 ; then
+    echo "Creating nginx group."
+    ${SUDO} addgroup --system nginx \
+      || error_exit "Cannot create 'nginx' group."
+fi
+
+if ! ${SUDO} getent passwd nginx >/dev/null 2>&1 ; then
+    echo "Creating nginx user."
+    ${SUDO} adduser \
+        --system \
+        --disabled-login \
+        --ingroup nginx \
+        --no-create-home \
+        --gecos "nginx user" \
+        --shell /bin/false \
+        nginx \
+      || error_exit "Cannot create 'nginx' user."
+fi
+

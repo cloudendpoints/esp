@@ -1,0 +1,106 @@
+system_parameters {
+  rules {
+    selector: "ListShelves"
+    parameters {
+       name: "api_key"
+       http_header: "Key"
+       url_query_parameter: "key"
+    }
+    parameters {
+       name: "api_key"
+       http_header: "Api-Key"
+       url_query_parameter: "api_key"
+    }
+  }
+  rules {
+    selector: "CreateShelf"
+    parameters {
+       name: "api_key"
+       http_header: "Key"
+       url_query_parameter: "key"
+    }
+    parameters {
+       name: "api_key"
+       http_header: "Api-Key"
+       url_query_parameter: "api_key"
+    }
+  }
+  rules {
+    selector: "GetShelf"
+    parameters {
+       name: "api_key"
+       http_header: "Key"
+       url_query_parameter: "key"
+    }
+    parameters {
+       name: "api_key"
+       http_header: "Api-Key"
+       url_query_parameter: "api_key"
+    }
+  }
+  rules {
+    selector: "DeleteShelf"
+    parameters {
+       name: "api_key"
+       http_header: "Key"
+       url_query_parameter: "key"
+    }
+    parameters {
+       name: "api_key"
+       http_header: "Api-Key"
+       url_query_parameter: "api_key"
+    }
+  }
+  rules {
+    selector: "ListBooks"
+    parameters {
+       name: "api_key"
+       http_header: "Key"
+       url_query_parameter: "key"
+    }
+    parameters {
+       name: "api_key"
+       http_header: "Api-Key"
+       url_query_parameter: "api_key"
+    }
+  }
+  rules {
+    selector: "CreateBook"
+    parameters {
+       name: "api_key"
+       http_header: "Key"
+       url_query_parameter: "key"
+    }
+    parameters {
+       name: "api_key"
+       http_header: "Api-Key"
+       url_query_parameter: "api_key"
+    }
+  }
+  rules {
+    selector: "GetBook"
+    parameters {
+       name: "api_key"
+       http_header: "Key"
+       url_query_parameter: "key"
+    }
+    parameters {
+       name: "api_key"
+       http_header: "Api-Key"
+       url_query_parameter: "api_key"
+    }
+  }
+  rules {
+    selector: "DeleteBook"
+    parameters {
+       name: "api_key"
+       http_header: "Key"
+       url_query_parameter: "key"
+    }
+    parameters {
+       name: "api_key"
+       http_header: "Api-Key"
+       url_query_parameter: "api_key"
+    }
+  }
+}

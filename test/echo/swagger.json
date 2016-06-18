@@ -1,0 +1,148 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "A simple Google Cloud Endpoints Echo API example.",
+    "title": "Echo",
+    "version": "1.0.0"
+  },
+  "host": "${MY_PROJECT_ID}.appspot.com",
+  "basePath": "/",
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "schemes": [
+    "https"
+  ],
+  "paths": {
+    "/echo": {
+      "delete": {
+        "description": "Echo Delete Message",
+        "operationId": "echoDeleteMessage",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "204": {
+            "description": "delete message response"
+          }
+        }
+      },
+      "get": {
+        "description": "Echo Get Message",
+        "operationId": "echoGetMessage",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "get message response"
+          }
+        }
+      },
+      "patch": {
+        "description": "Echo Patch Message",
+        "operationId": "echoPatchMessage",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "patch message response"
+          }
+        }
+      },
+      "post": {
+        "description": "Echo Post Message",
+        "operationId": "echoPostMessage",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "post message response"
+          }
+        }
+      },
+      "put": {
+        "description": "Echo Put Message",
+        "operationId": "echoPutMessage",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "put message response"
+          }
+        }
+      }
+    },
+    "/echo/auth": {
+      "get": {
+        "description": "Echo Get Message Authed",
+        "operationId": "echoGetMessageAuthed",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "get message response"
+          }
+        },
+        "x-security": [
+          {
+            "test_jwk":  {
+              "audiences": [
+                "echo-${MY_PROJECT_ID}.cloudendpointsapis.com"
+              ]
+            }
+          }
+        ]
+      },
+      "post": {
+        "description": "Echo Post Message Authed",
+        "operationId": "echoPostMessageAuthed",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "post message response"
+          }
+        },
+        "x-security": [
+          {
+            "test_jwk":  {
+              "audiences":[
+                "echo-${MY_PROJECT_ID}.cloudendpointsapis.com"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "definitions": {
+  },
+  "security": [
+    {
+      "api_key": []
+    }
+  ],
+  "securityDefinitions": {
+    "api_key": {
+      "in": "query",
+      "name": "key",
+      "type": "apiKey"
+    },
+    "test_jwk": {
+      "authorizationUrl": "",
+      "flow": "implicit",
+      "type": "oauth2",
+      "x-issuer": "loadtest@esp-test-client.iam.gserviceaccount.com",
+      "x-jwks_uri": "https://www.googleapis.com/service_accounts/v1/jwk/loadtest@esp-test-client.iam.gserviceaccount.com"
+    }
+  }
+}

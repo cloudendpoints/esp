@@ -1,0 +1,26 @@
+{
+  "name": "bookstore",
+  "version": "0.0.1",
+  "description": "Google Cloud Endpoints Bookstore App in Node.js",
+  "main": "bookstore.js",
+  "scripts": {
+    "start": "node bookstore.js",
+    "test": ""
+  },
+  "repository": {},
+  "author": "Google Inc.",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "body-parser": "^1.12.2",
+    "express": "^4.12.3"
+  },
+  "engines" : {
+    "node" : ">=4.1.2"
+  },
+  "files": [
+    "README.md",
+    "bookstore.js",
+    "package.json",
+    "swagger.json"
+  ]
+}

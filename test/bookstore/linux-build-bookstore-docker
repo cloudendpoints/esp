@@ -1,0 +1,59 @@
+#!/bin/bash
+#
+# Copyright (C) Endpoints Server Proxy Authors
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+################################################################################
+#
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+BOOKSTORE_ROOT="${ROOT}/test/bookstore"
+
+. ${ROOT}/script/all-utilities || { echo "Cannot load Bash utilities"; exit 1; }
+
+while getopts :i: arg; do
+  case ${arg} in
+    i) IMAGE="${OPTARG}";;
+    *) error_exit "Unrecognized argument -${OPTARG}";;
+  esac
+done
+
+[[ -n "${IMAGE}" ]] || error_exit "Specify required image argument via '-i'"
+
+echo "Checking if docker image ${IMAGE} exists.."
+gcloud docker pull "${IMAGE}" \
+  && echo "Image ${IMAGE} already exists; skipping" \
+  && exit 0
+
+echo "Building Endpoints Runtime docker image."
+cp ${DEB} ./docker/${PLATFORM}/endpoints-runtime.deb
+retry -n 3 docker build --no-cache -t ${IMAGE} \
+  -f "${BOOKSTORE_ROOT}/bookstore.Dockerfile" "${BOOKSTORE_ROOT}" \
+  || error_exit "Docker image build failed."
+
+echo "Pushing Docker image: ${IMAGE}"
+# Try 10 times, shortest wait is 10 seconds, exponential back-off.
+retry -n 10 -s 10 \
+    gcloud docker push "${IMAGE}" \
+  || error_exit "Failed to upload Docker image to gcr."

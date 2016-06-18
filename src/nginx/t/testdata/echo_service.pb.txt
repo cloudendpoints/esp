@@ -1,0 +1,23 @@
+name: "echo.cloudendpointsapis.com"
+http: {
+  rules: {
+    selector: "echo.v1.EchoService.GetMessage"
+    get: "/echo"
+  }
+  rules: {
+    selector: "echo.v1.EchoService.PostMessage"
+    post: "/echo"
+  }
+  rules: {
+    selector: "echo.v1.EchoService.PutMessage"
+    put: "/echo"
+  }
+  rules: {
+    selector: "echo.v1.EchoService.PatchMessage"
+    patch: "/echo"
+  }
+  rules: {
+    selector: "echo.v1.EchoService.DeleteMessage"
+    delete: "/echo"
+  }
+}

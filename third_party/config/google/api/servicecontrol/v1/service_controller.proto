@@ -1,0 +1,180 @@
+// Copyright 2016 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.api.servicecontrol.v1;
+
+import "google/api/annotations.proto";
+import "google/api/servicecontrol/v1/check_error.proto";
+import "google/api/servicecontrol/v1/operation.proto";
+import "google/rpc/status.proto";
+
+option cc_enable_arenas = true;
+option java_multiple_files = true;
+option java_outer_classname = "ServiceControllerProto";
+option java_package = "com.google.api.servicecontrol.v1";
+
+// Google Service Controller API
+//
+// The Google Service Controller allows clients to
+// [check][google.api.servicecontrol.v1.ServiceController.Check] and
+// [report][google.api.servicecontrol.v1.ServiceController.Report]
+// [operations][google.api.servicecontrol.v1.Operation] against
+// a managed service (see `google.api.servicemanagement.v1.ManagedService`).
+// It has the following high-level concepts.
+//
+// ## Managed service
+//
+// The Google Service Manager API manages a set of services, called managed
+// services. Each managed service has a service configuration that specifies
+// different configuration aspects of the service, such as quota limits.
+// The Google Service Controller uses the service configurations to
+// determine its behavior at runtime.
+//
+// ## Operation
+//
+// An operation represents an arbitrary activity that a managed service
+// performs for its users. It can be an explicit API request or a background
+// activity (such as data backup) or a sub-request originated from a user
+// request (such as creating a persistent disk to start a VM instance).
+//
+// For performance and cost reasons, the operations are **not** persisted
+// as resources, so they can't be retrieved after the methods are called.
+//
+// ## Check
+//
+// The Google Service Controller API provides the method
+// [Check()][google.api.servicecontrol.v1.ServiceController.Check] for clients
+// to check whether an operation
+// should be allowed to proceed based on the specified service configuration
+// and the operation. For example, project status check, billing status check,
+// quota check.
+//
+// ## Report
+//
+// The Google Service Controller API provides the method
+// [Report()][google.api.servicecontrol.v1.ServiceController.Report] for clients
+// to report operations to
+// various service backends, such as billing, logging, monitoring, for a
+// managed service.
+service ServiceController {
+  // Checks an operation with the Google Service Controller for features like
+  // project status, billing status, abuse status, quota etc to decide whether
+  // the given operation should proceed. It should be called before the
+  // operation is executed.
+  //
+  // This method requires the `servicemanagement.services.check` permission
+  // on the specified service. For more information, see
+  // [Google Cloud IAM](https://cloud.google.com/iam).
+  rpc Check(CheckRequest) returns (CheckResponse) {
+    option (google.api.http) = {
+      post: "/v1/services/{service_name}:check"
+      body: "*"
+    };
+  }
+
+  // Reports operations to the Google Service Controller for features like
+  // billing, logging, monitoring, quota usage, etc. It should be called
+  // after the operation is completed.
+  //
+  // This method requires the `servicemanagement.services.report` permission
+  // on the specified service. For more information, see
+  // [Google Cloud IAM](https://cloud.google.com/iam).
+  rpc Report(ReportRequest) returns (ReportResponse) {
+    option (google.api.http) = {
+      post: "/v1/services/{service_name}:report"
+      body: "*"
+    };
+  }
+}
+
+// The request message of the Check method.
+message CheckRequest {
+  // The service name. The DNS address at which this service is available,
+  // such as `"pubsub.googleapis.com"`.
+  //
+  // Please see `google.api.Service` for the definition of service name.
+  string service_name = 1;
+
+  // The operation to be checked.
+  Operation operation = 2;
+}
+
+// The response message of the Check method.
+message CheckResponse {
+  // The same operation_id value used in the CheckRequest.
+  // Used for logging and diagnostics purpose.
+  string operation_id = 1;
+
+  // Indicate the decision of the check.
+  //
+  // If no check errors are present, the service should process the operation.
+  // Otherwise the service should use the list of errors to determine the
+  // appropriate action.
+  repeated CheckError check_errors = 2;
+}
+
+// The request message of the Report method.
+message ReportRequest {
+  // The service name. The DNS address at which this service is available,
+  // such as `"pubsub.googleapis.com"`.
+  //
+  // Please see `google.api.Service` for the definition of service name.
+  string service_name = 1;
+
+  // Operations to be reported.
+  //
+  // Typically the service should report one operation per request.
+  // Putting multiple operations into a single request is allowed, but should
+  // be used only when multiple operations are natually available at the time
+  // of the report.
+  //
+  // If multiple operations are in a single request, the total request size
+  // should be no larger than 1MB. See
+  // [ReportResponse.report_errors][google.api.servicecontrol.v1.ReportResponse.report_errors]
+  // for
+  // partial failure behavior.
+  repeated Operation operations = 2;
+}
+
+// The response message of the Report method.
+message ReportResponse {
+  // Represents the processing error of one `Operation` in the request.
+  message ReportError {
+    // The
+    // [Operation.operation_id][google.api.servicecontrol.v1.Operation.operation_id]
+    // value from the request.
+    string operation_id = 1;
+
+    // Details of the error when processing the `Operation`.
+    google.rpc.Status status = 2;
+  }
+
+  // The partial failures, one for each `Operation` in the request that failed
+  // processing. There are three possible combinations of the RPC status and
+  // this list:
+  //
+  // 1. The combination of a successful RPC status and an empty `report_errors`
+  //    list indicates a complete success where all `Operation`s in the
+  //    request are processed successfully.
+  // 2. The combination of a successful RPC status and a non-empty
+  //    `report_errors` list indicates a partial success where some
+  //    `Operation`s in the request are processed successfully. Each
+  //    `Operation` that failed processing has a corresponding item
+  //    in this list.
+  // 3. A failed RPC status indicates a complete failure where none of the
+  //    `Operation`s in the request is processed successfully.
+  repeated ReportError report_errors = 1;
+}

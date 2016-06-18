@@ -1,0 +1,274 @@
+#!/bin/bash
+#
+# Copyright (C) Endpoints Server Proxy Authors
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+################################################################################
+#
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+. ${ROOT}/script/all-utilities || { echo "Cannot load Bash utilities"; exit 1; }
+
+function usage() {
+  [[ -n "${1}" ]] && echo "${1}"
+  echo "usage: ${BASH_SOURCE[0]}
+  -g <path_to_gsutil>
+  -s <commit sha>
+  -t <output dir>
+  -j <to include Jenkins logs>"
+  exit 1
+}
+
+GSUTIL=$(which gsutil) || GSUTIL=~/google-cloud-sdk/bin/gsutil
+SHA=""
+TMP=~/tmp
+USE_JENKINS_LOGS='false'
+
+while getopts :g:js:t: arg; do
+  case ${arg} in
+    g) GSUTIL="${OPTARG}";;
+    j) USE_JENKINS_LOGS='true';;
+    s) SHA="${OPTARG}";;
+    t) TMP="${OPTARG}";;
+    *) usage "Invalid option: -${OPTARG}";;
+  esac
+done
+
+[[ -n "${SHA}" ]] || usage "Must provide commit sha via '-s' parameter."
+[[ -x "${GSUTIL}" ]] || usage "Cannot find gsutil, provide it via '-g' flag."
+
+LOGS="$(mktemp -d ${TMP}/qualify-XXXX)"
+RESULT="${LOGS}/RESULT.log"
+NGINX_LOG_ANALYSIS="${LOGS}/nginx-log-analysis.log"
+
+function check_result() {
+  local FILE=${1}
+  local COMMIT=${2}
+
+  python - <<EOF ${FILE} ${COMMIT}
+import sys
+import json
+
+log_file = sys.argv[1]
+commit_sha = sys.argv[2]
+
+with open(log_file) as log:
+  result = json.load(log)
+
+json_status = result.get('scriptStatus', 1)
+json_sha = result.get('headCommitHash', '')
+
+status_ok = json_status == 0
+sha_ok = json_sha == commit_sha
+
+print "Checking {} SHA={}".format(log_file, commit_sha)
+print "  Status == {} ({})".format(json_status, "OK" if status_ok else "FAIL")
+print "  SHA == {} ({})".format(json_sha, "OK" if sha_ok else "FAIL")
+
+exit(0 if status_ok and sha_ok else 1)
+EOF
+}
+
+function count_stress_failures() {
+  awk '
+    BEGIN {
+      failed=0
+      total=0
+      non2xx=0
+    }
+
+    /Complete requests: *[0-9]*/ {
+      total+=$3
+    }
+
+    /Failed requests: *[0-9]*/ {
+      failed+=$3
+    }
+
+    /Non-2xx responses: *[0-9]*/ {
+      non2xx+=$3
+    }
+
+    END {
+      print "Failed requests:   ", failed
+      print "Non-2xx responses: ", non2xx
+      print "Total requests:    ", total
+      if (total > 0) {
+        print "Failed/Total:      ", failed / total
+      }
+    }' "${@}"
+}
+
+(
+  echo "Release qualification of ${SHA}."
+  echo "It is now: $(date)"
+
+  echo "Downloading logs to '${LOGS}' directory."
+  ${GSUTIL} -m cp -r "gs://endpoints-robot-temp/${SHA}/" "${LOGS}/" 2>&1 \
+    || error_exit "Failed to download logs from endpoints-robot-temp."
+  if [[ "${USE_JENKINS_LOGS}" == 'true' ]]; then
+    ${GSUTIL} -m cp -r "gs://endpoints-jenkins.appspot.com/${SHA}/logs/*" "${LOGS}/${SHA}/" 2>&1 \
+      || error_exit "Failed to download logs from endpoints-jenkins.appspot.com."
+  fi
+
+  [[ -f "${LOGS}/${SHA}/presubmit.json" ]] \
+    || error_exit "Cannot find presubmit results ${LOGS}/${SHA}/presubmit.json"
+  [[ -f "${LOGS}/${SHA}/coverage.json" ]] \
+    || error_exit "Cannot find code coverage results ${LOGS}/${SHA}/coverage.json"jj
+  [[ -f "${LOGS}/${SHA}/performance.json" ]] \
+    || error_exit "Cannot find performance test results ${LOGS}/${SHA}/performance.json"
+  [[ -f "${LOGS}/${SHA}/release.json" ]] \
+    || error_exit "Cannot find release results ${LOGS}/${SHA}/release.json"
+  [[ -f "${LOGS}/${SHA}/test-docker.json" ]] \
+    || error_exit "Cannot find Docker test results ${LOGS}/${SHA}/test-docker.json"
+
+  check_result "${LOGS}/${SHA}/presubmit.json" "${SHA}" \
+    || error_exit "Presubmit run failed - Release is not qualified."
+  check_result "${LOGS}/${SHA}/coverage.json" "${SHA}" \
+    || error_exit "Code coverage run failed - Release is not qualified."
+  check_result "${LOGS}/${SHA}/performance.json" "${SHA}" \
+    || error_exit "Postsubmit performance test failed - Release is not qualified."
+  check_result "${LOGS}/${SHA}/release.json" "${SHA}" \
+    || error_exit "Postsubmit build of release artifacts failed - Release is not qualified."
+  check_result "${LOGS}/${SHA}/test-docker.json" "${SHA}" \
+    || error_exit "Postsubmit Docker test failed - release is not qualified."
+
+  RQ_TESTS=()
+
+  # This while loop reads from a redirect set up at the "done" clause.
+  # Because we read user input inside the loop, we set up the input
+  # coming from the "find" command on file descriptor 3. This is why
+  # we use "read -u3" here.
+  while read -u3 DIR; do
+    RUN=${DIR##*/}
+
+    echo '*********************************************************************'
+
+    [[ -f "${DIR}/long-run-test.log" ]] \
+      || { echo "${RUN} is not a release qualification run. Skipping."; continue; }
+
+    echo "Release qualification run: ${RUN}"
+    echo "Backend application was:"
+    grep 'PROJECT_ID:\|IMAGE_NAME:\|GAE_VERSION:\|Deployed URL:' \
+      "${DIR}/long-run-test.log"
+    RQ_TESTS+=(${DIR})
+
+  # the ! -path ... exludes the root directory which is otherwise
+  # included in the result
+  done 3< <(find "${LOGS}/${SHA}" ! -path "${LOGS}/${SHA}" -type d)
+
+  echo "Checking the following release qualification runs:"
+  for DIR in "${RQ_TESTS[@]}"; do
+    echo "  ${DIR##*/} (${DIR})";
+    [[ -f "${DIR}/long-run-test.json" ]] \
+      || error_exit "Result of release qualification test ${DIR}/long-run-test.json not found."
+
+    check_result "${DIR}/long-run-test.json" "${SHA}"
+  done
+
+  if [[ ${#RQ_TESTS[@]} -le 0 ]]; then
+    echo '*********************************************************************'
+    echo '* Release qualification INCOMPLETE.                                 *'
+    echo '*                       **********                                  *'
+    echo '*                                                                   *'
+    echo '* No release qualification tests have been run yet.                 *'
+    echo '* Please run release qualification tests per http://go/esp-r.       *'
+    echo '* When complete, re-run the command below.                          *'
+    echo '*********************************************************************'
+
+    ARGS=()
+    for arg in "${@}"; do ARGS+=("\"${arg}\""); done
+    echo "${BASH_SOURCE[0]}" "${ARGS[@]}"
+
+    exit 0
+  fi
+
+  echo "Checking results of the long running release qualification tests."
+
+  for DIR in "${RQ_TESTS[@]}"; do
+    echo ""
+    echo "Checking ${DIR##*/}/long-run-test.log"
+    echo ""
+    count_stress_failures "${DIR}/long-run-test.log"
+  done
+
+  echo 'Extracting logs from tar files of the long running release qualification tests.'
+
+  for DIR in "${RQ_TESTS[@]}"; do
+    [[ "${DIR}" =~ 'rc-test' ]] || continue
+    echo ""
+    echo "Looking for tar.gz files in ${DIR}"
+    echo ""
+    while read -u3 TAR; do
+      echo "Extracting nginx logs from ${TAR}"
+      tar zxvf ${TAR} -C "${DIR}" --strip=3 var/log/nginx
+    done 3< <(find "${DIR}" -type f -name '*.tar.gz')
+  done
+
+  echo ''
+  echo 'Analyzing NGINX error logs...'
+
+  # Read all entries from "${ROOT}/script/known-error-log-entries" and construct
+  # a regular expression that would match any of the entries.
+  while read entry; do
+    [[ "${KNOWN_ERRORS_REGEX}" != '' ]] && KNOWN_ERRORS_REGEX+='\|'
+    KNOWN_ERRORS_REGEX+="\($entry\)"
+  done<"${ROOT}/script/known-error-log-entries"
+
+  (
+    echo '**********************************************************************'
+    echo '* Below are the NGINX error log entries that were not accounted for. *'
+    echo '**********************************************************************'
+    grep -v "${KNOWN_ERRORS_REGEX}" "${LOGS}/${SHA}"/rc-test-*/error*.log
+  ) > "${NGINX_LOG_ANALYSIS}"
+
+  printf "\e[31m
+Please review the NGINX log analysis results in ${NGINX_LOG_ANALYSIS}
+\e[0m"
+
+  echo ''
+  echo '*********************************************************************'
+  echo '* Release qualification script completed.                           *'
+  echo '*                                                                   *'
+  echo '* Additional manual checks may be required.                         *'
+  echo '*                                                                   *'
+  echo '* Please review the results above and analyze any failed requests.  *'
+  echo '* If there are failures, review the NGINX error logs on the backend *'
+  echo '* virtual machines to get more insights into the failures.          *'
+  echo '* Update the release bug with any findings, and open bugs for any   *'
+  echo '* issues found during the investigation.                            *'
+  echo '*********************************************************************'
+
+) | tee ${RESULT}
+
+[[ ${PIPESTATUS[0]} -eq 0 && ${PIPESTATUS[1]} -eq 0 ]] \
+  || error_exit "Release qualification failed. Results were saved in ${RESULT}."
+
+echo "Results were saved in ${RESULT}"
+
+printf '\e[31m
+***************************************************************************
+*      Please paste the script output verbatim into the release bug.      *
+***************************************************************************
+\e[0m'

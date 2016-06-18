@@ -1,0 +1,75 @@
+#!/bin/bash
+#
+# Copyright (C) Endpoints Server Proxy Authors
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+################################################################################
+#
+
+TEST_JSON=""
+TEST_DOCKER=""
+TEST_ENV=""
+BUCKET=""
+SKIP_SETUP=false
+
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. ${DIR}/all-utilities || { echo "Cannot load Bash utilities" ; exit 1 ; }
+
+while getopts :j:d:e:b:s arg; do
+  case ${arg} in
+    j) TEST_JSON=${OPTARG};;
+    d) TEST_DOCKER=${OPTARG};;
+    e) TEST_ENV=${OPTARG};;
+    b) BUCKET=${OPTARG};;
+    s) SKIP_SETUP=true;;
+    *) echo "Unknown argument -${OPTARG}"; exit 1;;
+  esac
+done
+
+# Set default bucket until Robot serves it to us.
+[[ -n "${BUCKET}" ]] || BUCKET="gs://endpoints-robot-temp/$(git show -q HEAD --pretty=format:%H)"
+
+if [[ "${SKIP_SETUP}" == false ]]; then
+  echo "Building and installing dependencies."
+  ${DIR}/linux-build-dependencies \
+    || error_exit "Failed to build and install dependencies."
+
+  ${DIR}/linux-install-test-client \
+    || error_exit "Cannot install test client."
+fi
+
+${DIR}/linux-test-vm-bookstore -i "${TEST_DOCKER}" -b "${BUCKET}" -e \
+  || error_exit "Bookstore test failed."
+
+${DIR}/linux-test-vm-bookstore -i "${TEST_DOCKER}" -b "${BUCKET}" \
+  || error_exit "Bookstore test with endpoints=off failed."
+
+${DIR}/linux-test-vm-bookstore -i "${TEST_DOCKER}" -b "${BUCKET}" -e -f \
+  || echo "WARNING!!!!! Bookstore test with endpoints=on & flex=on failed. This will become fatal when flex is stable..."
+
+${DIR}/linux-test-vm-bookstore -i "${TEST_DOCKER}" -b "${BUCKET}" -f \
+  || echo "WARNING!!!!! Bookstore test with endpoints=off & flex=on failed. This will become fatal when flex is stable..."
+
+${DIR}/linux-test-vm-echo -i "${TEST_DOCKER}" -t "${TEST_ENV}" -b "${BUCKET}" \
+  || error_exit "Echo test failed."

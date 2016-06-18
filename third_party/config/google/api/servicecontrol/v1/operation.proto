@@ -1,0 +1,119 @@
+// Copyright 2016 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.api.servicecontrol.v1;
+
+import "google/api/annotations.proto";
+import "google/api/servicecontrol/v1/log_entry.proto";
+import "google/api/servicecontrol/v1/metric_value.proto";
+import "google/api/servicecontrol/v1/quota_properties.proto";
+import "google/protobuf/timestamp.proto";
+
+option cc_enable_arenas = true;
+option java_multiple_files = true;
+option java_outer_classname = "OperationProto";
+option java_package = "com.google.api.servicecontrol.v1";
+
+// Represents information regarding an operation.
+message Operation {
+  // Defines the importance of the data contained in the operation.
+  enum Importance {
+    // The operation doesn't contain significant monetary value or audit
+    // trail. The API implementation may cache and aggregate the data.
+    // There is no deduplication based on `operation_id`. The data
+    // may be lost when rare and unexpected system failures occur.
+    LOW = 0;
+
+    // The operation contains significant monetary value or audit trail.
+    // The API implementation doesn't cache and aggregate the data.
+    // Deduplication based on `operation_id` is performed for monetary
+    // values. If the method returns successfully, it's guaranteed that
+    // the data are persisted in durable storage.
+    HIGH = 1;
+  }
+
+  // Identity of the operation. It must be unique within the scope of the
+  // service that the operation is generated. If the service calls
+  // Check() and Report() on the same operation, the two calls should carry
+  // the same id.
+  //
+  // UUID version 4 is recommended, though not required.
+  // In the scenarios where an operation is computed from existing information
+  // and an idempotent id is desirable for deduplication purpose, UUID version 5
+  // is recommended. See RFC 4122 for details.
+  string operation_id = 1;
+
+  // Fully qualified name of the operation.
+  // Example of an RPC method name used as operation name:
+  //     google.example.library.v1.LibraryService.CreateShelf
+  // Example of a service defined operation name:
+  //     compute.googleapis.com/InstanceHeartbeat
+  string operation_name = 2;
+
+  // Identity of the consumer who is using the service.
+  // This field should be filled in for the operations initiated by a
+  // consumer, but not for service initiated operations that are
+  // not related to a specific consumer.
+  //
+  // The accepted format is dependent on the implementation.
+  // The Google Service Control implementation accepts four forms:
+  // "project:<project_id>", "project_number:<project_number>",
+  // "api_key:<api_key>" and "spatula_header:<spatula_header>".
+  string consumer_id = 3;
+
+  // Start time of the operation.
+  // Required.
+  google.protobuf.Timestamp start_time = 4;
+
+  // End time of the operation.
+  // Required when the operation is used in ControllerService.Report,
+  // but optional when the operation is used in ControllerService.Check.
+  google.protobuf.Timestamp end_time = 5;
+
+  // Labels describing the operation. Only the following labels are allowed:
+  //
+  // Labels describing the monitored resource. The labels must be defined in
+  // the service configuration.
+  //
+  // Default labels of the metric values. When specified, labels defined in the
+  // metric value overrule.
+  //
+  // Labels are defined and documented by Google Cloud Platform. For example:
+  // `cloud.googleapis.com/location: "us-east1"`.
+  map<string, string> labels = 6;
+
+  // Represents information about this operation. Each MetricValueSet
+  // corresponds to a metric defined in the service configuration.
+  // The data type used in the MetricValueSet must agree with
+  // the data type specified in the metric definition.
+  //
+  // Within a single operation, it is not allowed to have more than one
+  // MetricValue instances that have the same metric names and identical
+  // label value combinations. The existence of such duplicated MetricValue
+  // instances in a request causes the entire request being rejected with
+  // an invalid argument error.
+  repeated MetricValueSet metric_value_sets = 7;
+
+  // Represents information to be logged.
+  repeated LogEntry log_entries = 8;
+
+  // Represents the properties needed for quota check. Applicable only if this
+  // operation is for a quota check request.
+  QuotaProperties quota_properties = 9;
+
+  // The importance of the data contained in the operation.
+  Importance importance = 11;
+}

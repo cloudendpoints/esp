@@ -1,0 +1,21 @@
+{
+  "name": "tools",
+  "version": "0.0.1",
+  "description": "Tools to generate JWTs.",
+  "main": "token-gen.js",
+  "scripts": {
+    "start": "node token-gen.js"
+  },
+  "author": "Google Inc.",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "commander": "^2.9.0",
+    "jsonwebtoken": "^5.7.0"
+  },
+  "engines" : {
+    "node" : ">=4.1.2"
+  },
+  "files": [
+    "token-gen.js"
+  ]
+}

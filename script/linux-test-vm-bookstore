@@ -1,0 +1,273 @@
+#!/bin/bash
+#
+# Copyright (C) Endpoints Server Proxy Authors
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+################################################################################
+#
+
+# This script deploys the bookstore into a GAEv2 VM with ESP
+# and run basic bookstore API test as well as a long-running test.
+#
+# This script requires AB(apache benchmark), python gflags
+# and auth_token_gen.
+# script/linux-install-test-client can be used to install them.
+
+if [[ "$(uname)" != "Linux" ]]; then
+  echo "Run on Linux only."
+  exit 1
+fi
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+. ${ROOT}/script/all-utilities \
+  || { echo "Cannot load Bash utilities" ; exit 1 ; }
+
+TIME_VERSION="$(date +"%Y%m%d%H%M%S")"
+IMAGE_NAME=gcr.io/endpointsv2/endpoints-runtime-flex:debian-git-$(git log -1 --pretty=format:%H)
+PROJECT_ID=esp-load-test
+API_KEY=""
+BUCKET=""
+ENABLE_ENDPOINTS="false"
+ENABLE_FLEX="false"
+DURATION_IN_HOUR=0
+KEEP_VM="false"
+GAE_VERSION="test-bookstore-${TIME_VERSION}"
+
+# Whether to use a long-life token for esp-load-test project.
+USE_LONG_LIFE_TOKEN="false"
+
+while getopts :a:b:defi:kl:p:v: arg; do
+  case ${arg} in
+    a) API_KEY="${OPTARG}";;
+    b) BUCKET="${OPTARG}";;
+    d) USE_LONG_LIFE_TOKEN="true";;
+    e) ENABLE_ENDPOINTS="true";;
+    f) ENABLE_FLEX="true";;
+    i) IMAGE_NAME="${OPTARG}";;
+    k) KEEP_VM="true";;
+    l) DURATION_IN_HOUR="${OPTARG}";;
+    p) PROJECT_ID="${OPTARG}";;
+    v) GAE_VERSION="${OPTARG}";;
+    *) echo "Invalid option: -${OPTARG}";;
+  esac
+done
+
+[[ -n "${IMAGE_NAME}" ]] \
+  || error_exit "Please use -i to specify image name."
+
+# Download API Key file.
+set_api_keys
+
+APP_VERSION="${IMAGE_NAME}-${TIME_VERSION}"
+if [[ ${DURATION_IN_HOUR} -ne 0 ]]; then
+  PROJECT_ID=esp-long-run
+  API_KEY="${ESP_LONG_RUN_API_KEY}"
+  GAE_VERSION="rc-test-${TIME_VERSION}"
+fi
+
+# Get default API Key if none was specified.
+if [[ -z "${API_KEY}" ]]; then
+  API_KEY="${ESP_LOAD_TEST_API_KEY}"
+  [[ -n "${API_KEY}" ]] || error_exit 'Could not set api key.'
+fi
+
+echo "API_KEY: ${API_KEY}"
+echo "PROJECT_ID: ${PROJECT_ID}"
+echo "IMAGE_NAME: ${IMAGE_NAME}"
+echo "APP_VERSION: ${APP_VERSION}"
+echo "GAE_VERSION: ${GAE_VERSION}"
+echo "ENABLE_ENDPOINTS: ${ENABLE_ENDPOINTS}"
+echo "ENABLE_FLEX: ${ENABLE_FLEX}"
+
+if [[ "${ENABLE_FLEX}" == "true" ]]; then
+  APPENGINE_ENV="env: flex"
+else
+  APPENGINE_ENV="vm: true"
+fi
+
+echo "APPENGINE_ENV: ${APPENGINE_ENV}"
+
+APP_DIR=${ROOT}/test/bookstore
+
+echo "Replaces environment."
+sed -i "s|\${MY_PROJECT_ID}|${PROJECT_ID}|g" ${APP_DIR}/swagger.json
+sed -i "s|\${VERSION}|${APP_VERSION}|g" ${APP_DIR}/bookstore.js
+sed -i "s|\${IMAGE_NAME}|${IMAGE_NAME}|g" ${APP_DIR}//app_esp.yaml
+sed -i "s|\${ENABLE_ENDPOINTS}|${ENABLE_ENDPOINTS}|g" ${APP_DIR}/app_esp.yaml
+sed -i "s|\${APPENGINE_ENV}|${APPENGINE_ENV}|g" ${APP_DIR}/app_esp.yaml
+
+$ROOT/script/linux-gae-instance -a ${APP_DIR}/app_esp.yaml \
+    -v ${GAE_VERSION} -p ${PROJECT_ID} create \
+  || error_exit "Failed to deploy ${GAE_VERSION} to ${PROJECT_ID}."
+
+function cleanup() {
+  # restore the original configs after we are done with the tests
+  git -C ${ROOT} checkout \
+      ${APP_DIR}/swagger.json \
+      ${APP_DIR}/endpoints/service.json \
+      ${APP_DIR}/app_esp.yaml \
+      ${APP_DIR}/bookstore.js
+
+  # deploying a flex app generates some files that cause
+  # subsequent deployments to fail
+  [[ "${ENABLE_FLEX}" == "true" ]] && \
+    rm -rf ${APP_DIR}/source_context*.json ${APP_DIR}/Dockerfile
+
+  [[ "${KEEP_VM}" == "true" ]] \
+    || "${ROOT}/script/linux-gae-instance" \
+          -v "${GAE_VERSION}" \
+          -p "${PROJECT_ID}" \
+          delete
+
+  echo "DONE!"
+}
+
+trap cleanup EXIT
+
+SERVICE_NAME="${PROJECT_ID}.appspot.com"
+HOST="https://${GAE_VERSION}-dot-${SERVICE_NAME}"
+
+function check_deployed_version() {
+  echo "Verify \"${APP_VERSION}\" version is deployed on host: ${HOST}".
+  DEPLOYED_VERSION=$(curl ${HOST}/version)
+
+  if [[ "${DEPLOYED_VERSION}" != "${APP_VERSION}" ]]; then
+    echo "Version from ${HOST}: ${DEPLOYED_VERSION} doesn't match ${APP_VERSION}"
+    return 1
+  else
+    return 0
+  fi
+}
+
+if [[ "${ENABLE_FLEX}" == "true" ]]; then
+  # Flex apps take up to 30 mins to come up
+  retry -n 30 -s 60 -t 60 \
+      check_deployed_version \
+    || error_exit "Timeout: could not match the version from ${HOST} with ${APP_VERSION}"
+else
+    check_deployed_version \
+      || error_exit "Could not get the version from ${HOST}"
+fi
+
+POST_FILE="${ROOT}/test/data/35k.json"
+
+pushd ${ROOT}/test/client > /dev/null
+
+END_TIME=$(date +"%s")
+END_TIME=$((END_TIME + DURATION_IN_HOUR * 60 * 60))
+RUN_COUNT=0
+STRESS_FAILURES=0
+BOOKSTORE_FAILURES=0
+
+# Token that has multiple audiences and never expires.
+# {
+#   "alg": "RS256",
+#   "typ": "JWT",
+#   "kid": "f525b853cbd035cc6b2910bb87752311d32091b8"
+# }
+# {
+#   "iss": "loadtest@esp-test-client.iam.gserviceaccount.com",
+#   "sub": "loadtest@esp-test-client.iam.gserviceaccount.com",
+#   "aud": ["test", "esp-load-test.appspot.com"],
+#   "iat": 1457109765,
+#   "exp": 2457113365
+# }
+JWT_TOKEN="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjMzYTY4MWIzNmI4OTgzOTEzYjA1ZjhkNWVhYjE2NWM2MDY5NGI2ZmMifQ.eyJpc3MiOiJsb2FkdGVzdEBlc3AtdGVzdC1jbGllbnQuaWFtLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJzdWIiOiJsb2FkdGVzdEBlc3AtdGVzdC1jbGllbnQuaWFtLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJhdWQiOlsidGVzdCIsImVzcC1sb2FkLXRlc3QuYXBwc3BvdC5jb20iLCJlc3AtbG9uZy1ydW4uYXBwc3BvdC5jb20iXSwiaWF0IjoxNDU3MTA5NzY1LCJleHAiOjI0NTcxMTMzNjV9.NzO4y_BkW5Dz7cwkMUzApBGwXtHwVVujhc4pxcODcFYB44mOzS49iHnikoRquBHB6tsCE61Y4GwK4Gdk7ng5-PFqUF6ctD6Onum4pMSH25DmqyI6kht4TSNiAHT1A2KhrBv7WFTMKYmn1SrvioLkiCH7XrxO2mTohr9yh2X8qvrGVj06OkdFp-3A7N3RFZouhGBWeGf1dBnXwB0MvlIVmi63rFnvLryCKFMb8aQgADSEDPVtdoSzDe_s2eIXucaLTRe0lgVr9E1vStmU147uI56v-ymREUC1GJTvhamSupfP56eJZ3ESivoFutFLKGjQvKRkahc_Rr4YfonlbiVGKA"
+
+RESULT=0  # succeed by default
+while true; do
+  # Check that we are still calling the deployed version.
+  echo "Verify VERSION from host: ${HOST}".
+  DEPLOYED_VERSION=$(curl ${HOST}/version)
+  echo "Expected version: ${APP_VERSION}"
+  echo "Deployed version: ${DEPLOYED_VERSION}"
+
+  if [[ "${DEPLOYED_VERSION}" != "${APP_VERSION}" ]] ; then
+    echo "Deployed version ${DEPLOYED_VERSION} doesn't match ${APP_VERSION}"
+    RESULT=1
+    break
+  fi
+
+  ((RUN_COUNT++))
+
+  #######################
+  # Insert tests here
+  #######################
+
+  echo "Starting test run ${RUN_COUNT} at $(date)."
+  echo "Failures so far: Stress: ${STRESS_FAILURES}, Bookstore: ${BOOKSTORE_FAILURES}."
+
+  if [[ "${USE_LONG_LIFE_TOKEN}" == "false" ]]; then
+    # Need to re-generate token for each run, it expired in 1 hour.
+    JWT_TOKEN=$(${ROOT}/client/custom/gen-auth-token.sh -a ${SERVICE_NAME})
+  fi
+  echo "Auth token is: ${JWT_TOKEN}"
+  sed -e "s|\${API_KEY}|${API_KEY}|g" \
+      -e "s|\${HOST}|${HOST}|g" \
+      -e "s|\${POST_FILE}|${POST_FILE}|g" \
+      -e "s|\${JWT_TOKEN}|${JWT_TOKEN}|g" \
+      ${ROOT}/test/client/test_data.json.temp > ${ROOT}/test/client/test_data.json
+  cat ${ROOT}/test/client/test_data.json
+
+  if [[ "${ENABLE_ENDPOINTS}" == "true" ]]; then
+    echo "Test bookstore with endpoints=on."
+    ${ROOT}/test/client/esp_bookstore_test.py \
+      --host=${HOST} --endpoints=true \
+      --api_key=${API_KEY} --auth_token=${JWT_TOKEN}
+    RESULT=${?}
+  else
+    echo "Test bookstore with endpoints=off."
+    ${ROOT}/test/client/esp_bookstore_test.py \
+      --host=${HOST} --endpoints=false
+    RESULT=${?}
+  fi
+
+  [[ ${RESULT} -eq 0 ]] \
+    || ((BOOKSTORE_FAILURES++))
+
+  if [[ ${DURATION_IN_HOUR} -ne 0 ]]; then
+    echo "Starting stress test at $(date)."
+    ./esp_client.py --test=stress --test_data=${ROOT}/test/client/test_data.json \
+      || ((STRESS_FAILURES++))
+  fi
+  #######################
+  # End of test suite
+  #######################
+
+  # Break if test has run long enough.
+  [[ $(date +"%s") -lt ${END_TIME} ]] || break
+done
+
+echo "Finished ${RUN_COUNT} test runs."
+echo "Failures: Stress: ${STRESS_FAILURES}, Bookstore: ${BOOKSTORE_FAILURES}."
+
+if [[ -n "${BUCKET}" ]] ; then
+  echo "Downloading NGINX server logs to ${BUCKET}."
+  ${ROOT}/script/linux-gae-instance \
+    -v "${GAE_VERSION}" -p "${PROJECT_ID}" -d "${HOME}/nginx-logs" nginx-logs \
+    && gsutil -h "Content-Type:text/plain" -m cp -r "${HOME}/nginx-logs" "${BUCKET}/${GAE_VERSION}" \
+    || error_exit "Cannot download NGINX logs."
+fi
+
+exit ${RESULT}

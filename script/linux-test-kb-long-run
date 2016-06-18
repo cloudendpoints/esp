@@ -1,0 +1,127 @@
+#!/bin/bash
+#
+# Copyright (C) Endpoints Server Proxy Authors
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+################################################################################
+#
+
+# This script runs a long-running test against it.
+#
+# This script requires AB(apache benchmark), python gflag
+# and auth_token_gen.
+# script/linux-install-test-client can be used to install them.
+
+if [[ "$(uname)" != "Linux" ]]; then
+  echo "Run on Linux only."
+  exit 1
+fi
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+. ${ROOT}/script/all-utilities \
+  || { echo "Cannot load Bash utilities" ; exit 1 ; }
+
+API_KEY=''
+SERVICE_NAME=''
+HOST=''
+DURATION_IN_HOUR=0
+
+while getopts :a:h:l:s: arg; do
+  case ${arg} in
+    a) API_KEY="${OPTARG}";;
+    h) HOST="${OPTARG}";;
+    l) DURATION_IN_HOUR="${OPTARG}";;
+    s) SERVICE_NAME="${OPTARG}";;
+    *) echo "Invalid option: -${OPTARG}";;
+  esac
+done
+
+[[ -n "${API_KEY}" ]] || error_exit 'Please specify api key with -a option.'
+[[ -n "${SERVICE_NAME}" ]] || error_exit 'Please specify service name with -s option.'
+[[ -n "${HOST}" ]] || error_exit 'Please specify a host with -h option.'
+
+POST_FILE="${ROOT}/test/data/35k.json"
+
+pushd ${ROOT}/test/client > /dev/null
+
+END_TIME=$(date +"%s")
+END_TIME=$((END_TIME + DURATION_IN_HOUR * 60 * 60))
+RUN_COUNT=0
+STRESS_FAILURES=0
+BOOKSTORE_FAILURES=0
+
+#Status server always run in port 8090 and use HTTP protocol.
+STATUS_SERVER=${HOST/8080/8090}
+STATUS_SERVER=${STATUS_SERVER/443/8090}
+STATUS_SERVER=${STATUS_SERVER/https/http}
+
+while true; do
+  ((RUN_COUNT++))
+
+  #######################
+  # Insert tests here
+  #######################
+
+  echo "Starting test run ${RUN_COUNT} at $(date)."
+  echo "Failures so far: Stress: ${STRESS_FAILURES}, Bookstore: ${BOOKSTORE_FAILURES}."
+
+  # Generating token for each run, that they expire in 1 hour.
+  JWT_TOKEN=`${ROOT}/client/custom/gen-auth-token.sh -a ${SERVICE_NAME}`
+  echo "Auth token is: ${JWT_TOKEN}"
+  sed -e "s|\${API_KEY}|${API_KEY}|g" \
+      -e "s|\${HOST}|${HOST}|g" \
+      -e "s|\${POST_FILE}|${POST_FILE}|g" \
+      -e "s|\${JWT_TOKEN}|${JWT_TOKEN}|g" \
+      ${ROOT}/test/client/test_data.json.temp > ${ROOT}/test/client/test_data.json
+  cat ${ROOT}/test/client/test_data.json
+
+  echo "Starting bookstore test at $(date)."
+  ./esp_bookstore_test.py --verbose=true \
+      --host=${HOST} \
+      --api_key=${API_KEY} \
+      --auth_token=${JWT_TOKEN} \
+      --allow_unverified_cert=true \
+    || ((BOOKSTORE_FAILURES++))
+
+  echo "Getting endpoints status at $(date)."
+
+  echo "${STATUS_SERVER}/endpoints_status"
+  curl ${STATUS_SERVER}/endpoints_status
+
+  echo "Starting stress test at $(date)."
+  ./esp_client.py --test=stress --test_data=${ROOT}/test/client/test_data.json \
+    || ((STRESS_FAILURES++))
+
+  #######################
+  # End of test suite
+  #######################
+
+  # Break if test has run long enough.
+  [[ $(date +"%s") -lt ${END_TIME} ]] || break
+done
+
+echo "Finished ${RUN_COUNT} test runs."
+echo "Failures: Stress: ${STRESS_FAILURES}, Bookstore: ${BOOKSTORE_FAILURES}."
+
+exit $((${BOOKSTORE_FAILURES} + ${STRESS_FAILURES}))

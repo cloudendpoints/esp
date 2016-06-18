@@ -1,0 +1,18 @@
+{
+  "instance": {
+    "attributes": {
+      "gae_backend_name": "default",
+      "gae_backend_version": "20150921t180445"
+    },
+    "hostname": "docker-test-hostname",
+    "zone": "projects/271279133179/zones/docker-test-zone"
+  },
+  "project": {
+    "attributes": {
+      "google-compute-default-region": "us-central1",
+      "google-compute-default-zone": "us-central1-f"
+    },
+    "numericProjectId": 271279133179,
+    "projectId": "endpointsv2"
+  }
+}

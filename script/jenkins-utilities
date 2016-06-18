@@ -1,0 +1,364 @@
+#!/bin/bash
+#
+# Copyright (C) Endpoints Server Proxy Authors
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+################################################################################
+#
+## Library of useful utilities for Jenkins scripts.
+
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ESP_ROOT="$(cd "${DIR}/.." && pwd)"
+GSUTIL=$(which gsutil) || GSUTIL=~/google-cloud-sdk/bin/gsutil
+
+# End to End tests options
+API_KEY=''
+BOOKSTORE_IMAGE=''
+BUCKET=''
+DEBIAN_PKG=''
+DIRECT_REPO=''
+DURATION_IN_HOUR=0
+ENDPOINTS_RUNTIME_VERSION=''
+ESP_IMAGE=''
+ESP_SERVICE="${DEFAULT_ESP_SERVICE}"
+INSTANCE_NAME=''
+NAMESPACE=''
+REMOTE_LOG_DIR=''
+SKIP_CLEANUP='false'
+SWAGGER_TMPL="${ESP_ROOT}/test/bookstore/swagger_template.json"
+TEST_TYPE=''
+UNIQUE_ID=''
+VM_IMAGE=''
+
+. ${DIR}/all-utilities || { echo "Cannot load Bash utilities" ; exit 1 ; }
+
+PROJECT_ID="$(gcloud config list core/project --format flattened | cut -d ' ' -f 2)"
+DEFAULT_ESP_SERVICE="testing-dot-${PROJECT_ID}.appspot.com"
+ESP_SERVICE_VERSION=''
+# To generate new version
+# $ cp test/bookstore/swagger_template.json swagger.json
+# For Prod
+# $ sed -i s|\${ENDPOINT_SERVICE}|testing-dot-endpoints-jenkins.appspot.com|g \
+  # swagger.json
+# For Staging
+# $ sed -i s|\${ENDPOINT_SERVICE}|staging-testing-dot-endpoints-jenkins.appspot.com|g \
+  # swagger.json
+# $ gcloud alpha service-management convert-config swagger.json swagger.json
+# $ sed -i s/endpoints-servicecontrol/staging-servicecontrol/g swagger.json
+# For both
+# $ gcloud alpha service-management deploy swagger.json
+# Take a note of the version and update here.
+PROD_ESP_SERVICE_VERSION='2016-05-12R1209'
+# Once the service is deployed it will take 24h to get to staging.
+STAGING_ESP_SERVICE_VERSION='2016-05-12R4'
+STAGING_SERVICE_MGMT_URL='https://staging-servicemanagement.sandbox.googleapis.com/'
+STAGING_SERVICE_MGMT_URL_PREFIX="${STAGING_SERVICE_MGMT_URL}v1/services"
+SERVICE_MGMT_URL_PREFIX=''
+
+# Echo and un command, exit on failure
+function run_nonfatal() {
+  echo ""
+  echo "[$(date)] $@"
+  "${@}"
+  local status=${?}
+  if [[ "${status}" != "0" ]]; then
+    echo "Command failed with exit status ${status}: ${@}" >&2
+  fi
+  return ${status}
+}
+
+# Echo and run a shell command, exit on failure
+function run() {
+  run_nonfatal "${@}" || error_exit "command failed"
+}
+
+# Convenience method to sed files, works on both linux and mac
+function sed_i() {
+  # Incompatible sed parameter parsing.
+  if sed -i 2>&1 | grep -q 'requires an argument'; then
+    sed -i '' "${@}"
+  else
+    sed -i "${@}"
+  fi
+}
+
+# Deleting and Deactivating a service
+function delete_service() {
+  local esp_service="${1}"
+  if ! [[ "${esp_service}" =~ "${DEFAULT_ESP_SERVICE}" ]]; then
+    gcloud alpha service-management disable \
+      --consumer-project="${PROJECT_ID}" \
+      --service="${DEFAULT_ESP_SERVICE}"
+    gcloud alpha service-management delete "${esp_service}" -q
+  fi
+}
+
+# Parse regex from a given variable
+function parse_output() {
+  local output="${1}"
+  local regex="${2}"
+  local value=''
+  # change delimiter (IFS) to new line.
+  local ifs_backup=${IFS}
+  IFS=$'\n'
+
+  for line in ${output}; do
+    if [[ "${line}" =~ ${regex} ]]; then
+      value="${BASH_REMATCH[1]}"
+      echo "${value}"
+    fi
+  done
+
+  # return delimiter to previous value
+  IFS=${ifs_backup}
+}
+
+# Check if this is a staging service management test
+function check_staging_service_management () {
+  local esp_service="${1}"
+  local staging_service='staging-testing-dot-endpoints-jenkins.appspot.com'
+
+  [[ "${esp_service}" == "${staging_service}" ]] || return 1
+  [[ -n "${CLOUDSDK_API_ENDPOINT_OVERRIDES_SERVICEMANAGEMENT}" ]] || return 1
+  echo 'Using staging Service Management'
+  return 0
+}
+
+# Creating and activating a sercice
+function create_service() {
+  local esp_service="${1}"
+  local swagger_json="${2}"
+  local output=''
+  local operation=''
+  local version=''
+  local use_staging=1
+
+  # TODO: Remove once we can direclty push to Staging Service
+  # Management
+
+  check_staging_service_management "${esp_service}"
+  use_staging="${?}"
+
+  if [[ "${esp_service}" =~ "${DEFAULT_ESP_SERVICE}" ]]; then
+    if [[ "${use_staging}" -eq 0 ]]; then
+      ESP_SERVICE_VERSION="${STAGING_ESP_SERVICE_VERSION}"
+      SERVICE_MGMT_URL_PREFIX="${STAGING_SERVICE_MGMT_URL_PREFIX}"
+      echo "ESP service version: ${ESP_SERVICE_VERSION} exported to ESP_SERVICE_VERSION"
+      echo "Service Management URL prefix: ${SERVICE_MGMT_URL_PREFIX}"
+    else
+      ESP_SERVICE_VERSION="${PROD_ESP_SERVICE_VERSION}"
+    fi
+    return
+  else
+    echo 'Deploying service'
+    output="$(run gcloud alpha service-management deploy "${swagger_json}" 2>&1)"
+
+    # Parsing operation from output.
+    operation="$(parse_output "${output}" '.*(operations/services.*)\s*')"
+    [[ -z "${operation}" ]] && error_exit 'Could not parse operation from output.'
+    echo "Operation: ${operation}"
+
+    # Parsing version from output.
+    version="$(parse_output "${output}" "($(date +'%Y-%m-%d')[A-Za-z0-9]+)")"
+    [[ -z "${version}" ]] && error_exit 'Could not parse version from output.'
+    echo "ESP service version: ${version} exported to ESP_SERVICE_VERSION"
+    ESP_SERVICE_VERSION="${version}"
+
+    echo 'Waiting up to 10 minutes for deployment to complete'
+    run timeout 600 gcloud alpha service-management operations wait "${operation}"
+
+    echo 'Activating service'
+    output="$(run gcloud alpha service-management enable \
+      --consumer-project="${PROJECT_ID}" \
+      --service="${esp_service}")"
+
+    # Parsing operation from output
+    operation="$(parse_output "${output}" '.*(operations/services.*)\s*')"
+    [[ -z "${operation}" ]] && error_exit 'Could not parse operation from output.'
+
+    echo 'Waiting up to 10 minutes for operation to complete'
+    run timeout 600 gcloud alpha service-management operations wait "${operation}"
+  fi
+}
+
+# Check for host http return code.
+function check_service_http_response () {
+  local host=${1}
+  local http_code="${2}"
+  local http_response="$(curl -k -m 20 --write-out %{http_code} --silent --output /dev/null ${host})"
+  echo "Pinging host: ${host}, response: ${http_response}"
+  [[ "${http_response}" == "${http_code}" ]] && return 0
+  return 1
+}
+
+# Check for service readyness for Bookstore backend.
+function check_service() {
+  local host=${1}/shelves
+  local http_code='200'
+  retry -n 10 -t 90 check_service_http_response "${host}" "${http_code}"
+  local status=${?}
+  if [[ ${status} -eq 0 ]]; then
+    echo "Service is available at: ${host}"
+  else
+    echo "Service is not ready ${host} not ready"
+  fi
+  return ${status}
+}
+
+# Run and upload logs
+function long_running_test() {
+  local host=${1}
+  local duration_in_hour=${2}
+  local api_key=${3}
+  local esp_service=${4}
+  local remote_dir=${5}
+  local log_file="$(mktemp /tmp/XXXXXX.log)"
+  local status
+
+  # Checking Service before starting the test.
+  check_service "${HOST}"
+  status=${?}
+
+  if [[ ${status} -eq 0 ]]; then
+    echo 'Running long running test.'
+    run_nonfatal "${ESP_ROOT}"/script/linux-test-kb-long-run \
+      -h "${host}" \
+      -l "${duration_in_hour}" \
+      -a "${api_key}" \
+      -s "${esp_service}" | tee "${log_file}"
+
+    status=${?}
+
+    echo "Uploading log to ${remote_dir}"
+    retry -n 3 ${GSUTIL} -h Content-Type:text/plain cp \
+      "${log_file}" \
+      "${remote_dir}/long-run-test.log"
+    [[ ${?} -eq 0 ]] || echo 'Failed to upload long-run-test.log'
+  fi
+
+  echo "Uplading json to ${remote_dir}"
+  retry -n 3 ${GSUTIL} -h Content-Type:application/json cp - \
+    "${remote_dir}"/long-run-test.json <<__EOF__
+{
+  "scriptStatus": ${status},
+  "headCommitHash": "$(git rev-parse --verify HEAD)"
+}
+__EOF__
+  [[ ${?} -eq 0 ]] || echo 'Failed to upload long-run-test.json'
+  rm -f ${log_file}
+  return ${status}
+}
+
+# Extract logs from VM and save it to a given directory.
+function save_vm_logs() {
+  local vm="${1}"
+  local log_dir="${2}"
+  local tar_file="${log_dir}/${vm}.tar.gz"
+  local ssh_path="${HOME}/.ssh"
+  local private_ssh_key="${ssh_path}/google_compute_engine"
+  if ! [[ -a "${private_ssh_key}" ]]; then
+    mkdir -p "${ssh_path}"
+    local remote_path="gs://${BUCKET}/ssh_keys/*"
+    echo "Getting ssh key from ${remote_path}"
+    retry -n 3 ${GSUTIL} cp "${remote_path}" "${ssh_path}/"
+    chmod -R 700 "${ssh_path}"
+  fi
+  # Using ssh instead of gcloud compute ssh, as gcloud uses external IP
+  # address which does not work with restrictive firewall rules
+  ssh -i "${private_ssh_key}" \
+    -o StrictHostKeyChecking=no \
+    "${vm}" sudo tar czvf - /var/log/ > "${tar_file}"
+  [[ ${?} -eq 0 ]] || echo 'Failed to get logs'
+}
+
+# Upload logs remote directory
+function upload_logs() {
+  local remote_dir="${1}"
+  local log_dir="${2}"
+
+  for log_file in `find "${log_dir}" -type f`; do
+    [[ -s "${log_file}" ]] || continue
+    local filename="${log_file##*/}"
+    echo "Uploading log ${log_file} to ${remote_dir}"
+    retry -n 3 ${GSUTIL} -h Content-Type:application/x-gtar cp \
+      "${log_file}" "${remote_dir}/${filename}"
+    [[ ${?} -eq 0 ]] || echo "Failed to upload ${filename}"
+  done
+}
+
+# End to End tests common options
+function e2e_options() {
+  local OPTIND OPTARG arg
+  while getopts :a:b:B:c:d:e:i:l:r:st:v:V: arg; do
+    case ${arg} in
+      a) ESP_SERVICE="${OPTARG}";;
+      b) BOOKSTORE_IMAGE="${OPTARG}";;
+      B) BUCKET="${OPTARG}";;
+      c) COUPLING_OPTION="$(echo ${OPTARG} | tr '[A-Z]' '[a-z]')";;
+      d) DEBIAN_PKG="${OPTARG}";;
+      e) ESP_IMAGE="${OPTARG}";;
+      i) UNIQUE_ID="${OPTARG}";;
+      k) API_KEY="${OPTARG}";;
+      l) DURATION_IN_HOUR="${OPTARG}";;
+      r) DIRECT_REPO="${OPTARG}";;
+      s) SKIP_CLEANUP='true';;
+      t) TEST_TYPE="$(echo ${OPTARG} | tr '[A-Z]' '[a-z]')";;
+      v) VM_IMAGE="${OPTARG}";;
+      V) ENDPOINTS_RUNTIME_VERSION="${OPTARG}";;
+      *) e2e_usage "Invalid option: -${OPTARG}";;
+    esac
+  done
+
+  if [[ -z ${API_KEY} ]]; then
+    # Setting APY_KEY
+    set_api_keys
+    API_KEY="${ENDPOINTS_JENKINS_API_KEY}"
+    [[ -n "${API_KEY}" ]] || error_exit 'Could not set api key.'
+  fi
+
+  [[ -n "${BUCKET}" ]] || usage "Must provide Bucket via '-b' parameter."
+  local git_commit="$(git rev-parse --verify HEAD)"
+  REMOTE_LOG_DIR="gs://${BUCKET}/${git_commit}/logs/${UNIQUE_ID}"
+}
+
+function e2e_usage() {
+  local error_message="${1}"
+  [[ -n "${error_message}" ]] && echo "${error_message}"
+  echo "usage: ${BASH_SOURCE[1]}
+  -a <esp service name to use>
+  -b <Bookstore docker image>
+  -B <bucket to upload files in>
+  -c <coupling option: loose, tight>
+  -d <debian package>
+  -e <esp docker image>
+  -i <Unique identifier for instances and kubernetes namespaces>
+  -k <api key>
+  -l <duration in hour>
+  -r <debian repo>
+  -s <skip cleanup>
+  -t <test type: http, https, custom>
+  -V <endpoints-runtime version>
+  -v <vm image to use. Supported are [debian-8]>"
+  exit 1
+}

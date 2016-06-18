@@ -1,0 +1,114 @@
+#!/bin/bash
+#
+# Copyright (C) Endpoints Server Proxy Authors
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+################################################################################
+#
+
+# This script will create a GCE-VM instance and test the installation the
+# endpoints runtime package.
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+. ${ROOT}/script/all-utilities || { echo "Cannot load Bash utilities"; exit 1; }
+
+function usage() {
+  [[ -n "${1}" ]] && echo "${1}"
+
+  cat <<EOF
+usage: ${BASH_SOURCE[0]} [options ...]"
+  options:
+    -n ... service name
+    -v ... service version
+    -r ... name of DIRECT_REPO containing Debian package.
+    -i ... VM instance name to create (default test-gce-vm)
+    -p ... project name
+    -z ... compute zone in which to create the VM.
+EOF
+  exit 2
+}
+
+SERVICE_NAME=''
+SERVICE_VERSION=''
+# Default tests the stable package used by customers.
+DIRECT_REPO="google-cloud-endpoints-jessie"
+PROJECT=""
+INSTANCE=test-gce-vm
+
+while getopts :i:n:p:r:v:z: arg; do
+  case "${arg}" in
+    i) INSTANCE="${OPTARG}";;
+    n) SERVICE_NAME="${OPTARG}";;
+    p) PROJECT="${OPTARG}";;
+    r) DIRECT_REPO="${OPTARG}";;
+    v) SERVICE_VERSION="${OPTARG}";;
+    z) ZONE="${OPTARG}";;
+    *) usage "Invalid option: -${OPTARG}";;
+  esac
+done
+
+METADATA="endpoints-service-name=${SERVICE_NAME},endpoints-service-version=${SERVICE_VERSION}"
+
+GCLOUD=$(which gcloud) || GCLOUD=~/google-cloud-sdk/bin/gcloud
+
+[[ -n "${SERVICE_NAME}" ]] || error_exit "Please use -n to specify service name."
+[[ -n "${SERVICE_VERSION}" ]] || error_exit "Please use -v to specify service version."
+
+COMMON_ARGS=()
+[[ -n "${PROJECT}" ]] && COMMON_ARGS+=(--project "${PROJECT}")
+[[ -n "${ZONE}" ]]    && COMMON_ARGS+=(--zone "${ZONE}")
+
+echo "Creating a GCE-VM ${INSTANCE}"
+"${GCLOUD}" compute instances create "${INSTANCE}" "${COMMON_ARGS[@]}" \
+    --metadata "${METADATA}" \
+    --image debian-8 \
+  || error_exit "Cannot create a new GCE-VM."
+
+function delete_vm() {
+  "${GCLOUD}" compute instances delete --quiet "${INSTANCE}" "${COMMON_ARGS[@]}"
+}
+trap delete_vm EXIT
+
+cat << EOF > /tmp/install.sh
+echo "deb http://packages.cloud.google.com/apt ${DIRECT_REPO} main" | sudo tee /etc/apt/sources.list.d/google-cloud-endpoints.list
+curl --silent https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+sudo apt-get update && sudo apt-get install endpoints-runtime \
+  && curl localhost:8090/nginx_status \
+  && echo "==== endpoint runtime installed successfully. ===="
+EOF
+chmod +x /tmp/install.sh
+
+echo "Here is the script to run in VM"
+cat /tmp/install.sh
+
+echo "Copying the script to VM"
+"${GCLOUD}" compute copy-files "${COMMON_ARGS[@]}" \
+    /tmp/install.sh "${INSTANCE}": \
+  || error_exit "Failed to copy install script to VM."
+
+echo "Run the script in VM"
+"${GCLOUD}" compute ssh "${INSTANCE}" "${COMMON_ARGS[@]}" \
+    --command=./install.sh \
+  || error_exit "Failed to install the package in VM."
+

@@ -1,0 +1,169 @@
+#!/bin/bash
+#
+# Copyright (C) Endpoints Server Proxy Authors
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+################################################################################
+#
+# May require sudo login.
+
+if [[ "$(uname)" != "Linux" ]]; then
+  echo "Run on Linux only."
+  exit 1
+fi
+
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. ${DIR}/all-utilities || { echo "Cannot load Bash utilities" ; exit 1 ; }
+
+export DEBIAN_FRONTEND=noninteractive
+# Release 0.3.0 (2016-06-10)
+BAZEL_VERSION='e671d2950fb56c499db2c99a3d6dad2d291ed873'
+BAZEL_DIRECTORY="${HOME}/bazel"
+CLANG_VERSION='3.8.0'
+CLANG_DIRECTORY="${HOME}/clang"
+SKIP_DOCKER_TEST=false
+
+function clear_apt() {
+  echo 'Clearing apt source lists'
+  ${SUDO} rm -rf /var/lib/apt/lists/*
+  ${SUDO} apt-get update --fix-missing -qq && return 0
+  return 1
+}
+
+function install_packages() {
+  echo "Installing tools."
+  clear_apt \
+  && ${SUDO} apt-get -qqy install \
+    apt-transport-https \
+    autoconf \
+    autotools-dev \
+    ca-certificates \
+    curl \
+    g++ \
+    gcc \
+    gettext \
+    git \
+    lcov \
+    libssl-dev \
+    libio-socket-ssl-perl \
+    libtool \
+    make \
+    openjdk-8-jdk \
+    openjdk-8-source \
+    pkg-config \
+    unzip \
+    uuid-dev \
+    wget \
+    zip \
+    zlib1g-dev \
+    && return 0
+  return 1
+}
+
+function install_docker() {
+  echo 'Installing docker'
+  ${SUDO} apt-key adv \
+    --keyserver hkp://p80.pool.sks-keyservers.net:80 \
+    --recv-keys 58118E89F3A912897C070ADBF76221572C52609D \
+  && clear_apt \
+  && ${SUDO} apt-get -qqy install docker-engine \
+  && return 0
+  return 1
+}
+
+while getopts :d arg; do
+  case ${arg} in
+    d) SKIP_DOCKER_TEST=true;;
+  esac
+done
+
+retry install_packages || error_exit 'Cannot install required packages.'
+echo 'Removing older docker installation if any'
+${SUDO} apt-get purge -y docker.io* \
+  || echo 'docker.io not installed, proceeding...'
+${SUDO} apt-get purge -y docker-engine \
+  || echo 'docker-engine not installed, proceeding...'
+
+echo 'Adding repo for docker'
+echo "deb https://apt.dockerproject.org/repo debian-jessie main" \
+  | ${SUDO} tee /etc/apt/sources.list.d/docker.list
+retry install_docker || error_exit 'Cannot install docker.'
+
+echo 'Clearing packages downloaded by apt'
+${SUDO} apt-get clean
+clear_apt
+
+if [[ ${SKIP_DOCKER_TEST} == false ]]; then
+  echo 'Checking docker installation'
+  docker run hello-world \
+    || error_exit 'Docker not installed properly'
+fi
+
+if [[ ! -d "${BAZEL_DIRECTORY}" ]]; then
+  echo "Cloning Bazel."
+  git clone https://github.com/bazelbuild/bazel.git "${BAZEL_DIRECTORY}" \
+    || error_exit "Cannot clone Bazel repository."
+
+  BAZEL_CURRENT="none"
+else
+  BAZEL_CURRENT=$(git -C "${BAZEL_DIRECTORY}" log -n 1 --pretty=format:%H)
+fi
+
+if [[ "${BAZEL_VERSION}" == "${BAZEL_CURRENT}" ]]; then
+  echo "Bazel up-to-date."
+else
+  echo "Updating Bazel."
+  (cd "${BAZEL_DIRECTORY}" \
+    && git clean -dffx \
+    && git fetch origin \
+    && git fetch origin --tags \
+    && git reset --hard ${BAZEL_VERSION} \
+    && ./compile.sh \
+    && ./output/bazel shutdown \
+    && rm -rf ${HOME}/.cache/bazel \
+    && ${SUDO} cp ./output/bazel /usr/local/bin/bazel
+  ) \
+    || error_exit "Bazel build failed."
+fi
+
+if [[ -d "${CLANG_DIRECTORY}" ]]; then
+  CLANG_CURRENT=$("${CLANG_DIRECTORY}/bin/clang-format" -version | cut -d ' ' -f 3)
+else
+  CLANG_CURRENT='none'
+fi
+
+if [[ "${CLANG_VERSION}" != "${CLANG_CURRENT}" ]]; then
+  echo "Downloading clang ${CLANG_VERSION}."
+  mkdir "${CLANG_DIRECTORY}"
+  curl --silent --show-error --retry 10 \
+      "http://llvm.org/releases/${CLANG_VERSION}/clang+llvm-${CLANG_VERSION}-x86_64-linux-gnu-debian8.tar.xz" \
+      | tar Jx -C "${CLANG_DIRECTORY}" --strip=1
+else
+  echo "Clang up-to-date."
+fi
+
+echo "Updating gcloud."
+${SUDO} gcloud -q components update --version 109.0.0
+
+echo "Software installation complete."

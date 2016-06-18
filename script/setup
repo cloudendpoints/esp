@@ -1,0 +1,54 @@
+#!/bin/bash
+#
+# Copyright (C) Endpoints Server Proxy Authors
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+################################################################################
+#
+
+ROOT=$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")
+
+# Set up the ESP submodules.
+git -C "${ROOT}" submodule update --init --recursive
+
+COMMIT_MSG='https://gerrit-review.googlesource.com/tools/hooks/commit-msg'
+
+function install_hook() {
+  local GIT_DIR="$(git -C "${1}" rev-parse --git-dir)"
+  curl -Lo "${GIT_DIR}/hooks/commit-msg" "${COMMIT_MSG}" \
+    && chmod +x "${GIT_DIR}/hooks/commit-msg"
+}
+
+install_hook "${ROOT}"
+install_hook "${ROOT}/third_party/config"
+
+ln -sf "${ROOT}/script/pre-commit" "${ROOT}/.git/hooks/pre-commit"
+
+for repo in . third_party/config; do
+  ORIGIN=$(git -C "${ROOT}/${repo}" config remote.origin.url)
+  git -C "${ROOT}/${repo}" config remote.review.pushurl ${ORIGIN}
+  git -C "${ROOT}/${repo}" config remote.review.push HEAD:refs/for/master
+  git -C "${ROOT}/${repo}" config remote.draft.pushurl ${ORIGIN}
+  git -C "${ROOT}/${repo}" config remote.draft.push HEAD:refs/drafts/master
+done

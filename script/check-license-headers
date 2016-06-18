@@ -1,0 +1,65 @@
+#!/bin/bash
+#
+# Copyright (C) Endpoints Server Proxy Authors
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+################################################################################
+#
+# Checks the source code files for proper license headers.
+
+ESP_COPYRIGHT='Copyright (C) Endpoints Server Proxy Authors'
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+. ${ROOT}/script/all-utilities \
+  || { echo "Cannot load Bash utilities" ; exit 1 ; }
+
+function is_source_code_file() {
+  first_line="$(head -1 ${1} | xargs)"
+  filename="$(echo ${1} |awk -F / '{print $NF}')"
+  [[ "${filename}" == 'BUILD' ]] && return 0
+  [[ "${first_line}" == '#!/bin/bash' ]] && return 0
+  extension="$(echo ${1} |awk -F . '{if (NF>1) {print $NF}}')"
+  [[ "${extension}" == "c" ||
+     "${extension}" == "cc" ||
+     "${extension}" == "h" ||
+     "${extension}" == "py" ||
+     "${extension}" == "go" ||
+     "${extension}" == "pm" ||
+     "${extension}" == "bzl" ||
+     "${extension}" == "t" ]] && return 0
+  return 1
+}
+
+for file in $(git ls-files)
+do
+  base="$(echo ${file} |awk -F / '{print $1}')"
+  [[ "${base}" == "google" || "${base}" == "third_party" ]] && continue
+  [[ "$(basename ${file})" == "check-license-headers" ]] && continue
+  if is_source_code_file "${file}"; then
+    total_copyright_count="$(grep 'Copyright (C)' ${file} | wc -l)"
+    esp_copyright_count="$(grep "${ESP_COPYRIGHT}" "${file}" | wc -l)"
+    [[ "${total_copyright_count}" == 1 && "${esp_copyright_count}" == 1 ]] \
+      || error_exit "$file has invalid license headers."
+  fi
+done

@@ -1,0 +1,32 @@
+# [START runtime]
+runtime: nodejs
+vm: true
+api_version: 1
+module: default
+# [END runtime]
+
+# [START resources]
+resources:
+  cpu: 4
+  memory_gb: 1.3
+  disk_size_gb: 10
+# [END resources]
+
+manual_scaling:
+  instances: 1
+
+# Disable health check so you don't get zinged
+health_check:
+  enable_health_check: false
+
+beta_settings:
+  # requires dev mode permission. immediately allow ssh
+  allow_ssh: true
+  # The custom ESP-enabled image to use
+  # Change this value to your own image's GCR URL...
+  gae_nginx_proxy_image_name: gcr.io/${PROJECT}/${TAG}
+  # default scopes + service control scope
+  service_account_scopes: compute,devstorage.full_control,appengine.apis,servicecontrol
+
+env_variables:
+  NODE_ENV: production

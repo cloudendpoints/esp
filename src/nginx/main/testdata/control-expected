@@ -1,0 +1,5 @@
+control
+postinst
+postrm
+preinst
+prerm

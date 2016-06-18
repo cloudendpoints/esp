@@ -1,0 +1,22 @@
+{
+  "name": "error",
+  "version": "0.0.1",
+  "description": "An error server.",
+  "main": "error.js",
+  "readme": "README.md",
+  "scripts": {
+    "start": "node error.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cloudendpoints/esp"
+  },
+  "license": "Apache-2.0",
+  "engines" : {
+    "node" : ">=4.1.2"
+  },
+  "files": [
+    "README.md",
+    "error.js"
+  ]
+}

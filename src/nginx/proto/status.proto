@@ -1,0 +1,107 @@
+// Copyright (C) Endpoints Server Proxy Authors
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions
+// are met:
+// 1. Redistributions of source code must retain the above copyright
+//    notice, this list of conditions and the following disclaimer.
+// 2. Redistributions in binary form must reproduce the above copyright
+//    notice, this list of conditions and the following disclaimer in the
+//    documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+// LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+// OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+// SUCH DAMAGE.
+//
+////////////////////////////////////////////////////////////////////////////////
+//
+// This file contains proto representations of the JSON output of ESP's status.
+
+syntax = "proto3";
+
+package google.api_manager.nginx.proto;
+
+import "google/protobuf/timestamp.proto";
+import "proto/api_manager_status.proto";
+
+// Server-level status
+message ServerStatus {
+  // server version string, for example "ESP/0.2.8"
+  string server_version = 1;
+
+  // nginx version string
+  string nginx_server_version = 2;
+
+  // Compiler info string
+  string built_by = 3;
+
+  // nginx configure flags
+  string configure = 4;
+
+  // Connections statistics message, calculated by nginx_stub_status module
+  message Connections {
+    // Number of current active connections
+    uint64 active = 1;
+
+    // Number of accepted connections
+    uint64 accepted = 2;
+
+    // Number of handled connections
+    uint64 handled = 3;
+
+    // Number of reading connections
+    uint64 reading = 4;
+
+    // Number of writing connections
+    uint64 writing = 5;
+
+    // Number of waiting connections
+    uint64 waiting = 6;
+  }
+
+  // Connection statistics, not available when NGX_STAT_STUB is not defined.
+  Connections connections = 5;
+
+  // Total requests that nginx processed
+  // Not available when NGX_STAT_STUB is not defined.
+  uint64 requests = 6;
+}
+
+// Process-level status
+message ProcessStatus {
+  // Process ID
+  uint64 process_id = 1;
+
+  // The timestamp that the process started
+  google.protobuf.Timestamp started_at = 2;
+
+  // Memory footprint of the process (unit: bytes)
+  uint64 memory_usage = 3;
+
+  // User CPU time used (unit: microseconds)
+  uint64 user_cpu_time_us = 4;
+
+  // System CPU time used (unit: microseconds)
+  uint64 system_cpu_time_us = 5;
+
+  // Status per ESP instances
+  repeated google.api_manager.proto.EspStatus esp_status = 6;
+}
+
+// Top-level endpoints status message
+message Status {
+  // Overall server status
+  ServerStatus server = 1;
+
+  // Status for each process
+  repeated ProcessStatus processes = 2;
+}

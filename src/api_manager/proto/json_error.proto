@@ -1,0 +1,76 @@
+// Copyright (C) Endpoints Server Proxy Authors
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions
+// are met:
+// 1. Redistributions of source code must retain the above copyright
+//    notice, this list of conditions and the following disclaimer.
+// 2. Redistributions in binary form must reproduce the above copyright
+//    notice, this list of conditions and the following disclaimer in the
+//    documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+// LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+// OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+// SUCH DAMAGE.
+//
+////////////////////////////////////////////////////////////////////////////////
+//
+// This file contains a proto representation of the JSON output of ESP's errors.
+// The JSON error output is not a direct translation of google.rpc.Status, so
+// we copy from Status into our own proto before generating errors.
+
+syntax = "proto3";
+
+package google.api_manager.proto;
+
+import "google/protobuf/any.proto";
+
+// These messages are the proto version of our JSON-REST error output
+// structure, and have a 1:1 mapping with it. Said structure is:
+// {
+//   error: {
+//     code: <http status code>,
+//     status: <canonical code string>
+//     message: <string>,
+//     details: [
+//       {
+//         ...,
+//       },
+//       {
+//         ...,
+//       },
+//     ],
+//   }
+// }
+
+// Top-level object present in the HTTP body.
+message ErrorBody {
+  ErrorProto error = 1;
+}
+
+message ErrorProto {
+  // HTTP code of the response. Further specified by the first element of the
+  // "errors" field. Always present. This is particularly useful in JSONP calls
+  // where the actual HTTP status is always 200.
+  int32 code = 1;
+
+  // Canonical error status code.  We encourage clients to rely on this
+  // status code in their error handling logic, rather than the HTTP status.
+  // See google.rpc.Status.code.
+  int32 status = 2;
+
+  // The error message (see google.rpc.Status.message).
+  string message = 3;
+
+  // Additional details about this error (see google.rpc.Status.details).
+  repeated google.protobuf.Any details = 4;
+}

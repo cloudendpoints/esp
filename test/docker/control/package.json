@@ -1,0 +1,22 @@
+{
+  "name": "metadata-server",
+  "version": "0.0.1",
+  "description": "A fake metadata server.",
+  "main": "control.js",
+  "scripts": {
+    "start": "node control.js"
+  },
+  "repository": {
+  },
+  "license": "Apache-2.0",
+  "dependencies": {
+    "express": "^4.12.3"
+  },
+  "engines" : {
+    "node" : ">=4.1.2"
+  },
+  "files": [
+    "control.js",
+    "README.md"
+  ]
+}

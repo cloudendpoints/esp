@@ -1,0 +1,25 @@
+{
+  "name": "bookstore-test",
+  "version": "0.0.1",
+  "description": "A test for the Google Cloud Endpoints bookstore example.",
+  "scripts": {
+    "test": "npm install && ./node_modules/mocha/bin/mocha test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://endpoints.googlesource.com/endpoints"
+  },
+  "author": "Google Inc.",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "mocha": ">=2.3.3",
+    "chai": ">=2.1.0"
+  },
+  "engines" : {
+    "node" : ">=4.1.2"
+  },
+  "files": [
+    "README.md",
+    "test.js"
+  ]
+}

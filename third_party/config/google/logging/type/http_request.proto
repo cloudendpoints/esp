@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package google.logging.type;
+
+option java_multiple_files = true;
+option java_outer_classname = "HttpRequestProto";
+option java_package = "com.google.logging.type";
+
+// A common proto for logging HTTP requests.
+//
+// (-- Next tag: 9 --)
+message HttpRequest {
+  // Request method, such as `GET`, `HEAD`, `PUT` or `POST`.
+  string request_method = 1;
+
+  // Contains the scheme (http|https), the host name, the path and the query
+  // portion of the URL that was requested.
+  string request_url = 2;
+
+  // Size of the HTTP request message in bytes, including request headers and
+  // the request body.
+  int64 request_size = 3;
+
+  // A response code indicates the status of response, e.g., 200.
+  int32 status = 4;
+
+  // Size of the HTTP response message in bytes sent back to the client,
+  // including response headers and response body.
+  int64 response_size = 5;
+
+  // User agent sent by the client, e.g., "Mozilla/4.0 (compatible; MSIE 6.0;
+  // Windows 98; Q312461; .NET CLR 1.0.3705)".
+  string user_agent = 6;
+
+  // IP address of the client who issues the HTTP request. Could be either IPv4
+  // or IPv6.
+  string remote_ip = 7;
+
+  // Referer (a.k.a. referrer) URL of request, as defined in
+  // http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html.
+  string referer = 8;
+
+  // Whether or not an entity was served from cache
+  // (with or without validation).
+  bool cache_hit = 9;
+
+  // Whether or not the response was validated with the origin server before
+  // being served from cache. This field is only meaningful if cache_hit is
+  // True.
+  bool validated_with_origin_server = 10;
+}

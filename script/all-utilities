@@ -1,0 +1,124 @@
+#!/bin/bash
+#
+# Copyright (C) Endpoints Server Proxy Authors
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+################################################################################
+#
+# Library of useful utilities.
+
+# Exit with a message and an exit code.
+# Arguments:
+#   $1 - string with an error message
+#   $2 - exit code, defaults to 1
+function error_exit() {
+  # ${BASH_SOURCE[1]} is the file name of the caller.
+  echo "${BASH_SOURCE[1]}: line ${BASH_LINENO[0]}: ${1:-Unknown Error.} (exit ${2:-1})" 1>&2
+  exit ${2:-1}
+}
+
+# Tag a source image with a target image which shouldn't exist.
+# Arguments:
+#   $1 - the source image.
+#   $2 - the target image.
+function docker_tag() {
+  docker pull "${1}" || error_exit "Cannot pull image: ${1}"
+  docker pull "${2}" && error_exit "Trying to override an existing image: ${2}"
+  docker tag "${1}" "${2}" || error_exit "Failed to tag ${1} with ${2}"
+}
+
+# Tag -f a source image with a target image which may exist already.
+# Arguments:
+#   $1 - the source image.
+#   $2 - the target image.
+function docker_tag_f() {
+  docker pull "${1}" || error_exit "Cannot pull image: ${1}"
+  docker tag "${1}" "${2}" || error_exit "Failed to tag ${1} with ${2}"
+}
+
+# Retries a command with an exponential back-off.
+# The back-off base is a constant 3/2
+# Options:
+#   -n Maximum total attempts (0 for infinite, default 10)
+#   -t Maximum time to sleep between retries (default 60)
+#   -s Initial time to sleep between retries. Subsequent retries
+#      subject to exponential back-off up-to the maximum time.
+#      (default 5)
+function retry() {
+  local OPTIND OPTARG ARG
+  local COUNT=10
+  local SLEEP=5 MAX_SLEEP=60
+  local MUL=3 DIV=2 # Exponent base multiplier and divisor
+                    # (Bash doesn't do floats)
+
+  while getopts ":n:s:t:" ARG; do
+    case ${ARG} in
+      n) COUNT=${OPTARG};;
+      s) SLEEP=${OPTARG};;
+      t) MAX_SLEEP=${OPTARG};;
+      *) echo "Unrecognized argument: -${OPTARG}";;
+    esac
+  done
+
+  shift $((OPTIND-1))
+
+  # If there is no command, abort early.
+  [[ ${#} -le 0 ]] && { echo "No command specified, aborting."; return 1; }
+
+  local N=1 S=${SLEEP}  # S is the current length of sleep.
+  while : ; do
+    echo "${N}. Executing ${@}"
+    "${@}" && { echo "Command succeeded."; return 0; }
+
+    [[ (( COUNT -le 0 || N -lt COUNT )) ]] \
+      || { echo "Command '${@}' failed ${N} times, aborting."; return 1; }
+
+    if [[ (( S -lt MAX_SLEEP )) ]] ; then
+      # Must always count full exponent due to integer rounding.
+      ((S=SLEEP * (MUL ** (N-1)) / (DIV ** (N-1))))
+    fi
+
+    ((S=(S < MAX_SLEEP) ? S : MAX_SLEEP))
+
+    echo "Command failed. Will retry in ${S} seconds."
+    sleep ${S}
+
+    ((N++))
+  done
+}
+
+# Download api Keys from Cloud storage and source the file.
+function set_api_keys() {
+  local api_key_directory="$(mktemp -d)"
+  gsutil cp gs://client-secret-files/api_keys \
+        "${api_key_directory}/api_keys" \
+          || error_exit "Failed to download API key file."
+
+  source "${api_key_directory}/api_keys"
+}
+
+
+if [[ $UID -ne 0 ]]; then
+  SUDO=sudo
+fi
