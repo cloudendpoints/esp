@@ -59,7 +59,7 @@ ngx_esp_request_ctx_s::ngx_esp_request_ctx_s(ngx_http_request_t *r,
                                              ngx_esp_loc_conf_t *lc)
     : current_access_handler(nullptr),
       endpoints_api_userinfo(ngx_null_string),
-      check_status(0, ""),
+      status(NGX_OK, ""),
       auth_token(ngx_null_string),
       grpc_server_call(nullptr),
       backend_time(-1) {
@@ -391,6 +391,7 @@ static void handle_endpoints_config_error(ngx_conf_t *cf,
 
 static ngx_str_t remote_addr = ngx_string("remote_addr");
 static ngx_str_t default_cert_name = ngx_string("trusted-ca-certificates.crt");
+
 //
 // Module initialization inserts request handlers into nginx's processing
 // pipeline.
@@ -515,6 +516,7 @@ ngx_int_t ngx_esp_postconfiguration(ngx_conf_t *cf) {
     }
     *h = ngx_http_esp_access_wrapper;
 
+    // Log handler
     h = reinterpret_cast<ngx_http_handler_pt *>(
         ngx_array_push(&cmcf->phases[NGX_HTTP_LOG_PHASE].handlers));
     if (h == nullptr) {
@@ -628,7 +630,7 @@ Status ngx_http_esp_access_handler(ngx_http_request_t *r) {
 
     std::shared_ptr<wakeup_context_t> wakeup_context(
         new wakeup_context_t(r, ctx));
-    ctx->check_status = Status(NGX_AGAIN, "Calling check");
+    ctx->status = Status(NGX_AGAIN, "Calling check");
     ctx->wakeup_context = wakeup_context;
 
     ctx->request_handler->Check([wakeup_context](Status status) {
@@ -637,7 +639,7 @@ Status ngx_http_esp_access_handler(ngx_http_request_t *r) {
 
       // The client request is still around, i.e. it did not timeout.
       if (r != nullptr && ctx != nullptr) {
-        ctx->check_status = status;
+        ctx->status = status;
 
         // If the continuation is called within the context of the Check call
         // itself, we haven't yet assigned the current_access_handler below.
@@ -666,8 +668,8 @@ Status ngx_http_esp_access_check_done(ngx_http_request_t *r,
                                       ngx_esp_request_ctx_t *ctx) {
   ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                  "Service control check status: %d, error: \"%s\"",
-                 ctx->check_status.code(), ctx->check_status.message().c_str());
-  return ctx->check_status;
+                 ctx->status.code(), ctx->status.message().c_str());
+  return ctx->status;
 }
 
 Status ngx_http_esp_redirect_access_handler(ngx_http_request_t *r,
@@ -675,8 +677,8 @@ Status ngx_http_esp_redirect_access_handler(ngx_http_request_t *r,
   ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                  "skipping service control check on redirected request; "
                  "previous check status was: %d, error: \"%s\"",
-                 ctx->check_status.code(), ctx->check_status.message().c_str());
-  return ctx->check_status;
+                 ctx->status.code(), ctx->status.message().c_str());
+  return ctx->status;
 }
 
 ngx_int_t ngx_http_esp_access_wrapper(ngx_http_request_t *r) {
@@ -687,26 +689,30 @@ ngx_int_t ngx_http_esp_access_wrapper(ngx_http_request_t *r) {
     ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "esp: access wrapper status: r=%p: %s", r,
                    status.ToString().c_str());
-    if (status.code() > 0 || status.code() == NGX_ERROR ||
-        status.code() > NGX_HTTP_SPECIAL_RESPONSE) {
+
+    // Request fails check step
+    if (status.code() > 0 || status.code() == NGX_ERROR) {
       ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                      "esp: access wrapper finalizing r=%p", r);
+
+      // status is passed by context
       ngx_int_t rc;
       if (IsGrpcRequest(r)) {
         rc = ngx_esp_return_grpc_error(r, status);
       } else {
-        rc = ngx_esp_return_json_error(r, status);
+        rc = ngx_esp_return_json_error(r);
       }
       ngx_http_finalize_request(r, rc);
       return NGX_DONE;
     }
-  }
+  } else {
+    // If check is successful, update cause of error to application backend
+    ngx_esp_request_ctx_t *ctx = reinterpret_cast<ngx_esp_request_ctx_t *>(
+        ngx_http_get_module_ctx(r, ngx_esp_module));
 
-  // If check is successful, update cause of error to application backend
-  ngx_esp_request_ctx_t *ctx = reinterpret_cast<ngx_esp_request_ctx_t *>(
-      ngx_http_get_module_ctx(r, ngx_esp_module));
-  if (ctx != nullptr) {
-    ctx->check_status.SetErrorCause(Status::APPLICATION);
+    if (ctx != nullptr) {
+      ctx->status.SetErrorCause(Status::APPLICATION);
+    }
   }
 
   return status.code();
@@ -1153,7 +1159,6 @@ void ngx_esp_exit_process(ngx_cycle_t *cycle) {
     lc->~ngx_esp_loc_conf_t();
   }
 }
-
 }  // namespace
 
 ngx_esp_request_ctx_t *ngx_http_esp_ensure_module_ctx(ngx_http_request_t *r) {
@@ -1183,7 +1188,7 @@ ngx_esp_request_ctx_t *ngx_http_esp_ensure_module_ctx(ngx_http_request_t *r) {
         }
 
         // Smuggle data used in the redirected request and report path.
-        ctx->check_status = ngx_esp_current_request_context->check_status;
+        ctx->status = ngx_esp_current_request_context->status;
         ctx->endpoints_api_userinfo =
             ngx_esp_current_request_context->endpoints_api_userinfo;
       }

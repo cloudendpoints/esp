@@ -208,8 +208,8 @@ struct ngx_esp_request_ctx_s {
   // Endpoints variables.
   ngx_str_t endpoints_api_userinfo;  // base64 encoded Json of user info.
 
-  // Result of the check call.
-  ::google::api_manager::utils::Status check_status;
+  // Status of the request check/application backend upstream connection
+  ::google::api_manager::utils::Status status;
 
   // Auth token from incoming request.
   ngx_str_t auth_token;

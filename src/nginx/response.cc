@@ -45,16 +45,16 @@ Status NgxEspResponse::GetResponseStatus() {
   // For HTTP, we have to call ngx_http_get_response_status()
   // to get the upstream response status since we use Nginx proxy_pass
   // directly.
-  // If check access handler fails, its status is in ctx->check_status
-  // Grpc backend status is also in ctx->check_status. Only the
+  // If check access handler fails, its status is in ctx->status
+  // Grpc backend status is also in ctx->status. Only the
   // HTTP upstream status should be got from ngx_http_get_response_status
   ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
-  if (ctx && !ctx->check_status.ok()) {
-    return ctx->check_status;
+  if (ctx && !ctx->status.ok()) {
+    return ctx->status;
   }
 
   auto error_cause =
-      ctx == nullptr ? Status::INTERNAL : ctx->check_status.GetErrorCause();
+      ctx == nullptr ? Status::INTERNAL : ctx->status.GetErrorCause();
   return Status(ngx_http_get_response_status(r_), "", error_cause);
 }
 

@@ -36,11 +36,13 @@ namespace google {
 namespace api_manager {
 namespace nginx {
 
-ngx_int_t ngx_esp_return_json_error(ngx_http_request_t *r, utils::Status rc);
+ngx_int_t ngx_esp_return_json_error(ngx_http_request_t *r);
 ngx_int_t ngx_esp_return_grpc_error(ngx_http_request_t *r, utils::Status rc);
 
 }  // namespace nginx
 }  // namespace api_manager
 }  // namespace google
+
+extern ngx_module_t ngx_esp_error_module;
 
 #endif  // NGINX_NGX_ESP_ERROR_H_

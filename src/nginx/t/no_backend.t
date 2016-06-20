@@ -36,6 +36,7 @@ use Test::Nginx;  # Imports Nginx's test module
 use Test::More;   # And the test framework
 use HttpServer;
 use ServiceControl;
+use JSON::PP;
 
 ################################################################################
 
@@ -49,7 +50,7 @@ my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(11);
 # Save service name in the service configuration protocol buffer file.
 my $config = ApiManager::get_bookstore_service_config_allow_unregistered .
              ApiManager::read_test_file('testdata/logs_metrics.pb.txt') . <<"EOF";
-producer_project_id: "endpoints-test"
+producer_project_id: "esp-backend-test"
 control {
   environment: "http://127.0.0.1:${ServiceControlPort}"
 }
@@ -81,10 +82,8 @@ EOF
 
 my $report_done = 'report_done';
 
-$t->run_daemon(\&bookstore, $t, $BackendPort, 'bookstore.log');
 $t->run_daemon(\&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log', $report_done);
 
-is($t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'Bookstore socket ready.');
 is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control socket ready.');
 
 $t->run();
@@ -93,13 +92,24 @@ $t->run();
 
 my $response = http_get('/shelves');
 
-is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');
+$t->waitforfile("$t->{_testdir}/${report_done}");
 $t->stop_daemons();
 
 my ($response_headers, $response_body) = split /\r\n\r\n/, $response, 2;
 
-like($response_headers, qr/HTTP\/1\.1 403 Forbidden/, 'Returned HTTP 403.');
-like($response_body, qr/Reject request from the backend/, 'Response body is preserved.');
+like($response_headers, qr/HTTP\/1\.1 502 Bad Gateway/, 'Returned HTTP 502.');
+
+my $expected_body = <<'EOF';
+{
+ "error": {
+  "code": 502,
+  "status": 13,
+  "message": "BAD_GATEWAY"
+ }
+}
+EOF
+
+is($response_body, $expected_body, 'Return correct JSON of error message');
 
 my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
 is(scalar @servicecontrol_requests, 2, 'Service control was called twice.');
@@ -114,26 +124,16 @@ is($r->{verb}, 'POST', ':report was a POST');
 is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:report',
    ':report was called');
 
-my $report_body = ServiceControl::convert_proto($r->{body}, 'report_request', 'json');
-my $expected_report_body = ServiceControl::gen_report_body({
-  'url' => '/shelves',
-  'producer_project_id' => 'endpoints-test',
-  'location' => 'us-central1',
-  'api_name' =>  'endpoints-test.cloudendpointsapis.com',
-  'api_method' =>  'ListShelves',
-  'http_method' => 'GET',
-  'log_message' => 'Failed to call method: ListShelves',
-  'response_code' => '403',
-  'error_cause' => 'application',
-  'error_type' => '4xx',
-  'request_size' => 39,
-  'response_size' => 130,
-  });
+my $report_json = decode_json(ServiceControl::convert_proto($r->{body}, 'report_request', 'json'));
 
-ok(ServiceControl::compare_json($report_body, $expected_report_body), 'Report body is received.');
+is($report_json->{operations}[0]->{consumerId}, 'project:esp-backend-test',
+  'Project ID used for report log');
+
+my $log = $report_json->{operations}[0]->{logEntries}[0]->{structPayload};
+is($log->{error_cause}, 'application', 'Error cause is application');
+is($log->{http_response_code}, '502', 'Error response is 502');
 
 ################################################################################
-
 
 sub servicecontrol {
   my ($t, $port, $file, $done) = @_;
@@ -162,23 +162,3 @@ EOF
 
   $server->run();
 }
-
-################################################################################
-
-sub bookstore {
-  my ($t, $port, $file) = @_;
-  my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
-    or die "Can't create test server socket: $!\n";
-  local $SIG{PIPE} = 'IGNORE';
-
-  $server->on('GET', '/shelves', <<'EOF');
-HTTP/1.1 403 Forbidden
-Connection: close
-
-Reject request from the backend.
-EOF
-
-  $server->run();
-}
-
-################################################################################

@@ -65,6 +65,9 @@ class Status final {
   bool operator==(const Status& x) const;
   bool operator!=(const Status& x) const { return !operator==(x); }
 
+  // Get string representation of the error code
+  static std::string CodeToString(int code);
+
   // Constructs a Status object from a protobuf Status.
   static Status FromProto(const ::google::protobuf::util::Status& proto_status);
 
@@ -79,6 +82,9 @@ class Status final {
 
   // Returns the error code held by this status.
   int code() const { return code_; }
+
+  // Sets the error code
+  void SetCode(int code) { code_ = code; }
 
   // Returns the error message held by this status.
   const std::string& message() const { return message_; }
@@ -113,15 +119,7 @@ class Status final {
   // Returns the error code mapped to protobuf canonical code.
   Code CanonicalCode() const;
 
-  // Returns a JSON representation of the error as a std::string, with the
-  // following format:
-  // {
-  //   error: {
-  //     code: <http status code>,
-  //     status: <canonical status code>,
-  //     message: <error message>,
-  //   }
-  // }
+  // Returns a JSON representation as ErrorBody proto
   std::string ToJson() const;
 
   // Returns a combination of the error code name and message.

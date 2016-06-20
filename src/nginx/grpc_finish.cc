@@ -316,7 +316,7 @@ ngx_int_t GrpcFinish(
     std::multimap<std::string, std::string> response_trailers) {
   ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r);
   if (ctx != nullptr) {
-    ctx->check_status = status;
+    ctx->status = status;
   }
 
   std::string status_str = status.ToString();

@@ -51,8 +51,42 @@ proto::ErrorBody ToErrorBody(const Status& status) {
 
   return body;
 }
+}  // namespace
 
-std::string CodeToString(int code) {
+Status::Status(int code, const std::string& message, ErrorCause error_cause)
+    : code_(code == 200 ? 0 : code) {
+  if (code != Code::OK && code != 200) {
+    message_ = message;
+    error_cause_ = error_cause;
+  } else {
+    message_ = "";
+    error_cause_ = Status::INTERNAL;
+  }
+}
+
+Status::Status(int code, const std::string& message)
+    : Status(code, message, Status::INTERNAL) {}
+
+Status::Status() : Status(Code::OK, "") {}
+
+bool Status::operator==(const Status& x) const {
+  if (code_ != x.code_ || message_ != x.message_ ||
+      error_cause_ != x.error_cause_) {
+    return false;
+  }
+  return true;
+}
+
+/* static */ Status Status::FromProto(
+    const ::google::protobuf::util::Status& proto_status) {
+  if (proto_status.ok()) {
+    return OK;
+  }
+  return Status(proto_status.error_code(),
+                proto_status.error_message().ToString());
+}
+
+/* static */ std::string Status::CodeToString(int code) {
   // NGX error codes are negative. These are generally control codes.
   if (code < 0) {
     switch (code) {
@@ -222,41 +256,6 @@ std::string CodeToString(int code) {
       return http_out.str();
     }
   }
-}
-}  // namespace
-
-Status::Status(int code, const std::string& message, ErrorCause error_cause)
-    : code_(code == 200 ? 0 : code) {
-  if (code != Code::OK && code != 200) {
-    message_ = message;
-    error_cause_ = error_cause;
-  } else {
-    // initialize to default
-    message_ = "";
-    error_cause_ = Status::INTERNAL;
-  }
-}
-
-Status::Status(int code, const std::string& message)
-    : Status(code, message, Status::INTERNAL) {}
-
-Status::Status() : Status(Code::OK, "") {}
-
-bool Status::operator==(const Status& x) const {
-  if (code_ != x.code_ || message_ != x.message_ ||
-      error_cause_ != x.error_cause_) {
-    return false;
-  }
-  return true;
-}
-
-/* static */ Status Status::FromProto(
-    const ::google::protobuf::util::Status& proto_status) {
-  if (proto_status.ok()) {
-    return OK;
-  }
-  return Status(proto_status.error_code(),
-                proto_status.error_message().ToString());
 }
 
 ::google::protobuf::util::Status Status::ToProto() const {
@@ -437,9 +436,9 @@ std::string Status::ToString() const {
     return "OK";
   } else {
     if (message_.empty()) {
-      return CodeToString(code_);
+      return Status::CodeToString(code_);
     } else {
-      return CodeToString(code_) + ": " + message_;
+      return Status::CodeToString(code_) + ": " + message_;
     }
   }
 }

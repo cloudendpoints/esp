@@ -123,8 +123,7 @@ TEST(Status, ToJsonIncludesCodeAndMessage) {
       " \"error\": {\n"
       "  \"code\": 404,\n"
       "  \"status\": 5,\n"
-      "  \"message\": \"Unknown Element\",\n"
-      "  \"details\": []\n"
+      "  \"message\": \"Unknown Element\"\n"
       " }\n"
       "}\n",
       Status(5, "Unknown Element").ToJson());
@@ -138,8 +137,7 @@ TEST(Status, ToJsonIncludesDetails) {
       " \"error\": {\n"
       "  \"code\": 400,\n"
       "  \"status\": 3,\n"
-      "  \"message\": \"Invalid Parameter\",\n"
-      "  \"details\": []\n"
+      "  \"message\": \"Invalid Parameter\"\n"
       " }\n"
       "}\n",
       status.ToJson());
