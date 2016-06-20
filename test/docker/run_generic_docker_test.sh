@@ -36,7 +36,8 @@ SERVER_ADDRESS=''
 NGINX_CONF_PATH=''
 PUBLISH='--publish-all'
 BACKEND="${ROOT}/test/docker/backend"
-VOLUMES=''
+VOLUMES='--volumes-from=app'
+VOLUMES+=" --volume=${BACKEND}/service.json:/etc/nginx/endpoints/service.json"
 SERVICE_NAME=''
 SERVICE_VERSION=''
 

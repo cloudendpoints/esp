@@ -26,31 +26,9 @@
 //
 
 "use strict";
-
 var express = require('express');
-
-var http = require('http');
-
-function getAccessToken(callback) {
-    return http.get({
-        host: 'metadata',
-        headers: {'Metadata-Flavor': 'Google'},
-        path: '/computeMetadata/v1/instance/service-accounts/default/token'
-    }, function(response) {
-        // Continuously update stream with data
-        var body = '';
-        response.on('data', function(d) {
-            body += d;
-        });
-        response.on('end', function() {
-            callback(body);
-        });
-    });
-}
-
 function metadata() {
   var metadata = express();
-
   // Tracing middleware.
   metadata.use(function(req, res, next) {
     console.log(req.method, req.originalUrl);
@@ -58,35 +36,37 @@ function metadata() {
     console.log();
     next();
   })
-
   metadata.get('/', function(req, res) {
     res.send(process.env.ACCESS_TOKEN);
   });
-
+  metadata.get('/computeMetadata/v1/instance/attributes/endpoints-service-name', function(req, res) {
+    res.send('bookstore-backend.endpointsv2.appspot.com');
+  });
+  metadata.get('/computeMetadata/v1/instance/attributes/endpoints-service-version', function(req, res) {
+    res.send('2016-04-25R1');
+  });
   metadata.get('/computeMetadata/v1/', function(req, res) {
     res.set('Content-Type', 'application/json');
     res.sendFile('metadata.json', { root: __dirname });
   });
-
   metadata.get('/computeMetadata/v1/instance/service-accounts/default/token',
-
     function(req, res) {
-      getAccessToken(function(body) {
-        res.set('Content-Type', 'application/json');
-        res.send(body);
+      res.set('Content-Type', 'application/json');
+      res.set('Metadata-Flavor', 'Google');
+      res.send({
+        'access_token':process.env.ACCESS_TOKEN,
+        'expires_in':3592,
+        'token_type':'Bearer'
       });
     });
-
   return metadata;
 }
-
 if (module.parent) {
   module.exports = metadata;
 } else {
   var server = metadata().listen(process.env.PORT || '8080', '0.0.0.0', function() {
     var host = server.address().address;
     var port = server.address().port;
-
     console.log('Metadata listening at http://%s:%s', host, port);
   })
 }
