@@ -162,7 +162,7 @@ void AuthChecker::GetAuthToken() {
   Request *r = context_->request();
   std::string auth_header;
   if (!r->FindHeader(kAuthHeader, &auth_header)) {
-    // When authorizaiton header is missing, check query parameter.
+    // When authorization header is missing, check query parameter.
     r->FindQuery(kAccessTokenName, &auth_token_);
     return;
   }
@@ -217,9 +217,9 @@ void AuthChecker::ParseJwt() {
     }
   }
 
-  const char *error;
-  if (!validator_->Parse(&user_info_, &error)) {
-    Unauthorized(error);
+  Status status = validator_->Parse(&user_info_);
+  if (!status.ok()) {
+    Unauthorized(status.message());
     return;
   }
 
@@ -288,7 +288,7 @@ void AuthChecker::DiscoverJwksUri(const std::string &url) {
     pChecker->PostFetchJwksUri(status, std::move(body));
   });
   if (!status.ok()) {
-    Unauthorized("Unable to fetch URI of the key via openID discovery");
+    Unauthorized("Unable to fetch URI of the key via OpenID discovery");
     return;
   }
 }
@@ -297,7 +297,7 @@ void AuthChecker::PostFetchJwksUri(Status status, std::string &&body) {
   if (!status.ok()) {
     context_->service_context()->SetJwksUri(user_info_.issuer, std::string(),
                                             false);
-    Unauthorized("Unable to fetch URI of the key via openID discovery");
+    Unauthorized("Unable to fetch URI of the key via OpenID discovery");
     return;
   }
 
@@ -313,10 +313,10 @@ void AuthChecker::PostFetchJwksUri(Status status, std::string &&body) {
   }
 
   if (jwks_uri == nullptr) {
-    env_->LogError("OpenId discovery failed due to invalid doc format");
+    env_->LogError("OpenID discovery failed due to invalid doc format");
     context_->service_context()->SetJwksUri(user_info_.issuer, std::string(),
                                             false);
-    Unauthorized("Unable to fetch URI of the key via openID discovery");
+    Unauthorized("Unable to fetch URI of the key via OpenID discovery");
     return;
   }
 
@@ -332,14 +332,14 @@ void AuthChecker::FetchPubKey(const std::string &url) {
     pChecker->PostFetchPubKey(status, std::move(body));
   });
   if (!status.ok()) {
-    Unauthorized("Failed to fetch public key");
+    Unauthorized("Unable to fetch public key");
     return;
   }
 }
 
 void AuthChecker::PostFetchPubKey(Status status, std::string &&body) {
   if (!status.ok() || body.empty()) {
-    Unauthorized("Fetch verification key failed");
+    Unauthorized("Unable to fetch verification key");
     return;
   }
 
@@ -358,10 +358,10 @@ void AuthChecker::VerifySignature() {
     return;
   }
 
-  const char *error;
-  if (!validator_->VerifySignature(cert->first.c_str(), cert->first.size(),
-                                   &error)) {
-    Unauthorized(error);
+  Status status =
+      validator_->VerifySignature(cert->first.c_str(), cert->first.size());
+  if (!status.ok()) {
+    Unauthorized(status.message());
     return;
   }
 

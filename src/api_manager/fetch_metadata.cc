@@ -71,7 +71,7 @@ Status ConvertStatus(Status status) {
 void FetchGceMetadata(std::shared_ptr<context::RequestContext> context,
                       std::function<void(Status)> continuation) {
   if (context->service_context()->metadata_server().empty()) {
-    // No need to fetching metadata, metadata server address is not set..
+    // No need to fetching metadata, metadata server address is not set.
     continuation(Status::OK);
     return;
   }

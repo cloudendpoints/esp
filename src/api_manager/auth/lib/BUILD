@@ -44,6 +44,8 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "//external:grpc",
+        "//google/protobuf",
+        "//src/api_manager/utils",
         "//include:headers_only",
     ],
 )

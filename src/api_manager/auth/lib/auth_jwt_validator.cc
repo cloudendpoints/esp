@@ -80,6 +80,7 @@ extern "C" {
 
 using std::string;
 using std::chrono::system_clock;
+using ::google::protobuf::util::error::Code;
 
 namespace google {
 namespace api_manager {
@@ -96,8 +97,8 @@ struct JoseHeader {
 class JwtValidatorImpl : public JwtValidator {
  public:
   JwtValidatorImpl(const char *jwt, size_t jwt_len);
-  bool Parse(UserInfo *user_info, const char **error);
-  bool VerifySignature(const char *pkey, size_t pkey_len, const char **error);
+  Status Parse(UserInfo *user_info);
+  Status VerifySignature(const char *pkey, size_t pkey_len);
   system_clock::time_point &GetExpirationTime() { return exp_; }
   ~JwtValidatorImpl();
 
@@ -244,18 +245,17 @@ JwtValidatorImpl::~JwtValidatorImpl() {
   }
 }
 
-bool JwtValidatorImpl::Parse(UserInfo *user_info, const char **error) {
+Status JwtValidatorImpl::Parse(UserInfo *user_info) {
   grpc_jwt_verifier_status status = ParseImpl();
   if (status == GRPC_JWT_VERIFIER_OK) {
     status = FillUserInfoAndSetExp(user_info);
     if (status == GRPC_JWT_VERIFIER_OK) {
-      *error = nullptr;
-      return true;
+      return Status::OK;
     }
   }
 
-  *error = grpc_jwt_verifier_status_to_string(status);
-  return false;
+  return Status(Code::UNAUTHENTICATED,
+                grpc_jwt_verifier_status_to_string(status));
 }
 
 // Extracts and removes the audiences from the token.
@@ -373,15 +373,13 @@ grpc_jwt_verifier_status JwtValidatorImpl::ParseImpl() {
   return GRPC_JWT_VERIFIER_OK;
 }
 
-bool JwtValidatorImpl::VerifySignature(const char *pkey, size_t pkey_len,
-                                       const char **error) {
+Status JwtValidatorImpl::VerifySignature(const char *pkey, size_t pkey_len) {
   grpc_jwt_verifier_status status = VerifySignatureImpl(pkey, pkey_len);
   if (status == GRPC_JWT_VERIFIER_OK) {
-    *error = nullptr;
-    return true;
+    return Status::OK;
   } else {
-    *error = grpc_jwt_verifier_status_to_string(status);
-    return false;
+    return Status(Code::UNAUTHENTICATED,
+                  grpc_jwt_verifier_status_to_string(status));
   }
 }
 

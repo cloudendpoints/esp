@@ -31,6 +31,9 @@
 #include <memory>
 
 #include "include/api_manager/auth.h"
+#include "include/api_manager/utils/status.h"
+
+using ::google::api_manager::utils::Status;
 
 namespace google {
 namespace api_manager {
@@ -42,17 +45,14 @@ class JwtValidator {
   static std::unique_ptr<JwtValidator> Create(const char *jwt, size_t jwt_len);
 
   // Parse JWT.
-  // Returns true when parsing is successful, and fills user_info.
-  // Returns false otherwise, and fills error.
-  // TODO: migrate to use Status.
-  virtual bool Parse(UserInfo *user_info, const char **error) = 0;
+  // Returns Status::OK when parsing is successful, and fills user_info.
+  // Otherwise, produces a status error message.
+  virtual Status Parse(UserInfo *user_info) = 0;
 
   // Verify signature.
-  // Returns true when signature verification is successful.
-  // Returns false otherwise, and fills error.
-  // TODO: migrate to use Status.
-  virtual bool VerifySignature(const char *pkey, size_t pkey_len,
-                               const char **error) = 0;
+  // Returns Status::OK when signature verification is successful.
+  // Otherwise, produces a status error message.
+  virtual Status VerifySignature(const char *pkey, size_t pkey_len) = 0;
 
   // Returns the expiration time of the JWT.
   virtual std::chrono::system_clock::time_point &GetExpirationTime() = 0;

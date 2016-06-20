@@ -223,8 +223,8 @@ like($response_headers, qr/HTTP\/1\.1 401 Unauthorized/,
      'Returned 401 Unauthorized.');
 
 like($response_body,
-     qr/JWT validation failed\: Unable to fetch URI of the key via openID discovery/,
-     'OpenId discovery failed in response body');
+     qr/JWT validation failed\: Unable to fetch URI of the key via OpenID discovery/,
+     'OpenID discovery failed in response body');
 
 # Negative test case: openID discovery doc does not contain "jwks_uri" field.
 $response = http(<<"EOF");
@@ -240,8 +240,8 @@ like($response_headers, qr/HTTP\/1\.1 401 Unauthorized/,
      'Returned 401 Unauthorized.');
 
 like($response_body,
-     qr/JWT validation failed\: Unable to fetch URI of the key via openID discovery/,
-     'OpenId discovery failed in response body');
+     qr/JWT validation failed\: Unable to fetch URI of the key via OpenID discovery/,
+     'OpenID discovery failed in response body');
 
 my @openid_bad_requests = ApiManager::read_http_stream($t, 'openid-bad.log');
 is(scalar @openid_bad_requests, 1, 'bad openid discovery was called once');

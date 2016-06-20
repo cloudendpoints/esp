@@ -61,7 +61,11 @@ class Interface {
   // Sends a ServiceControl Report.
   // Report calls are always aggregated and cached.
   // Return utils::Status usually is OK unless some caching error.
-  // TODO: list all potential error cases, and how to handle them.
+  // If status code is less than 20, as defined by
+  // google/protobuf/stubs/status.h,
+  // then the error is from processing response fields (e.g. INVALID_ARGUMENT).
+  // Reports may be sent to the service control server asynchronously if caching
+  // is enabled. HTTP request errors carry Nginx error code.
   virtual utils::Status Report(const ReportRequestInfo& info) = 0;
 
   // Sends ServiceControl Check asynchronously.

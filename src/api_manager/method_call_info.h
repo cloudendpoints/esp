@@ -48,7 +48,7 @@ struct VariableBinding {
 };
 
 // Information that we store per each call of a method. It includes information
-// about the method itslef and variable bindings for the particular call.
+// about the method itself and variable bindings for the particular call.
 struct MethodCallInfo {
   // Method information
   const MethodInfo* method_info;

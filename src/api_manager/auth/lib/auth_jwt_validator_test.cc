@@ -303,51 +303,50 @@ class JwtValidatorTest : public ::testing::Test {
 void TestTokenWithPubkey(char *token, const char *pkey) {
   ASSERT_TRUE(token != nullptr);
   UserInfo user_info;
-  const char *error = nullptr;
 
   std::unique_ptr<JwtValidator> validator =
       JwtValidator::Create(token, strlen(token));
-  bool status = validator->Parse(&user_info, &error);
-  ASSERT_TRUE(status);
-  ASSERT_TRUE(error == nullptr) << error;
+  Status status = validator->Parse(&user_info);
+  ASSERT_TRUE(status.ok());
+  ASSERT_EQ(status.message(), "");
   ASSERT_EQ(kUserId, user_info.id);
   ASSERT_TRUE(user_info.audiences.end() != user_info.audiences.find(kAudience));
   ASSERT_EQ(1U, user_info.audiences.size());
   ASSERT_EQ(kUserId, user_info.issuer);
 
-  status = validator->VerifySignature(pkey, strlen(pkey), &error);
-  ASSERT_TRUE(status);
-  ASSERT_TRUE(error == nullptr) << error;
+  status = validator->VerifySignature(pkey, strlen(pkey));
+  ASSERT_TRUE(status.ok());
+  ASSERT_EQ(status.message(), "");
 
   // Wrong length.
   validator = JwtValidator::Create(token + 1, strlen(token));
-  status = validator->Parse(&user_info, &error);
-  ASSERT_FALSE(status);
-  ASSERT_STREQ(error, "BAD_FORMAT") << error;
+  status = validator->Parse(&user_info);
+  ASSERT_FALSE(status.ok());
+  ASSERT_EQ(status.message(), "BAD_FORMAT") << status.message();
 
   // Wrong sig.
   validator = JwtValidator::Create(token, strlen(token) - 1);
-  status = validator->Parse(&user_info, &error);
-  ASSERT_TRUE(status);
-  status = validator->VerifySignature(pkey, strlen(pkey), &error);
-  ASSERT_FALSE(status);
-  ASSERT_STREQ(error, "BAD_SIGNATURE") << error;
+  status = validator->Parse(&user_info);
+  ASSERT_TRUE(status.ok());
+  status = validator->VerifySignature(pkey, strlen(pkey));
+  ASSERT_FALSE(status.ok());
+  ASSERT_EQ(status.message(), "BAD_SIGNATURE") << status.message();
 
   // Wrong key length.
   validator = JwtValidator::Create(token, strlen(token));
-  status = validator->Parse(&user_info, &error);
-  ASSERT_TRUE(status);
-  status = validator->VerifySignature(pkey, strlen(pkey) - 1, &error);
-  ASSERT_FALSE(status);
-  ASSERT_STREQ(error, "KEY_RETRIEVAL_ERROR") << error;
+  status = validator->Parse(&user_info);
+  ASSERT_TRUE(status.ok());
+  status = validator->VerifySignature(pkey, strlen(pkey) - 1);
+  ASSERT_FALSE(status.ok());
+  ASSERT_EQ(status.message(), "KEY_RETRIEVAL_ERROR") << status.message();
 
   // Empty key.
   validator = JwtValidator::Create(token, strlen(token));
-  status = validator->Parse(&user_info, &error);
-  ASSERT_TRUE(status);
-  status = validator->VerifySignature("", 0, &error);
-  ASSERT_FALSE(status);
-  ASSERT_STREQ(error, "BAD_FORMAT") << error;
+  status = validator->Parse(&user_info);
+  ASSERT_TRUE(status.ok());
+  status = validator->VerifySignature("", 0);
+  ASSERT_FALSE(status.ok());
+  ASSERT_EQ(status.message(), "BAD_FORMAT") << status.message();
 }
 
 TEST_F(JwtValidatorTest, OkTokenX509) {
@@ -377,93 +376,89 @@ TEST_F(JwtValidatorTest, TokenNoKid) {
 
 TEST_F(JwtValidatorTest, ParseToken) {
   // Multiple audiences.
-  const char *error = nullptr;
   UserInfo user_info;
   std::unique_ptr<JwtValidator> validator =
       JwtValidator::Create(kTokenMultiAud, strlen(kTokenMultiAud));
-  bool status = validator->Parse(&user_info, &error);
-  ASSERT_TRUE(status);
+  Status status = validator->Parse(&user_info);
+  ASSERT_TRUE(status.ok());
   ASSERT_EQ(user_info.audiences.size(), 2U);
 
   // Token with only one dot.
   const char *token = "a1234.b5678";  // should have 2 dots.
   validator = JwtValidator::Create(token, strlen(token));
-  status = validator->Parse(&user_info, &error);
-  ASSERT_FALSE(status);
-  ASSERT_STREQ(error, "BAD_FORMAT") << error;
+  status = validator->Parse(&user_info);
+  ASSERT_FALSE(status.ok());
+  ASSERT_EQ(status.message(), "BAD_FORMAT") << status.message();
 
   // Token with three dots.
   token = "a1234.b5678.c7890.d1234";  // should have 2 dots.
   validator = JwtValidator::Create(token, strlen(token));
-  status = validator->Parse(&user_info, &error);
-  ASSERT_FALSE(status);
-  ASSERT_STREQ(error, "BAD_FORMAT") << error;
+  status = validator->Parse(&user_info);
+  ASSERT_FALSE(status.ok());
+  ASSERT_EQ(status.message(), "BAD_FORMAT") << status.message();
 
   // Token without dot.
   token = "a1234";  // should have 2 dots.
   validator = JwtValidator::Create(token, strlen(token));
-  status = validator->Parse(&user_info, &error);
-  ASSERT_FALSE(status);
-  ASSERT_STREQ(error, "BAD_FORMAT") << error;
+  status = validator->Parse(&user_info);
+  ASSERT_FALSE(status.ok());
+  ASSERT_EQ(status.message(), "BAD_FORMAT") << status.message();
 
   // Empty token.
   token = "";  // should have 2 dots.
   validator = JwtValidator::Create(token, strlen(token));
-  status = validator->Parse(&user_info, &error);
-  ASSERT_FALSE(status);
-  ASSERT_STREQ(error, "BAD_FORMAT") << error;
+  status = validator->Parse(&user_info);
+  ASSERT_FALSE(status.ok());
+  ASSERT_EQ(status.message(), "BAD_FORMAT") << status.message();
 
   // Token truncated in the second part.
   validator = JwtValidator::Create(kTokenOneDot, strlen(kTokenOneDot));
-  status = validator->Parse(&user_info, &error);
-  ASSERT_FALSE(status);
-  ASSERT_STREQ(error, "BAD_FORMAT") << error;
+  status = validator->Parse(&user_info);
+  ASSERT_FALSE(status.ok());
+  ASSERT_EQ(status.message(), "BAD_FORMAT") << status.message();
 
   // Token without the last signature part.
   validator = JwtValidator::Create(kTokenNoSign, strlen(kTokenNoSign));
-  status = validator->Parse(&user_info, &error);
-  ASSERT_FALSE(status);
-  ASSERT_STREQ(error, "BAD_FORMAT") << error;
+  status = validator->Parse(&user_info);
+  ASSERT_FALSE(status.ok());
+  ASSERT_EQ(status.message(), "BAD_FORMAT") << status.message();
 
   // Token without "iss" field in payload.
   validator = JwtValidator::Create(kTokenNoIss, strlen(kTokenNoIss));
-  status = validator->Parse(&user_info, &error);
-  ASSERT_FALSE(status);
-  ASSERT_STREQ(error, "BAD_FORMAT") << error;
+  status = validator->Parse(&user_info);
+  ASSERT_FALSE(status.ok());
+  ASSERT_EQ(status.message(), "BAD_FORMAT") << status.message();
 
   // Token without "sub" field in payload.
   validator = JwtValidator::Create(kTokenNoSub, strlen(kTokenNoSub));
-  status = validator->Parse(&user_info, &error);
-  ASSERT_FALSE(status);
-  ASSERT_STREQ(error, "BAD_FORMAT") << error;
+  status = validator->Parse(&user_info);
+  ASSERT_FALSE(status.ok());
+  ASSERT_EQ(status.message(), "BAD_FORMAT") << status.message();
 
   // Token without "aud" field in payload.
   validator = JwtValidator::Create(kTokenNoAud, strlen(kTokenNoAud));
-  status = validator->Parse(&user_info, &error);
-  ASSERT_FALSE(status);
-  ASSERT_STREQ(error, "BAD_FORMAT") << error;
+  status = validator->Parse(&user_info);
+  ASSERT_FALSE(status.ok());
+  ASSERT_EQ(status.message(), "BAD_FORMAT") << status.message();
 }
 
 TEST_F(JwtValidatorTest, WrongKey) {
   char *token = esp_get_auth_token(kWrongPrivateKey, kAudience);
   ASSERT_TRUE(token != nullptr);
-  const char *error = nullptr;
   UserInfo user_info;
 
   std::unique_ptr<JwtValidator> validator =
       JwtValidator::Create(token, strlen(token));
-  bool status = validator->Parse(&user_info, &error);
-  ASSERT_TRUE(status);
+  Status status = validator->Parse(&user_info);
+  ASSERT_TRUE(status.ok());
 
-  status = validator->VerifySignature(kPublicKeyX509, strlen(kPublicKeyX509),
-                                      &error);
-  ASSERT_FALSE(status);
-  ASSERT_STREQ(error, "KEY_RETRIEVAL_ERROR") << error;
+  status = validator->VerifySignature(kPublicKeyX509, strlen(kPublicKeyX509));
+  ASSERT_FALSE(status.ok());
+  ASSERT_EQ(status.message(), "KEY_RETRIEVAL_ERROR") << status.message();
 
-  status =
-      validator->VerifySignature(kPublicKeyJwk, strlen(kPublicKeyJwk), &error);
-  ASSERT_FALSE(status);
-  ASSERT_STREQ(error, "KEY_RETRIEVAL_ERROR") << error;
+  status = validator->VerifySignature(kPublicKeyJwk, strlen(kPublicKeyJwk));
+  ASSERT_FALSE(status.ok());
+  ASSERT_EQ(status.message(), "KEY_RETRIEVAL_ERROR") << status.message();
 }
 
 }  // namespace

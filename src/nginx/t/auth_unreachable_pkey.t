@@ -110,7 +110,7 @@ EOF
 like($response, qr/HTTP\/1\.1 401 Unauthorized/, 'Returned HTTP 401, pkey not reachable.');
 like($response, qr/Content-Type: application\/json/i,
      'Pkey not reachable returned application/json body.');
-like($response, qr/JWT validation failed: Fetch verification key failed/i,
+like($response, qr/JWT validation failed: Unable to fetch verification key/i,
      'Error body contains \'Fetch verification key failed\'.');
 
 $t->stop_daemons();

@@ -386,7 +386,7 @@ TEST_F(CheckAuthTest, TestOpenIdFailed) {
     ASSERT_EQ(status.code(), 401);
     ASSERT_EQ(status.message(),
               "JWT validation failed: Unable to fetch "
-              "URI of the key via openID discovery");
+              "URI of the key via OpenID discovery");
   });
 
   EXPECT_TRUE(Mock::VerifyAndClearExpectations(raw_request_));
