@@ -91,14 +91,15 @@ nginx_suite(
 nginx_suite(
     size = "small",
     data = [
+        "matching-client-secret.json",
+        "testdata/grpc_tsan_suppressions",
         "//test/grpc:grpc-test-client",
         "//test/grpc:grpc-test-server",
-        "matching-client-secret.json",
     ],
+    env = {
+        "TSAN_OPTIONS": "suppressions=$TEST_SRCDIR/src/nginx/t/testdata/grpc_tsan_suppressions",
+    },
     nginx = "//src/nginx/main:nginx-esp",
-    tags = [
-        "no_tsan",
-    ],
     tests = [
         "grpc_lib_big_streaming_report.t",
         "grpc_lib_downstream_flow_control.t",
@@ -132,13 +133,14 @@ nginx_suite(
 nginx_suite(
     size = "medium",
     data = [
+        "testdata/grpc_tsan_suppressions",
         "//test/grpc:grpc-test-client",
         "//test/grpc:grpc-test-server",
     ],
+    env = {
+        "TSAN_OPTIONS": "suppressions=$TEST_SRCDIR/src/nginx/t/testdata/grpc_tsan_suppressions",
+    },
     nginx = "//src/nginx/main:nginx-esp",
-    tags = [
-        "no_tsan",
-    ],
     tests = [
         "grpc_lib_call_flow_control.t",
         "grpc_lib_ministress.t",
@@ -207,12 +209,12 @@ nginx_suite(
     tags = ["exclusive"],
     tests = [
         "auth_openid.t",
+        "auth_ssl.t",
         "cloud_trace.t",
         "cloud_trace_disabled.t",
         "endpoints_off.t",
         "no_check.t",
         "no_http.t",
-        "auth_ssl.t",
         "status.t",
     ],
     deps = [
@@ -224,13 +226,14 @@ nginx_suite(
 # config_list parameter.
 nginx_suite(
     data = [
+        "testdata/grpc_tsan_suppressions",
         "//test/grpc:grpc-test-client",
         "//test/grpc:grpc-test-server",
     ],
+    env = {
+        "TSAN_OPTIONS": "suppressions=$TEST_SRCDIR/src/nginx/t/testdata/grpc_tsan_suppressions",
+    },
     nginx = "//src/nginx/main:nginx-esp",
-    tags = [
-        "no_tsan",
-    ],
     tests = [
         "grpc_lib_grpc_override.t",
         "grpc_lib_grpc_with_http.t",

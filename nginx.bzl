@@ -52,7 +52,7 @@ def nginx_test(name, nginx, data=None, env=None, config=None, **kwargs):
 # If a test has %%TEST_CONFIG%% in its nginx.conf, use config_list to specify the server
 # config files the test can support. Otherwise, pass [] or None for config_list.
 def nginx_suite(tests, deps, nginx, size="small", data=None, tags=[], config_list=[],
-                timeout="short"):
+                timeout="short", env=None):
   for test in tests:
     if not config_list:
       nginx_test(
@@ -65,6 +65,7 @@ def nginx_suite(tests, deps, nginx, size="small", data=None, tags=[], config_lis
         nginx = nginx,
         config = None,
         tags = ["exclusive"] + tags,
+        env = env,
       )
     else:
       for config in config_list:
@@ -78,4 +79,5 @@ def nginx_suite(tests, deps, nginx, size="small", data=None, tags=[], config_lis
           nginx = nginx,
           config = config,
           tags = ["exclusive"] + tags,
+          env = env,
         )
