@@ -86,7 +86,7 @@ $t->run();
 my $response = http_get('/shelves?key=this-is-an-api-key');
 
 $t->stop_daemons();
-like($response, qr/HTTP\/1\.1 401 Unauthorized/, 'Returned HTTP 401');
+like($response, qr/HTTP\/1\.1 503 Service Temporarily Unavailable/, 'Returned HTTP 503');
 like($response, qr/content-type: application\/json/i,
      'Unauthorized has application/json body.');
 like($response, qr/Failed to connect to service control./i, 'Error body contains \'failed to connect\'.');

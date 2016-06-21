@@ -94,7 +94,7 @@ my $response1 = http_get('/shelves?key=this-is-an-api-key');
 $t->stop();
 $t->stop_daemons();
 
-like($response1, qr/HTTP\/1\.1 401 Unauthorized/, 'Returned HTTP 401.');
+like($response1, qr/HTTP\/1\.1 503 Service Temporarily Unavailable/, 'Returned HTTP 503.');
 like($response1, qr/Failed to connect to service control/i, 'Failed to connect to service control.');
 
 my $bookstore_requests1 = $t->read_file('bookstore.log');
@@ -125,7 +125,7 @@ my $response2 = http_get('/shelves?key=this-is-an-api-key');
 $t->stop();
 $t->stop_daemons();
 
-like($response2, qr/HTTP\/1\.1 401 Unauthorized/, 'Returned HTTP 401.');
+like($response2, qr/HTTP\/1\.1 503 Service Temporarily Unavailable/, 'Returned HTTP 503.');
 like($response2, qr/Failed to connect to service control/i, 'Failed to connect to service control.');
 
 my $bookstore_requests2 = $t->read_file('bookstore.log');
@@ -149,7 +149,7 @@ my $response3 = http_get('/shelves?key=this-is-an-api-key');
 $t->stop();
 $t->stop_daemons();
 
-like($response3, qr/HTTP\/1\.1 401 Unauthorized/, 'Returned HTTP 401.');
+like($response3, qr/HTTP\/1\.1 503 Service Temporarily Unavailable/, 'Returned HTTP 503.');
 like($response3, qr/Failed to connect to service control/i, 'Failed to connect to service control.');
 
 my $bookstore_requests3 = $t->read_file('bookstore.log');

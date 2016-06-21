@@ -45,7 +45,7 @@ Status ConvertStatus(Status status) {
   // body.
   if (status.code() < 0) {
     // network connection error.
-    return Status(401, "Failed to connect to service control.",
+    return Status(503, "Failed to connect to service control.",
                   Status::SERVICE_CONTROL);
   } else if (status.code() >= 300) {
     // HTTP response status code from service control server.
