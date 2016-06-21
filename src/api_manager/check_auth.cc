@@ -389,11 +389,18 @@ Status AuthChecker::HttpFetch(
     std::function<void(Status, std::string &&)> continuation) {
   env_->LogDebug(std::string("http fetch: ") + url);
 
-  std::unique_ptr<HTTPRequest> request(
-      new HTTPRequest([continuation](Status status, std::string &&body) {
-        status.SetErrorCause(Status::AUTH);
-        continuation(status, std::move(body));
-      }));
+  std::unique_ptr<HTTPRequest> request(new HTTPRequest([continuation](
+      Status status, std::string &&body) {
+    // Treat NGINX code as network error
+    if (status.code() < 0) {
+      continuation(Status(Code::UNAVAILABLE,
+                          "Failed to fetch authentication data", Status::AUTH),
+                   std::move(body));
+    } else {
+      status.SetErrorCause(Status::AUTH);
+      continuation(status, std::move(body));
+    }
+  }));
   if (!request) {
     return Status(Code::UNAUTHENTICATED, "Out of memory", Status::INTERNAL);
   }

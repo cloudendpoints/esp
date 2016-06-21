@@ -58,9 +58,8 @@ Status FetchMetadata(context::RequestContext *context, const char *path,
 
 // Converts status code and error message specific to metadata fetching.
 Status ConvertStatus(Status status) {
-  // Any metadata fetching failure is an internal error.
   if (!status.ok()) {
-    return Status(500, "");
+    return Status(Code::UNAVAILABLE, status.message());
   } else {
     return status;
   }
@@ -91,7 +90,7 @@ void FetchGceMetadata(std::shared_ptr<context::RequestContext> context,
       // Log debug only because if this happens, this log will happen on every
       // API call.
       env->LogDebug("Metadata fetch previously failed. Skipping with error.");
-      continuation(Status(500, ""));
+      continuation(Status(Code::UNAVAILABLE, "Failed to fetch metadata"));
       return;
     case GceMetadata::FETCHING_STATE:
       // TODO: do not issue another metadata call, wait for the current one
@@ -122,7 +121,7 @@ void FetchGceMetadata(std::shared_ptr<context::RequestContext> context,
   if (!status.ok()) {
     context->service_context()->gce_metadata()->set_state(
         GceMetadata::FAILED_STATE);
-    continuation(status);
+    continuation(ConvertStatus(status));
   }
 }
 
@@ -149,8 +148,8 @@ void FetchServiceAccountToken(std::shared_ptr<context::RequestContext> context,
     if (!auth::esp_get_service_account_auth_token(
             const_cast<char *>(body.data()), body.length(), &token, &expires) ||
         token == nullptr) {
-      continuation(Status(
-          500, std::string("Failed to parse access token response: ") + body));
+      continuation(
+          Status(Code::INTERNAL, "Failed to parse access token response"));
       return;
     }
     // Compute Engine returns tokens with at least 60 seconds life left so we
@@ -166,7 +165,7 @@ void FetchServiceAccountToken(std::shared_ptr<context::RequestContext> context,
       FetchMetadata(context.get(), metadata_service_account_token, on_done);
   // If failed, continuation will not be called by FetchMetadata().
   if (!status.ok()) {
-    continuation(status);
+    continuation(ConvertStatus(status));
   }
 }
 

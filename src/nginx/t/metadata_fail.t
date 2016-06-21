@@ -118,12 +118,12 @@ sub test_metadata_404 {
   $t->stop_daemons();
 
   my ($shelves_headers1, $shelves_body1) = split /\r\n\r\n/, $shelves1, 2;
-  like($shelves_headers1, qr/HTTP\/1\.1 500 Internal Server Error/, '/shelves returned HTTP 500.');
+  like($shelves_headers1, qr/HTTP\/1\.1 503 Service Temporarily Unavailable/, '/shelves returned HTTP 503.');
 
   is($t->read_file($backend_log), '', 'Backend was not called.');
 
   my @servicecontrol_requests = ApiManager::read_http_stream($t, $servicecontrol_log);
-  ok(no_check_call(@servicecontrol_requests), 'Service control check was not called after metadata 404.');
+  ok(no_check_call(@servicecontrol_requests), 'Service control check was not called after metadata error.');
 }
 
 test_metadata_404();
@@ -149,7 +149,7 @@ sub test_metadata_not_running {
   $t->stop_daemons();
 
   my ($shelves_headers2, $shelves_body2) = split /\r\n\r\n/, $shelves2, 2;
-  like($shelves_headers2, qr/HTTP\/1\.1 500 Internal Server Error/, '/shelves returned HTTP 500 (metadata down)');
+  like($shelves_headers2, qr/HTTP\/1\.1 503 Service Temporarily Unavailable/, '/shelves returned HTTP 503 (metadata down)');
 
   is($t->read_file($backend_log), '', 'Backend was not called.');
 

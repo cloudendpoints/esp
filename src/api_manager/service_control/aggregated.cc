@@ -72,17 +72,6 @@ const char application_proto[] = "application/x-protobuf";
 const char servicecontrol_service[] =
     "/google.api.servicecontrol.v1.ServiceController";
 
-// Converts ::google::api_manager::Status to ::google::protobuf::util::Status
-::google::protobuf::util::Status ConvertStatus(const Status& status) {
-  return ::google::protobuf::util::Status(static_cast<Code>(status.code()),
-                                          status.message());
-}
-
-// Converts ::google::protobuf::util::Status to utils::Status
-Status ConvertStatus(const ::google::protobuf::util::Status& status) {
-  return Status(status.error_code(), status.error_message());
-}
-
 // Generates CheckAggregationOptions.
 CheckAggregationOptions GetCheckAggregationOptions(
     const ServerConfig* server_config) {
@@ -269,7 +258,10 @@ void Aggregated::Check(
           Proto::ConvertCheckResponse(*response, project_id, &response_info);
       on_done(status, response_info);
     } else {
-      on_done(ConvertStatus(status), response_info);
+      // Respond to parsing and network errors
+      on_done(Status(status.error_code(), status.error_message(),
+                     Status::SERVICE_CONTROL),
+              response_info);
     }
     delete response;
   };
@@ -290,7 +282,7 @@ Status Aggregated::GetStatistics(Statistics* esp_stat) const {
       client_->GetStatistics(&client_stat);
 
   if (!status.ok()) {
-    return ConvertStatus(status);
+    return Status::FromProto(status);
   }
   esp_stat->total_called_checks = client_stat.total_called_checks;
   esp_stat->send_checks_by_flush = client_stat.send_checks_by_flush;
@@ -310,8 +302,8 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
       [response, on_done, this](Status status, std::string&& body) {
         if (status.ok()) {
           if (!response->ParseFromString(body)) {
-            status = Status(Code::INVALID_ARGUMENT,
-                            std::string("Invalid response: ") + body);
+            status =
+                Status(Code::INVALID_ARGUMENT, std::string("Invalid response"));
           }
         } else {
           const std::string& url = typeid(RequestType) == typeid(CheckRequest)
@@ -319,8 +311,16 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
                                        : url_.report_url();
           env_->LogError(std::string("Failed to call ") + url + ", Error: " +
                          status.ToString());
+
+          // Handle NGX error as opposed to pass-through error code
+          if (status.code() < 0) {
+            status = Status(Code::UNAVAILABLE,
+                            "Failed to connect to service control");
+          } else {
+            status = Status(status.code(), "Service control Check failed");
+          }
         }
-        on_done(ConvertStatus(status));
+        on_done(status.ToProto());
       }));
 
   const std::string& url = typeid(RequestType) == typeid(CheckRequest)
@@ -348,7 +348,8 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
   Status status = env_->RunHTTPRequest(std::move(http_request));
   if (!status.ok()) {
     // Failed to send HTTPRequest.
-    on_done(ConvertStatus(status));
+    on_done(Status(Code::UNAVAILABLE, "Failed to connect to service control")
+                .ToProto());
   }
 }
 

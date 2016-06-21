@@ -103,8 +103,8 @@ is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.
 $t->stop();
 $t->stop_daemons();
 
-like($shelves, qr/^HTTP\/1\.1 500 Internal Server Error/, '/shelves returned HTTP 500.');
-like($books, qr/^HTTP\/1\.1 500 Internal Server Error/, '/books returned HTTP 500.');
+like($shelves, qr/^HTTP\/1\.1 503 Service Temporarily Unavailable/, '/shelves returned HTTP 503.');
+like($books, qr/^HTTP\/1\.1 503 Service Temporarily Unavailable/, '/books returned HTTP 503.');
 
 # Check metadata server log.
 my @metadata_requests = ApiManager::read_http_stream($t, 'metadata.log');

@@ -33,6 +33,7 @@
 
 using ::google::protobuf::Message;
 using ::google::protobuf::util::TypeResolver;
+using ::google::protobuf::util::error::Code;
 
 namespace google {
 namespace api_manager {
@@ -108,7 +109,7 @@ Status JsonToProto(const std::string& json, Message* message) {
     return Status::OK;
   }
   return Status(
-      ::google::protobuf::util::error::Code::INTERNAL,
+      Code::INTERNAL,
       "Unable to parse bytes generated from JsonToBinaryString as proto.");
 }
 
@@ -127,7 +128,7 @@ Status JsonToProto(::google::protobuf::io::ZeroCopyInputStream* json,
     return Status::OK;
   }
   return Status(
-      ::google::protobuf::util::error::Code::INTERNAL,
+      Code::INTERNAL,
       "Unable to parse bytes generated from JsonToBinaryString as proto.");
 }
 

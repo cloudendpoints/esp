@@ -272,6 +272,16 @@ bool Status::operator==(const Status& x) const {
                 proto_status.error_message().ToString());
 }
 
+::google::protobuf::util::Status Status::ToProto() const {
+  ::google::protobuf::util::Status result(CanonicalCode(), message_);
+
+  // for (auto& detail : details_) {
+  //  *result.add_details() = detail;
+  //}
+
+  return result;
+}
+
 /* static */ const Status& Status::OK = Status();
 
 // Note: We return 400 instead of 412 for failed precondition as the meaning of
@@ -353,7 +363,7 @@ int Status::HttpCode() const {
   }
 }
 
-int Status::CanonicalCode() const {
+Code Status::CanonicalCode() const {
   // Map NGNX status codes to canonical codes.
   if (code_ < 0) {
     switch (code_) {
@@ -383,7 +393,7 @@ int Status::CanonicalCode() const {
 
   // The space from 0 to 99 is for canonical codes, so we leave it as is.
   if (code_ < 100) {
-    return code_;
+    return (Code)code_;
   }
 
   // Map HTTP error codes to canonical codes. This is based on the mapping
@@ -422,16 +432,6 @@ int Status::CanonicalCode() const {
 
 void Status::Attach(const ::google::protobuf::Any& detail) {
   details_.push_back(detail);
-}
-
-::google::rpc::Status Status::ToProto() const {
-  ::google::rpc::Status result;
-  result.set_code(code_);
-  result.set_message(message_);
-  for (auto& detail : details_) {
-    *result.add_details() = detail;
-  }
-  return result;
 }
 
 std::string Status::ToJson() const {

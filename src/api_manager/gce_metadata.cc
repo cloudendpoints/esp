@@ -32,6 +32,7 @@
 using ::google::api_manager::auth::GetProperty;
 using ::google::api_manager::auth::GetStringValue;
 using ::google::api_manager::utils::Status;
+using ::google::protobuf::util::error::Code;
 
 namespace google {
 namespace api_manager {
@@ -48,8 +49,7 @@ Status GceMetadata::ParseFromJson(std::string *json_str) {
   grpc_json *json = grpc_json_parse_string_with_len(
       const_cast<char *>(json_str->data()), json_str->length());
   if (!json) {
-    return Status(::google::protobuf::util::error::INVALID_ARGUMENT,
-                  "Invalid JSON input.");
+    return Status(Code::INVALID_ARGUMENT, "Invalid JSON input.");
   }
 
   const grpc_json *project = GetProperty(json, "project");

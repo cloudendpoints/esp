@@ -35,27 +35,6 @@ namespace api_manager {
 
 namespace {
 
-// Converts status code and error message specific to service control.
-Status ConvertStatus(Status status) {
-  // If status.code is negative, indicates network connection errors.
-  // If status.code is more than 100, it is the HTTP response status
-  // from the service control server.
-  // If status code is less than 20, within the ranges defined by
-  // google/protobuf/stubs/status.h, is from parsing error response
-  // body.
-  if (status.code() < 0) {
-    // network connection error.
-    return Status(503, "Failed to connect to service control.",
-                  Status::SERVICE_CONTROL);
-  } else if (status.code() >= 300) {
-    // HTTP response status code from service control server.
-    return Status(status.code(), "Service control Check failed",
-                  Status::SERVICE_CONTROL);
-  } else {
-    return status;
-  }
-}
-
 // If api_key is not provided, check if it is allowed.
 Status CheckCallerIdentity(context::RequestContext *context) {
   if (!context->api_key().empty()) {
@@ -110,7 +89,7 @@ void CheckServiceControl(std::shared_ptr<context::RequestContext> context,
         if (status.ok()) {
           context->set_is_api_key_valid(info.is_api_key_valid);
         }
-        continuation(ConvertStatus(status));
+        continuation(status);
       });
 }
 

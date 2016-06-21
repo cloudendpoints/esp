@@ -148,7 +148,7 @@ my $expected_report_body = ServiceControl::gen_report_body({
   'http_method' => 'POST',
   'log_message' => 'Method: test.grpc.Test.Echo',
   'response_code' => '200',
-  'request_size' => 295,
+  'request_size' => 293,
   'response_size' => 121,
   });
 # TODO: request_size is different between Mac and Linux.

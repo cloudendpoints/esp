@@ -129,26 +129,9 @@ TEST(Status, AttachStoresDetails) {
 
 TEST(Status, ToProtoIncludesCodeAndMessage) {
   Status status(400, "Invalid Parameter");
-  ::google::rpc::Status proto = status.ToProto();
-  EXPECT_EQ(400, proto.code());
-  EXPECT_EQ("Invalid Parameter", proto.message());
-}
-
-TEST(Status, ToProtoIncludesDetails) {
-  ::google::rpc::DebugInfo debug;
-  debug.set_detail("Some Error");
-
-  ::google::protobuf::Any any;
-  any.set_type_url(GetTypeUrl(debug));
-  debug.SerializeToString(any.mutable_value());
-
-  Status status(400, "Invalid Parameter");
-  status.Attach(any);
-
-  ::google::rpc::Status proto = status.ToProto();
-  EXPECT_EQ(1, proto.details_size());
-  EXPECT_EQ("type.googleapis.com/google.rpc.DebugInfo",
-            proto.details(0).type_url());
+  ::google::protobuf::util::Status proto = status.ToProto();
+  EXPECT_EQ(Code::INVALID_ARGUMENT, proto.error_code());
+  EXPECT_EQ("Invalid Parameter", proto.error_message());
 }
 
 TEST(Status, ToJsonIncludesCodeAndMessage) {

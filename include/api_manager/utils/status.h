@@ -33,6 +33,8 @@
 #include "google/protobuf/stubs/status.h"
 #include "google/rpc/status.pb.h"
 
+using ::google::protobuf::util::error::Code;
+
 namespace google {
 namespace api_manager {
 namespace utils {
@@ -69,6 +71,9 @@ class Status final {
 
   // The predefined OK status object.
   static const Status& OK;
+
+  // Returns a representation of the error as a protobuf Status.
+  ::google::protobuf::util::Status ToProto() const;
 
   // Returns true if this status is not an error (code == 0).
   bool ok() const { return code_ == 0 || code_ == 200; }
@@ -107,7 +112,7 @@ class Status final {
   int HttpCode() const;
 
   // Returns the error code mapped to protobuf canonical code.
-  int CanonicalCode() const;
+  Code CanonicalCode() const;
 
   // Attaches an error detail as an Any object.
   void Attach(const ::google::protobuf::Any& detail);
@@ -116,10 +121,6 @@ class Status final {
   const std::vector<::google::protobuf::Any>& details() const {
     return details_;
   }
-
-  // Returns a proto representation of the error as a google::rpc::Status.
-  // TODO: Should we just wrap ::google::rpc::Status directly?
-  ::google::rpc::Status ToProto() const;
 
   // Returns a JSON representation of the error as a std::string, with the
   // following format:

@@ -107,7 +107,7 @@ std::unique_ptr<PeriodicTimer> NgxEspEnv::StartPeriodicTimer(
 utils::Status NgxEspEnv::RunHTTPRequest(std::unique_ptr<HTTPRequest> request) {
   utils::Status status = ngx_esp_send_http_request(std::move(request));
   if (!status.ok()) {
-    return utils::Status(503, "Unable to initiate backend request");
+    return utils::Status(NGX_ERROR, "Unable to initiate backend request");
   } else {
     return utils::Status::OK;
   }
