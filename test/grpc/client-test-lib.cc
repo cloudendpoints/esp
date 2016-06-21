@@ -117,9 +117,9 @@ class Echo {
           } else {
             result.mutable_echo()->set_text(echo->response_.text());
           }
-          ok = ((echo->desc_.request().return_status().code() ==
+          ok = ((echo->desc_.expected_status().code() ==
                  echo->status_.error_code()) &&
-                (echo->desc_.request().return_status().details() ==
+                (echo->desc_.expected_status().details() ==
                  echo->status_.error_message()));
           if (echo->status_.ok()) {
             ok &= (echo->desc_.request().text() == echo->response_.text());
@@ -184,7 +184,7 @@ class EchoStream {
     if (es->desc_.request_size() <= request_index) {
       request_index = es->desc_.request_size() - 1;
     }
-    const CallStatus &status = es->desc_.request(request_index).return_status();
+    const CallStatus &status = es->desc_.expected_status();
     if (status.code()) {
       es->read_count_expected_ = request_index;
       es->status_expected_ =
@@ -333,6 +333,7 @@ class Parallel {
           stats.succeeded_count++;
         } else {
           stats.failed_count++;
+          stats.failures.push_back(result.status());
         }
         stats.latencies.push_front(
             std::chrono::duration_cast<std::chrono::microseconds>(
@@ -409,6 +410,10 @@ class Parallel {
 
       stats->set_mean_latency_micros(mean_latency);
       stats->set_stddev_latency_micros(stddev_latency);
+
+      for (const auto &failure : it.failures) {
+        *stats->add_failures() = failure;
+      }
     }
   }
 
@@ -416,6 +421,7 @@ class Parallel {
     int succeeded_count = 0;
     int failed_count = 0;
     std::forward_list<std::chrono::microseconds> latencies;
+    std::vector<CallStatus> failures;
   };
 
   ParallelTest desc_;

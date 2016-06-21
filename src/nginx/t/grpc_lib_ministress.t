@@ -45,7 +45,7 @@ my $ServiceControlPort = 8081;
 my $HttpNginxPort = 8083;
 my $HttpBackendPort = 8085;
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(7);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(5);
 
 $t->write_file('service.pb.txt', ApiManager::get_grpc_test_service_config . <<"EOF");
 control {
@@ -141,6 +141,10 @@ plans {
         request {
           text: "Hello, world!"
         }
+        expected_status {
+          code: 16
+          details: "Method doesn\'t allow unregistered callers (callers without established identity). Please use API Key or other form of API consumer identity to call this API."
+        }
       }
     }
     subtests {
@@ -150,6 +154,10 @@ plans {
           text: "Hello, world!"
         }
         count: 100
+        expected_status {
+          code: 16
+          details: "Method doesn\'t allow unregistered callers (callers without established identity). Please use API Key or other form of API consumer identity to call this API."
+        }
       }
     }
   }
@@ -173,12 +181,12 @@ results {
       stddev_latency_micros: \d+
     }
     stats {
-      failed_count: (\d+)
+      succeeded_count: (\d+)
       mean_latency_micros: \d+
       stddev_latency_micros: \d+
     }
     stats {
-      failed_count: (\d+)
+      succeeded_count: (\d+)
       mean_latency_micros: \d+
       stddev_latency_micros: \d+
     }
@@ -188,11 +196,8 @@ EOF
 
 like($test_results, qr/$test_results_expected/m, 'Client tests completed as expected.');
 if ($test_results =~ /$test_results_expected/) {
-  my $succeeded = $1 + $2;
-  my $failed = $3 + $4;
-  cmp_ok($succeeded, '>=', 40, 'At least 40 successful requests');
-  cmp_ok($failed, '>=', 50, 'At least 50 failed requests');
-  is($succeeded + $failed, 100, 'Total requests');
+  my $total = $1 + $2 + $3 + $4;
+  is($total, 100, 'Total succeeded requests');
 } else {
   fail('Able to pull out test results');
 }

@@ -78,6 +78,9 @@ message EchoTest {
 
   // The configuration to use for the test.
   CallConfig call_config = 2;
+
+  // The final RPC status to expect in the response.
+  CallStatus expected_status = 3;
 }
 
 message EchoResult {
@@ -100,6 +103,9 @@ message EchoStreamTest {
 
   // The configuration to use for the test.
   CallConfig call_config = 4;
+
+  // The final RPC status to expect in the response.
+  CallStatus expected_status = 5;
 }
 
 message EchoStreamResult {
@@ -141,6 +147,8 @@ message ParallelSubtestStats {
   int32 failed_count = 2;
   int64 mean_latency_micros = 3;
   int64 stddev_latency_micros = 4;
+
+  repeated CallStatus failures = 5;
 }
 
 message ParallelResult {
