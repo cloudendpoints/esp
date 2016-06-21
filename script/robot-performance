@@ -27,28 +27,10 @@
 ################################################################################
 #
 
-PERFORMANCE_JSON=""
-PERFORMANCE_ENV=""
-
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-. ${DIR}/all-utilities || { echo "Cannot load Bash utilities" ; exit 1 ; }
-
-while getopts j:e:t:b arg; do
-  case ${arg} in
-    j) PERFORMANCE_JSON=${OPTARG};;
-    e) PERFORMANCE_ENV=${OPTARG};;
-    t) echo "-t is deprecated and a noop";;
-    b) echo "-b is deprecated and a noop";;
-    ?) exit 1;;
-  esac
-done
-
-${DIR}/linux-build-dependencies \
-  || error_exit "Failed to build and install dependencies."
-
-${DIR}/linux-install-test-client \
-  || error_exit "Cannot install test client."
-
-${DIR}/linux-start-local-test -t "${PERFORMANCE_ENV}" \
-  || error_exit "Local test failed."
+# Stage 1 postsubmit tests are executed by Jenkins and
+# this script is re-purposed to re-run presubmit tests
+# after the code was merged. This allows us to use more
+# relaxed commit enforcement policy.
+${DIR}/robot-presubmit
