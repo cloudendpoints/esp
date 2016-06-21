@@ -140,8 +140,18 @@ RUN_COUNT=0
 GRPC_STRESS_FAILURES=0
 HTTP_STRESS_FAILURES=0
 
+START_MEMORY_USAGE=0
+SECOND_MEMORY_USAGE=0
+INCREASED_MEMORY_USAGE=0
+
+echo "GRPC_HOST: ${GRPC_HOST}"
+STATUS_SERVER=${GRPC_HOST/8001/8090}
+STATUS_SERVER="http://${STATUS_SERVER}"
+echo "STATUS_SERVER: ${STATUS_SERVER}"
+
 # ${ROOT}/test/client/esp_client.py needs to run at that folder.
 pushd ${ROOT}/test/client > /dev/null
+local_json="$(mktemp /tmp/XXXXXX.json)"
 
 while true; do
   echo "Starting test run ${RUN_COUNT} at $(date)."
@@ -150,6 +160,23 @@ while true; do
   #######################
   # Insert tests here
   #######################
+  ((RUN_COUNT++))
+  curr_usage=$(get_memory_usage "${STATUS_SERVER}" "${local_json}") \
+    || error_exit "Could not extract memory usage from ${STATUS_SERVER}"
+  # Record the memory usage for each test run
+  if [[ ${RUN_COUNT} -eq 1 ]]; then
+    START_MEMORY_USAGE=${curr_usage}
+    echo "Start Memory Usage (Bytes): ${START_MEMORY_USAGE}."
+  else
+    INCREASED_MEMORY_USAGE=$((${curr_usage} - ${START_MEMORY_USAGE}))
+    echo "Memory Increased in Test ${RUN_COUNT} (Bytes): ${INCREASED_MEMORY_USAGE}"
+    if [[ ${RUN_COUNT} -eq 2 ]]; then
+      SECOND_MEMORY_USAGE=${curr_usage}
+      echo "Second Memory Usage (Bytes): ${SECOND_MEMORY_USAGE}."
+    fi
+  fi
+
+  python -m json.tool "${local_json}"
 
   # Generating token for each run, that they expire in 1 hour.
   AUTH_TOKEN=$("${ROOT}/client/custom/gen-auth-token.sh" -a "${SERVICE_NAME}")
@@ -158,12 +185,10 @@ while true; do
   if [[ -n ${HTTP_HOST} ]]; then
     grpc_test_transcode || ((HTTP_STRESS_FAILURES++))
   fi
-
   #######################
   # End of test suite
   #######################
 
-  ((RUN_COUNT++))
   # Break if test has run long enough.
   [[ $(date +"%s") -lt ${END_TIME} ]] || break
 done
@@ -172,8 +197,15 @@ popd > /dev/null
 
 echo "Finished ${RUN_COUNT} test runs."
 echo "Failures: pass-through: ${GRPC_STRESS_FAILURES}, transcode: ${HTTP_STRESS_FAILURES}."
+echo "Total Memory Increased (Bytes): ${INCREASED_MEMORY_USAGE}."
+rm "${local_json}"
+
+# We fail the test if memory increase is large.
+detect_memory_leak "${START_MEMORY_USAGE}" "${SECOND_MEMORY_USAGE}" "${INCREASED_MEMORY_USAGE}"
+HAS_MEMORY_LEAK=$?
+echo "memory leak detect: ${HAS_MEMORY_LEAK}"
 
 # Only mark test as failed if any pass-through tests failed.
 # This is to be consistent with other http stress tests.
 # All failure will be analyzed by release-engineers.
-exit ${GRPC_STRESS_FAILURES}
+exit $((${GRPC_STRESS_FAILURES} + ${HAS_MEMORY_LEAK}))

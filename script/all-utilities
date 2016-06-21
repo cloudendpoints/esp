@@ -157,6 +157,44 @@ __EOF__
   return 0
 }
 
+# Get memory usage from /endpoints_status
+function get_memory_usage() {
+    local server=${1}
+    local local_json=${2}
+    echo > "{local_json}"
+    curl "${server}/endpoints_status" > "${local_json}"
+
+    python -c "import json, sys; obj = json.load(open(\"${local_json}\")); \
+    print obj['processes'][0]['memoryUsage']" \
+      || { echo "Could not extract memory usage from ${local_json}"; return 1; }
+}
+
+# Check Memory Leak.
+function detect_memory_leak() {
+    local start_usage=${1}
+    local second_usage=${2}
+    [[ ${second_usage} -gt 0 ]] \
+      || { echo "Only run test once."; return 0; }
+
+    local memory_increased=${3}
+    echo "Memory Increased (Bytes): ${memory_increased}."
+    (( threshold = 2 * (${second_usage} - ${start_usage}) / 1000000))
+    if [[ ${threshold} -gt 40 ]]; then
+        threshold=40
+    fi
+    if [[ ${threshold} -lt 10 ]]; then
+        threshold=10
+    fi
+    echo "Memory Threshold (MB): ${threshold}."
+
+    if [[ $(( ${memory_increased} / 1000000 )) -gt ${threshold} ]]; then
+        echo "************ Memory leak is detected. *************"
+        return 1
+    else
+        return 0
+    fi
+}
+
 # Extract key from test env json created from
 # script/create-test-env-json script.
 # As an example, from this json
