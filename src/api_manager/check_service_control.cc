@@ -28,6 +28,7 @@
 #include "src/api_manager/cloud_trace/cloud_trace.h"
 
 using ::google::api_manager::utils::Status;
+using ::google::protobuf::util::error::Code;
 
 namespace google {
 namespace api_manager {
@@ -69,7 +70,7 @@ Status CheckCallerIdentity(context::RequestContext *context) {
     return Status::OK;
   }
 
-  return Status(401,
+  return Status(Code::UNAUTHENTICATED,
                 "Method doesn't allow unregistered callers (callers without "
                 "established identity). Please use API Key or other form of "
                 "API consumer identity to call this API.",

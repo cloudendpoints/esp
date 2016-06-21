@@ -85,7 +85,7 @@ ngx_int_t ngx_esp_return_json_error(ngx_http_request_t *r,
 
   // Returns WWW-Authenticate header for 401 response.
   // See https://tools.ietf.org/html/rfc6750#section-3.
-  if (status.code() == NGX_HTTP_UNAUTHORIZED) {
+  if (status.HttpCode() == NGX_HTTP_UNAUTHORIZED) {
     r->headers_out.www_authenticate = reinterpret_cast<ngx_table_elt_t *>(
         ngx_list_push(&r->headers_out.headers));
     if (r->headers_out.www_authenticate == nullptr) {

@@ -40,6 +40,7 @@ using ::testing::Mock;
 using ::testing::Return;
 
 using ::google::api_manager::utils::Status;
+using ::google::protobuf::util::error::Code;
 
 namespace google {
 namespace api_manager {
@@ -383,7 +384,7 @@ TEST_F(CheckAuthTest, TestOpenIdFailed) {
       }));
 
   CheckAuth(context_, [](Status status) {
-    ASSERT_EQ(status.code(), 401);
+    ASSERT_EQ(status.code(), Code::UNAUTHENTICATED);
     ASSERT_EQ(status.message(),
               "JWT validation failed: Unable to fetch "
               "URI of the key via OpenID discovery");
@@ -403,7 +404,7 @@ TEST_F(CheckAuthTest, TestOpenIdFailed) {
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_)).Times(0);
 
   CheckAuth(context_, [](Status status) {
-    ASSERT_EQ(status.code(), 401);
+    ASSERT_EQ(status.code(), Code::UNAUTHENTICATED);
     ASSERT_EQ(status.message(),
               "JWT validation failed: "
               "Cannot determine the URI of the key");
@@ -444,7 +445,7 @@ TEST_F(CheckAuthTest, TestInvalidToken) {
       }));
 
   CheckAuth(context_, [](Status status) {
-    ASSERT_EQ(status.code(), 401);
+    ASSERT_EQ(status.code(), Code::UNAUTHENTICATED);
     ASSERT_EQ(status.message(),
               "JWT validation failed: "
               "Missing or invalid credentials");
@@ -462,7 +463,7 @@ TEST_F(CheckAuthTest, TestInvalidToken) {
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_)).Times(0);
 
   CheckAuth(context_, [](Status status) {
-    ASSERT_EQ(status.code(), 401);
+    ASSERT_EQ(status.code(), Code::UNAUTHENTICATED);
     ASSERT_EQ(status.message(),
               "JWT validation failed: TIME_CONSTRAINT_FAILURE");
   });
@@ -479,7 +480,7 @@ TEST_F(CheckAuthTest, TestBadAudience) {
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_)).Times(0);
 
   CheckAuth(context_, [](Status status) {
-    ASSERT_EQ(status.code(), 401);
+    ASSERT_EQ(status.code(), Code::UNAUTHENTICATED);
     ASSERT_EQ(status.message(), "JWT validation failed: Audience not allowed");
   });
 }

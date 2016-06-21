@@ -379,7 +379,8 @@ void AuthChecker::PassUserInfoOnSuccess() {
 }
 
 void AuthChecker::Unauthorized(const std::string &error) {
-  on_done_(Status(401, std::string("JWT validation failed: ") + error,
+  on_done_(Status(Code::UNAUTHENTICATED,
+                  std::string("JWT validation failed: ") + error,
                   Status::AUTH));
 }
 

@@ -157,13 +157,13 @@ $t->stop_daemons();
 my $test_results_expected = <<'EOF';
 results {
   status {
-    code: 401
+    code: 16
     details: "JWT validation failed: Missing or invalid credentials"
   }
 }
 results {
   status {
-    code: 401
+    code: 16
     details: "JWT validation failed: BAD_FORMAT"
   }
 }
