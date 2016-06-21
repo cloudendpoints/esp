@@ -667,8 +667,8 @@ grpc_jwt_verifier_status JwtValidatorImpl::VerifyHsSignature(const char *pkey,
   }
 
   if (res_len != GPR_SLICE_LENGTH(sig_buffer_) ||
-      strncmp(reinterpret_cast<char *>(GPR_SLICE_START_PTR(sig_buffer_)),
-              reinterpret_cast<char *>(res), res_len) != 0) {
+      CRYPTO_memcmp(reinterpret_cast<void *>(GPR_SLICE_START_PTR(sig_buffer_)),
+                    reinterpret_cast<void *>(res), res_len) != 0) {
     gpr_log(GPR_ERROR, "JWT signature verification failed.");
     return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
   }
