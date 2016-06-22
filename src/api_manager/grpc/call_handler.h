@@ -57,7 +57,7 @@ class CallHandler {
   virtual ~CallHandler(){};
 
   // Checks that the supplied call is valid (i.e. should be passed
-  // along to the backend) according the ESP's service configuration.
+  // along to the backend) according to the ESP's service configuration.
   //
   // The supplied continuation will be invoked with the backend
   // address from the service configuration (if any) and the result of

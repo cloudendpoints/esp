@@ -872,7 +872,7 @@ ngx_int_t GrpcFinishV2(
   b->last =
       ngx_cpymem(b->last, kGrpcStatusHeaderKey.data, kGrpcStatusHeaderKey.len);
   u_char *len = b->last++;
-  b->last = ngx_sprintf(b->last, "%i", status.code());
+  b->last = ngx_sprintf(b->last, "%i", status.CanonicalCode());
   *len = b->last - len - 1;
 
   if (add_status_details) {
