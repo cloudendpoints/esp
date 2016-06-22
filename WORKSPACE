@@ -38,7 +38,7 @@ bind(
 
 git_repository(
     name = "grpc_git",
-    commit = "2b223977c13975648bac2f422363e1ebf83506ce",  # 0.14.1
+    commit = "be223358795b645416e801727f4d3fcad3d73964",  # 2016-06-21
     remote = "https://github.com/grpc/grpc.git",
 )
 
@@ -60,6 +60,11 @@ bind(
 bind(
     name = "grpc++",
     actual = "@grpc_git//:grpc++",
+)
+
+bind(
+    name = "grpc++_reflection",
+    actual = "@grpc_git//:grpc++_reflection",
 )
 
 new_git_repository(

@@ -92,6 +92,7 @@ def cc_grpc_library(
     deps = [
       ":" + name + "_messages",
       "//external:grpc++",
+      "//external:grpc++_reflection",
     ],
     **kargs
   )
