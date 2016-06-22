@@ -270,3 +270,18 @@ cc_test(
         "//external:googletest_main",
     ],
 )
+
+cc_test(
+    name = "fetch_metadata_test",
+    size = "small",
+    srcs = [
+        "fetch_metadata_test.cc",
+        "mock_request.h",
+    ],
+    linkstatic = 1,
+    deps = [
+        ":api_manager",
+        ":mock_api_manager_environment",
+        "//external:googletest_main",
+    ],
+)

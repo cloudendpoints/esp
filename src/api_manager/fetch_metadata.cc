@@ -40,9 +40,9 @@ namespace api_manager {
 namespace {
 
 // URL path for fetching compute metadata.
-const char compute_metadata[] = "/computeMetadata/v1/?recursive=true";
+const char kComputeMetadata[] = "/computeMetadata/v1/?recursive=true";
 // URL path for fetching service-account
-const char metadata_service_account_token[] =
+const char kMetadataServiceAccountToken[] =
     "/computeMetadata/v1/instance/service-accounts/default/token";
 
 // External status for failed metadata fetch
@@ -84,8 +84,8 @@ void FetchGceMetadata(std::shared_ptr<context::RequestContext> context,
     case GceMetadata::FAILED_STATE:
       // Metadata fetch already failed.
       // TODO: retry after some timeout?
-      // TODO: at some point, timeout of metdata fetch will become an indication
-      // of not running in a GCE VM and will be handled as a success.
+      // TODO: at some point, timeout of metadata fetch will become an
+      // indication of not running in a GCE VM and will be handled as a success.
       // Log debug only because if this happens, this log will happen on every
       // API call.
       env->LogDebug("Metadata fetch previously failed. Skipping with error.");
@@ -105,7 +105,7 @@ void FetchGceMetadata(std::shared_ptr<context::RequestContext> context,
   context->service_context()->gce_metadata()->set_state(
       GceMetadata::FETCHING_STATE);
   Status status = FetchMetadata(
-      context.get(), compute_metadata,
+      context.get(), kComputeMetadata,
       [context, continuation](Status status, std::string &&body) {
         if (status.ok()) {
           // reassing to parsing status
@@ -165,7 +165,7 @@ void FetchServiceAccountToken(std::shared_ptr<context::RequestContext> context,
   };
 
   Status status =
-      FetchMetadata(context.get(), metadata_service_account_token, on_done);
+      FetchMetadata(context.get(), kMetadataServiceAccountToken, on_done);
   // If failed, continuation will not be called by FetchMetadata().
   if (!status.ok()) {
     continuation(failed_token_fetch);

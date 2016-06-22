@@ -26,6 +26,7 @@
 //
 #include "src/nginx/http.h"
 
+#include <core/ngx_string.h>
 #include <memory>
 #include <sstream>
 
@@ -109,6 +110,9 @@ struct ngx_esp_http_connection {
   // Stream in which we accumulate response body as it is streamed to us
   // by the NGINX upstream module.
   std::ostringstream response_body;
+
+  // Response headers captured in a map.
+  std::map<std::string, std::string> response_headers;
 
   // Wake up information.
 
@@ -509,9 +513,14 @@ ngx_int_t ngx_esp_upstream_process_header(ngx_http_request_t *r) {
     if (rc == NGX_OK) {
       ngx_str_t name = {(size_t)(r->header_name_end - r->header_name_start),
                         r->header_name_start};
+      ngx_strlow(name.data, name.data, name.len);
       ngx_str_t value = {(size_t)(r->header_end - r->header_start),
                          r->header_start};
-
+      // Store headers if it is required.
+      if (http_connection->esp_request->requires_headers()) {
+        http_connection->response_headers.emplace(ngx_str_to_std(name),
+                                                  ngx_str_to_std(value));
+      }
       ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                      "esp: header: %V: %V", &name, &value);
 
@@ -633,7 +642,12 @@ void ngx_esp_upstream_finalize_request(ngx_http_request_t *r, ngx_int_t rc) {
     request.swap(http_connection->esp_request);
 
     // Call the request continuation.
-    request->OnComplete(status, std::move(body));
+    if (request->requires_headers()) {
+      request->OnComplete(status, std::move(http_connection->response_headers),
+                          std::move(body));
+    } else {
+      request->OnComplete(status, std::move(body));
+    }
   } else {
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, &http_connection->log, 0,
                    "continuation not available. skipping call");

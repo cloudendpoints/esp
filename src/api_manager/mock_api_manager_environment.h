@@ -63,7 +63,14 @@ class MockApiManagerEnvironmentWithLog : public ApiManagerEnvInterface {
     return std::unique_ptr<PeriodicTimer>();
   }
   utils::Status RunHTTPRequest(std::unique_ptr<HTTPRequest> request) {
-    request->OnComplete(utils::Status::OK, std::string());
+    if (request->requires_headers()) {
+      std::map<std::string, std::string> headers;
+      request->OnComplete(utils::Status::OK, std::move(headers),
+                          std::move(std::string()));
+    } else {
+      request->OnComplete(utils::Status::OK, std::move(std::string()));
+    }
+
     return utils::Status::OK;
   }
 };

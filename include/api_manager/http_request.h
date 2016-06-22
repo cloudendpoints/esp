@@ -38,10 +38,18 @@ namespace api_manager {
 // processed by the environment.
 class HTTPRequest {
  public:
+  // HTTPRequest constructor without headers in the callback function.
   // Callback receives NGX_ERROR status code if request fails or response
   // HTTP code otherwise.
   HTTPRequest(std::function<void(utils::Status, std::string&&)> callback)
       : callback_(callback), timeout_ms_(0) {}
+  // HTTPRequest constructor with headers in the callback function. The keys in
+  // headers are in lowercase.
+  HTTPRequest(
+      std::function<void(utils::Status, std::map<std::string, std::string>,
+                         std::string)>
+          callback)
+      : callback_with_headers_(callback), timeout_ms_(0) {}
 
   // Request properties.
   const std::string& method() const { return method_; }
@@ -101,7 +109,19 @@ class HTTPRequest {
     callback_(status, std::move(body));
   }
 
+  void OnComplete(utils::Status status,
+                  std::map<std::string, std::string> headers,
+                  std::string body) {
+    callback_with_headers_(status, std::move(headers), std::move(body));
+  }
+
+  // A flag to determine which callback will be called.
+  bool requires_headers() const { return callback_with_headers_ != nullptr; }
+
  private:
+  std::function<void(utils::Status, std::map<std::string, std::string>,
+                     std::string)>
+      callback_with_headers_;
   std::function<void(utils::Status, std::string&&)> callback_;
   std::string method_;
   std::string url_;
