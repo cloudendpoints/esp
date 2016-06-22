@@ -210,7 +210,7 @@ Status Aggregated::Close() {
 
 Status Aggregated::Report(const ReportRequestInfo& info) {
   if (!client_) {
-    return Status(Code::INVALID_ARGUMENT, "Client object is nullptr.");
+    return Status(Code::INTERNAL, "Missing service control client");
   }
   auto request = report_pool_.Alloc();
   Status status = service_control_proto_.FillReportRequest(info, request.get());
@@ -239,7 +239,7 @@ void Aggregated::Check(
     std::function<void(Status, const CheckResponseInfo&)> on_done) {
   CheckResponseInfo dummy_response_info;
   if (!client_) {
-    on_done(Status(Code::INVALID_ARGUMENT, "Client object is nullptr."),
+    on_done(Status(Code::INTERNAL, "Missing service control client"),
             dummy_response_info);
     return;
   }
@@ -263,7 +263,7 @@ void Aggregated::Check(
           Proto::ConvertCheckResponse(*response, project_id, &response_info);
       on_done(status, response_info);
     } else {
-      // Respond to parsing and network errors
+      // Propagate error response from upstream, and network/parsing errors
       on_done(Status(status.error_code(), status.error_message(),
                      Status::SERVICE_CONTROL),
               response_info);
@@ -282,7 +282,7 @@ void Aggregated::Check(
 
 Status Aggregated::GetStatistics(Statistics* esp_stat) const {
   if (!client_) {
-    return Status(Code::INVALID_ARGUMENT, "Client object is nullptr.");
+    return Status(Code::INTERNAL, "Missing service control client");
   }
 
   ::google::service_control_client::Statistics client_stat;
@@ -309,6 +309,7 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
   std::unique_ptr<HTTPRequest> http_request(new HTTPRequest(
       [response, on_done, this](Status status, std::string&& body) {
         if (status.ok()) {
+          // Handle 200 response
           if (!response->ParseFromString(body)) {
             status =
                 Status(Code::INVALID_ARGUMENT, std::string("Invalid response"));
@@ -325,7 +326,10 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
             status = Status(Code::UNAVAILABLE,
                             "Failed to connect to service control");
           } else {
-            status = Status(status.code(), "Service control Check failed");
+            status = Status(
+                Code::UNAVAILABLE,
+                "Service control request failed with HTTP response code " +
+                    std::to_string(status.code()));
           }
         }
         on_done(status.ToProto());

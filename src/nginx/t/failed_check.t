@@ -100,10 +100,10 @@ like($response1, qr/content-type: application\/json/i,
      'Forbidden has application/json body.');
 like($response1, qr/Project has not activated the .* API./i, "Error body contains 'activation error'.");
 
-like($response2, qr/HTTP\/1\.1 403 Forbidden/, 'Response2 returned HTTP 403.');
+like($response2, qr/HTTP\/1\.1 503 Service Temporarily Unavailable/, 'Response2 returned HTTP 503.');
 like($response2, qr/content-type: application\/json/i,
      'Unauthorized returned application/json body.');
-like($response2, qr/Service control Check failed/i, "Error body contains 'service control failed'.");
+like($response2, qr/Service control request failed/i, "Error body contains 'service control failed'.");
 
 like($response3, qr/HTTP\/1\.1 400 Bad Request/, 'Response3 returned HTTP 400.');
 like($response3, qr/content-type: application\/json/i,

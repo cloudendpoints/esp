@@ -240,7 +240,7 @@ like($response_headers, qr/HTTP\/1\.1 401 Unauthorized/,
      'Returned 401 Unauthorized.');
 
 like($response_body,
-     qr/JWT validation failed\: Unable to fetch URI of the key via OpenID discovery/,
+     qr/JWT validation failed\: Unable to parse URI of the key via OpenID discovery/,
      'OpenID discovery failed in response body');
 
 my @openid_bad_requests = ApiManager::read_http_stream($t, 'openid-bad.log');

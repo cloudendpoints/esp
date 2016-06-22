@@ -365,7 +365,7 @@ Status set_credential_id(const SupportedLabel& l, const ReportRequestInfo& info,
         info.auth_issuer.data(), info.auth_issuer.size(), true /* url_safe */,
         false /* multiline */, false /* padding */);
     if (base64_issuer == nullptr) {
-      return Status(Code::INTERNAL, "Failed to allocate memory.");
+      return Status(Code::INTERNAL, "Out of memory");
     }
     std::string credential_id("jwtAuth:issuer=");
     credential_id += base64_issuer;
@@ -377,7 +377,7 @@ Status set_credential_id(const SupportedLabel& l, const ReportRequestInfo& info,
           info.auth_audience.data(), info.auth_audience.size(),
           true /* url_safe */, false /* multiline */, false /* padding */);
       if (base64_audience == nullptr) {
-        return Status(Code::INTERNAL, "Failed to allocate memory.");
+        return Status(Code::INTERNAL, "Out of memory");
       }
 
       credential_id += "&audience=";
@@ -910,7 +910,7 @@ Status Proto::ConvertCheckResponse(const CheckResponse& check_response,
       if (check_response_info) check_response_info->is_api_key_valid = false;
       return CreateErrorStatus(
           Code::INVALID_ARGUMENT,
-          "API Key not found. Please pass a valid API key.");
+          "API key not found. Please pass a valid API key.");
     case CheckError::API_KEY_EXPIRED:
       if (check_response_info) check_response_info->is_api_key_valid = false;
       return CreateErrorStatus(Code::INVALID_ARGUMENT,

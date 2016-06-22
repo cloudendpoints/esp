@@ -40,9 +40,8 @@ namespace api_manager {
 namespace utils {
 
 // A Status object can be used to represent an error or an OK state. Error
-// status messages have an error code, an error message, and a list of error
-// details defined as protobufs. An OK status has a code of 0 or 200 and no
-// message or details.
+// status messages have an error code, an error message, and an error cause.
+// An OK status has a code of 0 or 200 and no message.
 class Status final {
  public:
   enum ErrorCause {
@@ -114,14 +113,6 @@ class Status final {
   // Returns the error code mapped to protobuf canonical code.
   Code CanonicalCode() const;
 
-  // Attaches an error detail as an Any object.
-  void Attach(const ::google::protobuf::Any& detail);
-
-  // Returns a list of error details attached to this status.
-  const std::vector<::google::protobuf::Any>& details() const {
-    return details_;
-  }
-
   // Returns a JSON representation of the error as a std::string, with the
   // following format:
   // {
@@ -129,7 +120,6 @@ class Status final {
   //     code: <http status code>,
   //     status: <canonical status code>,
   //     message: <error message>,
-  //     details: [<jsonified google.protobuf.Any>]
   //   }
   // }
   std::string ToJson() const;
@@ -152,9 +142,6 @@ class Status final {
   // The error message if this Status represents an error, otherwise an empty
   // string if this is the OK status.
   std::string message_;
-
-  // The error details attached to this Status.
-  std::vector<::google::protobuf::Any> details_;
 };
 
 }  // namespace utils

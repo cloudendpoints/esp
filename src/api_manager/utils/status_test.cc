@@ -110,23 +110,6 @@ TEST(Status, ToCanonicalMapping) {
   EXPECT_EQ(Code::UNAVAILABLE, Status(503, "").CanonicalCode());
 }
 
-TEST(Status, AttachStoresDetails) {
-  ::google::rpc::DebugInfo debug;
-  debug.set_detail("Some Error");
-
-  ::google::protobuf::Any any;
-  any.set_type_url(GetTypeUrl(debug));
-  debug.SerializeToString(any.mutable_value());
-
-  Status status(400, "Invalid Parameter");
-  status.Attach(any);
-
-  // TODO: Test JSON output includes Any.
-  EXPECT_EQ(1u, status.details().size());
-  EXPECT_EQ("type.googleapis.com/google.rpc.DebugInfo",
-            status.details()[0].type_url());
-}
-
 TEST(Status, ToProtoIncludesCodeAndMessage) {
   Status status(400, "Invalid Parameter");
   ::google::protobuf::util::Status proto = status.ToProto();
@@ -148,15 +131,7 @@ TEST(Status, ToJsonIncludesCodeAndMessage) {
 }
 
 TEST(Status, ToJsonIncludesDetails) {
-  ::google::rpc::DebugInfo debug;
-  debug.set_detail("Some Error");
-
-  ::google::protobuf::Any any;
-  any.set_type_url(GetTypeUrl(debug));
-  debug.SerializeToString(any.mutable_value());
-
   Status status(400, "Invalid Parameter");
-  status.Attach(any);
 
   EXPECT_EQ(
       "{\n"
@@ -164,37 +139,6 @@ TEST(Status, ToJsonIncludesDetails) {
       "  \"code\": 400,\n"
       "  \"status\": 3,\n"
       "  \"message\": \"Invalid Parameter\",\n"
-      "  \"details\": [\n"
-      "   {\n"
-      "    \"@type\": \"type.googleapis.com/google.rpc.DebugInfo\",\n"
-      "    \"stackEntries\": [],\n"
-      "    \"detail\": \"Some Error\"\n"
-      "   }\n"
-      "  ]\n"
-      " }\n"
-      "}\n",
-      status.ToJson());
-}
-
-TEST(Status, ToJsonWithInvalidDetailsPrintsInternalError) {
-  ::google::rpc::DebugInfo debug;
-  debug.set_detail("Ignore Me.");
-
-  ::google::protobuf::Any any;
-  any.set_type_url("type.wrongurl.com/google.rpc.DebugInfo");
-  debug.SerializePartialToString(any.mutable_value());
-
-  Status status(400, "Invalid Parameter");
-  status.Attach(any);
-
-  EXPECT_EQ(
-      "{\n"
-      " \"error\": {\n"
-      "  \"code\": 500,\n"
-      "  \"status\": 13,\n"
-      "  \"message\": \"Invalid type URL, type URLs must be of the form"
-      " 'type.googleapis.com/\\u003ctypename\\u003e',"
-      " got: type.wrongurl.com/google.rpc.DebugInfo\",\n"
       "  \"details\": []\n"
       " }\n"
       "}\n",

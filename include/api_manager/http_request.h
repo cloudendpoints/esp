@@ -38,6 +38,8 @@ namespace api_manager {
 // processed by the environment.
 class HTTPRequest {
  public:
+  // Callback receives NGX_ERROR status code if request fails or response
+  // HTTP code otherwise.
   HTTPRequest(std::function<void(utils::Status, std::string&&)> callback)
       : callback_(callback), timeout_ms_(0) {}
 

@@ -45,6 +45,15 @@ const char compute_metadata[] = "/computeMetadata/v1/?recursive=true";
 const char metadata_service_account_token[] =
     "/computeMetadata/v1/instance/service-accounts/default/token";
 
+// External status for failed metadata fetch
+const Status failed_metadata_fetch =
+    Status(Code::UNAVAILABLE, "Failed to fetch metadata", Status::INTERNAL);
+
+// External status for failed service account token fetch
+const Status failed_token_fetch =
+    Status(Code::UNAVAILABLE, "Failed to fetch service account token",
+           Status::INTERNAL);
+
 // Issues a HTTP request to fetch the metadata.
 Status FetchMetadata(context::RequestContext *context, const char *path,
                      std::function<void(Status, std::string &&)> continuation) {
@@ -55,16 +64,6 @@ Status FetchMetadata(context::RequestContext *context, const char *path,
       .set_timeout_ms(1000);  // 1s timeout to fetch metadata.
   return context->service_context()->env()->RunHTTPRequest(std::move(request));
 }
-
-// Converts status code and error message specific to metadata fetching.
-Status ConvertStatus(Status status) {
-  if (!status.ok()) {
-    return Status(Code::UNAVAILABLE, status.message());
-  } else {
-    return status;
-  }
-}
-
 }  // namespace
 
 void FetchGceMetadata(std::shared_ptr<context::RequestContext> context,
@@ -90,7 +89,7 @@ void FetchGceMetadata(std::shared_ptr<context::RequestContext> context,
       // Log debug only because if this happens, this log will happen on every
       // API call.
       env->LogDebug("Metadata fetch previously failed. Skipping with error.");
-      continuation(Status(Code::UNAVAILABLE, "Failed to fetch metadata"));
+      continuation(failed_metadata_fetch);
       return;
     case GceMetadata::FETCHING_STATE:
       // TODO: do not issue another metadata call, wait for the current one
@@ -109,19 +108,23 @@ void FetchGceMetadata(std::shared_ptr<context::RequestContext> context,
       context.get(), compute_metadata,
       [context, continuation](Status status, std::string &&body) {
         if (status.ok()) {
+          // reassing to parsing status
           status =
               context->service_context()->gce_metadata()->ParseFromJson(&body);
+        } else {
+          // http fetch error
+          status = failed_metadata_fetch;
         }
         context->service_context()->gce_metadata()->set_state(
             status.ok() ? GceMetadata::DONE_STATE : GceMetadata::FAILED_STATE);
-        continuation(ConvertStatus(status));
+        continuation(status);
       });
 
   // If failed, continuation will not be called by FetchMetadata().
   if (!status.ok()) {
     context->service_context()->gce_metadata()->set_state(
         GceMetadata::FAILED_STATE);
-    continuation(ConvertStatus(status));
+    continuation(failed_metadata_fetch);
   }
 }
 
@@ -139,7 +142,7 @@ void FetchServiceAccountToken(std::shared_ptr<context::RequestContext> context,
 
   auto on_done = [context, continuation](Status status, std::string &&body) {
     if (!status.ok()) {
-      continuation(ConvertStatus(status));
+      continuation(failed_token_fetch);
       return;
     }
 
@@ -148,8 +151,8 @@ void FetchServiceAccountToken(std::shared_ptr<context::RequestContext> context,
     if (!auth::esp_get_service_account_auth_token(
             const_cast<char *>(body.data()), body.length(), &token, &expires) ||
         token == nullptr) {
-      continuation(
-          Status(Code::INTERNAL, "Failed to parse access token response"));
+      continuation(Status(Code::INVALID_ARGUMENT,
+                          "Failed to parse access token response"));
       return;
     }
     // Compute Engine returns tokens with at least 60 seconds life left so we
@@ -165,7 +168,7 @@ void FetchServiceAccountToken(std::shared_ptr<context::RequestContext> context,
       FetchMetadata(context.get(), metadata_service_account_token, on_done);
   // If failed, continuation will not be called by FetchMetadata().
   if (!status.ok()) {
-    continuation(ConvertStatus(status));
+    continuation(failed_token_fetch);
   }
 }
 

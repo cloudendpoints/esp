@@ -94,7 +94,7 @@ $t->stop_daemons();
 
 my ($response_headers, $response_body) = split /\r\n\r\n/, $response, 2;
 
-like($response_headers, qr/HTTP\/1\.1 403 Forbidden/, 'Returned HTTP 403.');
+like($response_headers, qr/HTTP\/1\.1 503 Service Temporarily Unavailable/, 'Returned HTTP 503.');
 
 my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
 is(scalar @servicecontrol_requests, 2, 'Service control was called twice.');
@@ -116,11 +116,11 @@ my $expected_report_body = ServiceControl::gen_report_body({
   'api_method' =>  'ListShelves',
   'http_method' => 'GET',
   'log_message' => 'Failed to call method: ListShelves',
-  'response_code' => '403',
+  'response_code' => '503',
   'error_cause' => 'service_control',
-  'error_type' => '4xx',
+  'error_type' => '5xx',
   'request_size' => 62,
-  'response_size' => 260,
+  'response_size' => 313,
   'producer_project_id' => 'endpoints-test',
   });
 

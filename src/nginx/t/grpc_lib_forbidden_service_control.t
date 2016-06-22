@@ -125,8 +125,8 @@ $t->stop_daemons();
 my $test_results_expected = <<'EOF';
 results {
   status {
-    code: 7
-    details: "Service control Check failed"
+    code: 14
+    details: "Service control request failed with HTTP response code 403"
   }
 }
 EOF
@@ -171,12 +171,12 @@ my $expected_report_body = ServiceControl::gen_report_body({
   'http_method' => 'POST',
   'log_message' => 'Failed to call method: test.grpc.Test.Echo',
   'protocol' => 'grpc',
-  'response_code' => '403',
+  'response_code' => '503',
   'error_cause' => 'service_control',
-  'error_type' => '4xx',
+  'error_type' => '5xx',
   'request_size' => 0,
-  'response_size' => 28,
-  'status_code' => '7',
+  'response_size' => 58,
+  'status_code' => '14',
   'producer_project_id' => 'endpoints-grpc-test',
 });
 

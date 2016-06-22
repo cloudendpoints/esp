@@ -49,7 +49,9 @@ Status GceMetadata::ParseFromJson(std::string *json_str) {
   grpc_json *json = grpc_json_parse_string_with_len(
       const_cast<char *>(json_str->data()), json_str->length());
   if (!json) {
-    return Status(Code::INVALID_ARGUMENT, "Invalid JSON input.");
+    return Status(Code::INVALID_ARGUMENT,
+                  "Invalid JSON response from metadata server",
+                  Status::INTERNAL);
   }
 
   const grpc_json *project = GetProperty(json, "project");

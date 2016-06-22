@@ -49,10 +49,6 @@ proto::ErrorBody ToErrorBody(const Status& status) {
   error->set_status(status.CanonicalCode());
   error->set_message(status.message());
 
-  for (const ::google::protobuf::Any& any : status.details()) {
-    *error->add_details() = any;
-  }
-
   return body;
 }
 
@@ -236,6 +232,7 @@ Status::Status(int code, const std::string& message, ErrorCause error_cause)
     error_cause_ = error_cause;
   } else {
     // initialize to default
+    message_ = "";
     error_cause_ = Status::INTERNAL;
   }
 }
@@ -243,22 +240,12 @@ Status::Status(int code, const std::string& message, ErrorCause error_cause)
 Status::Status(int code, const std::string& message)
     : Status(code, message, Status::INTERNAL) {}
 
-Status::Status() : Status(0, "") {}
+Status::Status() : Status(Code::OK, "") {}
 
 bool Status::operator==(const Status& x) const {
   if (code_ != x.code_ || message_ != x.message_ ||
       error_cause_ != x.error_cause_) {
     return false;
-  }
-  size_t detail_count = details_.size();
-  if (detail_count != x.details_.size()) {
-    return false;
-  }
-  for (size_t i = 0; i < detail_count; ++i) {
-    if (details_[i].type_url() != x.details_[i].type_url() ||
-        details_[i].value() != x.details_[i].value()) {
-      return false;
-    }
   }
   return true;
 }
@@ -274,11 +261,6 @@ bool Status::operator==(const Status& x) const {
 
 ::google::protobuf::util::Status Status::ToProto() const {
   ::google::protobuf::util::Status result(CanonicalCode(), message_);
-
-  // for (auto& detail : details_) {
-  //  *result.add_details() = detail;
-  //}
-
   return result;
 }
 
@@ -428,10 +410,6 @@ Code Status::CanonicalCode() const {
       return Code::UNKNOWN;
     }
   }
-}
-
-void Status::Attach(const ::google::protobuf::Any& detail) {
-  details_.push_back(detail);
 }
 
 std::string Status::ToJson() const {

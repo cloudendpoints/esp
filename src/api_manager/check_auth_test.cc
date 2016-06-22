@@ -386,7 +386,7 @@ TEST_F(CheckAuthTest, TestOpenIdFailed) {
   CheckAuth(context_, [](Status status) {
     ASSERT_EQ(status.code(), Code::UNAUTHENTICATED);
     ASSERT_EQ(status.message(),
-              "JWT validation failed: Unable to fetch "
+              "JWT validation failed: Unable to parse "
               "URI of the key via OpenID discovery");
   });
 

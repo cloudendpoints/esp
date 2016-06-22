@@ -107,9 +107,11 @@ class AuthChecker : public std::enable_shared_from_this<AuthChecker> {
   Status HttpFetch(const std::string &url,
                    std::function<void(Status, std::string &&)> continuation);
 
-  // Sets state_ to fail and sets error code and message when authentication
-  // fails.
+  // Authentication error
   void Unauthorized(const std::string &error);
+
+  // Fetch error, takes upstream error
+  void FetchFailure(const std::string &error, Status status);
 
   /*** Member Variables. ***/
 
@@ -288,7 +290,7 @@ void AuthChecker::DiscoverJwksUri(const std::string &url) {
     pChecker->PostFetchJwksUri(status, std::move(body));
   });
   if (!status.ok()) {
-    Unauthorized("Unable to fetch URI of the key via OpenID discovery");
+    FetchFailure("Unable to fetch URI of the key via OpenID discovery", status);
     return;
   }
 }
@@ -297,7 +299,7 @@ void AuthChecker::PostFetchJwksUri(Status status, std::string &&body) {
   if (!status.ok()) {
     context_->service_context()->SetJwksUri(user_info_.issuer, std::string(),
                                             false);
-    Unauthorized("Unable to fetch URI of the key via OpenID discovery");
+    FetchFailure("Unable to fetch URI of the key via OpenID discovery", status);
     return;
   }
 
@@ -316,7 +318,7 @@ void AuthChecker::PostFetchJwksUri(Status status, std::string &&body) {
     env_->LogError("OpenID discovery failed due to invalid doc format");
     context_->service_context()->SetJwksUri(user_info_.issuer, std::string(),
                                             false);
-    Unauthorized("Unable to fetch URI of the key via OpenID discovery");
+    Unauthorized("Unable to parse URI of the key via OpenID discovery");
     return;
   }
 
@@ -332,14 +334,14 @@ void AuthChecker::FetchPubKey(const std::string &url) {
     pChecker->PostFetchPubKey(status, std::move(body));
   });
   if (!status.ok()) {
-    Unauthorized("Unable to fetch public key");
+    FetchFailure("Unable to fetch verification key", status);
     return;
   }
 }
 
 void AuthChecker::PostFetchPubKey(Status status, std::string &&body) {
   if (!status.ok() || body.empty()) {
-    Unauthorized("Unable to fetch verification key");
+    FetchFailure("Unable to fetch verification key", status);
     return;
   }
 
@@ -384,25 +386,28 @@ void AuthChecker::Unauthorized(const std::string &error) {
                   Status::AUTH));
 }
 
+void AuthChecker::FetchFailure(const std::string &error, Status status) {
+  // Append HTTP response code for nginx upstream statuses
+  on_done_(
+      Status(Code::UNAUTHENTICATED,
+             std::string("JWT validation failed: ") + error +
+                 (status.code() >= 300
+                      ? ". HTTP response code: " + std::to_string(status.code())
+                      : ""),
+             Status::AUTH));
+}
+
 Status AuthChecker::HttpFetch(
     const std::string &url,
     std::function<void(Status, std::string &&)> continuation) {
   env_->LogDebug(std::string("http fetch: ") + url);
 
-  std::unique_ptr<HTTPRequest> request(new HTTPRequest([continuation](
-      Status status, std::string &&body) {
-    // Treat NGINX code as network error
-    if (status.code() < 0) {
-      continuation(Status(Code::UNAVAILABLE,
-                          "Failed to fetch authentication data", Status::AUTH),
-                   std::move(body));
-    } else {
-      status.SetErrorCause(Status::AUTH);
-      continuation(status, std::move(body));
-    }
-  }));
+  std::unique_ptr<HTTPRequest> request(
+      new HTTPRequest([continuation](Status status, std::string &&body) {
+        continuation(status, std::move(body));
+      }));
   if (!request) {
-    return Status(Code::UNAUTHENTICATED, "Out of memory", Status::INTERNAL);
+    return Status(Code::INTERNAL, "Out of memory");
   }
 
   request->set_method("GET").set_url(url);
