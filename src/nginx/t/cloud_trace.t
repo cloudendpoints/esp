@@ -46,7 +46,7 @@ my $BackendPort = 8081;
 my $ServiceControlPort = 8082;
 my $CloudTracePort = 8083;
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(11);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(19);
 
 my $config = ApiManager::get_bookstore_service_config_allow_unregistered .
     ApiManager::read_test_file('testdata/logs_metrics.pb.txt') . <<"EOF";
@@ -125,6 +125,25 @@ my $json_obj = decode_json($r->{body});
 is($json_obj->{traces}->[0]->{projectId}, 'api-manager-project', 'Project ID in body is correct.');
 is($json_obj->{traces}->[0]->{spans}->[0]->{name}, 'API_MANAGER_ROOT', 'First trace span is ESP_ROOT');
 is($json_obj->{traces}->[0]->{spans}->[0]->{kind}, 'RPC_SERVER', 'Trace span kind is RPC_SERVER');
+my $rootid = $json_obj->{traces}->[0]->{spans}->[0]->{spanId};
+is($json_obj->{traces}->[0]->{spans}->[1]->{name}, 'CheckServiceControl',
+    'Next trace span is CheckServiceControl');
+is($json_obj->{traces}->[0]->{spans}->[1]->{parentSpanId}, $rootid,
+    'Parent of CheckServiceControlCache span is root');
+my $check_service_control_id = $json_obj->{traces}->[0]->{spans}->[1]->{spanId};
+is($json_obj->{traces}->[0]->{spans}->[2]->{name}, 'CheckServiceControlCache',
+    'Next trace span is CheckServiceControlCache');
+is($json_obj->{traces}->[0]->{spans}->[2]->{parentSpanId}, $check_service_control_id,
+    'Parent of CheckServiceControlCache span is CheckServiceControl');
+my $check_service_control_cache_id = $json_obj->{traces}->[0]->{spans}->[2]->{spanId};
+is($json_obj->{traces}->[0]->{spans}->[3]->{name}, 'Call ServiceControl server',
+    'Next trace span is Call ServiceControl server');
+is($json_obj->{traces}->[0]->{spans}->[3]->{parentSpanId}, $check_service_control_cache_id,
+    'Parent of Call ServiceControl sever span is CheckServiceControlCache');
+is($json_obj->{traces}->[0]->{spans}->[4]->{name}, 'Backend',
+    'Next trace span is Backend');
+is($json_obj->{traces}->[0]->{spans}->[4]->{parentSpanId}, $rootid,
+    'Parent of Beckend span is root');
 
 ################################################################################
 

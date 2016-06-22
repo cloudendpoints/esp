@@ -249,6 +249,10 @@ void RequestContext::FillReportRequestInfo(
   response->GetLatencyInfo(&info->latency);
 }
 
+void RequestContext::StartBackendSpan() {
+  backend_span_.reset(CreateSpan(cloud_trace_.get(), "Backend"));
+}
+
 }  // namespace context
 }  // namespace api_manager
 }  // namespace google

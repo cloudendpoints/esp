@@ -85,14 +85,27 @@ void CloudTrace::EndRootSpan() { GetNow(root_span_->mutable_end_time()); }
 CloudTraceSpan::CloudTraceSpan(CloudTrace *cloud_trace,
                                const std::string &span_name)
     : cloud_trace_(cloud_trace) {
+  InitWithParentSpanId(span_name, cloud_trace_->root_span()->span_id());
+}
+
+CloudTraceSpan::CloudTraceSpan(CloudTraceSpan *parent,
+                               const std::string &span_name)
+    : cloud_trace_(parent->cloud_trace_) {
+  InitWithParentSpanId(span_name, parent->trace_span_->span_id());
+}
+
+void CloudTraceSpan::InitWithParentSpanId(const std::string &span_name,
+                                          protobuf::uint64 parent_span_id) {
+  // TODO: this if is not needed, and probably the following two as well.
+  // Fully test and remove them.
   if (!cloud_trace_) {
     // Trace is disabled.
     return;
   }
-  trace_span_ = cloud_trace->trace()->add_spans();
+  trace_span_ = cloud_trace_->trace()->add_spans();
   trace_span_->set_kind(TraceSpan_SpanKind::TraceSpan_SpanKind_RPC_SERVER);
   trace_span_->set_span_id(RandomUInt64());
-  trace_span_->set_parent_span_id(cloud_trace_->root_span()->span_id());
+  trace_span_->set_parent_span_id(parent_span_id);
   trace_span_->set_name(span_name);
   GetNow(trace_span_->mutable_start_time());
 }
@@ -119,9 +132,18 @@ void CloudTraceSpan::Write(const std::string &msg) {
   messages.push_back(msg);
 }
 
-CloudTraceSpan *GetTraceSpan(CloudTrace *cloud_trace, const std::string &name) {
+CloudTraceSpan *CreateSpan(CloudTrace *cloud_trace, const std::string &name) {
   if (cloud_trace != nullptr) {
     return new CloudTraceSpan(cloud_trace, name);
+  } else {
+    return nullptr;
+  }
+}
+
+CloudTraceSpan *CreateChildSpan(CloudTraceSpan *parent,
+                                const std::string &name) {
+  if (parent != nullptr) {
+    return new CloudTraceSpan(parent, name);
   } else {
     return nullptr;
   }

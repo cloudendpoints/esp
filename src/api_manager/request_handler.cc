@@ -30,6 +30,7 @@
 #include "google/protobuf/stubs/logging.h"
 #include "src/api_manager/auth/service_account_token.h"
 #include "src/api_manager/check_workflow.h"
+#include "src/api_manager/cloud_trace/cloud_trace.h"
 #include "src/api_manager/utils/marshalling.h"
 
 using ::google::api_manager::utils::Status;
@@ -39,7 +40,15 @@ namespace google {
 namespace api_manager {
 
 void RequestHandler::Check(std::function<void(Status status)> continuation) {
-  context_->set_check_continuation(continuation);
+  auto interception = [continuation, this](Status status) {
+    if (status.ok()) {
+      // Start backend trace span. Noop if trace is disabled.
+      context_->StartBackendSpan();
+    }
+    continuation(status);
+  };
+
+  context_->set_check_continuation(interception);
 
   // Run the check flow.
   check_workflow_->Run(context_);
@@ -48,6 +57,9 @@ void RequestHandler::Check(std::function<void(Status status)> continuation) {
 // Sends a report.
 void RequestHandler::Report(std::unique_ptr<Response> response,
                             std::function<void(void)> continuation) {
+  // Close backend trace span.
+  context_->EndBackendSpan();
+
   if (context_->service_context()->service_control()) {
     service_control::ReportRequestInfo info;
     context_->FillReportRequestInfo(response.get(), &info);

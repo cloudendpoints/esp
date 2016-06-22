@@ -30,6 +30,7 @@
 #include "google/api/servicecontrol/v1/service_controller.pb.h"
 #include "include/api_manager/env_interface.h"
 #include "src/api_manager/auth/service_account_token.h"
+#include "src/api_manager/cloud_trace/cloud_trace.h"
 #include "src/api_manager/proto/server_config.pb.h"
 #include "src/api_manager/service_control/interface.h"
 #include "src/api_manager/service_control/proto.h"
@@ -56,7 +57,7 @@ class Aggregated : public Interface {
   virtual utils::Status Report(const ReportRequestInfo& info);
 
   virtual void Check(
-      const CheckRequestInfo& info,
+      const CheckRequestInfo& info, cloud_trace::CloudTraceSpan* parent_span,
       std::function<void(utils::Status, const CheckResponseInfo&)> on_done);
 
   virtual utils::Status Init();
@@ -118,7 +119,8 @@ class Aggregated : public Interface {
   // Calls to service control server.
   template <class RequestType, class ResponseType>
   void Call(const RequestType& request, ResponseType* response,
-            ::google::service_control_client::TransportDoneFunc on_done);
+            ::google::service_control_client::TransportDoneFunc on_done,
+            cloud_trace::CloudTraceSpan* parent_span);
 
   // Gets the auth token to access service control server.
   const std::string& GetAuthToken();

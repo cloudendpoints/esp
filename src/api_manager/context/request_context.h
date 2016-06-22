@@ -87,7 +87,14 @@ class RequestContext {
     auth_audience_ = audience;
   }
 
+  // Get CloudTrace object.
   cloud_trace::CloudTrace *cloud_trace() { return cloud_trace_.get(); }
+
+  // Marks the start of backend trace span.
+  void StartBackendSpan();
+
+  // Marks the end of backend trace span.
+  void EndBackendSpan() { backend_span_.reset(); }
 
  private:
   // Fill OperationInfo
@@ -139,8 +146,11 @@ class RequestContext {
   // auth_audience. It will be used in service control Report().
   std::string auth_audience_;
 
-  // Used by cloud tracing
+  // Used by cloud tracing.
   std::unique_ptr<cloud_trace::CloudTrace> cloud_trace_;
+
+  // Backend trace span.
+  std::shared_ptr<cloud_trace::CloudTraceSpan> backend_span_;
 };
 
 }  // namespace context

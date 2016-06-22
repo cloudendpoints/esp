@@ -28,6 +28,7 @@
 
 #include "include/api_manager/service_control.h"
 #include "include/api_manager/utils/status.h"
+#include "src/api_manager/cloud_trace/cloud_trace.h"
 #include "src/api_manager/service_control/info.h"
 
 namespace google {
@@ -77,7 +78,7 @@ class Interface {
   // google/protobuf/stubs/status.h, is from parsing error response
   // body.
   virtual void Check(
-      const CheckRequestInfo& info,
+      const CheckRequestInfo& info, cloud_trace::CloudTraceSpan* parent_span,
       std::function<void(utils::Status, const CheckResponseInfo&)> on_done) = 0;
 
   // Get statistics of ServiceControl library.

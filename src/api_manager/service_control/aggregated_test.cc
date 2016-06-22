@@ -136,9 +136,10 @@ TEST_F(AggregatedTestWithMockedClient, FailedCheckRequiredFieldTest) {
   CheckRequestInfo info;
   FillOperationInfo(&info);
   info.service_name = nullptr;  // Missing service_name
-  sc_lib_->Check(info, [](Status status, const CheckResponseInfo& info) {
-    ASSERT_EQ(Code::INVALID_ARGUMENT, status.code());
-  });
+  sc_lib_->Check(info, nullptr,
+                 [](Status status, const CheckResponseInfo& info) {
+                   ASSERT_EQ(Code::INVALID_ARGUMENT, status.code());
+                 });
 }
 
 TEST_F(AggregatedTestWithMockedClient, CheckTest) {
@@ -148,9 +149,10 @@ TEST_F(AggregatedTestWithMockedClient, CheckTest) {
   FillOperationInfo(&info);
   // mock the client to return OK
   done_status_ = ::google::protobuf::util::Status::OK;
-  sc_lib_->Check(info, [](Status status, const CheckResponseInfo& info) {
-    ASSERT_TRUE(status.ok());
-  });
+  sc_lib_->Check(info, nullptr,
+                 [](Status status, const CheckResponseInfo& info) {
+                   ASSERT_TRUE(status.ok());
+                 });
 }
 
 TEST_F(AggregatedTestWithMockedClient, FailedCheckTest) {
@@ -161,9 +163,10 @@ TEST_F(AggregatedTestWithMockedClient, FailedCheckTest) {
   // mock the client to return OK
   done_status_ = ::google::protobuf::util::Status(
       Code::INTERNAL, "AggregatedTestWithMockedClient internal error");
-  sc_lib_->Check(info, [](Status status, const CheckResponseInfo& info) {
-    ASSERT_EQ(status.code(), Code::INTERNAL);
-  });
+  sc_lib_->Check(info, nullptr,
+                 [](Status status, const CheckResponseInfo& info) {
+                   ASSERT_EQ(status.code(), Code::INTERNAL);
+                 });
 }
 
 class AggregatedTestWithRealClient : public ::testing::Test {
@@ -196,9 +199,10 @@ TEST_F(AggregatedTestWithRealClient, CheckOKTest) {
 
   CheckRequestInfo info;
   FillOperationInfo(&info);
-  sc_lib_->Check(info, [](Status status, const CheckResponseInfo& info) {
-    ASSERT_TRUE(status.ok());
-  });
+  sc_lib_->Check(info, nullptr,
+                 [](Status status, const CheckResponseInfo& info) {
+                   ASSERT_TRUE(status.ok());
+                 });
 
   Statistics stat;
   Status stat_status = sc_lib_->GetStatistics(&stat);

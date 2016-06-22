@@ -60,6 +60,7 @@ cc_library(
         "//src/api_manager:server_config_proto",
         "//src/api_manager/auth/lib",
         "//src/api_manager/auth:service_account_token",
+        "//src/api_manager/cloud_trace",
         "//src/api_manager/utils",
         "//third_party:service_config",
         "//third_party/config:servicecontrol",

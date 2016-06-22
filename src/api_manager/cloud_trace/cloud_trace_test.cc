@@ -71,7 +71,7 @@ TEST_F(CloudTraceTest, TestCloudTrace) {
   ASSERT_EQ(cloud_trace.trace()->spans(1).name(), "Span1");
 
   std::shared_ptr<CloudTraceSpan> cloud_trace_span(
-      GetTraceSpan(&cloud_trace, "Span2"));
+      CreateSpan(&cloud_trace, "Span2"));
   TRACE(cloud_trace_span) << "Message";
   cloud_trace_span.reset();
 
@@ -87,8 +87,7 @@ TEST_F(CloudTraceTest, TestCloudTrace) {
 }
 
 TEST_F(CloudTraceTest, TestCloudTraceSpanDisabled) {
-  std::shared_ptr<CloudTraceSpan> cloud_trace_span(
-      GetTraceSpan(nullptr, "Span"));
+  std::shared_ptr<CloudTraceSpan> cloud_trace_span(CreateSpan(nullptr, "Span"));
   // Ensure no core dump calling TRACE when cloud_trace_span is nullptr.
   TRACE(cloud_trace_span) << "Message";
   ASSERT_FALSE(cloud_trace_span);

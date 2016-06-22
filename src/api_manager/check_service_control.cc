@@ -61,7 +61,7 @@ Status CheckCallerIdentity(context::RequestContext *context) {
 void CheckServiceControl(std::shared_ptr<context::RequestContext> context,
                          std::function<void(Status status)> continuation) {
   std::shared_ptr<cloud_trace::CloudTraceSpan> trace_span(
-      GetTraceSpan(context->cloud_trace(), "CheckServiceControl"));
+      CreateSpan(context->cloud_trace(), "CheckServiceControl"));
   // If the method is not configured from the service config.
   // or if not need to check service control, skip it.
   if (!context->method() || !context->service_context()->service_control()) {
@@ -82,8 +82,9 @@ void CheckServiceControl(std::shared_ptr<context::RequestContext> context,
   service_control::CheckRequestInfo info;
   context->FillCheckRequestInfo(&info);
   context->service_context()->service_control()->Check(
-      info, [context, continuation, trace_span](
-                Status status, const service_control::CheckResponseInfo &info) {
+      info, trace_span.get(),
+      [context, continuation, trace_span](
+          Status status, const service_control::CheckResponseInfo &info) {
         TRACE(trace_span) << "Check service control request returned with "
                           << "status " << status.ToString();
         if (status.ok()) {

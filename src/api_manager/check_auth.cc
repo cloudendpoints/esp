@@ -33,6 +33,7 @@
 #include "include/api_manager/request.h"
 #include "src/api_manager/auth/lib/auth_jwt_validator.h"
 #include "src/api_manager/auth/lib/json_util.h"
+#include "src/api_manager/cloud_trace/cloud_trace.h"
 
 using ::google::api_manager::auth::Certs;
 using ::google::api_manager::auth::JwtCache;
@@ -107,6 +108,7 @@ class AuthChecker : public std::enable_shared_from_this<AuthChecker> {
   Status HttpFetch(const std::string &url,
                    std::function<void(Status, std::string &&)> continuation);
 
+  // TODO: this function should probably be renamed to "Unauthenticated".
   // Authentication error
   void Unauthorized(const std::string &error);
 
@@ -132,6 +134,9 @@ class AuthChecker : public std::enable_shared_from_this<AuthChecker> {
 
   // The final continuation function.
   std::function<void(Status status)> on_done_;
+
+  // Trace span for check auth.
+  std::shared_ptr<cloud_trace::CloudTraceSpan> trace_span_;
 };
 
 AuthChecker::AuthChecker(std::shared_ptr<context::RequestContext> context,
@@ -147,6 +152,9 @@ void AuthChecker::Check() {
     on_done_(Status::OK);
     return;
   }
+
+  // CreateSpan returns nullptr if trace is disabled.
+  trace_span_.reset(CreateSpan(context_->cloud_trace(), "CheckAuth"));
 
   GetAuthToken();
   if (auth_token_.empty()) {
@@ -377,10 +385,14 @@ void AuthChecker::VerifySignature() {
 
 void AuthChecker::PassUserInfoOnSuccess() {
   context_->request()->SetUserInfo(user_info_);
+  TRACE(trace_span_) << "Authenticated.";
+  trace_span_.reset();
   on_done_(Status::OK);
 }
 
 void AuthChecker::Unauthorized(const std::string &error) {
+  TRACE(trace_span_) << "Authentication failed: " << error;
+  trace_span_.reset();
   on_done_(Status(Code::UNAUTHENTICATED,
                   std::string("JWT validation failed: ") + error,
                   Status::AUTH));
@@ -388,6 +400,7 @@ void AuthChecker::Unauthorized(const std::string &error) {
 
 void AuthChecker::FetchFailure(const std::string &error, Status status) {
   // Append HTTP response code for nginx upstream statuses
+  trace_span_.reset();
   on_done_(
       Status(Code::UNAUTHENTICATED,
              std::string("JWT validation failed: ") + error +
@@ -400,10 +413,14 @@ void AuthChecker::FetchFailure(const std::string &error, Status status) {
 Status AuthChecker::HttpFetch(
     const std::string &url,
     std::function<void(Status, std::string &&)> continuation) {
+  std::shared_ptr<cloud_trace::CloudTraceSpan> fetch_span(
+      CreateChildSpan(trace_span_.get(), "HttpFetch"));
   env_->LogDebug(std::string("http fetch: ") + url);
+  TRACE(fetch_span) << "Http request URL: " << url;
 
-  std::unique_ptr<HTTPRequest> request(
-      new HTTPRequest([continuation](Status status, std::string &&body) {
+  std::unique_ptr<HTTPRequest> request(new HTTPRequest(
+      [continuation, fetch_span](Status status, std::string &&body) {
+        TRACE(fetch_span) << "Http response status: " << status.ToString();
         continuation(status, std::move(body));
       }));
   if (!request) {

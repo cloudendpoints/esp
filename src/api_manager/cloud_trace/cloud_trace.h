@@ -38,6 +38,7 @@ namespace google {
 namespace api_manager {
 namespace cloud_trace {
 
+// TODO: simplify class naming in this file.
 // Stores cloud trace configurations shared within the job. There should be
 // only one such instance. The instance is put in service_context.
 class CloudTraceConfig {
@@ -104,12 +105,18 @@ class CloudTraceSpan {
   friend class TraceStream;
 
  public:
+  // Initializes a trace span whose parent is the api manager root.
   CloudTraceSpan(CloudTrace *cloud_trace, const std::string &span_name);
+
+  // Initializes a trace span using the given trace span as parent.
+  CloudTraceSpan(CloudTraceSpan *parent, const std::string &span_name);
 
   ~CloudTraceSpan();
 
  private:
   void Write(const std::string &msg);
+  void InitWithParentSpanId(const std::string &span_name,
+                            protobuf::uint64 parent_span_id);
   CloudTrace *cloud_trace_;
   google::devtools::cloudtrace::v1::TraceSpan *trace_span_;
   std::vector<std::string> messages;
@@ -117,7 +124,12 @@ class CloudTraceSpan {
 
 // Creates trace span if trace is enabled.
 // Returns nullptr when cloud_trace is nullptr.
-CloudTraceSpan *GetTraceSpan(CloudTrace *cloud_trace, const std::string &name);
+CloudTraceSpan *CreateSpan(CloudTrace *cloud_trace, const std::string &name);
+
+// Creates a child trace span with the given parent span.
+// Returns nullptr if parent is nullptr.
+CloudTraceSpan *CreateChildSpan(CloudTraceSpan *parent,
+                                const std::string &name);
 
 // A helper class to create a stream-like write traces interface.
 //

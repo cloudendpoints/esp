@@ -185,10 +185,10 @@ Status Aggregated::Init() {
 
   options.check_transport = [this](
       const CheckRequest& request, CheckResponse* response,
-      TransportDoneFunc on_done) { Call(request, response, on_done); };
+      TransportDoneFunc on_done) { Call(request, response, on_done, nullptr); };
   options.report_transport = [this](
       const ReportRequest& request, ReportResponse* response,
-      TransportDoneFunc on_done) { Call(request, response, on_done); };
+      TransportDoneFunc on_done) { Call(request, response, on_done, nullptr); };
 
   options.periodic_timer = [this](int interval_ms,
                                   std::function<void()> callback)
@@ -235,8 +235,10 @@ Status Aggregated::Report(const ReportRequestInfo& info) {
 }
 
 void Aggregated::Check(
-    const CheckRequestInfo& info,
+    const CheckRequestInfo& info, cloud_trace::CloudTraceSpan* parent_span,
     std::function<void(Status, const CheckResponseInfo&)> on_done) {
+  std::shared_ptr<cloud_trace::CloudTraceSpan> trace_span(
+      CreateChildSpan(parent_span, "CheckServiceControlCache"));
   CheckResponseInfo dummy_response_info;
   if (!client_) {
     on_done(Status(Code::INTERNAL, "Missing service control client"),
@@ -255,8 +257,9 @@ void Aggregated::Check(
   std::string project_id = info.producer_project_id;
   CheckResponse* response = new CheckResponse;
 
-  auto check_on_done = [response, project_id, on_done](
+  auto check_on_done = [response, project_id, on_done, trace_span](
       const ::google::protobuf::util::Status& status) {
+    TRACE(trace_span) << "Check returned with status: " << status.ToString();
     CheckResponseInfo response_info;
     if (status.ok()) {
       Status status =
@@ -273,8 +276,10 @@ void Aggregated::Check(
 
   client_->Check(
       *request, response, check_on_done,
-      [this](const CheckRequest& request, CheckResponse* response,
-             TransportDoneFunc on_done) { Call(request, response, on_done); });
+      [trace_span, this](const CheckRequest& request, CheckResponse* response,
+                         TransportDoneFunc on_done) {
+        Call(request, response, on_done, trace_span.get());
+      });
   // There is no reference to request anymore at this point and it is safe to
   // free request now.
   check_pool_.Free(std::move(request));
@@ -305,9 +310,13 @@ Status Aggregated::GetStatistics(Statistics* esp_stat) const {
 
 template <class RequestType, class ResponseType>
 void Aggregated::Call(const RequestType& request, ResponseType* response,
-                      TransportDoneFunc on_done) {
+                      TransportDoneFunc on_done,
+                      cloud_trace::CloudTraceSpan* parent_span) {
+  std::shared_ptr<cloud_trace::CloudTraceSpan> trace_span(
+      CreateChildSpan(parent_span, "Call ServiceControl server"));
   std::unique_ptr<HTTPRequest> http_request(new HTTPRequest(
-      [response, on_done, this](Status status, std::string&& body) {
+      [response, on_done, trace_span, this](Status status, std::string&& body) {
+        TRACE(trace_span) << "HTTP response status: " << status.ToString();
         if (status.ok()) {
           // Handle 200 response
           if (!response->ParseFromString(body)) {
@@ -338,6 +347,7 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
   const std::string& url = typeid(RequestType) == typeid(CheckRequest)
                                ? url_.check_url()
                                : url_.report_url();
+  TRACE(trace_span) << "Http request URL: " << url;
 
   std::string request_body;
   request.SerializeToString(&request_body);
