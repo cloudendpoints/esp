@@ -27,10 +27,10 @@
 ################################################################################
 #
 
-[[ "$(uname)" == "Linux" ]] || { echo "Run on Linux only."; exit 1; }
+[[ "$(uname)" == 'Linux' ]] || { echo 'Run on Linux only.'; exit 1; }
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-. ${ROOT}/script/all-utilities || { echo "Cannot load Bash utilities"; exit 1; }
+. "${ROOT}/script/all-utilities" || { echo 'Cannot load Bash utilities'; exit 1; }
 
 TEST_ENV=""
 # This variable can be set by -m option. If set to a positive value, the nginx
@@ -38,20 +38,35 @@ TEST_ENV=""
 # this script will skip running the loadtest client esp_client.py.
 MANUAL_TEST_DURATION_MINUTES=0
 
-while getopts m:t: arg; do
+function quit_nginx {
+  echo "Shutting down Nginx."
+  "${NGINX}" "${NGINX_ARGS[@]}" -s quit
+}
+
+function tar_logs() {
+  local tar_file="${1}"
+  local path_to_tar="${2}"
+  echo "Taring local logs from ${path_to_tar}."
+  tar czf "${tar_file}" "${path_to_tar}" \
+    || echo "Unable to tar {path_to_tar}."
+}
+
+
+while getopts :b:m:t: arg; do
   case ${arg} in
+    b) BUCKET="${OPTARG}";;
     m) MANUAL_TEST_DURATION_MINUTES="${OPTARG}";;
-    t) TEST_ENV="--test_env=$(realpath "${OPTARG}")";;
+    t) TEST_ENV="$(realpath "${OPTARG}")";;
   esac
 done
 
-echo "Installing Node.js and npm."
+echo 'Installing Node.js and npm.'
 wget https://storage.googleapis.com/apache_tarballs/node-v4.2.1-linux-x64.tar.gz \
-  || error_exit "Failed to download Node.js package."
+  || error_exit 'Failed to download Node.js package.'
 sudo tar -C /usr/local --strip-components 1 -xzf node-v4.2.1-linux-x64.tar.gz \
-  || error_exit "Failed to install Node.js."
+  || error_exit 'Failed to install Node.js.'
 
-echo "Starting backend."
+echo 'Starting backend.'
 pushd test/echo
 npm install
 node echo.js 2>&1 > /dev/null&
@@ -61,75 +76,79 @@ popd
 NGINX=${ROOT}/nginx-esp
 
 gsutil cp gs://client-secret-files/esp-load-test-08fcbb64ace1.json \
-    ${ROOT}/test/echo/gce-vm/client-secret.json \
+    "${ROOT}/test/echo/gce-vm/client-secret.json" \
   || error_exit "Failed to download credentials."
 
 set_api_keys
 API_KEY="${ESP_LOAD_TEST_API_KEY}"
 [[ -n "${API_KEY}" ]] || error_exit 'Could not set api key.'
-NGINX_CONFIG=${ROOT}/test/echo/gce-vm/nginx.conf
-PREFIX=${ROOT}/.nginx
+NGINX_CONFIG="${ROOT}/test/echo/gce-vm/nginx.conf"
+PREFIX="${ROOT}/.nginx"
 # clean up the error log before the run
-rm ${PREFIX}/logs/error.log
+rm "${PREFIX}/logs/error.log"
 
-(
-  echo "Building Endpoints Runtime."
-  cd ${ROOT} \
+
+NGINX_BAZEL_BIN="${ROOT}/bazel-bin/src/nginx/main/nginx-esp"
+if ! [[ -e "${NGINX_BAZEL_BIN}" ]]; then
+  echo 'Building Endpoints Runtime.'
+  cd "${ROOT}" \
     && bazel build --config=release //src/nginx/main:nginx-esp \
-    && cp -f "${ROOT}/bazel-bin/src/nginx/main/nginx-esp" "${NGINX}" \
-    || error_exit "Failed to build //src/nginx/main:nginx-esp"
-) \
-  || error_exit "Build failed, aborting."
+    || error_exit 'Failed to build //src/nginx/main:nginx-esp'
+fi
+cp -f "${NGINX_BAZEL_BIN}" "${NGINX}" \
+  || error_exit 'Error copying nginx-esp, aborting.'
 
-echo "Starting Endpoints Runtime."
+echo 'Starting Endpoints Runtime.'
 mkdir --parents --mode=777 "${PREFIX}/logs" \
-  || error_exit "Cannot create NGINX logs directory."
+  || error_exit 'Cannot create NGINX logs directory.'
 
 NGINX_ARGS=(-p "${PREFIX}" -c "${NGINX_CONFIG}" -g "pid ${PREFIX}/.nginx.pid;")
 
-${NGINX} "${NGINX_ARGS[@]}" -T  \
-  || error_exit "Nginx configuration test failed."
-${NGINX} "${NGINX_ARGS[@]}"
+"${NGINX}" "${NGINX_ARGS[@]}" -T  \
+  || error_exit 'Nginx configuration test failed.'
+"${NGINX}" "${NGINX_ARGS[@]}"
 
-echo "Constructing test data."
-SERVICE_NAME="echo-esp-load-test.cloudendpointsapis.com"
-JWT_TOKEN=$( ${ROOT}/client/custom/gen-auth-token.sh \
-    -s ${ROOT}/test/echo/esp-echo-client-secret-jwk.json \
-    -a ${SERVICE_NAME} )
+echo 'Constructing test data.'
+SERVICE_NAME='echo-esp-load-test.cloudendpointsapis.com'
+JWT_TOKEN="$("${ROOT}/client/custom/gen-auth-token.sh" \
+    -s "${ROOT}/test/echo/esp-echo-client-secret-jwk.json" \
+    -a "${SERVICE_NAME}")"
 POST_FILE="${ROOT}/test/data/8k.json"
-HOST="http://127.0.0.1:8090"
+HOST='http://127.0.0.1:8090'
 sed -e "s|\${API_KEY}|${API_KEY}|g" \
     -e "s|\${HOST}|${HOST}|g" \
     -e "s|\${POST_FILE}|${POST_FILE}|g" \
     -e "s|\${JWT_TOKEN}|${JWT_TOKEN}|g" \
-    ${ROOT}/test/client/test_data.json.temp > ${ROOT}/test/client/test_data.json
-cat ${ROOT}/test/client/test_data.json
+    "${ROOT}/test/client/test_data.json.temp" > "${ROOT}/test/client/test_data.json"
+cat "${ROOT}/test/client/test_data.json"
 
-function quit_nginx {
-  ${NGINX} "${NGINX_ARGS[@]}" -s quit
-}
+trap quit_nginx EXIT
 
 if [[ ${MANUAL_TEST_DURATION_MINUTES} -gt 0 ]]; then
-  echo "ESP listens at port 8090. You can start your manual test against it."
+  echo 'ESP listens at port 8090. You can start your manual test against it.'
   echo "ESP will quit after ${DURATION_MINUTES} minutes or by Ctrl-C."
   echo "NGINX error log can be found here: ${PREFIX}/logs/error.log"
-  trap quit_nginx EXIT
   sleep `expr "${MANUAL_TEST_DURATION_MINUTES}" \* 60`
 else
-  echo "Start basic testing"
-  pushd ${ROOT}/test/client
-  ./esp_client.py --test_data=${ROOT}/test/client/test_data.json ${TEST_ENV}
-  EXIT_STATUS=$?
+  echo 'Start basic testing'
+  pushd "${ROOT}/test/client"
+  ./esp_client.py \
+    --test_data="${ROOT}/test/client/test_data.json" \
+    --test_env="${TEST_ENV}"
+  EXIT_STATUS=${?}
   popd
 fi
 
-echo "Shutting down Nginx."
-${NGINX} "${NGINX_ARGS[@]}" -s quit
+# Quitting nginx before gathering logs
+quit_nginx
 
-echo "========================================================================"
-echo "NGINX error log: ${PREFIX}/logs/error.log"
-echo "========================================================================"
-cat "${PREFIX}/logs/error.log"
-echo "========================================================================"
+if [[ -n "${BUCKET}" ]] ; then
+  RUN_ID="$(extract_run_id_from_test_env_file "${TEST_ENV}")"
+  LOG_DIRECTORY="$(mktemp -d /tmp/log_dir_XXXX)"
+  create_status_file "${LOG_DIRECTORY}/local-performance.json" "${EXIT_STATUS}"
+  tar_logs "$(mktemp "${LOG_DIRECTORY}/perf-XXXX.tar.gz")" "${PREFIX}/logs/"
+  gsutil -h 'Content-Type:text/plain' -m cp -r "${LOG_DIRECTORY}" "${BUCKET}/${RUN_ID}" \
+    || echo 'Cannot upload logs.'
+fi
 
 exit ${EXIT_STATUS}

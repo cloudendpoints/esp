@@ -124,7 +124,7 @@ function set_ssh_keys() {
       ${GCLOUD} --project ${PROJECT} compute config-ssh -q || \
         error_exit 'Unable to generate ssh keys'
       echo "Uploading new ssh keys to ${remote_ssh_keys}"
-      ${GSUTIL} -h "Content-Type:text/plain" -m cp "${private_ssh_key}*" \
+      retry -n 2 -s 10 ${GSUTIL} -h "Content-Type:text/plain" -m cp "${private_ssh_key}*" \
         "${remote_ssh_keys}/" \
         || error_exit "Failed to upload ssh keys to ${remote_ssh_keys}"
     fi
@@ -139,9 +139,14 @@ function download_nginx_logs() {
 
   # If the output format is changed, we will fail to extract fields.
   # Here the output is always printed for easy debug.
-  ${GCLOUD} preview app instances list \
-      --project "${PROJECT}" --service "${SERVICE}" --version "${VERSION}" \
-      --format json > $ROOT/instance-list
+  function instances_list () {
+    ${GCLOUD} preview app instances list \
+        --project "${PROJECT}" --service "${SERVICE}" --version "${VERSION}" \
+        --format json > $ROOT/instance-list
+    return ${?}
+  }
+
+  retry -n 5 -s 10 instances_list
   echo "Instance list:"
   cat $ROOT/instance-list
   read vm_id vm_zone vm_name < <(cat $ROOT/instance-list \
@@ -150,7 +155,7 @@ function download_nginx_logs() {
   [[ -n "${vm_id}" && -n "${vm_zone}" && -n "${vm_name}" ]] \
     || error_exit "Cannot identify backend VM name and zone. Aborting."
 
-  ${GCLOUD} preview app instances enable-debug ${vm_id} \
+  retry -n 5 -s 10 ${GCLOUD} preview app instances enable-debug ${vm_id} \
           --service "${SERVICE}" --version "${VERSION}" \
           --project ${PROJECT} -q \
     || error_exit "Cannot enable-debug on the managed VM. Aborting."
@@ -161,28 +166,16 @@ function download_nginx_logs() {
 
   set_ssh_keys
 
-  ${GCLOUD} compute ssh --project=${PROJECT} --zone=${vm_zone} \
-      ${vm_name} sudo tar csf - /var/log/ > "${archive_path}" \
+  retry -n 2 -s 10 ${GCLOUD} compute ssh --project=${PROJECT} --zone=${vm_zone} \
+      ${vm_name} sudo tar czf - /var/log/ > "${archive_path}"
+  # It is possible that files change during taring which cause tar to return non
+  # zero value.
+  [[ -e "${archive_path}" ]] \
     || error_exit "Cannot copy logs from the backend VM."
 
 }
 
-# Current gcloud account may not have permission to deploy an GAE Flex
-# application in an esp-load-test project. The following will activate
-# esp-load-test service account.
-if [[ "${PROJECT}" == "esp-load-test" ]]; then
-    echo "Gcloud auth activate esp-load-test service account"
-    gsutil cp gs://client-secret-files/esp-load-test-08fcbb64ace1.json /tmp/client.json
-    gcloud auth activate-service-account --key-file /tmp/client.json
-    trap 'gcloud auth revoke service-control-in-load-test@esp-load-test.iam.gserviceaccount.com' EXIT
-fi
-
-if [[ "${PROJECT}" == "esp-long-run" ]]; then
-    echo "Gcloud auth activate esp-long-run service account"
-    gsutil cp gs://client-secret-files/esp-long-run-f92945d40e0b.json /tmp/client.json
-    gcloud auth activate-service-account --key-file /tmp/client.json
-    trap 'gcloud auth revoke deploy-esp-vm@esp-long-run.iam.gserviceaccount.com' EXIT
-fi
+activate_service_account "${PROJECT}"
 
 case "${COMMAND}" in
   create | deploy)  retry -n 5 -s 10 deploy_application;;

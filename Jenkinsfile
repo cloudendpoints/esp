@@ -309,6 +309,8 @@ def buildPackages() {
         "-g ${espImgGeneric} " +
         "-d ${espDebianPackage} " +
         "${serverConfigFlag} -s"
+    // Not rebuilding esp for local perf
+    fastStash('nginx-esp', 'bazel-bin/src/nginx/main/nginx-esp')
   }
 }
 
@@ -428,35 +430,38 @@ def e2eGCEContainer(vmImage) {
 def localPerformanceTest() {
   checkoutSourceCode()
   setGCloud()
-  def test = 'jenkins-post-submit-perf-test'
-  def testId = getUniqueID('local-perf', false)
+  fastUnstash('auth_token_gen')
+  // Using binary build by buildPackages()
+  fastUnstash('nginx-esp')
+  def testId = 'jenkins-post-submit-perf-test'
+  def uniqueId = getUniqueID('local-perf', false)
+  def logBucket = "gs://${BUCKET}/${GIT_SHA}/logs"
   sh "script/create-test-env-json " +
-      "-t ${test} " +
-      "-i ${testId} > TEST_ENV"
+      "-t ${testId} " +
+      "-i ${uniqueId} > TEST_ENV"
   def testEnv = readFile('TEST_ENV').trim()
   sh 'script/linux-prep-machine'
-  // TODO: Update linux-start-local-test to use the debian
-  // package built earlier instead of re-building esp.
   sh "script/linux-start-local-test " +
-      "-t ${testEnv}"
+      "-t ${testEnv} " +
+      "-b ${logBucket}"
 }
 
 def flexPerformance() {
   checkoutSourceCode()
   setGCloud()
   fastUnstash('auth_token_gen')
-  def test = 'jenkins-perf-test-vm-esp'
-  def testId = getUniqueID('flex-perf', false)
+  def testId = 'jenkins-perf-test-vm-esp'
+  def uniqueId = getUniqueID('flex-perf', false)
   sh "script/create-test-env-json " +
-      "-t ${test} " +
-      "-i ${testId} > TEST_ENV"
+      "-t ${testId} " +
+      "-i ${uniqueId} > TEST_ENV"
   def testEnv = readFile('TEST_ENV').trim()
-  def logPath = "gs://${BUCKET}/${GIT_SHA}/logs"
+  def logBucket = "gs://${BUCKET}/${GIT_SHA}/logs"
   def espImgFlex = espFlexDockerImage()
   sh "script/linux-test-vm-echo " +
       "-i ${espImgFlex} " +
       "-t ${testEnv} " +
-      "-b ${logPath}"
+      "-b ${logBucket}"
 }
 
 def e2eFlex(endpoints, flex) {
@@ -466,7 +471,7 @@ def e2eFlex(endpoints, flex) {
   def espImgFlex = espFlexDockerImage()
   def rcTestVersion = getUniqueID('', false)
   def skipCleanup = getSkipCleanup() ? "-k" : ""
-  def logPath = "gs://${BUCKET}/${GIT_SHA}/logs"
+  def logBucket = "gs://${BUCKET}/${GIT_SHA}/logs"
   def durationHour = getDurationHour()
   def endpointsFlag = endpoints ? "-e " : ""
   def flexFlag = flex ? "-f " : ""
@@ -477,7 +482,7 @@ def e2eFlex(endpoints, flex) {
       "-v ${rcTestVersion} " +
       "-i ${espImgFlex} " +
       "-l ${durationHour} " +
-      "-b ${logPath} " +
+      "-b ${logBucket} " +
       "${skipCleanup}"
 }
 

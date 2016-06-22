@@ -288,7 +288,7 @@ function save_vm_logs() {
   # address which does not work with restrictive firewall rules
   ssh -i "${private_ssh_key}" \
     -o StrictHostKeyChecking=no \
-    "${vm}" sudo tar czvf - /var/log/ > "${tar_file}"
+    "${vm}" sudo tar czf - /var/log/ > "${tar_file}"
   [[ ${?} -eq 0 ]] || echo 'Failed to get logs'
 }
 

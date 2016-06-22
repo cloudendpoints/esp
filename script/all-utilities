@@ -118,6 +118,67 @@ function set_api_keys() {
   source "${api_key_directory}/api_keys"
 }
 
+# Creates a simple Json Status file
+function create_status_file() {
+  local file_path="${1}"
+  local status="${2}"
+  mkdir -p "$(dirname "${file_path}")"
+
+  cat > "${file_path}" <<__EOF__
+{
+  "scriptStatus": ${status},
+  "headCommitHash": "$(git rev-parse --verify HEAD)"
+}
+__EOF__
+}
+
+# Extract run_id from test env json created from
+# script/create-test-env-json script.
+# As an example, from this json
+# {
+# "test": "test-id",
+# "run_id": "test-id-1902",
+# "run_description": "Commit message",
+# "owner": "John Doe"
+# }
+# This method will return test-id-1902
+function extract_run_id_from_test_env_file() {
+  local json_path="${1}"
+  cat "${json_path}" \
+    | python -c 'import json,sys;obj=json.load(sys.stdin);print obj["run_id"]'
+}
+
+# Current gcloud account may not have permission to deploy an GAE Flex
+# application in an esp-load-test project. The following will activate
+# esp-load-test service account.
+function activate_service_account() {
+  local project="${1}"
+  local remote_json_name=''
+  local service_account=''
+  local local_json="$(mktemp /tmp/XXXXXX.secret.json)"
+  case "${project}" in
+    esp-load-test)
+      remote_json_name='esp-load-test-08fcbb64ace1.json'
+      service_account='service-control-in-load-test@esp-load-test.iam.gserviceaccount.com'
+      ;;
+    esp-long-run)
+      remote_json_name='esp-long-run-f92945d40e0b.json'
+      service_account='deploy-esp-vm@esp-long-run.iam.gserviceaccount.com'
+      ;;
+    *)
+      echo "Project ${project} does not have associated credentials."
+      return 1
+      ;;
+  esac
+  echo "Downloading ${project} service account"
+  retry -n 5 -s 10 gsutil cp \
+    "gs://client-secret-files/${remote_json_name}" "${local_json}" \
+    || error_exit "Could not download secret keys for ${project}"
+  echo "Gcloud auth activate ${project} service account."
+  retry -n 2 gcloud auth activate-service-account --key-file "${local_json}" \
+    || error_exit "Could not activate ${service_account}."
+  trap "gcloud auth revoke ${service_account}" EXIT
+}
 
 if [[ $UID -ne 0 ]]; then
   SUDO=sudo

@@ -34,34 +34,34 @@
 # and auth_token_gen.
 # script/linux-install-test-client can be used to install them.
 
-if [[ "$(uname)" != "Linux" ]]; then
-  echo "Run on Linux only."
+if [[ "$(uname)" != 'Linux' ]]; then
+  echo 'Run on Linux only.'
   exit 1
 fi
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-. ${ROOT}/script/all-utilities \
-  || { echo "Cannot load Bash utilities" ; exit 1 ; }
+. "${ROOT}/script/all-utilities" \
+  || { echo 'Cannot load Bash utilities' ; exit 1 ; }
 
-IMAGE_NAME=gcr.io/endpointsv2/endpoints-runtime-flex:debian-git-$(git log -1 --pretty=format:%H)
-PROJECT_ID=esp-load-test
+IMAGE_NAME="gcr.io/endpointsv2/endpoints-runtime-flex:debian-git-$(git log -1 --pretty=format:%H)"
+PROJECT_ID='esp-load-test'
 API_KEY=''
 TEST_ENV=''
 BUCKET=''
 
 while getopts a:i:p:t:b: arg; do
   case ${arg} in
-    a) API_KEY=${OPTARG};;
-    i) IMAGE_NAME=${OPTARG};;
-    p) PROJECT_ID=${OPTARG};;
-    t) TEST_ENV="--test_env=$(realpath "${OPTARG}")";;
+    a) API_KEY="${OPTARG}";;
+    i) IMAGE_NAME="${OPTARG}";;
+    p) PROJECT_ID="${OPTARG}";;
+    t) TEST_ENV="$(realpath "${OPTARG}")";;
     b) BUCKET="${OPTARG}";;
     *) echo "Invalid option: -${OPTARG}";;
   esac
 done
 
 if [[ -z "${API_KEY}" ]]; then
-  echo "Getting default API Key set."
+  echo 'Getting default API Key set.'
   set_api_keys
   API_KEY="${ESP_LOAD_TEST_API_KEY}"
   [[ -n "${API_KEY}" ]] \
@@ -70,22 +70,22 @@ fi
 
 TIME_VERSION="$(date +"%Y%m%d%H%M%S")"
 APP_VERSION="${IMAGE_NAME}-${TIME_VERSION}"
-GAE_VERSION="perf-test-echo-${TIME_VERSION}"
+GAE_VERSION="$(extract_run_id_from_test_env_file "${TEST_ENV}")"
 echo "API_KEY: ${API_KEY}"
 echo "PROJECT_ID: ${PROJECT_ID}"
 echo "IMAGE_NAME: ${IMAGE_NAME}"
 echo "APP_VERSION: ${APP_VERSION}"
 echo "GAE_VERSION: ${GAE_VERSION}"
 
-APP_DIR=${ROOT}/test/echo
+APP_DIR="${ROOT}/test/echo"
 
-echo "Replaces environment."
-sed -i "s|\${MY_PROJECT_ID}|${PROJECT_ID}|g" ${APP_DIR}/swagger.json
-sed -i "s|\${VERSION}|${APP_VERSION}|g" ${APP_DIR}/echo.js
-sed -i "s|\${IMAGE_NAME}|${IMAGE_NAME}|g" ${APP_DIR}/app_esp.yaml
+echo 'Replaces environment.'
+sed -i "s|\${MY_PROJECT_ID}|${PROJECT_ID}|g" "${APP_DIR}/swagger.json"
+sed -i "s|\${VERSION}|${APP_VERSION}|g" "${APP_DIR}/echo.js"
+sed -i "s|\${IMAGE_NAME}|${IMAGE_NAME}|g" "${APP_DIR}/app_esp.yaml"
 
-$ROOT/script/linux-gae-instance -a $ROOT/test/echo/app_esp.yaml \
-    -v ${GAE_VERSION} -p ${PROJECT_ID} create \
+"${ROOT}/script/linux-gae-instance" -a "${ROOT}/test/echo/app_esp.yaml" \
+    -v "${GAE_VERSION}" -p "${PROJECT_ID}" create \
   || error_exit "Failed to deploy ${GAE_VERSION} to ${PROJECT_ID}."
 
 trap "$ROOT/script/linux-gae-instance -v ${GAE_VERSION} -p ${PROJECT_ID} delete" EXIT
@@ -101,32 +101,38 @@ echo "Deployed version: ${DEPLOYED_VERSION}"
 [[ "${DEPLOYED_VERSION}" =~ .*${APP_VERSION}.* ]] \
   || error_exit "DEPLOYED_VERSION: ${DEPLOYED_VERSION} not matched with ${APP_VERSION}"
 
-echo "Verify that endpoints is enabled"
+echo 'Verify that endpoints is enabled'
 EXPECTED_RESPONSE=".*Method doesn't allow unregistered callers.*STATUS_CODE:401"
-[[ "$(curl -w "STATUS_CODE:%{http_code}" ${HOST}/echo)" =~ $EXPECTED_RESPONSE ]] \
+[[ "$(curl -w "STATUS_CODE:%{http_code}" "${HOST}/echo")" =~ ${EXPECTED_RESPONSE} ]] \
   || error_exit "ERROR: Endpoints is disabled on ${HOST}"
 
 SERVICE_NAME="echo-${PROJECT_ID}.cloudendpointsapis.com"
-JWT_TOKEN=$($ROOT/client/custom/gen-auth-token.sh -s $ROOT/test/echo/esp-echo-client-secret-jwk.json -a $SERVICE_NAME)
-POST_FILE="$ROOT/test/echo/esp-echo-client-secret-x509.json"
-sed -e "s|\${API_KEY}|$API_KEY|g" \
-    -e "s|\${HOST}|$HOST|g" \
-    -e "s|\${POST_FILE}|$POST_FILE|g" \
-    -e "s|\${JWT_TOKEN}|$JWT_TOKEN|g" \
-    $ROOT/test/client/test_data.json.temp > $ROOT/test/client/test_data.json
-cat $ROOT/test/client/test_data.json
+JWT_TOKEN="$("${ROOT}/client/custom/gen-auth-token.sh" \
+  -s "${ROOT}/test/echo/esp-echo-client-secret-jwk.json" \
+  -a "${SERVICE_NAME}")"
+POST_FILE="${ROOT}/test/echo/esp-echo-client-secret-x509.json"
+sed -e "s|\${API_KEY}|${API_KEY}|g" \
+    -e "s|\${HOST}|${HOST}|g" \
+    -e "s|\${POST_FILE}|${POST_FILE}|g" \
+    -e "s|\${JWT_TOKEN}|${JWT_TOKEN}|g" \
+    "${ROOT}/test/client/test_data.json.temp" > "${ROOT}/test/client/test_data.json"
+cat "${ROOT}/test/client/test_data.json"
 
 echo "Start perf testing"
-pushd $ROOT/test/client > /dev/null
-./esp_client.py --test_data=$ROOT/test/client/test_data.json ${TEST_ENV}
+pushd "${ROOT}/test/client" > /dev/null
+./esp_client.py \
+  --test_data="${ROOT}/test/client/test_data.json" \
+  --test_env="${TEST_ENV}"
 RESULT=${?}
 
 if [[ -n "${BUCKET}" ]] ; then
-  echo "Downloading NGINX server logs."
-  ${ROOT}/script/linux-gae-instance \
-    -v "${GAE_VERSION}" -p "${PROJECT_ID}" -d "${HOME}/echo-nginx-logs" nginx-logs \
-  && gsutil -h "Content-Type:text/plain" -m cp -r "${HOME}/echo-nginx-logs" "${BUCKET}/${GAE_VERSION}" \
-  || error_exit "Cannot download NGINX logs."
+  LOG_DIRECTORY="${HOME}/nginx-logs"
+  create_status_file "${LOG_DIRECTORY}/flex-performance.json" "${RESULT}"
+  echo "Uploading NGINX server logs."
+  "${ROOT}/script/linux-gae-instance" \
+    -v "${GAE_VERSION}" -p "${PROJECT_ID}" -d "${LOG_DIRECTORY}" nginx-logs \
+  && gsutil -h 'Content-Type:text/plain' -m cp -r "${LOG_DIRECTORY}" "${BUCKET}/${GAE_VERSION}" \
+  || error_exit 'Cannot upload NGINX logs.'
 fi
 
 exit ${RESULT}

@@ -121,6 +121,19 @@ $ROOT/script/linux-gae-instance -a ${APP_DIR}/app_esp.yaml \
     -v ${GAE_VERSION} -p ${PROJECT_ID} create \
   || error_exit "Failed to deploy ${GAE_VERSION} to ${PROJECT_ID}."
 
+function json_filename () {
+  local flex='on'
+  local endpoints='on'
+
+  if [[ "${ENABLE_FLEX}" == 'false' ]]; then
+    flex='off'
+  fi
+  if [[ "${ENABLE_ENDPOINTS}" == 'false' ]]; then
+  endpoints='off'
+  fi
+  echo "flex_${flex}_endpoints_${endpoints}"
+}
+
 function cleanup() {
   # restore the original configs after we are done with the tests
   git -C ${ROOT} checkout \
@@ -262,7 +275,8 @@ echo "Finished ${RUN_COUNT} test runs."
 echo "Failures: Stress: ${STRESS_FAILURES}, Bookstore: ${BOOKSTORE_FAILURES}."
 
 if [[ -n "${BUCKET}" ]] ; then
-  echo "Downloading NGINX server logs to ${BUCKET}."
+  create_status_file "${HOME}/nginx-logs/"$(json_filename)".json" "${RESULT}"
+  echo "Uploading NGINX server logs to ${BUCKET}."
   ${ROOT}/script/linux-gae-instance \
     -v "${GAE_VERSION}" -p "${PROJECT_ID}" -d "${HOME}/nginx-logs" nginx-logs \
     && gsutil -h "Content-Type:text/plain" -m cp -r "${HOME}/nginx-logs" "${BUCKET}/${GAE_VERSION}" \

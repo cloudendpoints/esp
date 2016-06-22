@@ -79,7 +79,7 @@ set -x
 
 VERSION="$(command cat ${ROOT}/include/version)" \
   || error_exit "Cannot find release version (${ROOT}/include/version)"
-SOURCE_IMAGE="gcr.io/endpointsv2/endpoints-runtime:debian-git-${SHA}"
+SOURCE_IMAGE="gcr.io/endpoints-jenkins.appspot.com/endpoints-runtime:debian-git-${SHA}"
 TARGET_IMAGE="b.gcr.io/endpoints/endpoints-runtime:${VERSION}"
 
 if RELEASE_BRANCH_SHA="$(git rev-parse origin/release-${VERSION})"; then
