@@ -88,7 +88,8 @@ class AggregatedTestWithMockedClient : public ::testing::Test {
   }
 
   void Check(const CheckRequest& req, CheckResponse* res,
-             ServiceControlClient::DoneCallback on_done) {
+             ServiceControlClient::DoneCallback on_done,
+             TransportCheckFunc transport) {
     on_done(done_status_);
   }
   void Report(const ReportRequest& req, ReportResponse* res,
@@ -141,7 +142,7 @@ TEST_F(AggregatedTestWithMockedClient, FailedCheckRequiredFieldTest) {
 }
 
 TEST_F(AggregatedTestWithMockedClient, CheckTest) {
-  EXPECT_CALL(*mock_client_, Check(_, _, _))
+  EXPECT_CALL(*mock_client_, Check(_, _, _, _))
       .WillOnce(Invoke(this, &AggregatedTestWithMockedClient::Check));
   CheckRequestInfo info;
   FillOperationInfo(&info);
@@ -153,7 +154,7 @@ TEST_F(AggregatedTestWithMockedClient, CheckTest) {
 }
 
 TEST_F(AggregatedTestWithMockedClient, FailedCheckTest) {
-  EXPECT_CALL(*mock_client_, Check(_, _, _))
+  EXPECT_CALL(*mock_client_, Check(_, _, _, _))
       .WillOnce(Invoke(this, &AggregatedTestWithMockedClient::Check));
   CheckRequestInfo info;
   FillOperationInfo(&info);

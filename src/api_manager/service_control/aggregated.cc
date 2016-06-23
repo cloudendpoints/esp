@@ -266,7 +266,10 @@ void Aggregated::Check(
     delete response;
   };
 
-  client_->Check(*request, response, check_on_done);
+  client_->Check(
+      *request, response, check_on_done,
+      [this](const CheckRequest& request, CheckResponse* response,
+             TransportDoneFunc on_done) { Call(request, response, on_done); });
   // There is no reference to request anymore at this point and it is safe to
   // free request now.
   check_pool_.Free(std::move(request));
