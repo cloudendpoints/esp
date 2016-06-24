@@ -122,9 +122,37 @@
           }
         ]
       }
+    },
+    "/version": {
+      "get": {
+        "description": "Returns a version of the application.",
+        "operationId": "getVersion",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Version of the application.",
+            "schema": {
+              "$ref": "#/definitions/version"
+            }
+          }
+        },
+        "security": []
+      }
     }
   },
   "definitions": {
+    "version": {
+      "properties": {
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "version"
+      ]
+    }
   },
   "security": [
     {

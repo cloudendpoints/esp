@@ -152,13 +152,16 @@ HOST="https://${GAE_VERSION}-dot-${SERVICE_NAME}"
 
 function check_deployed_version() {
   echo "Verify \"${APP_VERSION}\" version is deployed on host: ${HOST}".
-  DEPLOYED_VERSION=$(curl ${HOST}/version)
+  DEPLOYED_VERSION="$(curl ${HOST}/version)"
 
-  if [[ "${DEPLOYED_VERSION}" != "${APP_VERSION}" ]]; then
-    echo "Version from ${HOST}: ${DEPLOYED_VERSION} doesn't match ${APP_VERSION}"
-    return 1
-  else
+  echo "Expected version: ${APP_VERSION}"
+  echo "Deployed version: ${DEPLOYED_VERSION}"
+
+  if [[ "${DEPLOYED_VERSION}" =~ .*${APP_VERSION}.* ]]; then
     return 0
+  else
+    echo "Version from ${HOST}: ${DEPLOYED_VERSION} doesn't contain ${APP_VERSION}"
+    return 1
   fi
 }
 
@@ -200,13 +203,7 @@ JWT_TOKEN="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjMzYTY4MWIzNmI4OTgzOTEzY
 RESULT=0  # succeed by default
 while true; do
   # Check that we are still calling the deployed version.
-  echo "Verify VERSION from host: ${HOST}".
-  DEPLOYED_VERSION=$(curl ${HOST}/version)
-  echo "Expected version: ${APP_VERSION}"
-  echo "Deployed version: ${DEPLOYED_VERSION}"
-
-  if [[ "${DEPLOYED_VERSION}" != "${APP_VERSION}" ]] ; then
-    echo "Deployed version ${DEPLOYED_VERSION} doesn't match ${APP_VERSION}"
+  if ! check_deployed_version; then
     RESULT=1
     break
   fi

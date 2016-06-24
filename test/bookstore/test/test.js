@@ -507,6 +507,20 @@ describe('bookstore', function() {
       PATCH: '{}',
     });
   });
+
+  describe ('/version', function() {
+    it('GET returns version', function(done) {
+      request('GET', '/version', null, function(res, body) {
+        assert.equal(res.statusCode, 200, '/version didn\'t return 200');
+
+        var json = parseJsonBody(res.headers, body);
+        assert.property(json, 'version');
+        assert.isString(json.version);
+
+        done();
+      });
+    });
+  });
 });
 
 describe('bookstore-ui', function() {

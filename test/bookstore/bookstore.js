@@ -62,8 +62,10 @@ function bookstore(options) {
   // Serve application version for tests to ensure that
   // bookstore was deployed correctly.
   app.get('/version', function(req, res) {
-    res.set('Content-Type', 'text/plain');
-    res.status(200).send('${VERSION}');
+    res.set('Content-Type', 'application/json');
+    res.status(200).send({
+      version: '${VERSION}'
+    });
   });
 
   // Echo method for stress test.

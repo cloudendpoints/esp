@@ -92,10 +92,13 @@ trap "$ROOT/script/linux-gae-instance -v ${GAE_VERSION} -p ${PROJECT_ID} delete"
 
 HOST="https://${GAE_VERSION}-dot-${PROJECT_ID}.appspot.com"
 
-echo "Verify APP_VERSION is deployed from host: $HOST".
-DEPLOYED_VERSION=$(curl $HOST/version)
-echo "DEPLOYED_VERSION: ${DEPLOYED_VERSION}"
-[[ "${DEPLOYED_VERSION}" == "${APP_VERSION}" ]] \
+echo "Verify \"${APP_VERSION}\" version is deployed on host: ${HOST}".
+DEPLOYED_VERSION="$(curl ${HOST}/version)"
+
+echo "Expected version: ${APP_VERSION}"
+echo "Deployed version: ${DEPLOYED_VERSION}"
+
+[[ "${DEPLOYED_VERSION}" =~ .*${APP_VERSION}.* ]] \
   || error_exit "DEPLOYED_VERSION: ${DEPLOYED_VERSION} not matched with ${APP_VERSION}"
 
 echo "Verify that endpoints is enabled"

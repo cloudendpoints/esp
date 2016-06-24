@@ -29,6 +29,10 @@
    {
     "selector": "echo.v1.EchoService.PostMessageAuthed",
     "post": "/echo/auth"
+   },
+   {
+    "selector": "echo.v1.EchoService.GetVersion",
+    "get": "/version"
    }
   ]
  },
@@ -105,6 +109,10 @@
    },
    {
     "selector": "echo.v1.EchoService.PostMessageAuthed"
+   },
+   {
+    "selector": "echo.v1.EchoService.GetVersion",
+    "allowUnregisteredCalls": true
    }
   ]
  },

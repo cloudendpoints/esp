@@ -38,8 +38,8 @@ server.on('request', function(req, res) {
   var method = req.method;
   var url = req.url;
   if (method == 'GET' && url == '/version') {
-      res.writeHead(200, {"Content-Type": "text/plain"});
-      res.write("${VERSION}");
+      res.writeHead(200, {"Content-Type": "application/json"});
+      res.write('{"version":"${VERSION}"}');
       res.end();
       return;
   }
