@@ -888,9 +888,8 @@ ngx_int_t GrpcFinishV2(
   }
 
   // Fill in the frame length and header.
-  frame->length = b->last - b->start;
-  ngx_http_v2_write_len_and_type(b->start,
-                                 frame->length - NGX_HTTP_V2_FRAME_HEADER_SIZE,
+  frame->length = b->last - b->start - NGX_HTTP_V2_FRAME_HEADER_SIZE;
+  ngx_http_v2_write_len_and_type(b->start, frame->length,
                                  NGX_HTTP_V2_HEADERS_FRAME);
 
   // This is the last buffer in the chain.
