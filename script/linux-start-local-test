@@ -96,7 +96,7 @@ SERVICE_NAME="echo-esp-load-test.cloudendpointsapis.com"
 JWT_TOKEN=$( ${ROOT}/client/custom/gen-auth-token.sh \
     -s ${ROOT}/test/echo/esp-echo-client-secret-jwk.json \
     -a ${SERVICE_NAME} )
-POST_FILE="${ROOT}/test/echo/gce-vm/service.json"
+POST_FILE="${ROOT}/test/data/8k.json"
 HOST="http://127.0.0.1:8090"
 sed -e "s|\${API_KEY}|${API_KEY}|g" \
     -e "s|\${HOST}|${HOST}|g" \

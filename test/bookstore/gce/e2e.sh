@@ -51,7 +51,6 @@ ARCHIVE_PATH="${ESP_ROOT}/bookstore.tar.gz"
 BOOKSTORE_PATH="${SCRIPT_PATH}/../"
 HOST="http://${INSTANCE_NAME}:8080"
 REMOTE_ARCHIVE_PATH="gs://${BUCKET}/${INSTANCE_NAME}.tar.gz"
-SERVICE_JSON="${BOOKSTORE_PATH}/service.json"
 VM_STARTUP_SCRIPT="${ESP_ROOT}/vm_startup_script.sh"
 VM_STARTUP_SCRIPT_TMPL="${SCRIPT_PATH}/vm_startup_script_template.sh"
 

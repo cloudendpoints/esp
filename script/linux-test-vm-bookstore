@@ -125,9 +125,11 @@ function cleanup() {
   # restore the original configs after we are done with the tests
   git -C ${ROOT} checkout \
       ${APP_DIR}/swagger.json \
-      ${APP_DIR}/endpoints/service.json \
       ${APP_DIR}/app_esp.yaml \
       ${APP_DIR}/bookstore.js
+
+  # Delete directory created by gcloud.
+  rm -rf ${APP_DIR}/endpoints
 
   # deploying a flex app generates some files that cause
   # subsequent deployments to fail
