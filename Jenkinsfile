@@ -710,14 +710,20 @@ def fastStash(name, stashPath) {
   def archivePath = stashArchivePath(name)
   if (!pathExistsCloudStorage(archivePath)) {
     echo "Stashing ${stashPath} to ${archivePath}"
-    sh "tar czf - ${stashPath} | gsutil " +
-        "-h Content-Type:application/x-gtar cp - ${archivePath}"
+    retry(5) {
+      sh "tar czf - ${stashPath} | gsutil " +
+          "-h Content-Type:application/x-gtar cp - ${archivePath}"
+      sleep 5
+    }
   }
 }
 
 def fastUnstash(name) {
   def archivePath = stashArchivePath(name)
-  sh "gsutil cp ${archivePath} - | tar zxf - "
+  retry(5) {
+    sh "gsutil cp ${archivePath} - | tar zxf - "
+    sleep 5
+  }
 }
 
 def getRevision() {
