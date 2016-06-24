@@ -219,10 +219,15 @@ Status Aggregated::Report(const ReportRequestInfo& info) {
     return status;
   }
   ReportResponse* response = new ReportResponse;
-  client_->Report(*request, response,
-                  [response](const ::google::protobuf::util::Status& status) {
-                    delete response;
-                  });
+  client_->Report(
+      *request, response,
+      [this, response](const ::google::protobuf::util::Status& status) {
+        if (!status.ok() && env_) {
+          env_->LogError(std::string("Service control report failed. " +
+                                     status.ToString()));
+        }
+        delete response;
+      });
   // There is no reference to request anymore at this point and it is safe to
   // free request now.
   report_pool_.Free(std::move(request));
