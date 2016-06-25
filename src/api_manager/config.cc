@@ -53,7 +53,7 @@ const char http_get[] = "GET";
 const char http_patch[] = "PATCH";
 const char http_post[] = "POST";
 const char http_put[] = "PUT";
-// const char http_options[] = "OPTIONS";
+const char http_options[] = "OPTIONS";
 const string https_prefix = "https://";
 const string http_prefix = "http://";
 const string openid_config_path = ".well-known/openid-configuration";
@@ -102,6 +102,7 @@ MethodInfoImpl *Config::GetOrCreateMethodInfoImpl(const string &selector) {
 
 bool Config::LoadHttpMethods(ApiManagerEnvInterface *env,
                              PathMatcherBuilder *pmb) {
+  std::set<std::string> all_urls, urls_with_options;
   for (const auto &rule : service_.http().rules()) {
     const string &selector = rule.selector();
     const string *url = nullptr;
@@ -148,6 +149,47 @@ bool Config::LoadHttpMethods(ApiManagerEnvInterface *env,
       string error("Invalid HTTP template: ");
       error += *url;
       env->LogError(error.c_str());
+    } else {
+      all_urls.insert(*url);
+      if (strcmp(http_method, http_options) == 0) {
+        urls_with_options.insert(*url);
+      }
+    }
+  }
+
+  // Remove urls with options.
+  for (auto url : urls_with_options) {
+    all_urls.erase(url);
+  }
+  return AddOptionsMethodForAllUrls(env, pmb, all_urls);
+}
+
+bool Config::AddOptionsMethodForAllUrls(ApiManagerEnvInterface *env,
+                                        PathMatcherBuilder *pmb,
+                                        const std::set<std::string> &all_urls) {
+  // In order to support CORS. Http method OPTIONS needs to be added to
+  // the path_matcher for all urls except the ones already with options.
+  // For these OPTIONS methods, auth should be disabled and
+  // allow_unregistered_calls should be true.
+
+  // All options have same selector as format: service_name . OPTIONS . suffix.
+  // Appends suffix to make sure it is not used by any http rules.
+  string options_selector_base = service_.name() + "." + http_options;
+  string options_selector = options_selector_base;
+  int n = 0;
+  while (method_map_.find(options_selector) != method_map_.end()) {
+    std::ostringstream suffix;
+    suffix << ++n;
+    options_selector = options_selector_base + "." + suffix.str();
+  }
+  MethodInfoImpl *mi = GetOrCreateMethodInfoImpl(options_selector);
+  mi->set_auth(false);
+  mi->set_allow_unregistered_calls(true);
+
+  for (auto url : all_urls) {
+    if (!pmb->Register(service_.name(), http_options, url, mi)) {
+      env->LogError(
+          std::string("Failed to add http options template for url: " + url));
     }
   }
 

@@ -674,6 +674,97 @@ TEST(Config, RpcMethodsWithHttpRulesAndVariableBindings) {
   EXPECT_EQ("99", create_book.variable_bindings[0].value);
 }
 
+TEST(Config, TestHttpOptions) {
+  MockApiManagerEnvironmentWithLog env;
+
+  static const char config_text[] = R"(
+ name: "Service.Name"
+ http {
+   rules {
+     selector: "ListShelves"
+     get: "/shelves"
+   }
+   rules {
+     selector: "CorsShelves"
+     custom: {
+        kind: "OPTIONS"
+        path: "/shelves"
+     }
+   }
+   rules {
+     selector: "CreateShelf"
+     post: "/shelves"
+   }
+   rules {
+     selector: "GetShelf"
+     get: "/shelves/{shelf}"
+   }
+   rules {
+     selector: "DeleteShelf"
+     delete: "/shelves/{shelf}"
+   }
+   rules {
+     selector: "GetShelfBook"
+     get: "/shelves/{shelf}/books"
+   }
+ }
+)";
+
+  std::unique_ptr<Config> config = Config::Create(&env, config_text, "");
+  ASSERT_TRUE(config);
+
+  // The one from service config.
+  auto method1 = config->GetMethodInfo("OPTIONS", "/shelves");
+  ASSERT_NE(nullptr, method1);
+  ASSERT_EQ("CorsShelves", method1->name());
+  ASSERT_FALSE(method1->auth());
+  // For all service config specified method, default is NOT to allow
+  // unregistered calls.
+  ASSERT_FALSE(method1->allow_unregistered_calls());
+
+  // added by the code.
+  for (auto path : {"/shelves/{shelf}", "/shelves/{shelf}/books"}) {
+    auto method = config->GetMethodInfo("OPTIONS", path);
+    ASSERT_NE(nullptr, method);
+    ASSERT_EQ("Service.Name.OPTIONS", method->name());
+    ASSERT_FALSE(method->auth());
+    // For all added OPTIONS methods, allow_unregistered_calls is true.
+    ASSERT_TRUE(method->allow_unregistered_calls());
+  }
+
+  // not registered path.
+  auto method2 = config->GetMethodInfo("OPTIONS", "/xyz");
+  ASSERT_EQ(nullptr, method2);
+}
+
+TEST(Config, TestHttpOptionsSelector) {
+  MockApiManagerEnvironmentWithLog env;
+
+  static const char config_text[] = R"(
+ name: "Service.Name"
+ http {
+   rules {
+     selector: "Service.Name.OPTIONS"
+     get: "/shelves"
+   }
+   rules {
+     selector: "Service.Name.OPTIONS.1"
+     get: "/shelves/{shelf}"
+   }
+ }
+)";
+
+  std::unique_ptr<Config> config = Config::Create(&env, config_text, "");
+  ASSERT_TRUE(config);
+
+  auto method1 = config->GetMethodInfo("OPTIONS", "/shelves");
+  ASSERT_NE(nullptr, method1);
+  // selector for options should be appended with suffix.
+  ASSERT_EQ("Service.Name.OPTIONS.2", method1->name());
+  ASSERT_FALSE(method1->auth());
+  ASSERT_TRUE(method1->allow_unregistered_calls());
+}
+
 }  // namespace
 
 }  // namespace api_manager

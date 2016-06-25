@@ -104,6 +104,11 @@ class Config {
   // Create MethodInfo for HTTP methods, register them to PathMatcher.
   bool LoadHttpMethods(ApiManagerEnvInterface *env, PathMatcherBuilder *pmb);
 
+  // Add a special option method info for all URLs to support CORS.
+  bool AddOptionsMethodForAllUrls(ApiManagerEnvInterface *env,
+                                  PathMatcherBuilder *pmb,
+                                  const std::set<std::string> &all_urls);
+
   // Create MethodInfo for RPC methods, register them to PathMatcher.
   bool LoadRpcMethods(ApiManagerEnvInterface *env, PathMatcherBuilder *pmb);
 
