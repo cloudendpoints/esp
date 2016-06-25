@@ -53,3 +53,36 @@ cc_library(
         "//third_party/config:servicecontrol",
     ],
 )
+
+cc_library(
+    name = "zero_copy_stream",
+    srcs = [
+        "message_serializer.cc",
+        "zero_copy_stream.cc",
+    ],
+    hdrs = [
+        "message_serializer.h",
+        "zero_copy_stream.h",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//external:grpc",
+        "//external:grpc++",
+        "//google/protobuf",
+    ],
+)
+
+cc_test(
+    name = "zero_copy_stream_test",
+    size = "small",
+    srcs = [
+        "zero_copy_stream_test.cc",
+    ],
+    linkstatic = 1,
+    deps = [
+        ":zero_copy_stream",
+        "//external:googletest_main",
+        "//external:grpc",
+        "//external:grpc++",
+    ],
+)
