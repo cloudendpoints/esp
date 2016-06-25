@@ -2,8 +2,10 @@
 
 FROM debian:jessie
 
-# Install all of the needed dependencies
+# Copy the Endpoints runtime Debian package.
+ADD endpoints-runtime.deb endpoints-runtime.deb
 
+# Install all of the needed dependencies
 # Upgrade the OS and core packages
 # Install core required utilities
 # Install ESP dependencies.
@@ -14,12 +16,8 @@ RUN apt-get update && \
     apt-get install -y -q --no-install-recommends \
       apt-utils adduser cron curl logrotate python wget \
       libc6 libgcc1 libstdc++6 libuuid1 && \
-    apt-get clean && rm /var/lib/apt/lists/*_*
-
-# This file path is currently hard coded because there's no way to pass input
-# parameters into Dockerfiles or `docker build`
-ADD endpoints-runtime.deb endpoints-runtime.deb
-RUN dpkg -i /endpoints-runtime.deb && rm /endpoints-runtime.deb
+    apt-get clean && rm /var/lib/apt/lists/*_* && \
+    dpkg -i /endpoints-runtime.deb && rm /endpoints-runtime.deb
 
 # Add the custom Endpoints nginx configuration
 ADD nginx-grpc.conf.template /etc/nginx/nginx.conf.template
