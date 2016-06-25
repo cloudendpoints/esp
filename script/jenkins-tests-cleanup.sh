@@ -32,11 +32,15 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 function usage() {
   [[ -n "${1}" ]] && echo "${1}"
-  echo "usage: ${BASH_SOURCE[0]}
+  cat <<EOF
+usage: ${BASH_SOURCE[0]}
   -d <days old>
   -n <no prompt>
   -r <regex>
-  -s <git commit SHA>"
+  -s <git commit SHA>
+  -p <project>
+  -z <zone>
+EOF
   exit 1
 }
 
@@ -48,7 +52,10 @@ function delete_instances() {
   for instance in "${instances[@]}"; do
     echo "Deleting instances: ${instance}"
     user_input \
-      && run gcloud compute instances delete "${instance}" -q
+      && run "${GCLOUD}" compute instances delete \
+          --project "${PROJECT}" \
+          --zone "${ZONE}" \
+          "${instance}" -q
   done
 }
 
@@ -60,7 +67,7 @@ function delete_namespaces() {
   for namespace in "${namespaces[@]}"; do
     echo "Deleting namespaces: ${namespace}"
     user_input \
-      && run kubectl delete namespace ${namespace}
+      && run "${KUBECTL}" delete namespace ${namespace}
   done
 }
 
@@ -78,7 +85,9 @@ function delete_services() {
 
 # List esp instances
 function list_instances() {
-  local instances="$(gcloud compute instances list \
+  local instances="$("${GCLOUD}" compute instances list \
+        --project "${PROJECT}" \
+        --zone "${ZONE}" \
     | grep 'test-' \
     | cut -d ' ' -f 1)"
   [[ -n "${instances}" ]] && echo "${instances}"
@@ -86,7 +95,7 @@ function list_instances() {
 
 # List existing esp Kubernetes namespaces
 function list_namespaces() {
-  local namespaces="$(kubectl get namespaces \
+  local namespaces="$("${KUBECTL}" get namespaces \
     | grep 'test-' \
     | cut -d ' ' -f 1)"
   [[ -n "${namespaces}" ]] && echo "${namespaces}"
@@ -94,7 +103,9 @@ function list_namespaces() {
 
 # List existing esp services
 function list_services() {
-  local services="$(run gcloud alpha service-management list --produced \
+  local services="$(run "${GCLOUD}" alpha service-management list \
+      --project "${PROJECT}" \
+      --produced \
     | grep 'test-' \
     | cut -d ' ' -f 1)"
   [[ -n "${services}" ]] && echo "${services}"
@@ -149,13 +160,19 @@ DAYS_OLD=''
 INTERACTIVE='true'
 REGEX=''
 SHA=''
+PROJECT='endpoints-jenkins'
+ZONE='us-central1-f'
+GCLOUD="$(which gcloud)" || GCLOUD="${HOME}/google-cloud-sdk/bin/gcloud"
+KUBECLT="$(which kubectl)" || KUBECTL="${HOME}/google-cloud-sdk/bin/kubectl"
 
-while getopts :d:nr:s: arg; do
+while getopts :d:nr:p:s:z: arg; do
   case ${arg} in
     d) DAYS_OLD="${OPTARG}";;
     n) INTERACTIVE='false';;
     r) REGEX="${OPTARG}";;
+    p) PROJECT="${OPTARG}";;
     s) SHA="${OPTARG}";;
+    z) ZONE="${OPTARG}";;
     *) usage "Invalid option: -${OPTARG}";;
   esac
 done
