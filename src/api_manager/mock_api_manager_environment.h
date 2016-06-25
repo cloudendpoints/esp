@@ -65,10 +65,9 @@ class MockApiManagerEnvironmentWithLog : public ApiManagerEnvInterface {
   utils::Status RunHTTPRequest(std::unique_ptr<HTTPRequest> request) {
     if (request->requires_headers()) {
       std::map<std::string, std::string> headers;
-      request->OnComplete(utils::Status::OK, std::move(headers),
-                          std::move(std::string()));
+      request->OnComplete(utils::Status::OK, std::move(headers), std::string());
     } else {
-      request->OnComplete(utils::Status::OK, std::move(std::string()));
+      request->OnComplete(utils::Status::OK, std::string());
     }
 
     return utils::Status::OK;

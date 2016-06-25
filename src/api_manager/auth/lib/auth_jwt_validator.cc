@@ -404,7 +404,7 @@ void JwtValidatorImpl::CreateJoseHeader() {
   }
   const char *alg = GetStringValue(header_json_, "alg");
   if (alg == nullptr) {
-    gpr_log(GPR_ERROR, "Missing alg field.", alg);
+    gpr_log(GPR_ERROR, "Missing alg field.");
     return;
   }
   if (EvpMdFromAlg(alg) == nullptr) {
