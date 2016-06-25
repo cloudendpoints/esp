@@ -66,6 +66,8 @@ cc_library(
         "status.h",
         "util.cc",
         "util.h",
+        "zero_copy_stream.cc",
+        "zero_copy_stream.h",
     ],
     defines = [
         "NGX_HTTP_ENDPOINTS_RUNTIME",
