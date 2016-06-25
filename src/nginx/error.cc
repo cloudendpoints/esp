@@ -135,7 +135,7 @@ ngx_int_t ngx_esp_error_body_filter(ngx_http_request_t *r, ngx_chain_t *in) {
       ctx->status.SetMessage(Status::CodeToString(r->err_status));
     }
 
-    // TODO: considering sending constant paload
+    // TODO: considering sending constant payload
 
     // Serialize error as JSON
     ngx_str_t json_error;
@@ -198,12 +198,20 @@ ngx_int_t ngx_esp_return_json_error(ngx_http_request_t *r) {
     r->keepalive = 0;
   }
 
-  ngx_int_t rc = ngx_http_send_header(r);
+  // Send error headers if the headers haven't been sent for this request yet.
+  // TODO: Make sure that we are sending a valid HTTP response and that the
+  //       connection is closed after we send the error.
+  if (!r->header_sent) {
+    ngx_int_t rc = ngx_http_send_header(r);
 
-  if (rc == NGX_ERROR || r->header_only) {
-    return NGX_DONE;
+    if (rc == NGX_ERROR) {
+      return NGX_DONE;
+    }
   }
 
+  if (r->header_only) {
+    return NGX_DONE;
+  }
   return ngx_http_output_filter(r, nullptr);
 }
 

@@ -31,6 +31,7 @@
 #include "src/nginx/error.h"
 #include "src/nginx/grpc_passthrough_server_call.h"
 #include "src/nginx/module.h"
+#include "src/nginx/transcoded_grpc_server_call.h"
 #include "src/nginx/util.h"
 
 using ::google::api_manager::utils::Status;
@@ -197,11 +198,12 @@ std::pair<Status, std::shared_ptr<::grpc::GenericStub>> GrpcGetStub(
 ngx_int_t GrpcBackendHandler(ngx_http_request_t *r) {
   ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
                 "GrpcBackendHandler: Handling request");
-  if (IsGrpcRequest(r)) {
-    ngx_esp_loc_conf_t *espcf = reinterpret_cast<ngx_esp_loc_conf_t *>(
-        ngx_http_get_module_loc_conf(r, ngx_esp_module));
-    ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r);
 
+  ngx_esp_loc_conf_t *espcf = reinterpret_cast<ngx_esp_loc_conf_t *>(
+      ngx_http_get_module_loc_conf(r, ngx_esp_module));
+  ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r);
+
+  if (IsGrpcRequest(r)) {
     // Check whether there's a GRPC backend defined for this request;
     // if there is, we can use it for GRPC traffic.  Otherwise, we'll
     // take the next-best option: falling through and passing the
@@ -219,6 +221,11 @@ ngx_int_t GrpcBackendHandler(ngx_http_request_t *r) {
       std::multimap<std::string, std::string> headers;
       auto server_call = std::make_shared<NgxEspGrpcPassThroughServerCall>(r);
       std::string method(reinterpret_cast<char *>(r->uri.data), r->uri.len);
+
+      ngx_log_debug1(NGX_LOG_DEBUG, r->connection->log, 0,
+                     "GrpcBackendHandler: gRPC pass-through - method %s",
+                     method.c_str());
+
       grpc::ProxyFlow::Start(
           espcf->esp_srv_conf->esp_main_conf->grpc_queue.get(),
           std::move(server_call), std::move(stub), method, headers);
@@ -227,6 +234,39 @@ ngx_int_t GrpcBackendHandler(ngx_http_request_t *r) {
 
     if (status.code() != NGX_DECLINED) {
       return ngx_esp_return_grpc_error(r, status);
+    }
+
+    // Otherwise, fall through to the non-GRPC path.
+  } else if (ctx && ctx->request_handler &&
+             ctx->request_handler->CanBeTranscoded()) {
+    // Same as the gRPC case. Check whether there's a GRPC backend defined for
+    // this request to use.
+    Status status = Status::OK;
+    std::shared_ptr<::grpc::GenericStub> stub;
+    std::tie(status, stub) = GrpcGetStub(r, espcf, ctx);
+
+    if (status.ok()) {
+      std::shared_ptr<NgxEspTranscodedGrpcServerCall> server_call;
+      status = NgxEspTranscodedGrpcServerCall::Create(r, &server_call);
+      if (status.ok()) {
+        auto method = ctx->request_handler->GetRpcMethodFullName();
+
+        ngx_log_debug1(NGX_LOG_DEBUG, r->connection->log, 0,
+                       "GrpcBackendHandler: transcoding - method %s",
+                       method.c_str());
+
+        // TODO: Fill in the headers from the request.
+        std::multimap<std::string, std::string> headers;
+        grpc::ProxyFlow::Start(
+            espcf->esp_srv_conf->esp_main_conf->grpc_queue.get(),
+            std::move(server_call), std::move(stub), method, headers);
+        return NGX_DONE;
+      }
+    }
+
+    if (status.code() != NGX_DECLINED) {
+      ctx->status = status;
+      return ngx_esp_return_json_error(r);
     }
 
     // Otherwise, fall through to the non-GRPC path.
