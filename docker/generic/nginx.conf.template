@@ -4,7 +4,8 @@ user nginx nginx;
 
 worker_processes 1;
 
-error_log  /var/log/nginx/error.log error;
+# Logging to stderr enables better integration with Docker and GKE/Kubernetes.
+error_log stderr warn;
 
 events { worker_connections 4096; }
 
@@ -28,7 +29,8 @@ http {
 
     include ssl.conf;
 
-    access_log /var/log/nginx/access.log;
+    # Logging to stdout enables better integration with Docker and GKE/Kubernetes.
+    access_log /dev/stdout;
 
     location / {
       # Begin Endpoints v2 Support
