@@ -29,7 +29,7 @@
 #include "src/api_manager/grpc/proxy_flow.h"
 #include "src/nginx/environment.h"
 #include "src/nginx/error.h"
-#include "src/nginx/grpc_server_call.h"
+#include "src/nginx/grpc_passthrough_server_call.h"
 #include "src/nginx/module.h"
 #include "src/nginx/util.h"
 
@@ -217,7 +217,7 @@ ngx_int_t GrpcBackendHandler(ngx_http_request_t *r) {
 
       // TODO: Fill in the headers from the request.
       std::multimap<std::string, std::string> headers;
-      auto server_call = std::make_shared<NgxEspGrpcServerCall>(r);
+      auto server_call = std::make_shared<NgxEspGrpcPassThroughServerCall>(r);
       std::string method(reinterpret_cast<char *>(r->uri.data), r->uri.len);
       grpc::ProxyFlow::Start(
           espcf->esp_srv_conf->esp_main_conf->grpc_queue.get(),

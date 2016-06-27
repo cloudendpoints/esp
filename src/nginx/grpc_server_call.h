@@ -36,8 +36,10 @@ namespace google {
 namespace api_manager {
 namespace nginx {
 
-// Implements the ServerCall interface in a way that wraps a
-// downstream connection that's managed by an Nginx HTTP server.
+// A common base class for implementing the grpc::ServerCall interface in a way
+// that wraps a downstream connection that's managed by an Nginx HTTP server. It
+// implements the common functionality shared between by gRPC pass-through and
+// transcoding.
 //
 // Note: The implementation assumes that all method calls are
 // externally synchronized, for example, by running them all on the
@@ -60,32 +62,34 @@ class NgxEspGrpcServerCall : public grpc::ServerCall {
                     std::function<void(bool)> continuation);
   virtual void Write(const ::grpc::ByteBuffer& msg,
                      std::function<void(bool)> continuation);
-  virtual void Finish(
-      const utils::Status& status,
-      std::multimap<std::string, std::string> response_trailers);
   virtual void RecordBackendTime(int64_t backend_time);
 
- private:
+ protected:
   // Converts the request body into gRPC messages and outputs the raw slices.
   // The output slices are appended to the specified out vector.
   // Returns true if successful; otherwise ConvertRequestBody() must take care
   // of sending the error to the client, finalizing the request and return
   // false.
-  bool ConvertRequestBody(std::vector<gpr_slice>* out);
+  virtual bool ConvertRequestBody(std::vector<gpr_slice>* out) = 0;
 
   // Converts the gRPC message into a response ngx_chain_t*
   // Returns true if successful; otherwise ConvertResponseMessage() must take
   // care of sending the error to the client, finalizing the request and
   // return false.
-  bool ConvertResponseMessage(const ::grpc::ByteBuffer& msg, ngx_chain_t* out);
+  virtual bool ConvertResponseMessage(const ::grpc::ByteBuffer& msg,
+                                      ngx_chain_t* out) = 0;
 
   // Returns the response content-type
-  const ngx_str_t& response_content_type() const;
+  virtual const ngx_str_t& response_content_type() const = 0;
 
   // Calls ngx_http_read_client_request_body() to process the preread request
   // body.
   void ProcessPrereadRequestBody();
 
+  // The request
+  ngx_http_request_t* r_;
+
+ private:
   static void OnDownstreamPreread(ngx_http_request_t* r);
   static void OnDownstreamReadable(ngx_http_request_t* r);
   static void OnDownstreamWriteable(ngx_http_request_t* r);
@@ -103,7 +107,6 @@ class NgxEspGrpcServerCall : public grpc::ServerCall {
   // completed with 'false'.
   static void Cleanup(void* server_call_ptr);
 
-  ngx_http_request_t* r_;
   ngx_http_cleanup_t cln_;
   bool add_header_failed_;
   bool reading_;

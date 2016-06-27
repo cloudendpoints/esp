@@ -52,6 +52,8 @@ cc_library(
         "grpc_finish.cc",
         "grpc_finish.h",
         "grpc_module.cc",
+        "grpc_passthrough_server_call.cc",
+        "grpc_passthrough_server_call.h",
         "grpc_queue.cc",
         "grpc_queue.h",
         "grpc_server_call.cc",

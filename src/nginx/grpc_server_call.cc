@@ -44,7 +44,6 @@ namespace api_manager {
 namespace nginx {
 
 namespace {
-const ngx_str_t kContentTypeApplicationGrpc = ngx_string("application/grpc");
 
 // Returns a character at a logical offset within a vector of slices.
 char GetByte(const std::vector<gpr_slice> &slices, size_t offset) {
@@ -73,25 +72,6 @@ void TrimFront(std::vector<gpr_slice> *slices, size_t count) {
   }
 }
 
-// Builds a gpr_slice containing the same data as is contained in the
-// supplied nginx buffer.
-gpr_slice GprSliceFromNginxBuffer(ngx_buf_t *buf) {
-  if (!ngx_buf_in_memory(buf) && buf->file) {
-    // If the buffer's not in memory, we need to read the contents.
-    gpr_slice result = gpr_slice_malloc(ngx_buf_size(buf));
-    ngx_read_file(buf->file, GPR_SLICE_START_PTR(result), ngx_buf_size(buf),
-                  buf->file_pos);
-    return result;
-  }
-
-  // Otherwise, just copy the buffer's data.
-  gpr_slice result = gpr_slice_from_copied_buffer(
-      reinterpret_cast<char *>(buf->pos), buf->last - buf->pos);
-
-  buf->pos += GPR_SLICE_LENGTH(result);
-  return result;
-}
-
 }  // namespace
 
 NgxEspGrpcServerCall::NgxEspGrpcServerCall(ngx_http_request_t *r)
@@ -103,8 +83,6 @@ NgxEspGrpcServerCall::NgxEspGrpcServerCall(ngx_http_request_t *r)
   cln_.data = this;
   cln_.next = r->cleanup;
   r->cleanup = &cln_;
-
-  ProcessPrereadRequestBody();
 }
 
 void NgxEspGrpcServerCall::ProcessPrereadRequestBody() {
@@ -134,10 +112,6 @@ NgxEspGrpcServerCall::~NgxEspGrpcServerCall() {
     }
   }
   cln_.data = nullptr;
-}
-
-const ngx_str_t &NgxEspGrpcServerCall::response_content_type() const {
-  return kContentTypeApplicationGrpc;
 }
 
 void NgxEspGrpcServerCall::AddInitialMetadata(std::string key,
@@ -410,19 +384,6 @@ void NgxEspGrpcServerCall::RunPendingRead() {
   }
 }
 
-bool NgxEspGrpcServerCall::ConvertRequestBody(std::vector<gpr_slice> *out) {
-  // Turn all incoming buffers into slices.
-  ngx_http_request_body_t *body = r_->request_body;
-  while (body->bufs) {
-    ngx_chain_t *cl = body->bufs;
-    body->bufs = cl->next;
-    out->push_back(GprSliceFromNginxBuffer(cl->buf));
-    cl->next = body->free;
-    body->free = cl;
-  }
-  return true;
-}
-
 bool NgxEspGrpcServerCall::TryReadDownstreamMessage() {
   // From http://www.grpc.io/docs/guides/wire.html, a GRPC message is:
   // * A one-byte compressed-flag
@@ -524,85 +485,6 @@ bool NgxEspGrpcServerCall::TryReadDownstreamMessage() {
   return true;
 }
 
-namespace {
-// Deletes GRPC objects.
-//
-// This is used (instead of specializing std::default_deleter<>) in
-// order to explicitly verify that the deleter's in scope.  Otherwise,
-// it'd be entirely too easy for sources to include grpc.h without
-// pulling in the corresponding deleter definitions.
-struct GrpcDeleter {
-  void operator()(grpc_byte_buffer *byte_buffer) {
-    grpc_byte_buffer_destroy(byte_buffer);
-  }
-};
-}  // namespace
-
-bool NgxEspGrpcServerCall::ConvertResponseMessage(const ::grpc::ByteBuffer &msg,
-                                                  ngx_chain_t *out) {
-  grpc_byte_buffer *grpc_msg = nullptr;
-  bool own_buffer;
-
-  if (!::grpc::SerializationTraits<::grpc::ByteBuffer>::Serialize(
-           msg, &grpc_msg, &own_buffer)
-           .ok() ||
-      !grpc_msg) {
-    return false;
-  }
-
-  auto msg_deleter = std::unique_ptr<grpc_byte_buffer, GrpcDeleter>();
-  if (own_buffer) {
-    msg_deleter.reset(grpc_msg);
-  }
-
-  // Since there's no good way to reuse the underlying gpr_slice for
-  // the nginx buffer, we need to allocate an nginx buffer and copy
-  // the data into it.
-  size_t buflen = 5;  // Compressed flag + four bytes of length.
-
-  // Get the length of the actual message.  N.B. This is the
-  // *compressed* length.
-  size_t msglen = grpc_byte_buffer_length(grpc_msg);
-  buflen += msglen;
-
-  // Allocate the chain link and buffer.
-  ngx_buf_t *buf = ngx_create_temp_buf(r_->pool, buflen);
-  if (!buf) {
-    ngx_log_error(
-        NGX_LOG_ERR, r_->connection->log, 0,
-        "Failed to allocate response buffer header for GRPC response message.");
-    return false;
-  }
-  buf->last_in_chain = 1;
-  buf->flush = 1;
-  out->next = nullptr;
-  out->buf = buf;
-
-  // Write the 'compressed' flag.
-  *buf->last++ = (grpc_msg->data.raw.compression == GRPC_COMPRESS_NONE ? 0 : 1);
-
-  // Write the message length: four bytes, big-endian.
-  // TODO: We should fail if asked to forward a message with length > uint32_max
-  buf->last[3] = msglen & 0xFF;
-  msglen >>= 8;
-  buf->last[2] = msglen & 0xFF;
-  msglen >>= 8;
-  buf->last[1] = msglen & 0xFF;
-  msglen >>= 8;
-  buf->last[0] = msglen & 0xFF;
-  buf->last += 4;
-
-  // Fill in the message.
-  for (size_t sln = 0; sln < grpc_msg->data.raw.slice_buffer.count; sln++) {
-    gpr_slice *slice = grpc_msg->data.raw.slice_buffer.slices + sln;
-    ngx_memcpy(buf->last, GPR_SLICE_START_PTR(*slice),
-               GPR_SLICE_LENGTH(*slice));
-    buf->last += GPR_SLICE_LENGTH(*slice);
-  }
-
-  return true;
-}
-
 void NgxEspGrpcServerCall::Write(const ::grpc::ByteBuffer &msg,
                                  std::function<void(bool)> continuation) {
   if (!r_) {
@@ -651,28 +533,6 @@ void NgxEspGrpcServerCall::Write(const ::grpc::ByteBuffer &msg,
   // unblocked. It's safer to set it every time we write as NGINX might
   // overwrite it (e.g. ngx_http_read_client_request_body() does).
   r_->write_event_handler = &NgxEspGrpcServerCall::OnDownstreamWriteable;
-}
-
-void NgxEspGrpcServerCall::Finish(
-    const utils::Status &status,
-    std::multimap<std::string, std::string> response_trailers) {
-  if (!r_) {
-    return;
-  }
-
-  if (!r_->header_sent) {
-    SendInitialMetadata([&](bool ok) {
-      if (ok) {
-        ngx_http_finalize_request(r_,
-                                  GrpcFinish(r_, status, response_trailers));
-      } else {
-        // TODO: more details of the error
-        ngx_http_finalize_request(r_, NGX_ERROR);
-      }
-    });
-    return;
-  }
-  ngx_http_finalize_request(r_, GrpcFinish(r_, status, response_trailers));
 }
 
 void NgxEspGrpcServerCall::RecordBackendTime(int64_t backend_time) {
