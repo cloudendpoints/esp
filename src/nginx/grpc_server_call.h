@@ -66,6 +66,26 @@ class NgxEspGrpcServerCall : public grpc::ServerCall {
   virtual void RecordBackendTime(int64_t backend_time);
 
  private:
+  // Converts the request body into gRPC messages and outputs the raw slices.
+  // The output slices are appended to the specified out vector.
+  // Returns true if successful; otherwise ConvertRequestBody() must take care
+  // of sending the error to the client, finalizing the request and return
+  // false.
+  bool ConvertRequestBody(std::vector<gpr_slice>* out);
+
+  // Converts the gRPC message into a response ngx_chain_t*
+  // Returns true if successful; otherwise ConvertResponseMessage() must take
+  // care of sending the error to the client, finalizing the request and
+  // return false.
+  bool ConvertResponseMessage(const ::grpc::ByteBuffer& msg, ngx_chain_t* out);
+
+  // Returns the response content-type
+  const ngx_str_t& response_content_type() const;
+
+  // Calls ngx_http_read_client_request_body() to process the preread request
+  // body.
+  void ProcessPrereadRequestBody();
+
   static void OnDownstreamPreread(ngx_http_request_t* r);
   static void OnDownstreamReadable(ngx_http_request_t* r);
   static void OnDownstreamWriteable(ngx_http_request_t* r);
@@ -73,8 +93,6 @@ class NgxEspGrpcServerCall : public grpc::ServerCall {
   void CompletePendingRead(bool ok);
 
   void RunPendingRead();
-
-  void ReadDownstreamRequestBody();
 
   // Attempts to read a GRPC message from downstream into read_msg_;
   // calls CompletePendingRead and returns true if successful.

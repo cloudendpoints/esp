@@ -104,22 +104,23 @@ NgxEspGrpcServerCall::NgxEspGrpcServerCall(ngx_http_request_t *r)
   cln_.next = r->cleanup;
   r->cleanup = &cln_;
 
-  ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r);
+  ProcessPrereadRequestBody();
+}
+
+void NgxEspGrpcServerCall::ProcessPrereadRequestBody() {
+  ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
   ctx->grpc_server_call = this;
   // In the typical case, there will actually be a body to be passed
   // to upstream.  So begin the read from downstream immediately
   // (i.e. do not wait for the upstream connection to be established),
   // setting up a call to OnDownstreamPreread when preread data is
   // available.
-  r->request_body_no_buffering = 1;
+  r_->request_body_no_buffering = 1;
   ngx_int_t rc = ngx_http_read_client_request_body(
-      r, &NgxEspGrpcServerCall::OnDownstreamPreread);
+      r_, &NgxEspGrpcServerCall::OnDownstreamPreread);
   if (rc >= NGX_HTTP_SPECIAL_RESPONSE) {
     ngx_http_finalize_request(r_, rc);
   }
-
-  // Establish the initial write handler.
-  r->write_event_handler = &NgxEspGrpcServerCall::OnDownstreamWriteable;
 }
 
 NgxEspGrpcServerCall::~NgxEspGrpcServerCall() {
@@ -133,6 +134,10 @@ NgxEspGrpcServerCall::~NgxEspGrpcServerCall() {
     }
   }
   cln_.data = nullptr;
+}
+
+const ngx_str_t &NgxEspGrpcServerCall::response_content_type() const {
+  return kContentTypeApplicationGrpc;
 }
 
 void NgxEspGrpcServerCall::AddInitialMetadata(std::string key,
@@ -191,7 +196,7 @@ void NgxEspGrpcServerCall::SendInitialMetadata(
   }
 
   r_->headers_out.status = NGX_HTTP_OK;
-  r_->headers_out.content_type = kContentTypeApplicationGrpc;
+  r_->headers_out.content_type = response_content_type();
   ngx_int_t rc = ngx_http_send_header(r_);
   ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r_->connection->log, 0,
                  "NgxEspGrpcServerCall::SendInitialMetadata: "
@@ -245,7 +250,15 @@ void NgxEspGrpcServerCall::OnDownstreamPreread(ngx_http_request_t *r) {
   ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                  "NgxEspGrpcServerCall::OnDownstreamPreread");
 
-  server_call->ReadDownstreamRequestBody();
+  // Convert the preread request body and store in downstream_slices_
+  if (!server_call->ConvertRequestBody(&server_call->downstream_slices_)) {
+    // Error occurred, ConvertRequestBody() has finalized the request, nothing
+    // to do anymore.
+    ngx_log_error(
+        NGX_LOG_DEBUG, server_call->r_->connection->log, 0,
+        "Failed to convert the preread request body for a gRPC call.");
+    return;
+  }
 
   r->read_event_handler = &ngx_http_block_reading;
 }
@@ -310,6 +323,15 @@ void NgxEspGrpcServerCall::RunPendingRead() {
                  "NgxEspGrpcServerCall::RunPendingRead: Starting loop");
 
   while (read_continuation_) {
+    // Read and convert the request body
+    if (!ConvertRequestBody(&downstream_slices_)) {
+      // Error occurred, ConvertRequestBody() has finalized the request and
+      // Cleanup() has called the pending read continuation with ok=false.
+      // Nothing to do anymore.
+      ngx_log_error(NGX_LOG_DEBUG, r_->connection->log, 0,
+                    "Failed to convert the request body for a gRPC call.");
+      return;
+    }
     // Attempt to read and complete a message from downstream.  Note
     // that the callback here might wind up enqueueing another read.
     if (TryReadDownstreamMessage()) {
@@ -388,21 +410,20 @@ void NgxEspGrpcServerCall::RunPendingRead() {
   }
 }
 
-void NgxEspGrpcServerCall::ReadDownstreamRequestBody() {
+bool NgxEspGrpcServerCall::ConvertRequestBody(std::vector<gpr_slice> *out) {
   // Turn all incoming buffers into slices.
   ngx_http_request_body_t *body = r_->request_body;
   while (body->bufs) {
     ngx_chain_t *cl = body->bufs;
     body->bufs = cl->next;
-    downstream_slices_.push_back(GprSliceFromNginxBuffer(cl->buf));
+    out->push_back(GprSliceFromNginxBuffer(cl->buf));
     cl->next = body->free;
     body->free = cl;
   }
+  return true;
 }
 
 bool NgxEspGrpcServerCall::TryReadDownstreamMessage() {
-  ReadDownstreamRequestBody();
-
   // From http://www.grpc.io/docs/guides/wire.html, a GRPC message is:
   // * A one-byte compressed-flag
   // * A four-byte message length
@@ -517,16 +538,8 @@ struct GrpcDeleter {
 };
 }  // namespace
 
-void NgxEspGrpcServerCall::Write(const ::grpc::ByteBuffer &msg,
-                                 std::function<void(bool)> continuation) {
-  if (!r_) {
-    continuation(false);
-    return;
-  }
-
-  ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r_->connection->log, 0,
-                 "NgxEspGrpcServerCall::Write: Writing %z bytes", msg.Length());
-
+bool NgxEspGrpcServerCall::ConvertResponseMessage(const ::grpc::ByteBuffer &msg,
+                                                  ngx_chain_t *out) {
   grpc_byte_buffer *grpc_msg = nullptr;
   bool own_buffer;
 
@@ -534,8 +547,7 @@ void NgxEspGrpcServerCall::Write(const ::grpc::ByteBuffer &msg,
            msg, &grpc_msg, &own_buffer)
            .ok() ||
       !grpc_msg) {
-    continuation(false);
-    return;
+    return false;
   }
 
   auto msg_deleter = std::unique_ptr<grpc_byte_buffer, GrpcDeleter>();
@@ -554,19 +566,17 @@ void NgxEspGrpcServerCall::Write(const ::grpc::ByteBuffer &msg,
   buflen += msglen;
 
   // Allocate the chain link and buffer.
-  ngx_chain_t out;
   ngx_buf_t *buf = ngx_create_temp_buf(r_->pool, buflen);
   if (!buf) {
     ngx_log_error(
         NGX_LOG_ERR, r_->connection->log, 0,
         "Failed to allocate response buffer header for GRPC response message.");
-    continuation(false);
-    return;
+    return false;
   }
   buf->last_in_chain = 1;
   buf->flush = 1;
-  out.next = nullptr;
-  out.buf = buf;
+  out->next = nullptr;
+  out->buf = buf;
 
   // Write the 'compressed' flag.
   *buf->last++ = (grpc_msg->data.raw.compression == GRPC_COMPRESS_NONE ? 0 : 1);
@@ -588,6 +598,30 @@ void NgxEspGrpcServerCall::Write(const ::grpc::ByteBuffer &msg,
     ngx_memcpy(buf->last, GPR_SLICE_START_PTR(*slice),
                GPR_SLICE_LENGTH(*slice));
     buf->last += GPR_SLICE_LENGTH(*slice);
+  }
+
+  return true;
+}
+
+void NgxEspGrpcServerCall::Write(const ::grpc::ByteBuffer &msg,
+                                 std::function<void(bool)> continuation) {
+  if (!r_) {
+    continuation(false);
+    return;
+  }
+
+  ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r_->connection->log, 0,
+                 "NgxEspGrpcServerCall::Write: Writing %z bytes", msg.Length());
+
+  ngx_chain_t out;
+  if (!ConvertResponseMessage(msg, &out)) {
+    // Converting the response message failed. ConvertResponseMessage() has
+    // finalized the request, call the continuation with false to abort the
+    // call.
+    ngx_log_error(NGX_LOG_DEBUG, r_->connection->log, 0,
+                  "Failed to convert a gRPC response message.");
+    continuation(false);
+    return;
   }
 
   ngx_int_t rc = ngx_http_output_filter(r_, &out);
@@ -612,6 +646,11 @@ void NgxEspGrpcServerCall::Write(const ::grpc::ByteBuffer &msg,
   write_continuation_ = continuation;
   ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r_->connection->log, 0,
                  "NgxEspGrpcServerCall::Write: blocked");
+
+  // Establish the write handler to call the continuation when write is
+  // unblocked. It's safer to set it every time we write as NGINX might
+  // overwrite it (e.g. ngx_http_read_client_request_body() does).
+  r_->write_event_handler = &NgxEspGrpcServerCall::OnDownstreamWriteable;
 }
 
 void NgxEspGrpcServerCall::Finish(
@@ -648,11 +687,13 @@ void NgxEspGrpcServerCall::Cleanup(void *server_call_ptr) {
     return;
   }
   auto server_call = reinterpret_cast<NgxEspGrpcServerCall *>(server_call_ptr);
-  server_call->r_ = nullptr;
-  server_call->cln_.data = nullptr;
   if (server_call->read_continuation_) {
     server_call->CompletePendingRead(false);
   }
+  // Set r_ = nullptr only after calling CompletePendingRead() as it needs r_
+  // (for debug logging).
+  server_call->r_ = nullptr;
+  server_call->cln_.data = nullptr;
 }
 
 }  // namespace nginx
