@@ -50,9 +50,13 @@ message ServiceControlClientConfig {
   // Report aggregator config
   ReportAggregatorConfig report_aggregator_config = 2;
 
-  // Timeout in milliseconds on service control requests.
-  // If the value is <= 0, implementation-default timeout is used.
-  int32 timeout_ms = 3;
+  // Timeout in milliseconds on service control check requests.
+  // If the value is <= 0, default timeout is 5000 milliseconds.
+  int32 check_timeout_ms = 3;
+
+  // Timeout in milliseconds on service control report requests.
+  // If the value is <= 0, default timeout is 15000 milliseconds.
+  int32 report_timeout_ms = 4;
 }
 
 // Check aggregator config

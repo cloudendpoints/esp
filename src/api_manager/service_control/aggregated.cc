@@ -60,6 +60,11 @@ const int kCheckAggregationExpirationMs = 60000;
 const int kReportAggregationEntries = 10000;
 const int kReportAggregationFlushIntervalMs = 1000;
 
+// The default connection timeout for check requests.
+const int kCheckDefaultTimeoutInMs = 5000;
+// The default connection timeout for report requests.
+const int kReportDefaultTimeoutInMs = 15000;
+
 // The maximum protobuf pool size. All usages of pool alloc() and free() are
 // within a function frame. If no con-current usage, pool size of 1 is enough.
 // This number should correspond to maximum of concurrent calls.
@@ -344,9 +349,8 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
         on_done(status.ToProto());
       }));
 
-  const std::string& url = typeid(RequestType) == typeid(CheckRequest)
-                               ? url_.check_url()
-                               : url_.report_url();
+  bool is_check = (typeid(RequestType) == typeid(CheckRequest));
+  const std::string& url = is_check ? url_.check_url() : url_.report_url();
   TRACE(trace_span) << "Http request URL: " << url;
 
   std::string request_body;
@@ -359,11 +363,22 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
       .set_body(request_body);
 
   // Set timeout on the request if it was so configured.
+  if (is_check) {
+    http_request->set_timeout_ms(kCheckDefaultTimeoutInMs);
+  } else {
+    http_request->set_timeout_ms(kReportDefaultTimeoutInMs);
+  }
   if (server_config_ != nullptr &&
       server_config_->has_service_control_client_config()) {
     const auto& config = server_config_->service_control_client_config();
-    if (config.timeout_ms() > 0) {
-      http_request->set_timeout_ms(config.timeout_ms());
+    if (is_check) {
+      if (config.check_timeout_ms() > 0) {
+        http_request->set_timeout_ms(config.check_timeout_ms());
+      }
+    } else {
+      if (config.report_timeout_ms() > 0) {
+        http_request->set_timeout_ms(config.report_timeout_ms());
+      }
     }
   }
 

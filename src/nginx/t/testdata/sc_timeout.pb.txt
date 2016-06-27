@@ -1,4 +1,4 @@
 service_control_client_config {
-  timeout_ms: 1000
+  check_timeout_ms: 1000
 }
 
