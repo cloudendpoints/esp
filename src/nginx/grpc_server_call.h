@@ -95,10 +95,6 @@ class NgxEspGrpcServerCall : public grpc::ServerCall {
   ::std::vector<gpr_slice> downstream_slices_;
 };
 
-// Sends Grpc status and response_trailers to client.
-ngx_int_t GrpcFinish(ngx_http_request_t* r, const utils::Status& status,
-                     std::multimap<std::string, std::string> response_trailers);
-
 }  // namespace nginx
 }  // namespace api_manager
 }  // namespace google

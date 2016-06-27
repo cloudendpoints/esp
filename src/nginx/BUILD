@@ -49,6 +49,8 @@ cc_library(
         "error.h",
         "grpc.cc",
         "grpc.h",
+        "grpc_finish.cc",
+        "grpc_finish.h",
         "grpc_module.cc",
         "grpc_queue.cc",
         "grpc_queue.h",

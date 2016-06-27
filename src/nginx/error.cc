@@ -29,6 +29,7 @@
 //
 
 #include "src/nginx/error.h"
+#include "src/nginx/grpc_finish.h"
 #include "src/nginx/module.h"
 #include "src/nginx/util.h"
 
