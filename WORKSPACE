@@ -38,7 +38,7 @@ bind(
 
 git_repository(
     name = "grpc_git",
-    commit = "be223358795b645416e801727f4d3fcad3d73964",  # 2016-06-21
+    commit = "03efbd34ce64615f58007eae667b375accc6c8e6",  # 0.15.0
     remote = "https://github.com/grpc/grpc.git",
 )
 
