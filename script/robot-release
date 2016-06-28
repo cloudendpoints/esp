@@ -40,6 +40,8 @@ SKIP_TESTS="false"
 RELEASE_FLEX_IMAGE_FORMAT="gcr.io/endpointsv2/endpoints-runtime-flex:debian-git-%H"
 RELEASE_GENERIC_IMAGE_FORMAT="gcr.io/endpointsv2/endpoints-runtime"
 RELEASE_GENERIC_IMAGE_FORMAT+=":debian-git-%H"
+RELEASE_GENERIC_GRPC_IMAGE_FORMAT="gcr.io/endpointsv2/endpoints-runtime-grpc"
+RELEASE_GENERIC_GRPC_IMAGE_FORMAT+=":debian-git-%H"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . ${ROOT}/script/all-utilities || { echo "Cannot load Bash utilities"; exit 1; }
@@ -165,6 +167,13 @@ if  [[ -n "${RELEASE_GENERIC_IMAGE_FORMAT}" ]]; then
   GENERIC_IMAGE="$(git show -q HEAD --pretty=format:"${RELEASE_GENERIC_IMAGE_FORMAT}")"
   ${ROOT}/script/linux-build-docker -c "${CONFIG}" -d "${TMP_DEBIAN_PACKAGE}" -i "${GENERIC_IMAGE}" -p generic \
     || error_exit "Failed to build a generic Docker Image."
+fi
+
+# Build docker container image for GKE/GCE deployment with GRPC backend.
+if  [[ -n "${RELEASE_GENERIC_GRPC_IMAGE_FORMAT}" ]]; then
+  GENERIC_GRPC_IMAGE="$(git show -q HEAD --pretty=format:"${RELEASE_GENERIC_GRPC_IMAGE_FORMAT}")"
+  ${ROOT}/script/linux-build-docker -c "${CONFIG}" -d "${TMP_DEBIAN_PACKAGE}" -g -i "${GENERIC_GRPC_IMAGE}" -p generic \
+    || error_exit "Failed to build a grpc Docker Image."
 fi
 
 if [[ -n "${RELEASE_JSON}" ]]; then

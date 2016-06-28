@@ -32,11 +32,13 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 PLATFORM="flex"
 DEB="${ROOT}/bazel-bin/src/nginx/main/endpoints-server-proxy.deb"
+DOCKERFILE="Dockerfile"
 
-while getopts :c:d:i:p: arg; do
+while getopts :c:d:gi:p: arg; do
   case ${arg} in
     c) CONFIG="${OPTARG}";;
     d) DEB="${OPTARG}";;
+    g) DOCKERFILE="Dockerfile.grpc";;
     i) IMAGE="${OPTARG}";;
     p) PLATFORM="${OPTARG}";;
     *) error_exit "Unrecognized argument -${OPTARG}";;
@@ -51,8 +53,11 @@ gcloud docker pull "${IMAGE}" \
   && { echo "Image ${IMAGE} already exists; skipping"; exit 0; }
 
 echo "Building Endpoints Runtime docker image."
-cp ${DEB} ./docker/${PLATFORM}/endpoints-runtime.deb
-retry -n 3 docker build --no-cache -t ${IMAGE} ./docker/${PLATFORM}/  \
+DOCKERFILE_PATH="./docker/${PLATFORM}"
+cp "${DEB}" "${DOCKERFILE_PATH}/endpoints-runtime.deb"
+retry -n 3 docker build --no-cache -t "${IMAGE}" \
+  -f "${DOCKERFILE_PATH}/${DOCKERFILE}" \
+  "${DOCKERFILE_PATH}/"  \
   || error_exit "Docker image build failed."
 
 # Build custom docker image for GKE/GCE.
