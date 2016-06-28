@@ -66,7 +66,8 @@ void CheckServiceControl(std::shared_ptr<context::RequestContext> context,
   // or if not need to check service control, skip it.
   if (!context->method()) {
     TRACE(trace_span) << "Method is not configured in the service config";
-    continuation(Status(404, "Method does not exist."));
+    continuation(Status(Code::NOT_FOUND, "Method does not exist.",
+                        Status::SERVICE_CONTROL));
     return;
   } else if (!context->service_context()->service_control()) {
     TRACE(trace_span) << "Service control check is not needed";
