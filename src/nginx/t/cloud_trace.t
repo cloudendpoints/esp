@@ -46,7 +46,7 @@ my $BackendPort = 8081;
 my $ServiceControlPort = 8082;
 my $CloudTracePort = 8083;
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(19);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(21);
 
 my $config = ApiManager::get_bookstore_service_config_allow_unregistered .
     ApiManager::read_test_file('testdata/logs_metrics.pb.txt') . <<"EOF";
@@ -101,10 +101,12 @@ $t->run();
 ################################################################################
 
 # This request triggers trace.
-my $response = http(<<'EOF');
+my $trace_id = 'e133eacd437d8a12068fd902af3962d8';
+my $parent_span_id = '12345678';
+my $response = http(<<"EOF");
 GET /shelves?key=this-is-an-api-key HTTP/1.0
 Host: localhost
-X-Cloud-Trace-Context: 123
+X-Cloud-Trace-Context: ${trace_id}/${parent_span_id};o=1
 
 EOF
 
@@ -123,8 +125,11 @@ is($r->{uri}, '/v1/projects/api-manager-project/traces', 'Trace request was call
 
 my $json_obj = decode_json($r->{body});
 is($json_obj->{traces}->[0]->{projectId}, 'api-manager-project', 'Project ID in body is correct.');
+is($json_obj->{traces}->[0]->{traceId}, $trace_id, 'Trace ID matches the provided one.');
 is($json_obj->{traces}->[0]->{spans}->[0]->{name}, 'API_MANAGER_ROOT', 'First trace span is ESP_ROOT');
 is($json_obj->{traces}->[0]->{spans}->[0]->{kind}, 'RPC_SERVER', 'Trace span kind is RPC_SERVER');
+is($json_obj->{traces}->[0]->{spans}->[0]->{parentSpanId}, $parent_span_id,
+    'Parent span of root should be the provided one');
 my $rootid = $json_obj->{traces}->[0]->{spans}->[0]->{spanId};
 is($json_obj->{traces}->[0]->{spans}->[1]->{name}, 'CheckServiceControl',
     'Next trace span is CheckServiceControl');

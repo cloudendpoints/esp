@@ -100,10 +100,17 @@ $t->run();
 
 ################################################################################
 
-# This request triggers trace.
-my $response = http(<<'EOF');
+# These requests should not trigger trace.
+http(<<'EOF');
 GET /shelves?key=this-is-an-api-key HTTP/1.0
 Host: localhost
+
+EOF
+
+http(<<'EOF');
+GET /shelves?key=this-is-an-api-key HTTP/1.0
+Host: localhost
+X-Cloud-Trace-Context: 370835b626fd525dfd1b46d34755140d;o=0
 
 EOF
 

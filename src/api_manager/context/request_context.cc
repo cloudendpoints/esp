@@ -107,12 +107,7 @@ RequestContext::RequestContext(std::shared_ptr<ServiceContext> service_context,
   std::string trace_context_header;
   request_->FindHeader(kCloudTraceContextHeader, &trace_context_header);
 
-#ifdef CLOUD_TRACE_ENABLED
-  if (!trace_context_header.empty()) {
-    // TODO: read trace context header and get context from it.
-    cloud_trace_.reset(new cloud_trace::CloudTrace());
-  }
-#endif
+  cloud_trace_.reset(cloud_trace::CreateCloudTrace(trace_context_header));
 }
 
 void RequestContext::ExtractApiKey() {

@@ -62,10 +62,9 @@ class CloudTraceConfig {
 // EndRootSpan is called.
 class CloudTrace final {
  public:
-  CloudTrace();
-
-  // Construct with context header.
-  CloudTrace(std::string trace_context);
+  // Construct with give Trace proto object. This constructor must only be
+  // called with non-null pointer.
+  CloudTrace(google::devtools::cloudtrace::v1::Trace *trace);
 
   void SetProjectId(const std::string &project_id);
 
@@ -121,6 +120,12 @@ class CloudTraceSpan {
   google::devtools::cloudtrace::v1::TraceSpan *trace_span_;
   std::vector<std::string> messages;
 };
+
+// Parses the trace_context and determines if cloud trace should
+// be produced for the request. If so, creates an initialized CloudTrace object.
+// Otherwise return nullptr.
+// For trace_context, pass the value of "X-Cloud-Trace-Context" HTTP header.
+CloudTrace *CreateCloudTrace(const std::string &trace_context);
 
 // Creates trace span if trace is enabled.
 // Returns nullptr when cloud_trace is nullptr.
