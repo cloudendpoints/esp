@@ -213,7 +213,8 @@ nginx_suite(
     tests = [
         "auth_openid.t",
         "auth_ssl.t",
-        "cloud_trace.t",
+# Cloud trace temporarily disabled.
+#        "cloud_trace.t",
         "cloud_trace_disabled.t",
         "endpoints_off.t",
         "no_check.t",
