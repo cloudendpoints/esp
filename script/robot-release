@@ -88,7 +88,8 @@ BAZEL_VERSION="$(bazel version | grep '^Build label: ' | sed 's/^Build label: //
 echo "Bazel ${BAZEL_VERSION}" > "${ROOT}/src/nginx/main/built_using"
 DEB="${ROOT}/bazel-bin/src/nginx/main/endpoints-server-proxy.deb"
 # Placeholder for debian package.
-TMP_DEBIAN_PACKAGE="$(mktemp /tmp/XXXXXX.deb)"
+TMP_DEBIAN_DIR="$(mktemp -d)"  # Create a temp directory
+TMP_DEBIAN_PACKAGE="${TMP_DEBIAN_DIR}/endpoints-server-proxy.deb"
 
 if [[ -n "${RELEASE_DEB}" ]]; then
   echo "Attempting to download ${RELEASE_DEB}."
