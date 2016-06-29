@@ -62,6 +62,7 @@ const size_t kMemoryUnit = 1024;
 ngx_str_t application_json = ngx_string("application/json");
 ngx_str_t shm_name = ngx_string("esp_stats");
 const std::chrono::milliseconds kRefreshInterval(1000);
+const std::chrono::milliseconds kLogStatusInterval(60000);
 
 ngx_int_t ngx_esp_stats_init_zone(ngx_shm_zone_t *shm_zone, void *data) {
   if (data) {  // nginx is being reloaded, propagate the data
@@ -242,6 +243,15 @@ ngx_int_t ngx_esp_add_stats_shared_memory(ngx_conf_t *cf) {
   return NGX_OK;
 }
 
+Status stats_json_per_process(const ngx_esp_process_stats_t &process_stats,
+                              std::string *json) {
+  nginx::proto::Status status;
+  fill_server_status_proto(status.mutable_server());
+  fill_process_stats(process_stats, status.add_processes());
+
+  return utils::ProtoToJson(status, json, utils::JsonOptions::OUTPUT_DEFAULTS);
+};
+
 ngx_int_t ngx_esp_init_process_stats(ngx_cycle_t *cycle) {
   auto *mc = reinterpret_cast<ngx_esp_main_conf_t *>(
       ngx_http_cycle_get_module_main_conf(cycle, ngx_esp_module));
@@ -299,8 +309,22 @@ ngx_int_t ngx_esp_init_process_stats(ngx_cycle_t *cycle) {
     }
   };
 
+  auto log_func = [cycle, process_stat]() {
+    std::string status_json;
+    Status status = stats_json_per_process(*process_stat, &status_json);
+    if (!status.ok()) {
+      return NGX_ERROR;
+    };
+    ngx_log_error(NGX_LOG_ERR, cycle->log, 0, "Print endpoints status \"%s\"",
+                  status_json.c_str());
+    return NGX_OK;
+  };
+
   mc->stats_timer.reset(
       new NgxEspTimer(kRefreshInterval, timer_func, cycle->log));
+
+  mc->log_stats_timer.reset(
+      new NgxEspTimer(kLogStatusInterval, log_func, cycle->log));
 
   return NGX_OK;
 }

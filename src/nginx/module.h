@@ -81,6 +81,9 @@ typedef struct {
   // Timer to update process stats
   std::unique_ptr<PeriodicTimer> stats_timer;
 
+  // Timer to log endpoints status.
+  std::unique_ptr<PeriodicTimer> log_stats_timer;
+
   // A timer event to detect worker process existing.
   ngx_event_t exit_timer;
   // the start time to wait for active connections to be closed.
