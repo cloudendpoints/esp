@@ -52,7 +52,8 @@ ENABLE_ENDPOINTS="false"
 ENABLE_FLEX="false"
 DURATION_IN_HOUR=0
 KEEP_VM="false"
-GAE_VERSION="test-bookstore-${TIME_VERSION}"
+VERSION_PREFIX='test-bookstore'
+GAE_VERSION=''
 
 # Whether to use a long-life token for esp-load-test project.
 USE_LONG_LIFE_TOKEN="false"
@@ -81,10 +82,13 @@ set_api_keys
 
 APP_VERSION="${IMAGE_NAME}-${TIME_VERSION}"
 if [[ ${DURATION_IN_HOUR} -ne 0 ]]; then
+  # This is a release qualification test.
   PROJECT_ID=esp-long-run
   API_KEY="${ESP_LONG_RUN_API_KEY}"
-  GAE_VERSION="rc-test-${TIME_VERSION}"
+  VERSION_PREFIX='rc-test'
 fi
+
+[[ -n "${GAE_VERSION}" ]] || GAE_VERSION="${VERSION_PREFIX}-${TIME_VERSION}"
 
 # Get default API Key if none was specified.
 if [[ -z "${API_KEY}" ]]; then
@@ -129,9 +133,9 @@ function json_filename () {
     flex='off'
   fi
   if [[ "${ENABLE_ENDPOINTS}" == 'false' ]]; then
-  endpoints='off'
+    endpoints='off'
   fi
-  echo "flex_${flex}_endpoints_${endpoints}"
+  echo "flex-${flex}-endpoints-${endpoints}"
 }
 
 function cleanup() {
@@ -214,6 +218,7 @@ BOOKSTORE_FAILURES=0
 JWT_TOKEN="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjMzYTY4MWIzNmI4OTgzOTEzYjA1ZjhkNWVhYjE2NWM2MDY5NGI2ZmMifQ.eyJpc3MiOiJsb2FkdGVzdEBlc3AtdGVzdC1jbGllbnQuaWFtLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJzdWIiOiJsb2FkdGVzdEBlc3AtdGVzdC1jbGllbnQuaWFtLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJhdWQiOlsidGVzdCIsImVzcC1sb2FkLXRlc3QuYXBwc3BvdC5jb20iLCJlc3AtbG9uZy1ydW4uYXBwc3BvdC5jb20iXSwiaWF0IjoxNDU3MTA5NzY1LCJleHAiOjI0NTcxMTMzNjV9.NzO4y_BkW5Dz7cwkMUzApBGwXtHwVVujhc4pxcODcFYB44mOzS49iHnikoRquBHB6tsCE61Y4GwK4Gdk7ng5-PFqUF6ctD6Onum4pMSH25DmqyI6kht4TSNiAHT1A2KhrBv7WFTMKYmn1SrvioLkiCH7XrxO2mTohr9yh2X8qvrGVj06OkdFp-3A7N3RFZouhGBWeGf1dBnXwB0MvlIVmi63rFnvLryCKFMb8aQgADSEDPVtdoSzDe_s2eIXucaLTRe0lgVr9E1vStmU147uI56v-ymREUC1GJTvhamSupfP56eJZ3ESivoFutFLKGjQvKRkahc_Rr4YfonlbiVGKA"
 
 RESULT=0  # succeed by default
+
 while true; do
   # Check that we are still calling the deployed version.
   if ! check_deployed_version; then

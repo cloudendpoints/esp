@@ -58,6 +58,7 @@ done
 [[ -n "${SHA}" ]] || usage "Must provide commit sha via '-s' parameter."
 [[ -x "${GSUTIL}" ]] || usage "Cannot find gsutil, provide it via '-g' flag."
 
+mkdir -p "${TMP}"
 LOGS="$(mktemp -d ${TMP}/qualify-XXXX)"
 RESULT="${LOGS}/RESULT.log"
 NGINX_LOG_ANALYSIS="${LOGS}/nginx-log-analysis.log"
@@ -216,13 +217,14 @@ function count_stress_failures() {
   echo 'Extracting logs from tar files of the long running release qualification tests.'
 
   for DIR in "${RQ_TESTS[@]}"; do
-    [[ "${DIR}" =~ 'rc-test' ]] || continue
     echo ""
     echo "Looking for tar.gz files in ${DIR}"
     echo ""
     while read -u3 TAR; do
       echo "Extracting nginx logs from ${TAR}"
-      tar zxvf ${TAR} -C "${DIR}" --strip=3 var/log/nginx
+      tar zxvf ${TAR} -C "${DIR}" --strip=3 var/log/nginx \
+        || tar xvf ${TAR} -C "${DIR}" --strip=3 var/log/nginx \
+        || error_exit "Could not extract ${TAR}"
     done 3< <(find "${DIR}" -type f -name '*.tar.gz')
   done
 
@@ -240,8 +242,10 @@ function count_stress_failures() {
     echo '**********************************************************************'
     echo '* Below are the NGINX error log entries that were not accounted for. *'
     echo '**********************************************************************'
-    grep -v "${KNOWN_ERRORS_REGEX}" "${LOGS}/${SHA}"/rc-test-*/error*.log
-  ) > "${NGINX_LOG_ANALYSIS}"
+    grep -v "${KNOWN_ERRORS_REGEX}" "${LOGS}/${SHA}"/rc-test-*/error*.log \
+      || error_exit 'Cannot find any log files'
+  ) > "${NGINX_LOG_ANALYSIS}" \
+    || error_exit 'Could not filter logs.'
 
   printf "\e[31m
 Please review the NGINX log analysis results in ${NGINX_LOG_ANALYSIS}
