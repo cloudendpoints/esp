@@ -247,6 +247,10 @@ def espDockerImage() {
   return espGenericDockerImage()
 }
 
+def espGrpcDockerImage() {
+  return espGenericDockerImage('-grpc')
+}
+
 def espFlexDockerImage() {
   return espGenericDockerImage('-flex')
 }
@@ -297,7 +301,7 @@ def buildPackages() {
   } else {
     def espDebianPackage = espDebianPackage()
     def espImgFlex = espFlexDockerImage()
-
+    def espImgGrpc = espGrpcDockerImage()
     def serviceManagementUrl = getServiceManagementUrl()
     if (serviceManagementUrl != '') {
       sh "sed -i s,${SERVICE_MGMT_URL},${serviceManagementUrl},g " +
@@ -308,6 +312,7 @@ def buildPackages() {
         "-m ${espImgFlex} " +
         "-g ${espImgGeneric} " +
         "-d ${espDebianPackage} " +
+        "-r ${espImgGrpc}" +
         "${serverConfigFlag} -s"
     // Not rebuilding esp for local perf
     fastStash('nginx-esp', 'bazel-bin/src/nginx/main/nginx-esp')

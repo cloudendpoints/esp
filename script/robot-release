@@ -48,7 +48,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 CONFIG=''
 
-while getopts :c:d:f:g:j:m:st:v: arg; do
+while getopts :c:d:f:g:j:m:r:st:v: arg; do
   case ${arg} in
     c) CONFIG="${OPTARG}";;
     d) RELEASE_DEB="${OPTARG}";;
@@ -56,6 +56,7 @@ while getopts :c:d:f:g:j:m:st:v: arg; do
     g) RELEASE_GENERIC_IMAGE_FORMAT="${OPTARG}";;
     j) RELEASE_JSON="${OPTARG}";;
     m) RELEASE_FLEX_IMAGE_FORMAT="${OPTARG}";;
+    r) RELEASE_GENERIC_GRPC_IMAGE_FORMAT="${OPTARG}";;
     s) SKIP_TESTS="true";;
     t) RELEASE_TAR="${OPTARG}";;
     v) VERSIONED_DEB="${OPTARG}";;
