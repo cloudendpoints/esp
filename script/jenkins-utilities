@@ -228,12 +228,18 @@ function check_service() {
 
 # Run and upload logs
 function long_running_test() {
-  local host=${1}
+  local host="${1}"
   local duration_in_hour=${2}
-  local api_key=${3}
-  local esp_service=${4}
-  local remote_dir=${5}
-  local log_file="$(mktemp /tmp/XXXXXX.log)"
+  local api_key="${3}"
+  local esp_service="${4}"
+  local log_dir="${5}"
+  local test_id="${6}"
+  local run_id="${7}"
+  local test_type=''
+  [[ ${duration_in_hour} -gt 0 ]] && test_type='long-run-test_'
+  local final_test_id="${test_type}${test_id}"
+  local log_file="${log_dir}/${final_test_id}.log"
+  local json_file="${log_dir}/${final_test_id}.json"
   local status
 
   # Checking Service before starting the test.
@@ -249,24 +255,14 @@ function long_running_test() {
       -s "${esp_service}" | tee "${log_file}"
 
     status=${PIPESTATUS[0]}
-
-    echo "Uploading log to ${remote_dir}"
-    retry -n 3 ${GSUTIL} -h Content-Type:text/plain cp \
-      "${log_file}" \
-      "${remote_dir}/long-run-test.log"
-    [[ ${?} -eq 0 ]] || echo 'Failed to upload long-run-test.log'
   fi
 
-  echo "Uplading json to ${remote_dir}"
-  retry -n 3 ${GSUTIL} -h Content-Type:application/json cp - \
-    "${remote_dir}"/long-run-test.json <<__EOF__
-{
-  "scriptStatus": ${status},
-  "headCommitHash": "$(git rev-parse --verify HEAD)"
-}
-__EOF__
-  [[ ${?} -eq 0 ]] || echo 'Failed to upload long-run-test.json'
-  rm -f ${log_file}
+  create_status_file \
+    -f "${json_file}" \
+    -s ${status} \
+    -t "${final_test_id}" \
+    -r "${run_id}"
+
   return ${status}
 }
 
@@ -297,14 +293,10 @@ function upload_logs() {
   local remote_dir="${1}"
   local log_dir="${2}"
 
-  for log_file in `find "${log_dir}" -type f`; do
-    [[ -s "${log_file}" ]] || continue
-    local filename="${log_file##*/}"
-    echo "Uploading log ${log_file} to ${remote_dir}"
-    retry -n 3 ${GSUTIL} -h Content-Type:application/x-gtar cp \
-      "${log_file}" "${remote_dir}/${filename}"
-    [[ ${?} -eq 0 ]] || echo "Failed to upload ${filename}"
-  done
+  echo "Uploading content of ${log_dir} to ${remote_dir}"
+  retry -n 3 ${GSUTIL} -h 'Content-Type:text/plain' -m cp -r \
+    "${log_dir}" "${remote_dir}" \
+    || echo "Failed to upload ${log_dir}"
 }
 
 # End to End tests common options

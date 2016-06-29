@@ -144,10 +144,17 @@ fi
 quit_nginx
 
 if [[ -n "${BUCKET}" ]] ; then
-  RUN_ID="$(extract_run_id_from_test_env_file "${TEST_ENV}")"
+  RUN_ID="$(extract_key_from_test_env_file 'run_id' "${TEST_ENV}")" \
+    || error_exit "Could not extract run_id from ${TEST_ENV}"
+  TEST_ID="$(extract_key_from_test_env_file 'test' "${TEST_ENV}")" \
+    || error_exit "Could not extract test from ${TEST_ENV}"
   LOG_DIRECTORY="$(mktemp -d /tmp/log_dir_XXXX)"
-  create_status_file "${LOG_DIRECTORY}/local-performance.json" "${EXIT_STATUS}"
-  tar_logs "$(mktemp "${LOG_DIRECTORY}/perf-XXXX.tar.gz")" "${PREFIX}/logs/"
+  create_status_file \
+    -f "${LOG_DIRECTORY}/${TEST_ID}.json" \
+    -s "${EXIT_STATUS}" \
+    -t "${TEST_ID}" \
+    -r "${RUN_ID}"
+  tar_logs "${LOG_DIRECTORY}/${RUN_ID}.tar.gz" "${PREFIX}/logs/"
   gsutil -h 'Content-Type:text/plain' -m cp -r "${LOG_DIRECTORY}" "${BUCKET}/${RUN_ID}" \
     || echo 'Cannot upload logs.'
 fi

@@ -207,16 +207,21 @@ case "${TEST_TYPE}" in
   *) HOST="http://${ENDPOINT}";;
 esac
 
+
+LOG_DIR="$(mktemp -d /tmp/log.XXXX)"
+TEST_ID="gke-${COUPLING_OPTION}-coupling-${TEST_TYPE}"
 # Running Test
 run_nonfatal long_running_test \
   "${HOST}" \
   "${DURATION_IN_HOUR}" \
   "${API_KEY}" \
   "${ESP_SERVICE}" \
-  "${REMOTE_LOG_DIR}"
-status=${?}
-log_dir="$(mktemp -d /tmp/log.XXXX)"
-save_logs "${NAMESPACE}" "${log_dir}"
-upload_logs "${REMOTE_LOG_DIR}" "${log_dir}"
-rm -rf "${log_dir}"
-exit ${status}
+  "${LOG_DIR}" \
+  "${TEST_ID}" \
+  "${UNIQUE_ID}"
+
+STATUS=${?}
+save_logs "${NAMESPACE}" "${LOG_DIR}"
+upload_logs "${REMOTE_LOG_DIR}" "${LOG_DIR}"
+rm -rf "${LOG_DIR}"
+exit ${STATUS}

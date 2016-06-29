@@ -125,17 +125,16 @@ $ROOT/script/linux-gae-instance -a ${APP_DIR}/app_esp.yaml \
     -v ${GAE_VERSION} -p ${PROJECT_ID} create \
   || error_exit "Failed to deploy ${GAE_VERSION} to ${PROJECT_ID}."
 
-function json_filename () {
+function test_filename () {
   local flex='on'
   local endpoints='on'
+  local test_type=''
 
-  if [[ "${ENABLE_FLEX}" == 'false' ]]; then
-    flex='off'
-  fi
-  if [[ "${ENABLE_ENDPOINTS}" == 'false' ]]; then
-    endpoints='off'
-  fi
-  echo "flex-${flex}-endpoints-${endpoints}"
+  [[ "${ENABLE_FLEX}" == 'false' ]] && flex='off'
+  [[ "${ENABLE_ENDPOINTS}" == 'false' ]] && endpoints='off'
+  [[ ${DURATION_IN_HOUR} -gt 0 ]] && test_type='long-run-test_'
+
+  echo "${test_type}flex-${flex}-endpoints-${endpoints}"
 }
 
 function cleanup() {
@@ -218,75 +217,90 @@ BOOKSTORE_FAILURES=0
 JWT_TOKEN="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjMzYTY4MWIzNmI4OTgzOTEzYjA1ZjhkNWVhYjE2NWM2MDY5NGI2ZmMifQ.eyJpc3MiOiJsb2FkdGVzdEBlc3AtdGVzdC1jbGllbnQuaWFtLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJzdWIiOiJsb2FkdGVzdEBlc3AtdGVzdC1jbGllbnQuaWFtLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJhdWQiOlsidGVzdCIsImVzcC1sb2FkLXRlc3QuYXBwc3BvdC5jb20iLCJlc3AtbG9uZy1ydW4uYXBwc3BvdC5jb20iXSwiaWF0IjoxNDU3MTA5NzY1LCJleHAiOjI0NTcxMTMzNjV9.NzO4y_BkW5Dz7cwkMUzApBGwXtHwVVujhc4pxcODcFYB44mOzS49iHnikoRquBHB6tsCE61Y4GwK4Gdk7ng5-PFqUF6ctD6Onum4pMSH25DmqyI6kht4TSNiAHT1A2KhrBv7WFTMKYmn1SrvioLkiCH7XrxO2mTohr9yh2X8qvrGVj06OkdFp-3A7N3RFZouhGBWeGf1dBnXwB0MvlIVmi63rFnvLryCKFMb8aQgADSEDPVtdoSzDe_s2eIXucaLTRe0lgVr9E1vStmU147uI56v-ymREUC1GJTvhamSupfP56eJZ3ESivoFutFLKGjQvKRkahc_Rr4YfonlbiVGKA"
 
 RESULT=0  # succeed by default
+LOG_DIRECTORY="$(mktemp -d /tmp/XXXX_log_dir)"
+TEST_ID="$(test_filename)"
+LOG_FILE="${LOG_DIRECTORY}/${TEST_ID}.log"
+JSON_FILE="${LOG_DIRECTORY}/${TEST_ID}.json"
 
-while true; do
-  # Check that we are still calling the deployed version.
-  if ! check_deployed_version; then
-    RESULT=1
-    break
-  fi
+(
+  while true; do
+    # Check that we are still calling the deployed version.
+    if ! check_deployed_version; then
+      RESULT=1
+      exit ${RESULT}
+    fi
 
-  ((RUN_COUNT++))
+    ((RUN_COUNT++))
 
-  #######################
-  # Insert tests here
-  #######################
+    #######################
+    # Insert tests here
+    #######################
 
-  echo "Starting test run ${RUN_COUNT} at $(date)."
-  echo "Failures so far: Stress: ${STRESS_FAILURES}, Bookstore: ${BOOKSTORE_FAILURES}."
+    echo "Starting test run ${RUN_COUNT} at $(date)."
+    echo "Failures so far: Stress: ${STRESS_FAILURES}, Bookstore: ${BOOKSTORE_FAILURES}."
 
-  if [[ "${USE_LONG_LIFE_TOKEN}" == "false" ]]; then
-    # Need to re-generate token for each run, it expired in 1 hour.
-    JWT_TOKEN=$(${ROOT}/client/custom/gen-auth-token.sh -a ${SERVICE_NAME})
-  fi
-  echo "Auth token is: ${JWT_TOKEN}"
-  sed -e "s|\${API_KEY}|${API_KEY}|g" \
-      -e "s|\${HOST}|${HOST}|g" \
-      -e "s|\${POST_FILE}|${POST_FILE}|g" \
-      -e "s|\${JWT_TOKEN}|${JWT_TOKEN}|g" \
-      ${ROOT}/test/client/test_data.json.temp > ${ROOT}/test/client/test_data.json
-  cat ${ROOT}/test/client/test_data.json
+    if [[ "${USE_LONG_LIFE_TOKEN}" == "false" ]]; then
+      # Need to re-generate token for each run, it expired in 1 hour.
+      JWT_TOKEN=$(${ROOT}/client/custom/gen-auth-token.sh -a ${SERVICE_NAME})
+    fi
+    echo "Auth token is: ${JWT_TOKEN}"
+    sed -e "s|\${API_KEY}|${API_KEY}|g" \
+        -e "s|\${HOST}|${HOST}|g" \
+        -e "s|\${POST_FILE}|${POST_FILE}|g" \
+        -e "s|\${JWT_TOKEN}|${JWT_TOKEN}|g" \
+        ${ROOT}/test/client/test_data.json.temp > ${ROOT}/test/client/test_data.json
+    cat ${ROOT}/test/client/test_data.json
 
-  if [[ "${ENABLE_ENDPOINTS}" == "true" ]]; then
-    echo "Test bookstore with endpoints=on."
-    ${ROOT}/test/client/esp_bookstore_test.py \
-      --host=${HOST} --endpoints=true \
-      --api_key=${API_KEY} --auth_token=${JWT_TOKEN}
-  else
-    echo "Test bookstore with endpoints=off."
-    ${ROOT}/test/client/esp_bookstore_test.py \
-      --host=${HOST} --endpoints=false
-  fi
+    if [[ "${ENABLE_ENDPOINTS}" == "true" ]]; then
+      echo "Test bookstore with endpoints=on."
+      ${ROOT}/test/client/esp_bookstore_test.py \
+        --host=${HOST} --endpoints=true \
+        --api_key=${API_KEY} --auth_token=${JWT_TOKEN}
+    else
+      echo "Test bookstore with endpoints=off."
+      ${ROOT}/test/client/esp_bookstore_test.py \
+        --host=${HOST} --endpoints=false
+    fi
 
-  [[ ${RESULT} -eq 0 ]] \
-    || ((BOOKSTORE_FAILURES++))
+    [[ ${RESULT} -eq 0 ]] \
+      || ((BOOKSTORE_FAILURES++))
 
-  if [[ ${DURATION_IN_HOUR} -ne 0 ]]; then
-    echo "Starting stress test at $(date)."
-    ./esp_client.py --test=stress --test_data=${ROOT}/test/client/test_data.json \
-      || ((STRESS_FAILURES++))
-  fi
-  #######################
-  # End of test suite
-  #######################
+    if [[ ${DURATION_IN_HOUR} -ne 0 ]]; then
+      echo "Starting stress test at $(date)."
+      ./esp_client.py --test=stress --test_data=${ROOT}/test/client/test_data.json \
+        || ((STRESS_FAILURES++))
+    fi
+    #######################
+    # End of test suite
+    #######################
 
-  # Break if test has run long enough.
-  [[ $(date +"%s") -lt ${END_TIME} ]] || break
-done
+    # Break if test has run long enough.
+    [[ $(date +"%s") -lt ${END_TIME} ]] || break
+  done
 
-echo "Finished ${RUN_COUNT} test runs."
-echo "Failures: Stress: ${STRESS_FAILURES}, Bookstore: ${BOOKSTORE_FAILURES}."
+  echo "Finished ${RUN_COUNT} test runs."
+  echo "Failures: Stress: ${STRESS_FAILURES}, Bookstore: ${BOOKSTORE_FAILURES}."
 
-# We only fail the test if all bookstore runs failed.
-[[ ${BOOKSTORE_FAILURES} == ${RUN_COUNT} ]] \
-  && RESULT=1
+  # We only fail the test if all bookstore runs failed.
+  [[ ${BOOKSTORE_FAILURES} == ${RUN_COUNT} ]] \
+    && RESULT=1
+
+  exit ${RESULT}
+) | tee  "${LOG_FILE}"
+
+RESULT=${PIPESTATUS[0]}
 
 if [[ -n "${BUCKET}" ]] ; then
-  create_status_file "${HOME}/nginx-logs/"$(json_filename)".json" "${RESULT}"
+  create_status_file \
+    -f "${JSON_FILE}" \
+    -s "${RESULT}" \
+    -t "${TEST_ID}" \
+    -r "${GAE_VERSION}"
+
   echo "Uploading NGINX server logs to ${BUCKET}."
   ${ROOT}/script/linux-gae-instance \
-    -v "${GAE_VERSION}" -p "${PROJECT_ID}" -d "${HOME}/nginx-logs" nginx-logs \
-    && gsutil -h "Content-Type:text/plain" -m cp -r "${HOME}/nginx-logs" "${BUCKET}/${GAE_VERSION}" \
+    -v "${GAE_VERSION}" -p "${PROJECT_ID}" -d "${LOG_DIRECTORY}" nginx-logs \
+    && gsutil -h "Content-Type:text/plain" -m cp -r "${LOG_DIRECTORY}" "${BUCKET}/${GAE_VERSION}" \
     || error_exit "Cannot download NGINX logs."
 fi
 

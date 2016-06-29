@@ -89,16 +89,21 @@ run retry -n 3 gcloud compute instances create "${INSTANCE_NAME}" \
   --metadata endpoints-service-name="${ESP_SERVICE}",endpoints-service-version="${ESP_SERVICE_VERSION}" \
   --metadata-from-file startup-script="${VM_STARTUP_SCRIPT}"
 
+
+LOG_DIR="$(mktemp -d /tmp/log.XXXX)"
+TEST_ID="gce-${VM_IMAGE}"
 # Running Test
 run_nonfatal long_running_test \
   "${HOST}" \
   "${DURATION_IN_HOUR}" \
   "${API_KEY}" \
   "${ESP_SERVICE}" \
-  "${REMOTE_LOG_DIR}"
-status=${?}
-log_dir="$(mktemp -d /tmp/log.XXXX)"
-save_vm_logs "${INSTANCE_NAME}" "${log_dir}"
-upload_logs "${REMOTE_LOG_DIR}" "${log_dir}"
-rm -rf "${log_dir}"
-exit ${status}
+  "${LOG_DIR}" \
+  "${TEST_ID}" \
+  "${UNIQUE_ID}"
+
+STATUS=${?}
+save_vm_logs "${INSTANCE_NAME}" "${LOG_DIR}"
+upload_logs "${REMOTE_LOG_DIR}" "${LOG_DIR}"
+rm -rf "${LOG_DIR}"
+exit ${STATUS}

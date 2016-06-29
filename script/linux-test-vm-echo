@@ -70,7 +70,8 @@ fi
 
 TIME_VERSION="$(date +"%Y%m%d%H%M%S")"
 APP_VERSION="${IMAGE_NAME}-${TIME_VERSION}"
-GAE_VERSION="$(extract_run_id_from_test_env_file "${TEST_ENV}")"
+GAE_VERSION="$(extract_key_from_test_env_file 'run_id' "${TEST_ENV}")" \
+  || error_exit "Could not extract run_id from ${TEST_ENV}."
 echo "API_KEY: ${API_KEY}"
 echo "PROJECT_ID: ${PROJECT_ID}"
 echo "IMAGE_NAME: ${IMAGE_NAME}"
@@ -127,7 +128,13 @@ RESULT=${?}
 
 if [[ -n "${BUCKET}" ]] ; then
   LOG_DIRECTORY="${HOME}/nginx-logs"
-  create_status_file "${LOG_DIRECTORY}/flex-performance.json" "${RESULT}"
+  TEST_ID="$(extract_key_from_test_env_file 'test' "${TEST_ENV}")"
+  create_status_file \
+    -f "${LOG_DIRECTORY}/${TEST_ID}.json" \
+    -s "${RESULT}" \
+    -t "${TEST_ID}" \
+    -r "${GAE_VERSION}"
+
   echo "Uploading NGINX server logs."
   "${ROOT}/script/linux-gae-instance" \
     -v "${GAE_VERSION}" -p "${PROJECT_ID}" -d "${LOG_DIRECTORY}" nginx-logs \

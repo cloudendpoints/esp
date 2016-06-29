@@ -122,19 +122,36 @@ function set_api_keys() {
 
 # Creates a simple Json Status file
 function create_status_file() {
-  local file_path="${1}"
-  local status="${2}"
+  local OPTARG ARG
+  local file_path=''
+  local test_status=''
+  local test_id=''
+  local run_id=''
+
+  while getopts ":f:s:t:r:" ARG; do
+    case ${ARG} in
+      f) file_path="${OPTARG}";;
+      s) test_tatus=${OPTARG};;
+      t) test_id="${OPTARG}";;
+      r) run_id="${OPTARG}";;
+      *) echo "Unrecognized argument: -${OPTARG}";;
+    esac
+  done
+
   mkdir -p "$(dirname "${file_path}")"
 
   cat > "${file_path}" <<__EOF__
 {
-  "scriptStatus": ${status},
+  "scriptStatus": ${test_status},
+  "testId": "${test_id}",
+  "date": "$(date +%s)",
+  "runId": "${run_id}",
   "headCommitHash": "$(git rev-parse --verify HEAD)"
 }
 __EOF__
 }
 
-# Extract run_id from test env json created from
+# Extract key from test env json created from
 # script/create-test-env-json script.
 # As an example, from this json
 # {
@@ -143,11 +160,12 @@ __EOF__
 # "run_description": "Commit message",
 # "owner": "John Doe"
 # }
-# This method will return test-id-1902
-function extract_run_id_from_test_env_file() {
-  local json_path="${1}"
+function extract_key_from_test_env_file() {
+  local key="${1}"
+  local json_path="${2}"
   cat "${json_path}" \
-    | python -c 'import json,sys;obj=json.load(sys.stdin);print obj["run_id"]'
+    | python -c "import json,sys;obj=json.load(sys.stdin);print obj['${key}']" \
+    || { echo "Could not extract ${key} from ${json_path}"; return 1; }
 }
 
 # Current gcloud account may not have permission to deploy an GAE Flex

@@ -69,11 +69,12 @@ DOCKER_SLAVES = [
 // If DEBIAN_PACKAGE_REPO build parameter is set only those test will run.
 // We can filter down the number of tests by using the E2E_FILTERS build
 // parameter.
+// Please Update script/validate_release.py when adding or removing long-run-test.
 RELEASE_QUALIFICATION_BRANCHES = [
-    'gke_tight_coupling_https',
-    'gce_debian_jessie',
-    'gce_container_vm',
-    'flex_endpoints_on_flex_off'
+    'flex-off-endpoints-on',
+    'gke-tight-coupling-https',
+    'gce-debian-8',
+    'gce-container-vm'
 ]
 
 // Source Code related variables. Set in stashSourceCode.
@@ -146,12 +147,12 @@ def buildArtifacts(nodeLabel, buildBoosktore = true) {
 
 def performance(nodeLabel) {
   def branches = [
-      'local_perf': {
+      'jenkins-post-submit-perf-test': {
         node(nodeLabel) {
           localPerformanceTest()
         }
       },
-      'flex_perf': {
+      'jenkins-perf-test-vm-esp': {
         node(nodeLabel) {
           flexPerformance()
         }
@@ -161,53 +162,54 @@ def performance(nodeLabel) {
 }
 
 def e2eTest(nodeLabel) {
+  // Please Update script/validate_release.py when adding or removing test.
   def branches = [
-      'gke_tight_coupling_https': {
+      'gke-tight-coupling-https': {
         node(nodeLabel) {
           e2eGKE('tight', 'https')
         }
       },
-      'gce_debian_jessie': {
+      'gce-debian-8': {
         node(nodeLabel) {
           e2eGCE(DEBIAN_JESSIE)
         }
       },
-      'gce_container_vm': {
+      'gce-container-vm': {
         node(nodeLabel) {
           e2eGCEContainer(CONTAINER_VM)
         }
       },
-      'gke_tight_coupling_http': {
+      'gke-tight-coupling-http': {
         node(nodeLabel) {
           e2eGKE('tight', 'http')
         }
       },
-      'gke_tight_coupling_custom': {
+      'gke-tight-coupling-custom': {
         node(nodeLabel) {
           e2eGKE('tight', 'custom')
         }
       },
-      'gke_loose_coupling_http': {
+      'gke-loose-coupling-http': {
         node(nodeLabel) {
           e2eGKE('loose', 'http')
         }
       },
-      'gke_loose_coupling_https': {
+      'gke-loose-coupling-https': {
         node(nodeLabel) {
           e2eGKE('loose', 'https')
         }
       },
-      'gke_loose_coupling_custom': {
+      'gke-loose-coupling-custom': {
         node(nodeLabel) {
           e2eGKE('loose', 'custom')
         }
       },
-      'flex_endpoints_on_flex_off': {
+      'flex-off-endpoints-on': {
         node(nodeLabel) {
           e2eFlex(true, false)
         }
       },
-      'flex_endpoints_off_flex_off': {
+      'flex-off-endpoints-off': {
         node(nodeLabel) {
           e2eFlex(false, false)
         }
