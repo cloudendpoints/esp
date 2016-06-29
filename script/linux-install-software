@@ -164,6 +164,6 @@ else
 fi
 
 echo "Updating gcloud."
-${SUDO} gcloud -q components update --version 109.0.0
+${SUDO} gcloud -q components update
 
 echo "Software installation complete."
