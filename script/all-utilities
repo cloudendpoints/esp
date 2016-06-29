@@ -28,6 +28,8 @@
 #
 # Library of useful utilities.
 
+GCLOUD="$(which gcloud)" || GCLOUD="${HOME}/google-cloud-sdk/bin/gcloud"
+
 # Exit with a message and an exit code.
 # Arguments:
 #   $1 - string with an error message
@@ -43,8 +45,8 @@ function error_exit() {
 #   $1 - the source image.
 #   $2 - the target image.
 function docker_tag() {
-  docker pull "${1}" || error_exit "Cannot pull image: ${1}"
-  docker pull "${2}" && error_exit "Trying to override an existing image: ${2}"
+  ${GCLOUD} docker pull "${1}" || error_exit "Cannot pull image: ${1}"
+  ${GCLOUD} docker pull "${2}" && error_exit "Trying to override an existing image: ${2}"
   docker tag "${1}" "${2}" || error_exit "Failed to tag ${1} with ${2}"
 }
 
@@ -53,7 +55,7 @@ function docker_tag() {
 #   $1 - the source image.
 #   $2 - the target image.
 function docker_tag_f() {
-  docker pull "${1}" || error_exit "Cannot pull image: ${1}"
+  ${GCLOUD} docker pull "${1}" || error_exit "Cannot pull image: ${1}"
   docker tag "${1}" "${2}" || error_exit "Failed to tag ${1} with ${2}"
 }
 
@@ -175,9 +177,9 @@ function activate_service_account() {
     "gs://client-secret-files/${remote_json_name}" "${local_json}" \
     || error_exit "Could not download secret keys for ${project}"
   echo "Gcloud auth activate ${project} service account."
-  retry -n 2 gcloud auth activate-service-account --key-file "${local_json}" \
+  retry -n 2 ${GCLOUD} auth activate-service-account --key-file "${local_json}" \
     || error_exit "Could not activate ${service_account}."
-  trap "gcloud auth revoke ${service_account}" EXIT
+  trap "${GCLOUD} auth revoke ${service_account}" EXIT
 }
 
 if [[ $UID -ne 0 ]]; then
