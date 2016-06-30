@@ -248,7 +248,7 @@ function long_running_test() {
       -a "${api_key}" \
       -s "${esp_service}" | tee "${log_file}"
 
-    status=${?}
+    status=${PIPESTATUS[0]}
 
     echo "Uploading log to ${remote_dir}"
     retry -n 3 ${GSUTIL} -h Content-Type:text/plain cp \
