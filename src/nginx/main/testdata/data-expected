@@ -20,8 +20,10 @@
 ./etc/nginx/win-utf
 ./usr/
 ./usr/sbin/
+./usr/sbin/debug_nginx.sh
 ./usr/sbin/fetch_service_config.sh
 ./usr/sbin/nginx
+./usr/sbin/nginx-debug
 ./usr/share/
 ./usr/share/doc/
 ./usr/share/doc/nginx-google/

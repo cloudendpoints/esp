@@ -88,6 +88,7 @@ read ENDPOINTS_RUNTIME_VERSION < ${ROOT}/include/version
 BAZEL_VERSION="$(bazel version | grep '^Build label: ' | sed 's/^Build label: //')"
 echo "Bazel ${BAZEL_VERSION}" > "${ROOT}/src/nginx/main/built_using"
 DEB="${ROOT}/bazel-bin/src/nginx/main/endpoints-server-proxy.deb"
+NGINX="${ROOT}/bazel-bin/src/nginx/main/nginx-esp"
 # Placeholder for debian package.
 TMP_DEBIAN_DIR="$(mktemp -d)"  # Create a temp directory
 TMP_DEBIAN_PACKAGE="${TMP_DEBIAN_DIR}/endpoints-server-proxy.deb"
@@ -100,6 +101,10 @@ if [[ -n "${RELEASE_DEB}" ]]; then
 fi
 
 if ! [[ -e "${TMP_DEBIAN_PACKAGE}" ]]; then
+  echo "Building debug nginx...."
+  bazel build -c dbg //src/nginx/main:nginx-esp
+  echo "Copying debug nginx..."
+  cp -f "${NGINX}" "${ROOT}/src/nginx/main/nginx-debug"
   echo "Building Endpoints Runtime .deb package."
   bazel build --config=release //src/nginx/main:endpoints-server-proxy \
     || error_exit "Failed to build Endpoints Runtime .deb package."
@@ -141,6 +146,10 @@ if ! [[ -e "${TMP_DEBIAN_PACKAGE}" ]]; then
   Commit: $(git rev-parse HEAD)
 __EOF__
 
+  echo "Building debug nginx...."
+  bazel build -c dbg //src/nginx/main:nginx-esp
+  echo "Copying debug nginx...."
+  cp -f "${NGINX}" "${ROOT}/src/nginx/main/nginx-debug"
   bazel build --config=release //src/nginx/main:endpoints-server-proxy \
     || error_exit "Failed to build Endpoints Runtime verbatim version .deb package."
 

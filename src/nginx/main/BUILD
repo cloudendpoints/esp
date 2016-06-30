@@ -144,8 +144,10 @@ genrule(
 pkg_tar(
     name = "esp-bin",
     files = [
+        ":debug_nginx.sh",
         ":fetch_service_config.sh",
         ":nginx",
+        ":nginx-debug",
     ],
     mode = "0755",
     package_dir = "/usr/sbin",
@@ -240,10 +242,10 @@ sh_test(
         "deb-test.sh",
     ],
     data = [
-        ":endpoints-server-proxy.deb",
-        "testdata/deb-expected",
         "testdata/control-expected",
         "testdata/data-expected",
-        "//:LICENSE"
+        "testdata/deb-expected",
+        ":endpoints-server-proxy.deb",
+        "//:LICENSE",
     ],
 )
