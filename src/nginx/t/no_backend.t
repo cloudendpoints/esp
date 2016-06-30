@@ -101,11 +101,15 @@ like($response_headers, qr/HTTP\/1\.1 502 Bad Gateway/, 'Returned HTTP 502.');
 
 my $expected_body = <<'EOF';
 {
- "error": {
-  "code": 502,
-  "status": 13,
-  "message": "BAD_GATEWAY"
- }
+ "code": 13,
+ "message": "BAD_GATEWAY",
+ "details": [
+  {
+   "@type": "type.googleapis.com/google.rpc.DebugInfo",
+   "stackEntries": [],
+   "detail": "application"
+  }
+ ]
 }
 EOF
 

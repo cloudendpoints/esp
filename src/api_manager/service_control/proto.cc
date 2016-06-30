@@ -782,7 +782,7 @@ void FillLogEntry(const ReportRequestInfo& info, const std::string& name,
   }
   if (info.response_code >= 400) {
     (*fields)[kLogFieldNameErrorCause].set_string_value(
-        info.status.GetErrorCauseString());
+        Status::ErrorCauseToString(info.status.error_cause()));
   }
 }
 

@@ -28,7 +28,6 @@
 
 #include "google/api/service.pb.h"
 #include "google/api/servicecontrol/v1/service_controller.pb.h"
-#include "src/api_manager/proto/json_error.pb.h"
 
 // Trivial tests that instantiate common protos
 // to make sure the compile and link correctly.
@@ -49,17 +48,4 @@ TEST(CommonProtos, ServiceControl) {
 
   ASSERT_EQ("bookstore", cr.service_name());
   ASSERT_EQ("CreateShelf", cr.operation().operation_name());
-}
-
-TEST(CommonProtos, JsonError) {
-  ::google::api_manager::proto::ErrorBody body;
-  auto error = body.mutable_error();
-
-  error->set_code(3);
-  error->set_status(404);
-  error->set_message("Error message");
-
-  ASSERT_EQ(3, body.error().code());
-  ASSERT_EQ(404, body.error().status());
-  ASSERT_EQ("Error message", body.error().message());
 }

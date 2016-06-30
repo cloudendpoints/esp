@@ -120,13 +120,17 @@ TEST(Status, ToProtoIncludesCodeAndMessage) {
 TEST(Status, ToJsonIncludesCodeAndMessage) {
   EXPECT_EQ(
       "{\n"
-      " \"error\": {\n"
-      "  \"code\": 404,\n"
-      "  \"status\": 5,\n"
-      "  \"message\": \"Unknown Element\"\n"
-      " }\n"
+      " \"code\": 5,\n"
+      " \"message\": \"Unknown Element\",\n"
+      " \"details\": [\n"
+      "  {\n"
+      "   \"@type\": \"type.googleapis.com/google.rpc.DebugInfo\",\n"
+      "   \"stackEntries\": [],\n"
+      "   \"detail\": \"auth\"\n"
+      "  }\n"
+      " ]\n"
       "}\n",
-      Status(5, "Unknown Element").ToJson());
+      Status(5, "Unknown Element", Status::AUTH).ToJson());
 }
 
 TEST(Status, ToJsonIncludesDetails) {
@@ -134,11 +138,15 @@ TEST(Status, ToJsonIncludesDetails) {
 
   EXPECT_EQ(
       "{\n"
-      " \"error\": {\n"
-      "  \"code\": 400,\n"
-      "  \"status\": 3,\n"
-      "  \"message\": \"Invalid Parameter\"\n"
-      " }\n"
+      " \"code\": 3,\n"
+      " \"message\": \"Invalid Parameter\",\n"
+      " \"details\": [\n"
+      "  {\n"
+      "   \"@type\": \"type.googleapis.com/google.rpc.DebugInfo\",\n"
+      "   \"stackEntries\": [],\n"
+      "   \"detail\": \"internal\"\n"
+      "  }\n"
+      " ]\n"
       "}\n",
       status.ToJson());
 }

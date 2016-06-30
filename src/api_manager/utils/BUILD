@@ -54,7 +54,6 @@ cc_library(
         "//google/protobuf",
         "//google/protobuf:cc_wkt_protos",
         "//include:headers_only",
-        "//src/api_manager:common_protos",
         "//third_party/config:servicecontrol",  # for google/rpc/status.proto
     ],
 )

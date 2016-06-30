@@ -132,9 +132,9 @@ ngx_int_t ngx_esp_error_body_filter(ngx_http_request_t *r, ngx_chain_t *in) {
                    "ESP error message: %s", ctx->status.message().c_str());
 
     // Update error code from upstream if error originates from the backend
-    if (ctx->status.GetErrorCause() == Status::APPLICATION) {
-      ctx->status.SetCode(r->err_status);
-      ctx->status.SetMessage(Status::CodeToString(r->err_status));
+    if (ctx->status.error_cause() == Status::APPLICATION) {
+      ctx->status = Status(r->err_status, Status::CodeToString(r->err_status),
+                           Status::APPLICATION);
     }
 
     // TODO: considering sending constant payload

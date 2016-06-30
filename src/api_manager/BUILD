@@ -29,17 +29,6 @@ package(default_visibility = [":__subpackages__"])
 load("/google/protobuf/protobuf", "cc_proto_library")
 
 cc_proto_library(
-    name = "common_protos",
-    srcs = [
-        "proto/json_error.proto",
-    ],
-    include = ".",
-    deps = [
-        "//google/protobuf:cc_wkt_protos",
-    ],
-)
-
-cc_proto_library(
     name = "server_config_proto",
     srcs = [
         "proto/server_config.proto",
@@ -117,7 +106,6 @@ cc_library(
         ":__subpackages__",
     ],
     deps = [
-        ":common_protos",
         ":impl_headers",
         ":method_call_info",
         ":server_config_proto",
@@ -225,7 +213,6 @@ cc_test(
         "common_protos_test.cc",
     ],
     deps = [
-        ":common_protos",
         "//external:googletest_main",
         "//third_party:service_config",
         "//third_party/config:servicecontrol",

@@ -54,7 +54,7 @@ Status NgxEspResponse::GetResponseStatus() {
   }
 
   auto error_cause =
-      ctx == nullptr ? Status::INTERNAL : ctx->status.GetErrorCause();
+      ctx == nullptr ? Status::INTERNAL : ctx->status.error_cause();
   return Status(ngx_http_get_response_status(r_), "", error_cause);
 }
 

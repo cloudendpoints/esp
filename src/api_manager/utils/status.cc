@@ -28,8 +28,6 @@
 
 #include <sstream>
 
-#include "google/protobuf/stubs/status.h"
-#include "src/api_manager/proto/json_error.pb.h"
 #include "src/api_manager/utils/marshalling.h"
 
 using ::google::protobuf::util::error::Code;
@@ -38,36 +36,15 @@ namespace google {
 namespace api_manager {
 namespace utils {
 
-namespace {
-
-// Converts a Status object to an ErrorBody (JSON error schema).
-proto::ErrorBody ToErrorBody(const Status& status) {
-  proto::ErrorBody body;
-  proto::ErrorProto* error = body.mutable_error();
-
-  error->set_code(status.HttpCode());
-  error->set_status(status.CanonicalCode());
-  error->set_message(status.message());
-
-  return body;
-}
-}  // namespace
-
 Status::Status(int code, const std::string& message, ErrorCause error_cause)
-    : code_(code == 200 ? 0 : code) {
-  if (code != Code::OK && code != 200) {
-    message_ = message;
-    error_cause_ = error_cause;
-  } else {
-    message_ = "";
-    error_cause_ = Status::INTERNAL;
-  }
-}
+    : code_(code == 200 ? Code::OK : code),
+      message_(message),
+      error_cause_(error_cause) {}
 
 Status::Status(int code, const std::string& message)
     : Status(code, message, Status::INTERNAL) {}
 
-Status::Status() : Status(Code::OK, "") {}
+Status::Status() : Status(Code::OK, "", Status::INTERNAL) {}
 
 bool Status::operator==(const Status& x) const {
   if (code_ != x.code_ || message_ != x.message_ ||
@@ -75,15 +52,6 @@ bool Status::operator==(const Status& x) const {
     return false;
   }
   return true;
-}
-
-/* static */ Status Status::FromProto(
-    const ::google::protobuf::util::Status& proto_status) {
-  if (proto_status.ok()) {
-    return OK;
-  }
-  return Status(proto_status.error_code(),
-                proto_status.error_message().ToString());
 }
 
 /* static */ std::string Status::CodeToString(int code) {
@@ -258,6 +226,29 @@ bool Status::operator==(const Status& x) const {
   }
 }
 
+/* static */ std::string Status::ErrorCauseToString(ErrorCause error_cause) {
+  switch (error_cause) {
+    default:
+    case INTERNAL:
+      return "internal";
+    case APPLICATION:
+      return "application";
+    case AUTH:
+      return "auth";
+    case SERVICE_CONTROL:
+      return "service_control";
+  }
+}
+
+/* static */ Status Status::FromProto(
+    const ::google::protobuf::util::Status& proto_status) {
+  if (proto_status.ok()) {
+    return OK;
+  }
+  return Status(proto_status.error_code(),
+                proto_status.error_message().ToString());
+}
+
 ::google::protobuf::util::Status Status::ToProto() const {
   ::google::protobuf::util::Status result(CanonicalCode(), message_);
   return result;
@@ -411,17 +402,29 @@ Code Status::CanonicalCode() const {
   }
 }
 
+::google::rpc::Status Status::ToCanonicalProto() const {
+  ::google::rpc::Status status;
+  status.set_code(CanonicalCode());
+  status.set_message(message_);
+
+  ::google::rpc::DebugInfo info;
+  info.set_detail(Status::ErrorCauseToString(error_cause_));
+  status.add_details()->PackFrom(info);
+
+  return status;
+}
+
 std::string Status::ToJson() const {
-  proto::ErrorBody error_body = ToErrorBody(*this);
+  ::google::rpc::Status proto = ToCanonicalProto();
   std::string result;
   int options = JsonOptions::PRETTY_PRINT | JsonOptions::OUTPUT_DEFAULTS;
-  Status status = ProtoToJson(error_body, &result, options);
+  Status status = ProtoToJson(proto, &result, options);
   if (!status.ok()) {
     // If translation failed, try outputting the json translation failure itself
     // as a JSON error. This should only happen if one of the error details had
     // an unresolvable type url.
-    error_body = ToErrorBody(status);
-    status = ProtoToJson(error_body, &result, options);
+    proto = status.ToCanonicalProto();
+    status = ProtoToJson(proto, &result, options);
     if (!status.ok()) {
       // This should never happen but just in case we do a non-json response.
       result = "Unable to generate error response: ";

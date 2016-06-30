@@ -711,7 +711,7 @@ ngx_int_t ngx_http_esp_access_wrapper(ngx_http_request_t *r) {
         ngx_http_get_module_ctx(r, ngx_esp_module));
 
     if (ctx != nullptr) {
-      ctx->status.SetErrorCause(Status::APPLICATION);
+      ctx->status = Status(Code::OK, "", Status::APPLICATION);
     }
   }
 

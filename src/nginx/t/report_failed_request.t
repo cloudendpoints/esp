@@ -120,7 +120,7 @@ my $expected_report_body = ServiceControl::gen_report_body({
   'error_cause' => 'service_control',
   'error_type' => '5xx',
   'request_size' => 62,
-  'response_size' => 275,
+  'response_size' => 377,
   'producer_project_id' => 'endpoints-test',
   });
 

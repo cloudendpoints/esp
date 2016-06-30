@@ -31,6 +31,7 @@
 
 #include "google/protobuf/any.pb.h"
 #include "google/protobuf/stubs/status.h"
+#include "google/rpc/error_details.pb.h"
 #include "google/rpc/status.pb.h"
 
 using ::google::protobuf::util::error::Code;
@@ -68,50 +69,26 @@ class Status final {
   // Get string representation of the error code
   static std::string CodeToString(int code);
 
+  // Get string representation of the error cause
+  static std::string ErrorCauseToString(ErrorCause error_cause);
+
   // Constructs a Status object from a protobuf Status.
   static Status FromProto(const ::google::protobuf::util::Status& proto_status);
 
-  // The predefined OK status object.
+  // Pre-defined OK status.
   static const Status& OK;
 
-  // Returns a representation of the error as a protobuf Status.
-  ::google::protobuf::util::Status ToProto() const;
-
-  // Returns true if this status is not an error (code == 0).
-  bool ok() const { return code_ == 0 || code_ == 200; }
+  // Returns true if this status is not an error
+  bool ok() const { return code_ == Code::OK || code_ == 200; }
 
   // Returns the error code held by this status.
   int code() const { return code_; }
 
-  // Sets the error code
-  void SetCode(int code) { code_ = code; }
-
   // Returns the error message held by this status.
   const std::string& message() const { return message_; }
 
-  // Sets the message stored in this error.
-  void SetMessage(const std::string& message) { message_ = message; }
-
   // Returns the error cause held by this status.
-  ErrorCause GetErrorCause() const { return error_cause_; }
-
-  // Update the error cause held by this status.
-  void SetErrorCause(ErrorCause error_cause) { error_cause_ = error_cause; }
-
-  // Returns the external string representation of the error cause
-  std::string GetErrorCauseString() const {
-    switch (error_cause_) {
-      default:
-      case INTERNAL:
-        return "internal";
-      case APPLICATION:
-        return "application";
-      case AUTH:
-        return "auth";
-      case SERVICE_CONTROL:
-        return "service_control";
-    }
-  }
+  ErrorCause error_cause() const { return error_cause_; }
 
   // Returns the error code mapped to HTTP status codes.
   int HttpCode() const;
@@ -119,11 +96,17 @@ class Status final {
   // Returns the error code mapped to protobuf canonical code.
   Code CanonicalCode() const;
 
-  // Returns a JSON representation as ErrorBody proto
-  std::string ToJson() const;
-
   // Returns a combination of the error code name and message.
   std::string ToString() const;
+
+  // Returns a representation of the error as a protobuf Status.
+  ::google::protobuf::util::Status ToProto() const;
+
+  // Returns a representation of the error as a canonical status
+  ::google::rpc::Status ToCanonicalProto() const;
+
+  // Returns a JSON representation of the error as a canonical status
+  std::string ToJson() const;
 
  private:
   // Constructs the OK status.
@@ -134,12 +117,12 @@ class Status final {
   // status codes. Positive numbers 100 and greater represent HTTP status codes.
   int code_;
 
-  // Error cause indicating the origin of the error.
-  ErrorCause error_cause_;
-
   // The error message if this Status represents an error, otherwise an empty
   // string if this is the OK status.
   std::string message_;
+
+  // Error cause indicating the origin of the error.
+  ErrorCause error_cause_;
 };
 
 }  // namespace utils
