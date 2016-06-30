@@ -163,11 +163,20 @@ function download_nginx_logs() {
   mkdir -p "${LOG_DIRECTORY}"
 
   local archive_path="${LOG_DIRECTORY}/${VERSION}.tar.gz"
+  local remote_archive="/tmp/logs.tar.gz"
 
   set_ssh_keys
 
-  retry -n 2 -s 10 ${GCLOUD} compute ssh --project=${PROJECT} --zone=${vm_zone} \
-      ${vm_name} sudo tar czf - /var/log/ > "${archive_path}"
+  retry -n 2 -s 10 \
+    ${GCLOUD} compute ssh --project=${PROJECT} --zone=${vm_zone} ${vm_name} \
+        "sudo tar czf \"${remote_archive}\" /var/log/ ; sudo chmod 777 \"${remote_archive}\"" \
+    || error_exit "Cannot tar backend VM logs."
+
+  retry -n 2 -s 10 \
+    ${GCLOUD} compute copy-files --project=${PROJECT} --zone=${vm_zone} \
+        "${vm_name}:${remote_archive}" "${archive_path}" \
+    || error_exit "Cannot copy logs from the backend VM."
+
   # It is possible that files change during taring which cause tar to return non
   # zero value.
   [[ -e "${archive_path}" ]] \
