@@ -24,7 +24,10 @@
 #
 ################################################################################
 #
-package(default_visibility = ["//src/api_manager:__subpackages__"])
+package(default_visibility = [
+    "//src/api_manager:__subpackages__",
+    "//test/grpc:__subpackages__",
+])
 
 load("/google/protobuf/protobuf", "cc_proto_library")
 

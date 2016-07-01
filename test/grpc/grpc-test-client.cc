@@ -28,6 +28,7 @@
 
 #include "google/protobuf/io/zero_copy_stream_impl.h"
 #include "google/protobuf/text_format.h"
+#include "src/api_manager/utils/marshalling.h"
 #include "test/grpc/client-test-lib.h"
 #include "test/grpc/grpc-test.grpc.pb.h"
 
@@ -35,7 +36,20 @@ using ::google::protobuf::io::IstreamInputStream;
 using ::google::protobuf::io::OstreamOutputStream;
 using ::google::protobuf::TextFormat;
 
-int main(int argc, char **argv) {
+std::string ReadInput(std::istream& src) {
+  std::string contents;
+  src.seekg(0, std::ios::end);
+  auto size = src.tellg();
+  if (size > 0) {
+    contents.reserve(size);
+  }
+  src.seekg(0, std::ios::beg);
+  contents.assign((std::istreambuf_iterator<char>(src)),
+                  (std::istreambuf_iterator<char>()));
+  return contents;
+}
+
+int main(int argc, char** argv) {
   if (argc != 1) {
     std::cerr << "Usage: grpc-test-client" << std::endl;
     std::cerr << "Supply a text TestPlans proto on stdin to describe the tests."
@@ -46,12 +60,20 @@ int main(int argc, char **argv) {
   ::test::grpc::TestPlans plans;
   ::test::grpc::TestResults results;
   std::cerr << "Parsing stdin" << std::endl;
+  bool json_format = false;
   {
-    IstreamInputStream in(&std::cin);
-    if (!TextFormat::Parse(&in, &plans)) {
-      std::cerr << "Failed to parse text TestPlans proto from stdin"
-                << std::endl;
-      return EXIT_FAILURE;
+    std::string contents = ReadInput(std::cin);
+    // Try Json
+    if (::google::api_manager::utils::JsonToProto(contents, &plans).ok()) {
+      json_format = true;
+    } else {
+      // Try Text
+      plans.Clear();
+      if (!TextFormat::ParseFromString(contents, &plans)) {
+        std::cerr << "Failed to parse text TestPlans proto from stdin"
+                  << std::endl;
+        return EXIT_FAILURE;
+      }
     }
   }
   std::cerr << "Running tests" << std::endl;
@@ -62,9 +84,18 @@ int main(int argc, char **argv) {
 
   {
     OstreamOutputStream out(&std::cout);
-    TextFormat::Print(results, &out);
+    if (json_format) {
+      ::google::api_manager::utils::ProtoToJson(
+          results, &out, ::google::api_manager::utils::PRETTY_PRINT);
+    } else {
+      TextFormat::Print(results, &out);
+    }
   }
 
-  std::cerr << "Exiting" << std::endl;
-  return EXIT_SUCCESS;
+  int failed_count = 0;
+  for (const auto& r : results.results()) {
+    if (r.status().code() != ::grpc::OK) failed_count++;
+  }
+  std::cerr << "Exiting with failed_count: " << failed_count << std::endl;
+  return failed_count == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }

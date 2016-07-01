@@ -53,6 +53,7 @@ cc_binary(
     deps = [
         ":client-test-lib",
         ":grpc-test_proto",
+        "//src/api_manager/utils",
     ],
 )
 

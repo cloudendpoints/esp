@@ -317,6 +317,9 @@ class Parallel {
            p->started_ < p->desc_.test_count()) {
       p->running_++;
       p->started_++;
+      if (p->started_ % 1000 == 0) {
+        std::cerr << "Started tests: " << p->started_ << std::endl;
+      }
 
       int subtest_type_index = p->NextSubtestType();
 
@@ -389,10 +392,14 @@ class Parallel {
         std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::steady_clock::now() - test_start_time_)
             .count());
+    int total_succeeded_count = 0;
+    int total_failed_count = 0;
     for (const auto &it : subtest_stats_) {
       ParallelSubtestStats *stats = res->add_stats();
       stats->set_succeeded_count(it.succeeded_count);
       stats->set_failed_count(it.failed_count);
+      total_succeeded_count += it.succeeded_count;
+      total_failed_count += it.failed_count;
       std::int64_t total_latency = 0;
       size_t num_latencies = 0;
       for (const auto &latency : it.latencies) {
@@ -414,6 +421,11 @@ class Parallel {
       for (const auto &failure : it.failures) {
         *stats->add_failures() = failure;
       }
+    }
+    if (total_succeeded_count != desc_.test_count() ||
+        total_failed_count != 0) {
+      result_.mutable_status()->set_code(::grpc::UNKNOWN);
+      result_.mutable_status()->set_details("Parallel test failed.");
     }
   }
 
