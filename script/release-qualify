@@ -186,6 +186,11 @@ function count_stress_failures() {
       || error_exit "Result of release qualification test ${DIR}/long-run-test.json not found."
 
     check_result "${DIR}/long-run-test.json" "${SHA}"
+
+    echo ''
+    echo "Checking ${DIR##*/}/long-run-test.log"
+    echo ''
+    count_stress_failures "${DIR}/long-run-test.log"
   done
 
   if [[ ${#RQ_TESTS[@]} -le 0 ]]; then
@@ -205,31 +210,11 @@ function count_stress_failures() {
     exit 0
   fi
 
-  echo "Checking results of the long running release qualification tests."
-
-  for DIR in "${RQ_TESTS[@]}"; do
-    echo ""
-    echo "Checking ${DIR##*/}/long-run-test.log"
-    echo ""
-    count_stress_failures "${DIR}/long-run-test.log"
-  done
-
-  echo 'Extracting logs from tar files of the long running release qualification tests.'
-
-  for DIR in "${RQ_TESTS[@]}"; do
-    echo ""
-    echo "Looking for tar.gz files in ${DIR}"
-    echo ""
-    while read -u3 TAR; do
-      echo "Extracting nginx logs from ${TAR}"
-      tar zxvf ${TAR} -C "${DIR}" --strip=3 var/log/nginx \
-        || tar xvf ${TAR} -C "${DIR}" --strip=3 var/log/nginx \
-        || error_exit "Could not extract ${TAR}"
-    done 3< <(find "${DIR}" -type f -name '*.tar.gz')
-  done
-
-  echo ''
-  echo 'Analyzing NGINX error logs...'
+cat > "${NGINX_LOG_ANALYSIS}" << __EOF__
+**********************************************************************
+* Below are the NGINX error log entries that were not accounted for. *
+**********************************************************************
+__EOF__
 
   # Read all entries from "${ROOT}/script/known-error-log-entries" and construct
   # a regular expression that would match any of the entries.
@@ -238,14 +223,32 @@ function count_stress_failures() {
     KNOWN_ERRORS_REGEX+="\($entry\)"
   done<"${ROOT}/script/known-error-log-entries"
 
-  (
-    echo '**********************************************************************'
-    echo '* Below are the NGINX error log entries that were not accounted for. *'
-    echo '**********************************************************************'
-    grep -v "${KNOWN_ERRORS_REGEX}" "${LOGS}/${SHA}"/rc-test-*/error*.log \
-      || error_exit 'Cannot find any log files'
-  ) > "${NGINX_LOG_ANALYSIS}" \
-    || error_exit 'Could not filter logs.'
+  while read -u3 DIR; do
+
+    echo ""
+    echo "Looking for tar.gz files in ${DIR}"
+    echo ""
+    while read -u3 TAR; do
+      echo "Extracting nginx logs from ${TAR}"
+      tar zxvf ${TAR} -C "${DIR}" --strip=3 var/log/nginx \
+        || tar xvf ${TAR} -C "${DIR}" --strip=3 var/log/nginx
+    done 3< <(find "${DIR}" -type f -name '*.tar.gz')
+
+    echo ''
+    echo 'Checking for presence of error.log'
+    ls "${DIR}"/error*.log || error_exit 'Cannot find any log files'
+
+    echo ''
+    echo "Analyzing NGINX error logs in ${DIR} ..."
+    cat >> "${NGINX_LOG_ANALYSIS}" << __EOF__
+
+**********************************************************************
+DIR: ${DIR}
+**********************************************************************
+__EOF__
+    grep -v "${KNOWN_ERRORS_REGEX}" "${DIR}"/error*.log \
+      >> "${NGINX_LOG_ANALYSIS}"
+  done 3< <(find "${LOGS}/${SHA}" -type d -name 'rc-test*')
 
   printf "\e[31m
 Please review the NGINX log analysis results in ${NGINX_LOG_ANALYSIS}
