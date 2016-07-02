@@ -1,0 +1,28 @@
+type: google.api.Service
+config_version: 3
+name: echo-dot-esp-grpc-load-test.appspot.com
+title: Grpc echo test API
+producer_project_id: esp-grpc-load-test
+apis:
+- name: test.grpc.Test
+authentication:
+  rules:
+    - selector: test.grpc.Test.EchoStream
+      requirements:
+        - provider_id: test_jwk
+  providers:
+    - id: test_jwk
+      issuer: loadtest@esp-test-client.iam.gserviceaccount.com
+      jwks_uri: https://www.googleapis.com/service_accounts/v1/jwk/loadtest@esp-test-client.iam.gserviceaccount.com
+system_parameters:
+  rules:
+    - selector: test.grpc.Test.EchoStream
+      parameters:
+        - name: api_key
+          http_header: x-api-key
+usage:
+  rules:
+    - selector: test.grpc.Test.Echo
+      allow_unregistered_calls: true
+control:
+    environment:  endpoints-servicecontrol.sandbox.googleapis.com

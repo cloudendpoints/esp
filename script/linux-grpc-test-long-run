@@ -1,0 +1,123 @@
+#!/bin/bash
+#
+# Copyright (C) Endpoints Server Proxy Authors
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+################################################################################
+#
+
+# This script runs a grpc long-running test.
+#
+# This script requires bazel build //test/grpc:all
+# and auth_token_gen.
+
+if [[ "$(uname)" != "Linux" ]]; then
+  echo "Run on Linux only."
+  exit 1
+fi
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+. ${ROOT}/script/all-utilities \
+  || { echo "Cannot load Bash utilities" ; exit 1 ; }
+
+API_KEY=''
+SERVICE_NAME='echo-dot-esp-grpc-load-test.appspot.com'
+HOST=''
+DURATION_IN_HOUR=0
+
+REQUEST_COUNT=100000
+
+while getopts :a:h:l:s: arg; do
+  case ${arg} in
+    a) API_KEY="${OPTARG}";;
+    h) HOST="${OPTARG}";;
+    l) DURATION_IN_HOUR="${OPTARG}";;
+    s) SERVICE_NAME="${OPTARG}";;
+    *) echo "Invalid option: -${OPTARG}";;
+  esac
+done
+
+if ! [[ -n "${API_KEY}" ]]; then
+  set_api_keys;
+  API_KEY="${ESP_GRPC_LOAD_TEST_API_KEY}"
+fi
+
+[[ -n "${HOST}" ]] || error_exit 'Please specify a host with -h option.'
+
+END_TIME=$(date +"%s")
+END_TIME=$((END_TIME + DURATION_IN_HOUR * 60 * 60))
+RUN_COUNT=0
+STRESS_FAILURES=0
+
+while true; do
+  ((RUN_COUNT++))
+
+  #######################
+  # Insert tests here
+  #######################
+
+  echo "Starting test run ${RUN_COUNT} at $(date)."
+  echo "Failures so far: Stress: ${STRESS_FAILURES}."
+
+  case $((RUN_COUNT % 12)) in
+    (0) CONCURRENT=10; STREAM_COUNT=10; BODY_FILE=${ROOT}/test/data/1k.data;;
+    (1) CONCURRENT=20; STREAM_COUNT=10; BODY_FILE=${ROOT}/test/data/1k.data};;
+    (2) CONCURRENT=50; STREAM_COUNT=10; BODY_FILE=${ROOT}/test/data/1k.data;;
+    (3) CONCURRENT=10; STREAM_COUNT=50; BODY_FILE=${ROOT}/test/data/1k.data;;
+    (4) CONCURRENT=20; STREAM_COUNT=50; BODY_FILE=${ROOT}/test/data/1k.data;;
+    (5) CONCURRENT=50; STREAM_COUNT=50; BODY_FILE=${ROOT}/test/data/1k.data;;
+    (6) CONCURRENT=10; STREAM_COUNT=10; BODY_FILE=${ROOT}/test/data/4k.data;;
+    (7) CONCURRENT=20; STREAM_COUNT=10; BODY_FILE=${ROOT}/test/data/4k.data;;
+    (8) CONCURRENT=50; STREAM_COUNT=10; BODY_FILE=${ROOT}/test/data/4k.data;;
+    (9) CONCURRENT=10; STREAM_COUNT=50; BODY_FILE=${ROOT}/test/data/4k.data;;
+    (10) CONCURRENT=20; STREAM_COUNT=50; BODY_FILE=${ROOT}/test/data/4k.data;;
+    (11) CONCURRENT=50; STREAM_COUNT=50; BODY_FILE=${ROOT}/test/data/4k.data;;
+  esac
+  echo concurrent="${CONCURRENT}" stream_count="${STREAM_COUNT}" body_file="${BODY_FILE}"
+
+  # Generating token for each run, that they expire in 1 hour.
+  AUTH_TOKEN=$("${ROOT}/client/custom/gen-auth-token.sh" -a "${SERVICE_NAME}")
+
+  "${ROOT}/test/grpc/grpc_stress_input.py" \
+    --server="${HOST}" \
+    --api_key="${API_KEY}" \
+    --auth_token="${AUTH_TOKEN}" \
+    --request_count="${REQUEST_COUNT}" \
+    --concurrent="${CONCURRENT}" \
+    --requests_per_stream="${STREAM_COUNT}" \
+    --body_file="${BODY_FILE}" \
+    |"${ROOT}/bazel-bin/test/grpc/grpc-test-client" || ((STRESS_FAILURES++))
+
+  #######################
+  # End of test suite
+  #######################
+
+  # Break if test has run long enough.
+  [[ $(date +"%s") -lt ${END_TIME} ]] || break
+done
+
+echo "Finished ${RUN_COUNT} test runs."
+echo "Failures: Stress: ${STRESS_FAILURES}."
+
+exit "${STRESS_FAILURES}"
