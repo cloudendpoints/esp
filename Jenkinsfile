@@ -266,6 +266,10 @@ def isReleaseQualification() {
   return getReleaseQualification()
 }
 
+def isDefaultCleanNginxBinary() {
+  return (getServiceManagementUrl() == '' && serverConfig == '')
+}
+
 def bookstoreDockerImage() {
   return "gcr.io/${PROJECT_ID}/bookstore:${GIT_SHA}"
 }
@@ -314,8 +318,17 @@ def buildPackages() {
         "-d ${espDebianPackage} " +
         "-r ${espImgGrpc}" +
         "${serverConfigFlag} -s"
-    // Not rebuilding esp for local perf
-    fastStash('nginx-esp', 'bazel-bin/src/nginx/main/nginx-esp')
+    // local perf builds its own esp binary package.
+    // Using the one built here instead if it exists.
+    if (isDefaultCleanNginxBinary()) {
+      // We only want to stash for the clean default binary.
+      def binaryExists = fileExists 'bazel-bin/src/nginx/main/nginx-esp'
+      if (binaryExists) {
+        fastStash('nginx-esp', 'bazel-bin/src/nginx/main/nginx-esp')
+      }
+    }
+
+
   }
 }
 
@@ -433,11 +446,16 @@ def e2eGCEContainer(vmImage) {
 }
 
 def localPerformanceTest() {
+  // This will not work for staging or server-config.
+  // In order to fully support this we'll need to use the debian
+  // packages created in buildPackages().
   checkoutSourceCode()
   setGCloud()
-  fastUnstash('auth_token_gen')
-  // Using binary build by buildPackages()
-  fastUnstash('nginx-esp')
+  if (pathExistsCloudStorage(stashArchivePath('nginx-esp'))) {
+    // Using binary build by buildArtifacts()
+    fastUnstash('auth_token_gen')
+    fastUnstash('nginx-esp')
+  }
   def testId = 'jenkins-post-submit-perf-test'
   def uniqueId = getUniqueID('local-perf', false)
   def logBucket = "gs://${BUCKET}/${GIT_SHA}/logs"
