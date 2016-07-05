@@ -124,4 +124,4 @@ done
 echo "Finished ${RUN_COUNT} test runs."
 echo "Failures: Stress: ${STRESS_FAILURES}, Bookstore: ${BOOKSTORE_FAILURES}."
 
-exit $((${BOOKSTORE_FAILURES} + ${STRESS_FAILURES}))
+exit ${BOOKSTORE_FAILURES}
