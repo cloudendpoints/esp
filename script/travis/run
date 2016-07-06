@@ -1,0 +1,84 @@
+#!/bin/bash
+#
+# Copyright (C) Endpoints Server Proxy Authors
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+################################################################################
+#
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+. ${ROOT}/script/all-utilities || { echo "Cannot load Bash utilities"; exit 1; }
+
+function build_and_test() {
+  # Run unit-tests, integration tests & NGINX tests
+  bazel test --test_output=errors //src/... //third_party:all || \
+    error_exit "Tests failed"
+}
+
+function asan() {
+  # Run unit-tests, integration tests & NGINX tests with ASAN enabled
+  bazel test --test_output=errors --config=asan --test_tag_filters=-no_asan \
+    //src/... //third_party:all || error_exit "ASAN tests failed"
+}
+
+function tsan() {
+  # Run unit-tests, integration tests & NGINX tests with TSAN enabled
+  bazel test --test_output=errors --config=tsan --test_tag_filters=-no_tsan \
+    //src/... //third_party:all || error_exit "TSAN tests failed"
+}
+
+function coverage() {
+  # Run unit-tests & integration tests with coverage enabled. Output the
+  # coverage results in the ${HOME}/artifacts directory, which will be uploaded
+  # to a bucket.
+  ${ROOT}/script/linux-run-coverage -s ${HOME}/artifacts/coverage.summary \
+    -t ${HOME}/artifacts/coverage.tar.gz || error_exit "Coverage failed."
+}
+
+function docker_tests() {
+  # Build a debian package
+  bazel build --config=release //src/nginx/main:endpoints-server-proxy || \
+    error_exit "Building the debian package failed"
+
+  # Docker test
+  "${ROOT}/test/docker/docker_test.sh" -d \
+    "${ROOT}/bazel-bin/src/nginx/main/endpoints-server-proxy.deb" || \
+    error_exit "Docker test failed"
+
+  # Generic docker test
+  "${ROOT}/test/docker/generic_docker_test.sh" -d \
+    "${ROOT}/bazel-bin/src/nginx/main/endpoints-server-proxy.deb" || \
+    error_exit "Generic docker test failed"
+}
+
+SCENARIO="$1"
+
+case $SCENARIO in
+  build-and-test) build_and_test;;
+  asan) asan;;
+  tsan) tsan;;
+  coverage) coverage;;
+  docker-tests) docker_tests;;
+  *) error_exit "Usage: travis-run build-and-test|asan|tsan|coverage|docker-tests";;
+esac

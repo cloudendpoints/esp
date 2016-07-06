@@ -1,0 +1,52 @@
+sudo: required
+dist: trusty
+
+services:
+  - docker
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-4.8
+      - gcc-4.8
+      - lcov
+      - libio-socket-ssl-perl
+      - oracle-java8-installer
+      - pkg-config
+      - uuid-dev
+      - wget
+      - zip
+      - zlib1g-dev
+
+env:
+  global:
+    - JAVA_HOME=/usr/lib/jvm/java-8-oracle
+    - CC=gcc-4.8
+    - CXX=g++-4.8
+  matrix:
+    # Build & run unit-tests, integration tests, NGINX tests
+    - SCENARIO="build-and-test"
+    # Build & run the tests with ASAN enabled
+    - SCENARIO="asan"
+    # Build & run the tests with TSAN enabled
+    - SCENARIO="tsan"
+    # Build & run the tests & generate coverage report
+    - SCENARIO="coverage"
+    # Build & run docker tests
+    - SCENARIO="docker-tests"
+
+install:
+  # Directory for artifacts
+  - mkdir "${HOME}/artifacts"
+  # Install necessary software
+  - script/travis/log-helper "script/travis/install" "${HOME}/artifacts/install.log"
+
+script:
+  # Run script/setup to prepare for the build
+  - script/travis/log-helper "script/setup" "${HOME}/artifacts/setup.log"
+  # Run the scenario
+  - script/travis/log-helper "script/travis/run ${SCENARIO}" "${HOME}/artifacts/run.log"
+  # Upload the artifacts into a Google Cloud Storage bucket
+  - script/travis/log-helper "script/travis/upload ${SCENARIO}" "${HOME}/artifacts/upload.log"
