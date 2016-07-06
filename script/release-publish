@@ -79,10 +79,10 @@ set -x
 
 VERSION="$(command cat ${ROOT}/include/version)" \
   || error_exit "Cannot find release version (${ROOT}/include/version)"
-SOURCE_IMAGE="gcr.io/endpoints-jenkins.appspot.com/endpoints-runtime:debian-git-${SHA}"
+SOURCE_IMAGE="gcr.io/endpoints-jenkins/endpoints-runtime:debian-git-${SHA}"
 TARGET_IMAGE="b.gcr.io/endpoints/endpoints-runtime:${VERSION}"
 
-if RELEASE_BRANCH_SHA="$(git rev-parse origin/release-${VERSION})"; then
+if RELEASE_BRANCH_SHA="$(git rev-parse origin/release/${VERSION})"; then
   if [[ "${SHA}" != "${RELEASE_BRANCH_SHA}" ]]; then
     printf "\e[31m
 WARNING: Release branch commit (${RELEASE_BRANCH_SHA}) doesn't match ${SHA}.
@@ -94,16 +94,17 @@ WARNING: Cannot find release branch origin/release-${VERSION}.
 \e[0m"
 fi
 
-docker_tag "${SOURCE_IMAGE}" "${TARGET_IMAGE}"
+docker_tag "${SOURCE_IMAGE}" "${TARGET_IMAGE}" \
+  || error_exit "Could not tag ${SOURCE_IMAGE} to ${TARGET_IMAGE}."
 
 echo "Pushing ${TARGET_IMAGE} to Cloud Container Registry."
 "${GCLOUD}" docker push "${TARGET_IMAGE}" \
   || error_exit "Cloud Container Registry push failed."
 
-SOURCE_PKG="gs://endpoints-robot-temp/${SHA}/endpoints-runtime-amd64.deb"
+SOURCE_PKG="gs://endpoints-jenkins.appspot.com/${SHA}/artifacts/endpoints-runtime-amd64.deb"
 TARGET_PKG="$(command mktemp -d)/endpoints-runtime-amd64.deb"
-"${GSUTIL}" cp "${SOURCE_PKG}" "${TARGET_PKG}"
-
+"${GSUTIL}" cp "${SOURCE_PKG}" "${TARGET_PKG}" \
+  || error_exit "Could not fetch ${SOURCE_PKG}."
 OUTPUT="$(rapture --universe=cloud-apt addpkg ${PREFIX} ${TARGET_PKG})"
 DIRECT_REPO=$(echo "${OUTPUT}" | grep "(direct):" | cut -d ' ' -f 1)
 
