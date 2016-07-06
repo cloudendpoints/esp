@@ -44,7 +44,7 @@ my $NginxPort = 8080;
 my $BackendPort = 8081;
 my $ServiceControlPort = 8082;
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(17);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(18);
 
 # Save service name in the service configuration protocol buffer file.
 my $config = ApiManager::get_bookstore_service_config_allow_unregistered .
@@ -108,7 +108,8 @@ $t->run();
 my $response1 = http_get('/shelves');
 my $response2 = http_get('/shelves/0');
 
-is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');
+is($t->waitforfile("$t->{_testdir}/${report_done}-1"), 1, 'First report is done.');
+is($t->waitforfile("$t->{_testdir}/${report_done}-2"), 1, 'Second report is done.');
 
 $t->stop_daemons();
 
@@ -156,6 +157,7 @@ sub servicecontrol {
   my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
+  my $report_counter = 1;
 
   $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:check', sub {
     my ($headers, $body, $client) = @_;
@@ -173,7 +175,8 @@ HTTP/1.1 500 Internal Server Error
 Connection: close
 
 EOF
-    $t->write_file($done, ':report done');
+    $t->write_file("${done}-${report_counter}", ':report done');
+    ++$report_counter;
   });
 
   $server->run();
