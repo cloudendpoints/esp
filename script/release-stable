@@ -70,9 +70,13 @@ BASE_VERSION="$(echo ${VERSION} | cut -d . -f -2)"
 
 IMAGE="b.gcr.io/endpoints/endpoints-runtime:${VERSION}"
 STABLE_IMAGE="b.gcr.io/endpoints/endpoints-runtime:${BASE_VERSION}"
+LATEST_IMAGE='b.gcr.io/endpoints/endpoints-runtime:latest'
 
 docker_tag_f "${IMAGE}" "${STABLE_IMAGE}"
-"${GCLOUD}" docker push "${STABLE_IMAGE}"
+docker_tag_f "${IMAGE}" "${LATEST_IMAGE}"
+
+retry "${GCLOUD}" docker push "${STABLE_IMAGE}"
+retry "${GCLOUD}" docker push "${LATEST_IMAGE}"
 
 rapture --universe=cloud-apt settag ${DEBIAN_PACKAGE_REPOSITORY} \
   endpoints-dev.stable:true
