@@ -46,7 +46,7 @@ namespace nginx {
 namespace {
 
 // Returns a character at a logical offset within a vector of slices.
-char GetByte(const std::vector<gpr_slice> &slices, size_t offset) {
+unsigned char GetByte(const std::vector<gpr_slice> &slices, size_t offset) {
   for (const auto &it : slices) {
     if (offset < GPR_SLICE_LENGTH(it)) {
       return GPR_SLICE_START_PTR(it)[offset];
