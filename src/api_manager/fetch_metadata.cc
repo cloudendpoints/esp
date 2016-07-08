@@ -44,25 +44,28 @@ const char kComputeMetadata[] = "/computeMetadata/v1/?recursive=true";
 // URL path for fetching service-account
 const char kMetadataServiceAccountToken[] =
     "/computeMetadata/v1/instance/service-accounts/default/token";
-
-// External status for failed metadata fetch
-const Status failed_metadata_fetch =
-    Status(Code::UNAVAILABLE, "Failed to fetch metadata", Status::INTERNAL);
-
-// External status for failed service account token fetch
-const Status failed_token_fetch =
-    Status(Code::UNAVAILABLE, "Failed to fetch service account token",
-           Status::INTERNAL);
+// Initial metadata fetch timeout (1s)
+const int kMetadataFetchTimeout = 1000;
+// Maximum number of retries to fetch metadata
+const int kMetadataFetchRetries = 5;
+// External status message for failure to fetch metadata
+const char kFailedMetadataFetch[] = "Failed to fetch metadata";
+// External status message for failure to fetch service account token
+const char kFailedTokenFetch[] = "Failed to fetch service account token";
 
 // Issues a HTTP request to fetch the metadata.
-Status FetchMetadata(context::RequestContext *context, const char *path,
-                     std::function<void(Status, std::string &&)> continuation) {
+void FetchMetadata(
+    context::RequestContext *context, const char *path,
+    std::function<void(Status, std::map<std::string, std::string> &&,
+                       std::string &&)>
+        continuation) {
   std::unique_ptr<HTTPRequest> request(new HTTPRequest(continuation));
   request->set_method("GET")
       .set_url(context->service_context()->metadata_server() + path)
       .set_header("Metadata-Flavor", "Google")
-      .set_timeout_ms(1000);  // 1s timeout to fetch metadata.
-  return context->service_context()->env()->RunHTTPRequest(std::move(request));
+      .set_timeout_ms(kMetadataFetchTimeout)
+      .set_max_retries(kMetadataFetchRetries);
+  context->service_context()->env()->RunHTTPRequest(std::move(request));
 }
 }  // namespace
 
@@ -82,50 +85,39 @@ void FetchGceMetadata(std::shared_ptr<context::RequestContext> context,
       continuation(Status::OK);
       return;
     case GceMetadata::FAILED_STATE:
-      // Metadata fetch already failed.
-      // TODO: retry after some timeout?
-      // TODO: at some point, timeout of metadata fetch will become an
-      // indication of not running in a GCE VM and will be handled as a success.
-      // Log debug only because if this happens, this log will happen on every
-      // API call.
+      // Metadata fetch already failed. Permanent failure.
       env->LogDebug("Metadata fetch previously failed. Skipping with error.");
-      continuation(failed_metadata_fetch);
+      continuation(Status(Code::INTERNAL, kFailedMetadataFetch));
       return;
     case GceMetadata::FETCHING_STATE:
-      // TODO: do not issue another metadata call, wait for the current one
-      // to finish. Hang the continuation in a queue.
       env->LogWarning("Another request fetching metadata. Duplicate fetch.");
-      break;
-    case GceMetadata::INVALID_STATE:
+      continuation(Status(Code::UNAVAILABLE, kFailedMetadataFetch));
+      return;
+    case GceMetadata::INITIAL_STATE:
     default:
       env->LogDebug("Fetching metadata.");
-      break;
   }
 
   context->service_context()->gce_metadata()->set_state(
       GceMetadata::FETCHING_STATE);
-  Status status = FetchMetadata(
+  FetchMetadata(
       context.get(), kComputeMetadata,
-      [context, continuation](Status status, std::string &&body) {
+      [context, continuation](Status status, std::map<std::string, std::string>,
+                              std::string &&body) {
+        // translate status to external status
         if (status.ok()) {
-          // reassing to parsing status
           status =
               context->service_context()->gce_metadata()->ParseFromJson(&body);
         } else {
-          // http fetch error
-          status = failed_metadata_fetch;
+          status = Status(Code::INTERNAL, kFailedMetadataFetch);
         }
+
+        // update fetching state
         context->service_context()->gce_metadata()->set_state(
             status.ok() ? GceMetadata::DONE_STATE : GceMetadata::FAILED_STATE);
+
         continuation(status);
       });
-
-  // If failed, continuation will not be called by FetchMetadata().
-  if (!status.ok()) {
-    context->service_context()->gce_metadata()->set_state(
-        GceMetadata::FAILED_STATE);
-    continuation(failed_metadata_fetch);
-  }
 }
 
 void FetchServiceAccountToken(std::shared_ptr<context::RequestContext> context,
@@ -140,37 +132,35 @@ void FetchServiceAccountToken(std::shared_ptr<context::RequestContext> context,
     return;
   }
 
-  auto on_done = [context, continuation](Status status, std::string &&body) {
-    if (!status.ok()) {
-      continuation(failed_token_fetch);
-      return;
-    }
+  FetchMetadata(
+      context.get(), kMetadataServiceAccountToken,
+      [context, continuation](Status status,
+                              std::map<std::string, std::string> &&,
+                              std::string &&body) {
+        if (!status.ok()) {
+          continuation(Status(Code::INTERNAL, kFailedTokenFetch));
+          return;
+        }
 
-    char *token = nullptr;
-    int expires = 0;
-    if (!auth::esp_get_service_account_auth_token(
-            const_cast<char *>(body.data()), body.length(), &token, &expires) ||
-        token == nullptr) {
-      continuation(Status(Code::INVALID_ARGUMENT,
-                          "Failed to parse access token response"));
-      return;
-    }
-    // Compute Engine returns tokens with at least 60 seconds life left so we
-    // need to wait a bit longer to refresh the token.
-    context->service_context()->service_account_token()->SetAccessToken(
-        token, expires - 50);
-    free(token);
+        char *token = nullptr;
+        int expires = 0;
+        if (!auth::esp_get_service_account_auth_token(
+                const_cast<char *>(body.data()), body.length(), &token,
+                &expires) ||
+            token == nullptr) {
+          continuation(Status(Code::INVALID_ARGUMENT,
+                              "Failed to parse access token response"));
+          return;
+        }
+        // Compute Engine returns tokens with at least 60 seconds life left so
+        // we
+        // need to wait a bit longer to refresh the token.
+        context->service_context()->service_account_token()->SetAccessToken(
+            token, expires - 50);
+        free(token);
 
-    continuation(Status::OK);
-  };
-
-  Status status =
-      FetchMetadata(context.get(), kMetadataServiceAccountToken, on_done);
-  // If failed, continuation will not be called by FetchMetadata().
-  if (!status.ok()) {
-    continuation(failed_token_fetch);
-  }
+        continuation(Status::OK);
+      });
 }
-
 }  // namespace api_manager
 }  // namespace google

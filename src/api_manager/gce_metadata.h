@@ -36,20 +36,18 @@ namespace api_manager {
 class GceMetadata {
  public:
   enum STATE {
-    // Data is invalid
-    INVALID_STATE = 0,
+    INITIAL_STATE = 0,
     // Fetching,
     FETCHING_STATE,
     // Fetch failed
     FAILED_STATE,
-    // Data is good
+    // Data is go
     DONE_STATE,
   };
-  GceMetadata() : state_(INVALID_STATE) {}
+  GceMetadata() : state_(INITIAL_STATE) {}
 
   STATE state() const { return state_; }
   void set_state(STATE state) { state_ = state; }
-  bool need_fetch() const { return state_ == INVALID_STATE; }
   bool has_valid_data() const { return state_ == DONE_STATE; }
 
   utils::Status ParseFromJson(std::string* json);

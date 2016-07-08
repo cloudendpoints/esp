@@ -40,9 +40,9 @@ class MockApiManagerEnvironment : public ApiManagerEnvInterface {
   MOCK_METHOD2(StartPeriodicTimer,
                std::unique_ptr<PeriodicTimer>(std::chrono::milliseconds,
                                               std::function<void()>));
-  MOCK_METHOD1(DoRunHTTPRequest, utils::Status(HTTPRequest *));
-  virtual utils::Status RunHTTPRequest(std::unique_ptr<HTTPRequest> req) {
-    return DoRunHTTPRequest(req.get());
+  MOCK_METHOD1(DoRunHTTPRequest, void(HTTPRequest *));
+  virtual void RunHTTPRequest(std::unique_ptr<HTTPRequest> req) {
+    DoRunHTTPRequest(req.get());
   }
 };
 
@@ -62,15 +62,9 @@ class MockApiManagerEnvironmentWithLog : public ApiManagerEnvInterface {
                                                     std::function<void()>) {
     return std::unique_ptr<PeriodicTimer>();
   }
-  utils::Status RunHTTPRequest(std::unique_ptr<HTTPRequest> request) {
-    if (request->requires_headers()) {
-      std::map<std::string, std::string> headers;
-      request->OnComplete(utils::Status::OK, std::move(headers), std::string());
-    } else {
-      request->OnComplete(utils::Status::OK, std::string());
-    }
-
-    return utils::Status::OK;
+  void RunHTTPRequest(std::unique_ptr<HTTPRequest> request) {
+    std::map<std::string, std::string> headers;
+    request->OnComplete(utils::Status::OK, std::move(headers), "");
   }
 };
 

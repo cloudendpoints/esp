@@ -319,35 +319,36 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
                       cloud_trace::CloudTraceSpan* parent_span) {
   std::shared_ptr<cloud_trace::CloudTraceSpan> trace_span(
       CreateChildSpan(parent_span, "Call ServiceControl server"));
-  std::unique_ptr<HTTPRequest> http_request(new HTTPRequest(
-      [response, on_done, trace_span, this](Status status, std::string&& body) {
-        TRACE(trace_span) << "HTTP response status: " << status.ToString();
-        if (status.ok()) {
-          // Handle 200 response
-          if (!response->ParseFromString(body)) {
-            status =
-                Status(Code::INVALID_ARGUMENT, std::string("Invalid response"));
-          }
-        } else {
-          const std::string& url = typeid(RequestType) == typeid(CheckRequest)
-                                       ? url_.check_url()
-                                       : url_.report_url();
-          env_->LogError(std::string("Failed to call ") + url + ", Error: " +
-                         status.ToString());
+  std::unique_ptr<HTTPRequest> http_request(new HTTPRequest([response, on_done,
+                                                             trace_span, this](
+      Status status, std::map<std::string, std::string>&&, std::string&& body) {
+    TRACE(trace_span) << "HTTP response status: " << status.ToString();
+    if (status.ok()) {
+      // Handle 200 response
+      if (!response->ParseFromString(body)) {
+        status =
+            Status(Code::INVALID_ARGUMENT, std::string("Invalid response"));
+      }
+    } else {
+      const std::string& url = typeid(RequestType) == typeid(CheckRequest)
+                                   ? url_.check_url()
+                                   : url_.report_url();
+      env_->LogError(std::string("Failed to call ") + url + ", Error: " +
+                     status.ToString());
 
-          // Handle NGX error as opposed to pass-through error code
-          if (status.code() < 0) {
-            status = Status(Code::UNAVAILABLE,
-                            "Failed to connect to service control");
-          } else {
-            status = Status(
-                Code::UNAVAILABLE,
-                "Service control request failed with HTTP response code " +
-                    std::to_string(status.code()));
-          }
-        }
-        on_done(status.ToProto());
-      }));
+      // Handle NGX error as opposed to pass-through error code
+      if (status.code() < 0) {
+        status =
+            Status(Code::UNAVAILABLE, "Failed to connect to service control");
+      } else {
+        status =
+            Status(Code::UNAVAILABLE,
+                   "Service control request failed with HTTP response code " +
+                       std::to_string(status.code()));
+      }
+    }
+    on_done(status.ToProto());
+  }));
 
   bool is_check = (typeid(RequestType) == typeid(CheckRequest));
   const std::string& url = is_check ? url_.check_url() : url_.report_url();
@@ -382,12 +383,7 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
     }
   }
 
-  Status status = env_->RunHTTPRequest(std::move(http_request));
-  if (!status.ok()) {
-    // Failed to send HTTPRequest.
-    on_done(Status(Code::UNAVAILABLE, "Failed to connect to service control")
-                .ToProto());
-  }
+  env_->RunHTTPRequest(std::move(http_request));
 }
 
 const std::string& Aggregated::GetAuthToken() {

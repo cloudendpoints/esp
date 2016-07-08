@@ -54,7 +54,7 @@ class NgxEspEnv : public ApiManagerEnvInterface {
   virtual std::unique_ptr<PeriodicTimer> StartPeriodicTimer(
       std::chrono::milliseconds interval, std::function<void()> continuation);
 
-  virtual utils::Status RunHTTPRequest(std::unique_ptr<HTTPRequest> request);
+  virtual void RunHTTPRequest(std::unique_ptr<HTTPRequest> request);
 
  private:
   ngx_log_t *log_;

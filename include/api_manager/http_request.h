@@ -39,17 +39,31 @@ namespace api_manager {
 class HTTPRequest {
  public:
   // HTTPRequest constructor without headers in the callback function.
-  // Callback receives NGX_ERROR status code if request fails or response
-  // HTTP code otherwise.
-  HTTPRequest(std::function<void(utils::Status, std::string&&)> callback)
-      : callback_(callback), timeout_ms_(0) {}
-  // HTTPRequest constructor with headers in the callback function. The keys in
-  // headers are in lowercase.
+  // Callback receives NGX_ERROR status code if the request fails to initiate or
+  // complete.
+  // Callback receives HTTP response code in status, if the request succeeds.
+  // The keys in headers passed to the callback are in lowercase.
   HTTPRequest(
-      std::function<void(utils::Status, std::map<std::string, std::string>,
-                         std::string)>
+      std::function<void(utils::Status, std::map<std::string, std::string>&&,
+                         std::string&&)>
           callback)
-      : callback_with_headers_(callback), timeout_ms_(0) {}
+      : callback_(callback),
+        requires_response_headers_(false),
+        timeout_ms_(0),
+        max_retries_(0),
+        timeout_backoff_factor_(2.0) {}
+
+  // A callback for the environment to invoke when the request is
+  // complete.  This will be invoked by the environment exactly once,
+  // and then the environment will drop the std::unique_ptr
+  // referencing the HTTPRequest.
+  // Headers are supplied only if the request requires them; otherwise, it's an
+  // empty map.
+  void OnComplete(utils::Status status,
+                  std::map<std::string, std::string>&& headers,
+                  std::string&& body) {
+    callback_(status, std::move(headers), std::move(body));
+  }
 
   // Request properties.
   const std::string& method() const { return method_; }
@@ -95,41 +109,52 @@ class HTTPRequest {
     return *this;
   }
 
-  const std::map<std::string, std::string>& headers() const { return headers_; }
+  int max_retries() const { return max_retries_; }
+  HTTPRequest& set_max_retries(int value) {
+    max_retries_ = value;
+    return *this;
+  }
+
+  double timeout_backoff_factor() const { return timeout_backoff_factor_; }
+  HTTPRequest& set_timeout_backoff_factor(double value) {
+    timeout_backoff_factor_ = value;
+    return *this;
+  }
+
+  const std::map<std::string, std::string>& request_headers() const {
+    return headers_;
+  }
   HTTPRequest& set_header(const std::string& name, const std::string& value) {
     headers_[name] = value;
     return *this;
   }
 
-  // A callback for the environment to invoke when the request is
-  // complete.  This will be invoked by the environment exactly once,
-  // and then the environment will drop the std::unique_ptr
-  // referencing the HTTPRequest.
-  void OnComplete(utils::Status status, std::string&& body) {
-    callback_(status, std::move(body));
+  bool requires_response_headers() const { return requires_response_headers_; }
+  HTTPRequest& set_requires_response_headers(bool value) {
+    requires_response_headers_ = value;
+    return *this;
   }
-
-  void OnComplete(utils::Status status,
-                  std::map<std::string, std::string> headers,
-                  std::string body) {
-    callback_with_headers_(status, std::move(headers), std::move(body));
-  }
-
-  // A flag to determine which callback will be called.
-  bool requires_headers() const { return callback_with_headers_ != nullptr; }
 
  private:
-  std::function<void(utils::Status, std::map<std::string, std::string>,
-                     std::string)>
-      callback_with_headers_;
-  std::function<void(utils::Status, std::string&&)> callback_;
+  std::function<void(utils::Status, std::map<std::string, std::string>&&,
+                     std::string&&)>
+      callback_;
   std::string method_;
   std::string url_;
   std::string body_;
   std::map<std::string, std::string> headers_;
 
+  // Indicates whether to extract headers from the response
+  bool requires_response_headers_;
+
   // Timeout, in milliseconds, for the request.
   int timeout_ms_;
+
+  // Maximum number of retries, 0 to skip
+  int max_retries_;
+
+  // Exponential back-off for the retries
+  double timeout_backoff_factor_;
 };
 
 }  // namespace api_manager

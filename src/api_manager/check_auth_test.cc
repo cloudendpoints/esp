@@ -303,17 +303,17 @@ TEST_F(CheckAuthTest, TestOKAuth) {
   EXPECT_CALL(*raw_request_, SetAuthToken(kToken)).Times(1);
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
       .Times(2)
-      .WillOnce(Invoke([](HTTPRequest *req) -> Status {
+      .WillOnce(Invoke([](HTTPRequest *req) {
         EXPECT_EQ(req->url(), kIssuer1OpenIdUrl);
         std::string body(kOpenIdContent);
-        req->OnComplete(Status::OK, std::move(body));
-        return Status::OK;
+        std::map<std::string, std::string> empty;
+        req->OnComplete(Status::OK, std::move(empty), std::move(body));
       }))
-      .WillOnce(Invoke([](HTTPRequest *req) -> Status {
+      .WillOnce(Invoke([](HTTPRequest *req) {
         EXPECT_EQ(req->url(), kIssuer1PubkeyUrl);
         std::string body(kPubkey);
-        req->OnComplete(Status::OK, std::move(body));
-        return Status::OK;
+        std::map<std::string, std::string> empty;
+        req->OnComplete(Status::OK, std::move(empty), std::move(body));
       }));
   EXPECT_CALL(*raw_request_, SetUserInfo(AllOf(Field(&UserInfo::id, kSub),
                                                Field(&UserInfo::issuer, kIss))))
@@ -376,11 +376,11 @@ TEST_F(CheckAuthTest, TestOpenIdFailed) {
       }));
   EXPECT_CALL(*raw_request_, SetAuthToken(kTokenOpenIdFail)).Times(1);
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
-      .WillOnce(Invoke([](HTTPRequest *req) -> Status {
+      .WillOnce(Invoke([](HTTPRequest *req) {
         EXPECT_EQ(req->url(), kOpenIdFailUrl);
         std::string body("");
-        req->OnComplete(Status::OK, std::move(body));
-        return Status::OK;
+        std::map<std::string, std::string> empty;
+        req->OnComplete(Status::OK, std::move(empty), std::move(body));
       }));
 
   CheckAuth(context_, [](Status status) {
@@ -421,11 +421,11 @@ TEST_F(CheckAuthTest, TestNoOpenId) {
       }));
   EXPECT_CALL(*raw_request_, SetAuthToken(kTokenIssuer2)).Times(1);
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
-      .WillOnce(Invoke([](HTTPRequest *req) -> Status {
+      .WillOnce(Invoke([](HTTPRequest *req) {
         EXPECT_EQ(req->url(), kIssuer2PubkeyUrl);
         std::string body(kPubkey);
-        req->OnComplete(Status::OK, std::move(body));
-        return Status::OK;
+        std::map<std::string, std::string> empty;
+        req->OnComplete(Status::OK, std::move(empty), std::move(body));
       }));
   EXPECT_CALL(*raw_request_,
               SetUserInfo(AllOf(Field(&UserInfo::id, kSub),

@@ -182,10 +182,10 @@ class AggregatedTestWithRealClient : public ::testing::Test {
     sc_lib_->Init();
   }
 
-  Status DoRunHTTPRequest(HTTPRequest* request) {
+  void DoRunHTTPRequest(HTTPRequest* request) {
+    std::map<std::string, std::string> headers;
     std::string body;
-    request->OnComplete(Status::OK, std::move(body));
-    return Status::OK;
+    request->OnComplete(Status::OK, std::move(headers), std::move(body));
   }
 
   ::google::api::Service service_;

@@ -123,10 +123,14 @@ void RequestHandler::SendTraces() {
       context_->service_context()->project_id());
 
   auto env = context_->service_context()->env();
-  std::unique_ptr<HTTPRequest> http_request(
-      new HTTPRequest([env](Status status, std::string&& body) {
-        env->LogDebug("Trace Response: " + status.ToString() + "\n" + body);
-      }));
+  std::unique_ptr<HTTPRequest> http_request(new HTTPRequest([env](
+      Status status, std::map<std::string, std::string>&&, std::string&& body) {
+    if (status.code() < 0) {
+      env->LogError("Trace Request Failed." + status.ToString());
+    } else {
+      env->LogDebug("Trace Response: " + status.ToString() + "\n" + body);
+    }
+  }));
 
   std::string url =
       context_->service_context()->cloud_trace_config()->cloud_trace_address() +
@@ -148,10 +152,7 @@ void RequestHandler::SendTraces() {
       .set_header("Content-Type", "application/json")
       .set_body(request_body);
 
-  Status status = env->RunHTTPRequest(std::move(http_request));
-  if (!status.ok()) {
-    env->LogDebug("Trace Request Failed." + status.ToString());
-  }
+  env->RunHTTPRequest(std::move(http_request));
 }
 
 }  // namespace api_manager

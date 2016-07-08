@@ -43,10 +43,9 @@ namespace nginx {
 // Sends an HTTP request and, upon completion (or error), calls the
 // continuation.
 //
-// If the return status is ok(), continuation stored on the request
-// will be called with the response (or with an error, for example
-// on connection failure, timeout etc.)
-utils::Status ngx_esp_send_http_request(std::unique_ptr<HTTPRequest> request);
+// Continuation stored on the request will be called with the response (or with
+// an error, for example on connection failure, timeout etc.)
+void ngx_esp_send_http_request(std::unique_ptr<HTTPRequest> request);
 
 }  // namespace nginx
 }  // namespace api_manager

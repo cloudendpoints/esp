@@ -103,12 +103,12 @@ is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.
 $t->stop();
 $t->stop_daemons();
 
-like($shelves, qr/^HTTP\/1\.1 503 Service Temporarily Unavailable/, '/shelves returned HTTP 503.');
-like($books, qr/^HTTP\/1\.1 503 Service Temporarily Unavailable/, '/books returned HTTP 503.');
+like($shelves, qr/^HTTP\/1\.1 401 Unauthorized/, '/shelves returned HTTP 401.');
+like($books, qr/^HTTP\/1\.1 401/, '/books returned HTTP 401.');
 
 # Check metadata server log.
 my @metadata_requests = ApiManager::read_http_stream($t, 'metadata.log');
-is(scalar @metadata_requests, 1, 'Metadata server received only one request.');
+is(scalar @metadata_requests, 4, 'Metadata server received all requests.');
 
 # Metadata request 1
 my $r = shift @metadata_requests;

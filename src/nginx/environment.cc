@@ -104,13 +104,8 @@ std::unique_ptr<PeriodicTimer> NgxEspEnv::StartPeriodicTimer(
       new NgxEspTimer(interval, continuation, log_));
 }
 
-utils::Status NgxEspEnv::RunHTTPRequest(std::unique_ptr<HTTPRequest> request) {
-  utils::Status status = ngx_esp_send_http_request(std::move(request));
-  if (!status.ok()) {
-    return utils::Status(NGX_ERROR, "Unable to initiate backend request");
-  } else {
-    return utils::Status::OK;
-  }
+void NgxEspEnv::RunHTTPRequest(std::unique_ptr<HTTPRequest> request) {
+  ngx_esp_send_http_request(std::move(request));
 }
 
 }  // namespace nginx

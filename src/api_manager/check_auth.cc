@@ -105,10 +105,9 @@ class AuthChecker : public std::enable_shared_from_this<AuthChecker> {
   std::shared_ptr<AuthChecker> GetPtr() { return shared_from_this(); }
 
   // Helper function to send a http GET request.
-  Status HttpFetch(const std::string &url,
-                   std::function<void(Status, std::string &&)> continuation);
+  void HttpFetch(const std::string &url,
+                 std::function<void(Status, std::string &&)> continuation);
 
-  // TODO: this function should probably be renamed to "Unauthenticated".
   // Authentication error
   void Unauthorized(const std::string &error);
 
@@ -294,13 +293,9 @@ void AuthChecker::InitKey() {
 
 void AuthChecker::DiscoverJwksUri(const std::string &url) {
   auto pChecker = GetPtr();
-  Status status = HttpFetch(url, [pChecker](Status status, std::string &&body) {
+  HttpFetch(url, [pChecker](Status status, std::string &&body) {
     pChecker->PostFetchJwksUri(status, std::move(body));
   });
-  if (!status.ok()) {
-    FetchFailure("Unable to fetch URI of the key via OpenID discovery", status);
-    return;
-  }
 }
 
 void AuthChecker::PostFetchJwksUri(Status status, std::string &&body) {
@@ -338,13 +333,9 @@ void AuthChecker::PostFetchJwksUri(Status status, std::string &&body) {
 
 void AuthChecker::FetchPubKey(const std::string &url) {
   auto pChecker = GetPtr();
-  Status status = HttpFetch(url, [pChecker](Status status, std::string &&body) {
+  HttpFetch(url, [pChecker](Status status, std::string &&body) {
     pChecker->PostFetchPubKey(status, std::move(body));
   });
-  if (!status.ok()) {
-    FetchFailure("Unable to fetch verification key", status);
-    return;
-  }
 }
 
 void AuthChecker::PostFetchPubKey(Status status, std::string &&body) {
@@ -410,7 +401,7 @@ void AuthChecker::FetchFailure(const std::string &error, Status status) {
              Status::AUTH));
 }
 
-Status AuthChecker::HttpFetch(
+void AuthChecker::HttpFetch(
     const std::string &url,
     std::function<void(Status, std::string &&)> continuation) {
   std::shared_ptr<cloud_trace::CloudTraceSpan> fetch_span(
@@ -418,18 +409,20 @@ Status AuthChecker::HttpFetch(
   env_->LogDebug(std::string("http fetch: ") + url);
   TRACE(fetch_span) << "Http request URL: " << url;
 
-  std::unique_ptr<HTTPRequest> request(new HTTPRequest(
-      [continuation, fetch_span](Status status, std::string &&body) {
+  std::unique_ptr<HTTPRequest> request(
+      new HTTPRequest([continuation, fetch_span](
+          Status status, std::map<std::string, std::string> &&,
+          std::string &&body) {
         TRACE(fetch_span) << "Http response status: " << status.ToString();
         continuation(status, std::move(body));
       }));
   if (!request) {
-    return Status(Code::INTERNAL, "Out of memory");
+    continuation(Status(Code::INTERNAL, "Out of memory"), "");
+    return;
   }
 
   request->set_method("GET").set_url(url);
-
-  return env_->RunHTTPRequest(std::move(request));
+  env_->RunHTTPRequest(std::move(request));
 }
 
 }  // namespace

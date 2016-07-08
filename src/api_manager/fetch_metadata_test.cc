@@ -87,26 +87,27 @@ class FetchMetadataTest : public ::testing::Test {
 TEST_F(FetchMetadataTest, FetchGceMetadataWithStatusOK) {
   // FetchGceMetadata responses with headers and status OK.
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
-      .WillOnce(Invoke([](HTTPRequest *req) -> Status {
+      .WillOnce(Invoke([](HTTPRequest *req) {
+        std::map<std::string, std::string> empty;
         std::string body(kEmptyBody);
-        req->OnComplete(Status::OK, std::move(body));
-        return Status::OK;
+        req->OnComplete(Status::OK, std::move(empty), std::move(body));
       }));
 
   FetchGceMetadata(context_, [](Status status) { ASSERT_TRUE(status.ok()); });
 }
 
-TEST_F(FetchMetadataTest, FetchGceMetadataWithStatusUNAVAILABLE) {
+TEST_F(FetchMetadataTest, FetchGceMetadataWithStatusINTERNAL) {
   // FetchGceMetadata responses with headers and status UNAVAILABLE.
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
-      .WillOnce(Invoke([](HTTPRequest *req) -> Status {
+      .WillOnce(Invoke([](HTTPRequest *req) {
+        std::map<std::string, std::string> empty;
         std::string body(kEmptyBody);
-        req->OnComplete(Status(Code::UNKNOWN, ""), std::move(body));
-        return Status::OK;
+        req->OnComplete(Status(Code::UNKNOWN, ""), std::move(empty),
+                        std::move(body));
       }));
 
   FetchGceMetadata(context_, [](Status status) {
-    ASSERT_EQ(Code::UNAVAILABLE, status.code());
+    ASSERT_EQ(Code::INTERNAL, status.code());
   });
 }
 

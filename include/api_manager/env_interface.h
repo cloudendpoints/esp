@@ -72,12 +72,10 @@ class ApiManagerEnvInterface {
 
   // Environment support for issuing non-streaming HTTP 1.1 requests from
   // the API manager. The environment takes ownership of the request, and is
-  // responsible for either returning a non-ok() status, or eventually
-  // invoking request->OnComplete() with the result of the request
+  // responsible for eventually invoking request->OnComplete() with the result
+  // of the request
   // (possibly before returning).
-  // Returns NGX_ERROR code if fails to initiate request, or OK otherwise.
-  virtual utils::Status RunHTTPRequest(
-      std::unique_ptr<HTTPRequest> request) = 0;
+  virtual void RunHTTPRequest(std::unique_ptr<HTTPRequest> request) = 0;
 };
 
 }  // namespace api_manager

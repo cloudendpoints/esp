@@ -193,7 +193,7 @@ Status ngx_esp_upstream_set_url(ngx_pool_t *pool, ngx_http_upstream_t *upstream,
     parsed_url.default_port = 443;
 #endif
   } else {
-    return Status(NGX_ERROR, "Invalid URL scheme.");
+    return Status(NGX_ERROR, "Invalid URL scheme");
   }
 
   // Parse out the URI part of the URL.
@@ -202,7 +202,7 @@ Status ngx_esp_upstream_set_url(ngx_pool_t *pool, ngx_http_upstream_t *upstream,
   parsed_url.no_resolve = 1;
 
   if (ngx_parse_url(pool, &parsed_url) != NGX_OK) {
-    return Status(NGX_ERROR, "Cannot parse URL.");
+    return Status(NGX_ERROR, "Cannot parse URL");
   }
 
   // Detect situation where input URL was of the form:
@@ -337,7 +337,7 @@ ngx_int_t ngx_esp_upstream_create_request(ngx_http_request_t *r) {
   buffer_size += sizeof("Connection: close" CRLF) - 1;
 
   // Add sizes of all headers and their values.
-  for (const auto &header : http_request->headers()) {
+  for (const auto &header : http_request->request_headers()) {
     const std::string &name = header.first;
     const std::string &value = header.second;
 
@@ -381,7 +381,7 @@ ngx_int_t ngx_esp_upstream_create_request(ngx_http_request_t *r) {
   append(buf, "Connection: close" CRLF);
 
   // Append the headers provided by the caller.
-  for (const auto &header : http_request->headers()) {
+  for (const auto &header : http_request->request_headers()) {
     const std::string &name = header.first;
     const std::string &value = header.second;
 
@@ -517,7 +517,7 @@ ngx_int_t ngx_esp_upstream_process_header(ngx_http_request_t *r) {
       ngx_str_t value = {(size_t)(r->header_end - r->header_start),
                          r->header_start};
       // Store headers if it is required.
-      if (http_connection->esp_request->requires_headers()) {
+      if (http_connection->esp_request->requires_response_headers()) {
         http_connection->response_headers.emplace(ngx_str_to_std(name),
                                                   ngx_str_to_std(value));
       }
@@ -625,28 +625,40 @@ void ngx_esp_upstream_finalize_request(ngx_http_request_t *r, ngx_int_t rc) {
 
   // Call the continuation.
   if (http_connection->esp_request) {
-    // Extract accumulated response body to a string.
-    std::string body = http_connection->response_body.str();
-
-    Status status(rc, message);
-
-    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, &http_connection->log, 0,
-                   "Calling a continuation with status: %s",
-                   status.ToString().c_str());
-    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, &http_connection->log, 0,
-                   "Calling a continuation with a body size: %d", body.size());
-
     // Swap the initial HTTP request out to make sure we don't
     // call the continuation multiple times.
     std::unique_ptr<HTTPRequest> request;
     request.swap(http_connection->esp_request);
 
-    // Call the request continuation.
-    if (request->requires_headers()) {
+    // Retry if an error and retry budget left
+    if (rc == NGX_ERROR && request->max_retries() > 0) {
+      // increase timeout
+      request->set_max_retries(request->max_retries() - 1);
+      request->set_timeout_ms(request->timeout_ms() *
+                              request->timeout_backoff_factor());
+
+      ngx_log_debug1(NGX_LOG_DEBUG_HTTP, &http_connection->log, 0,
+                     "Retrying connection, max retries left %d",
+                     request->max_retries());
+
+      // Swap the initial HTTP request out to the next iteration
+      ngx_esp_send_http_request(std::move(request));
+    } else {
+      // Extract accumulated response body to a string.
+      std::string body = http_connection->response_body.str();
+
+      Status status(rc, message);
+
+      ngx_log_debug1(NGX_LOG_DEBUG_HTTP, &http_connection->log, 0,
+                     "Calling a continuation with status: %s",
+                     status.ToString().c_str());
+      ngx_log_debug1(NGX_LOG_DEBUG_HTTP, &http_connection->log, 0,
+                     "Calling a continuation with a body size: %d",
+                     body.size());
+
+      // Call the request continuation.
       request->OnComplete(status, std::move(http_connection->response_headers),
                           std::move(body));
-    } else {
-      request->OnComplete(status, std::move(body));
     }
   } else {
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, &http_connection->log, 0,
@@ -705,9 +717,9 @@ ngx_int_t ngx_esp_upstream_input_filter_init(void *data) {
 
 // An upstream input filter handler.
 //
-// After the initiliazation, NGINX calls this filter handler whenever new data
+// After initialization, NGINX calls this filter handler whenever new data
 // is read from the upstream connection.
-// We accumulate the data by writing it into a stringstream.
+// We accumulate the data by writing it into a string stream.
 ngx_int_t ngx_esp_upstream_input_filter(void *data, ssize_t bytes) {
   ngx_http_request_t *r = reinterpret_cast<ngx_http_request_t *>(data);
   ngx_esp_http_connection *http_connection = get_esp_connection(r);
@@ -836,7 +848,7 @@ Status initialize_events_and_logs(ngx_esp_http_connection *http_connection) {
   // request must be initialized prior to this call!
   auto r = http_connection->request;
   if (r == nullptr) {
-    return Status(NGX_ERROR, "internal error");
+    return Status(NGX_ERROR, "Internal error");
   }
 
   // Set up read and write events. Their logs point at the pre-allocated log
@@ -874,7 +886,7 @@ Status initialize_connection(ngx_pool_t *connection_pool,
   // request must be initialized prior to this call!
   auto r = http_connection->request;
   if (r == nullptr) {
-    return Status(NGX_ERROR, "internal error");
+    return Status(NGX_ERROR, "Internal error");
   }
 
   // Set up a local socket address used by the connection object.
@@ -910,7 +922,7 @@ Status initialize_request(ngx_pool_t *request_pool,
   // request must be initialized prior to this call!
   auto r = http_connection->request;
   if (r == nullptr) {
-    return Status(NGX_ERROR, "internal error");
+    return Status(NGX_ERROR, "Internal error");
   }
 
   // Set up the request pool and its log.
@@ -922,12 +934,12 @@ Status initialize_request(ngx_pool_t *request_pool,
   auto http_cctx = reinterpret_cast<ngx_http_conf_ctx_t *>(
       ngx_get_conf(ngx_cycle->conf_ctx, ngx_http_module));
   if (http_cctx == nullptr) {
-    return Status(NGX_ERROR, "internal error");
+    return Status(NGX_ERROR, "Internal error");
   }
   auto mc = reinterpret_cast<ngx_esp_main_conf_t *>(
       http_cctx->main_conf[ngx_esp_module.ctx_index]);
   if (mc == nullptr) {
-    return Status(NGX_ERROR, "internal error");
+    return Status(NGX_ERROR, "Internal error");
   }
 
   // The main and server configuration contexts we use are from the HTTP module.
@@ -1008,7 +1020,7 @@ Status initialize_upstream_request(ngx_log_t *log, HTTPRequest *request,
   // request must be initialized prior to this call!
   auto r = http_connection->request;
   if (r == nullptr) {
-    return Status(NGX_ERROR, "internal error");
+    return Status(NGX_ERROR, "Internal error");
   }
 
   // Create the NGINX upstream structures.
@@ -1102,7 +1114,7 @@ Status initialize_upstream_request(ngx_log_t *log, HTTPRequest *request,
 // Creates data structures necessary to use NGINX upstream module as an HTTP
 // client.
 Status ngx_esp_create_http_request(
-    ngx_log_t *log, std::unique_ptr<HTTPRequest> request,
+    ngx_log_t *log, HTTPRequest *request,
     ngx_esp_http_connection **out_http_connection) {
   // Create the connection pool and request pools.
   std::unique_ptr<ngx_pool_t, ngx_pool_t_deleter> connection_pool;
@@ -1155,7 +1167,7 @@ Status ngx_esp_create_http_request(
 
   // Initialize the upstream structures which the upstream module uses to
   // connect to the server.
-  status = initialize_upstream_request(log, request.get(), request_pool.get(),
+  status = initialize_upstream_request(log, request, request_pool.get(),
                                        http_connection);
   if (!status.ok()) {
     return status;
@@ -1174,9 +1186,6 @@ Status ngx_esp_create_http_request(
   connection_pool.release();
   request_pool.release();
 
-  // Store the caller's request for the continuation call.
-  http_connection->esp_request = std::move(request);
-
   // Return the HTTP connection object to the caller.
   *out_http_connection = http_connection;
 
@@ -1185,7 +1194,7 @@ Status ngx_esp_create_http_request(
 
 }  // namespace
 
-utils::Status ngx_esp_send_http_request(std::unique_ptr<HTTPRequest> request) {
+void ngx_esp_send_http_request(std::unique_ptr<HTTPRequest> request) {
   ngx_esp_http_connection *http_connection(nullptr);
 
   ngx_log_t *log = ngx_cycle->log;
@@ -1197,18 +1206,25 @@ utils::Status ngx_esp_send_http_request(std::unique_ptr<HTTPRequest> request) {
 
   // Create the HTTP request data structures.
   Status status =
-      ngx_esp_create_http_request(log, std::move(request), &http_connection);
+      ngx_esp_create_http_request(log, request.get(), &http_connection);
 
   if (status.ok()) {
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, log, 0,
                    "esp: calling ngx_http_upstream_init(%p)",
                    http_connection->request);
 
+    // Store the caller's request for the continuation call.
+    http_connection->esp_request = std::move(request);
+
     // Initiate the upstream connection by calling NGINX upstream.
     ngx_http_upstream_init(http_connection->request);
-  }
+  } else {
+    status = Status(NGX_ERROR,
+                    "Unable to initiate HTTP request: " + status.message());
 
-  return status;
+    // Call the request continuation with error.
+    request->OnComplete(status, std::map<std::string, std::string>(), "");
+  }
 }
 
 }  // namespace nginx
