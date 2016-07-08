@@ -30,84 +30,62 @@
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . ${ROOT}/script/all-utilities || { echo "Cannot load Bash utilities"; exit 1; }
 
-# This script will create a tag for a release branch.
-
 function usage() {
   [[ -n "${1}" ]] && echo "${1}"
   cat <<EOF
-usage: ${BASH_SOURCE[0]} -t <tag git ref> -b <build git ref>"
+usage: ${BASH_SOURCE[0]} -s <release SHA> -n <next version number>"
 
-tag git ref: commit which to tag with the release
-    (typically release branch HEAD)
-build git ref: commit at which the build was produced
-    this is typically used when subsequent commits (such as changelog)
-    were made in the release branch after the release build was produced.
+This script will create a release branch with the SHA.
+Then update the version number for next release and push for review.
 
 example:
 ${BASH_SOURCE[0]} \\
-    -t HEAD \\
-    -b be2eb101f1b1b3e671e852656066c2909c41049b
+    -n 0.3.1 \\
+    -s be2eb101f1b1b3e671e852656066c2909c41049b
 EOF
   exit 1
 }
 
-BUILD_REF=''
-TAG_REF=''
+# Create a branch for release.
+NEXT_VERSION=''
+SHA=''
 
-while getopts :b:t: arg; do
+while getopts :n:s: arg; do
   case ${arg} in
-    b) BUILD_REF="${OPTARG}";;
-    t) TAG_REF="${OPTARG}";;
+    n) NEXT_VERSION="${OPTARG}";;
+    s) SHA="${OPTARG}";;
     *) usage "Invalid option: -${OPTARG}";;
   esac
 done
 
-[[ -n "${BUILD_REF}" ]] \
-  || usage "Please provide the release build ref via '-b' parameter."
-[[ -n "${TAG_REF}" ]] \
-  || usage "Please provide the release tag ref via '-t' parameter."
+[[ -n "${NEXT_VERSION}" ]] \
+  || usage "Please provide the next release version."
+[[ "${NEXT_VERSION}" =~ [0-9]\.[0-9]\.[0-9]+ ]] \
+  || usage "Invalid version number: ${NEXT_VERSION}."
+[[ -n "${SHA}" ]] \
+  || usage "Please provide the release SHA."
 
-BUILD_SHA=$(git rev-parse --verify "${BUILD_REF}") \
-  || usage "Invalid Git reference \"${BUILD_REF}\"."
-TAG_SHA=$(git rev-parse --verify "${TAG_REF}") \
-  || usage "Invalid Git reference \"${TAG_REF}\"."
+CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+VERSION="$(command cat ${ROOT}/include/version)"
+echo "Current branch: ${CURRENT_BRANCH}."
+[[ -z $(git diff --name-only) ]] \
+  || error_exit "Current branch is not clean."
 
-VERSION="$(command cat ${ROOT}/include/version)" \
-  || usage "Cannot determine release version (${ROOT}/include/version)."
+git fetch origin \
+  || error_exit "Could not fetch origin."
+git branch release-${VERSION} ${SHA} \
+  || error_exit "Could not create a local release branch."
+git push origin ${SHA}:refs/heads/release/${VERSION} \
+  || error_exit "Failed to create a remote release branch."
 
-set -x
+# Update the version number and push for review.
+git checkout origin/master
+echo "${NEXT_VERSION}" > ${ROOT}/include/version
+git add ${ROOT}/include/version
+git commit -m "Update version number to ${NEXT_VERSION}."
+git push origin HEAD:refs/for/refs/heads/master
 
-git tag --annotate --force --file=- ${VERSION} ${TAG_SHA} <<EOF
-Endpoints Runtime Release ${VERSION}
-
-The release build was produced at ${BUILD_SHA}.
-The Docker image released is:
-  b.gcr.io/endpoints/endpoints-runtime:${VERSION}
-EOF
-
-# Check the version is correct.
-git show -q ${VERSION}
-
-{ set +x; } 2>/dev/null
-
-printf "\\e[31m
-You are about to push the tag ${VERSION} for ${TAG_SHA} to origin.
-Once pushed, the tag cannot be removed. Are you sure? [Y/N] \\e[0m"
-
-read yn
-if [[ "${yn}" != "y" && "${yn}" != "Y" ]]; then
-  echo "Aborting."
-  exit 1
-fi
-
-# Push the tag to the server.
-set -x
-git push origin ${VERSION}
-{ set +x; } 2>/dev/null
-
-# Delete the release branch.
-git push origin :refs/heads/release/${VERSION} \
-  || error_exit "Failed to delete the release branch."
+git checkout release-${VERSION}
 
 printf '\e[31m
 ***************************************************************************
