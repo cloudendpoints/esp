@@ -336,7 +336,7 @@ class Parallel {
           stats.succeeded_count++;
         } else {
           stats.failed_count++;
-          stats.failures.push_back(result.status());
+          stats.AddFailure(result.status());
         }
         stats.latencies.push_front(
             std::chrono::duration_cast<std::chrono::microseconds>(
@@ -418,8 +418,8 @@ class Parallel {
       stats->set_mean_latency_micros(mean_latency);
       stats->set_stddev_latency_micros(stddev_latency);
 
-      for (const auto &failure : it.failures) {
-        *stats->add_failures() = failure;
+      for (const auto &f : it.failures) {
+        f.second.Fill(stats->add_failures());
       }
     }
     if (total_succeeded_count != desc_.test_count() ||
@@ -429,11 +429,46 @@ class Parallel {
     }
   }
 
+  class AggregatedStatus {
+   public:
+    AggregatedStatus(const CallStatus &status) : count_(1), status_(status) {
+      start_time_ = end_time_ = time(nullptr);
+    }
+
+    void Inc() {
+      count_++;
+      end_time_ = time(nullptr);
+    }
+
+    void Fill(AggregatedCallStatus *call_status) const {
+      call_status->set_count(count_);
+      call_status->set_start_time(ctime(&start_time_));
+      call_status->set_end_time(ctime(&end_time_));
+      *call_status->mutable_status() = status_;
+    }
+
+   private:
+    int count_ = 0;
+    time_t start_time_ = -1;
+    time_t end_time_ = -1;
+    CallStatus status_;
+  };
+
   struct SubtestStats {
     int succeeded_count = 0;
     int failed_count = 0;
     std::forward_list<std::chrono::microseconds> latencies;
-    std::vector<CallStatus> failures;
+    std::map<std::string, AggregatedStatus> failures;
+
+    void AddFailure(const CallStatus &status) {
+      std::string key = status.details() + std::to_string(status.code());
+      std::map<std::string, AggregatedStatus>::iterator it = failures.find(key);
+      if (it == failures.end()) {
+        failures.emplace(key, status);
+      } else {
+        it->second.Inc();
+      }
+    }
   };
 
   ParallelTest desc_;
