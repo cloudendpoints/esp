@@ -153,7 +153,7 @@ Host: localhost
 Authorization: Bearer $token
 
 EOF
-like($response, qr/HTTP\/1\.1 401 Unauthorized/, 'Returned HTTP 401, audience not allowed.');
+like($response, qr/HTTP\/1\.1 403 Forbidden/, 'Returned HTTP 403, audience not allowed.');
 like($response, qr/WWW-Authenticate: Bearer, error=\"invalid_token\"/, 'Returned invalid_token challenge.');
 like($response, qr/Content-Type: application\/json/i,
      'Audience not allowed returned application/json body.');

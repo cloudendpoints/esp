@@ -85,9 +85,11 @@ ngx_int_t ngx_esp_error_header_filter(ngx_http_request_t *r) {
     r->headers_out.content_type_len = application_json.len;
     r->headers_out.content_type_lowcase = nullptr;
 
-    // Returns WWW-Authenticate header for 401 response.
+    // Returns WWW-Authenticate header for authentication/authorization
+    // responses.
     // See https://tools.ietf.org/html/rfc6750#section-3.
-    if (r->err_status == NGX_HTTP_UNAUTHORIZED) {
+    if (r->err_status == NGX_HTTP_UNAUTHORIZED ||
+        r->err_status == NGX_HTTP_FORBIDDEN) {
       r->headers_out.www_authenticate = reinterpret_cast<ngx_table_elt_t *>(
           ngx_list_push(&r->headers_out.headers));
       if (r->headers_out.www_authenticate == nullptr) {

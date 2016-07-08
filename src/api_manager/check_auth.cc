@@ -109,6 +109,9 @@ class AuthChecker : public std::enable_shared_from_this<AuthChecker> {
                  std::function<void(Status, std::string &&)> continuation);
 
   // Authentication error
+  void Unauthenticated(const std::string &error);
+
+  // Authorization error
   void Unauthorized(const std::string &error);
 
   // Fetch error, takes upstream error
@@ -157,7 +160,7 @@ void AuthChecker::Check() {
 
   GetAuthToken();
   if (auth_token_.empty()) {
-    Unauthorized("Missing or invalid credentials");
+    Unauthenticated("Missing or invalid credentials");
     return;
   }
   context_->request()->SetAuthToken(auth_token_);
@@ -221,14 +224,14 @@ void AuthChecker::ParseJwt() {
   if (validator_ == nullptr) {
     validator_ = JwtValidator::Create(auth_token_.c_str(), auth_token_.size());
     if (validator_ == nullptr) {
-      Unauthorized("Internal error");
+      Unauthenticated("Internal error");
       return;
     }
   }
 
   Status status = validator_->Parse(&user_info_);
   if (!status.ok()) {
-    Unauthorized(status.message());
+    Unauthenticated(status.message());
     return;
   }
 
@@ -243,7 +246,7 @@ void AuthChecker::CheckAudience(bool cache_hit) {
   context_->set_auth_audience(audience);
 
   if (!context_->method()->isIssuerAllowed(user_info_.issuer)) {
-    Unauthorized("Issuer not allowed");
+    Unauthenticated("Issuer not allowed");
     return;
   }
 
@@ -275,7 +278,7 @@ void AuthChecker::InitKey() {
     bool tryOpenId =
         context_->service_context()->GetJwksUri(user_info_.issuer, &url);
     if (url.empty()) {
-      Unauthorized("Cannot determine the URI of the key");
+      Unauthenticated("Cannot determine the URI of the key");
       return;
     }
 
@@ -321,7 +324,7 @@ void AuthChecker::PostFetchJwksUri(Status status, std::string &&body) {
     env_->LogError("OpenID discovery failed due to invalid doc format");
     context_->service_context()->SetJwksUri(user_info_.issuer, std::string(),
                                             false);
-    Unauthorized("Unable to parse URI of the key via OpenID discovery");
+    Unauthenticated("Unable to parse URI of the key via OpenID discovery");
     return;
   }
 
@@ -355,14 +358,14 @@ void AuthChecker::VerifySignature() {
   Certs &key_cache = context_->service_context()->certs();
   auto cert = key_cache.GetCert(user_info_.issuer);
   if (cert == nullptr) {
-    Unauthorized("Missing verification key");
+    Unauthenticated("Missing verification key");
     return;
   }
 
   Status status =
       validator_->VerifySignature(cert->first.c_str(), cert->first.size());
   if (!status.ok()) {
-    Unauthorized(status.message());
+    Unauthenticated(status.message());
     return;
   }
 
@@ -381,10 +384,18 @@ void AuthChecker::PassUserInfoOnSuccess() {
   on_done_(Status::OK);
 }
 
-void AuthChecker::Unauthorized(const std::string &error) {
+void AuthChecker::Unauthenticated(const std::string &error) {
   TRACE(trace_span_) << "Authentication failed: " << error;
   trace_span_.reset();
   on_done_(Status(Code::UNAUTHENTICATED,
+                  std::string("JWT validation failed: ") + error,
+                  Status::AUTH));
+}
+
+void AuthChecker::Unauthorized(const std::string &error) {
+  TRACE(trace_span_) << "Authorization failed: " << error;
+  trace_span_.reset();
+  on_done_(Status(Code::PERMISSION_DENIED,
                   std::string("JWT validation failed: ") + error,
                   Status::AUTH));
 }

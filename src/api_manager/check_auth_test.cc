@@ -480,7 +480,7 @@ TEST_F(CheckAuthTest, TestBadAudience) {
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_)).Times(0);
 
   CheckAuth(context_, [](Status status) {
-    ASSERT_EQ(status.code(), Code::UNAUTHENTICATED);
+    ASSERT_EQ(status.code(), Code::PERMISSION_DENIED);
     ASSERT_EQ(status.message(), "JWT validation failed: Audience not allowed");
   });
 }
