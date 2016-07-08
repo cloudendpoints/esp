@@ -1,0 +1,105 @@
+#!/bin/bash
+#
+# Copyright (C) Endpoints Server Proxy Authors
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+################################################################################
+#
+
+# This script will create a GCE-VM instance with grpc-test-server and
+# endpoints runtime package.
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+. ${ROOT}/script/all-utilities || { echo "Cannot load Bash utilities"; exit 1; }
+
+function usage() {
+  [[ -n "${1}" ]] && echo "${1}"
+
+  cat <<EOF
+usage: ${BASH_SOURCE[0]} [options ...]"
+  options:
+    -d ... endpoint runtime docker image name
+    -n ... service name
+    -v ... service version
+    -i ... VM instance name to create (default grpc-test-server-gce-vm)
+    -p ... project name
+    -z ... compute zone in which to create the VM.
+EOF
+  exit 2
+}
+
+SERVICE_NAME='echo-dot-esp-grpc-load-test.appspot.com'
+SERVICE_VERSION='2016-07-08r1'
+PROJECT="esp-grpc-load-test"
+INSTANCE=grpc-test-server-gce-vm
+
+while getopts :i:d:n:p:v:z: arg; do
+  case "${arg}" in
+    i) INSTANCE="${OPTARG}";;
+    d) IMAGE="${OPTARG}";;
+    n) SERVICE_NAME="${OPTARG}";;
+    p) PROJECT="${OPTARG}";;
+    v) SERVICE_VERSION="${OPTARG}";;
+    z) ZONE="${OPTARG}";;
+    *) usage "Invalid option: -${OPTARG}";;
+  esac
+done
+
+[[ -n "${IMAGE}" ]] || error_exit "Please use -d to specify docker image name."
+
+GCLOUD=$(which gcloud) || GCLOUD=~/google-cloud-sdk/bin/gcloud
+
+COMMON_ARGS=()
+[[ -n "${PROJECT}" ]] && COMMON_ARGS+=(--project "${PROJECT}")
+[[ -n "${ZONE}" ]]    && COMMON_ARGS+=(--zone "${ZONE}")
+
+echo "Creating a GCE-VM ${INSTANCE}"
+"${GCLOUD}" compute instances create "${INSTANCE}" "${COMMON_ARGS[@]}" \
+  || error_exit "Cannot create a new GCE-VM."
+
+function remote() {
+  echo "Remotely run command: $*"
+  ${GCLOUD} compute ssh "${INSTANCE}" "${COMMON_ARGS[@]}" --command="$*" \
+    || error_exit "Failed to remotely run command: $*"
+}
+
+remote "sudo apt-get update && sudo apt-get -qqy install apt-transport-https && \
+  echo deb https://apt.dockerproject.org/repo debian-jessie main \
+  | sudo tee /etc/apt/sources.list.d/docker.list && \
+  sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 \
+    --recv-keys 58118E89F3A912897C070ADBF76221572C52609D"
+
+remote "sudo apt-get update && sudo apt-get -qqy install docker-engine"
+
+remote "sudo docker run -d --name=grpc-test-server gcr.io/endpointsv2/grpc-test-server:latest"
+
+remote "sudo docker run -d -p 80:8080 --link=grpc-test-server:grpc-test-server ${IMAGE} \
+  -s ${SERVICE_NAME} -v ${SERVICE_VERSION} -a grpc-test-server:8081"
+
+echo "GCE vm "${INSTANCE}" was created successfully. Its external IP:"
+${GCLOUD} compute instances describe "${INSTANCE}" "${COMMON_ARGS[@]}" |grep natIP:|awk '{print $2}'
+
+echo "Please use following command to delete it."
+echo "${GCLOUD}" compute instances delete --quiet "${INSTANCE}" "${COMMON_ARGS[@]}"
+
