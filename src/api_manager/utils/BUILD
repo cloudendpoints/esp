@@ -36,10 +36,12 @@ cc_library(
     srcs = [
         "marshalling.cc",
         "status.cc",
+        "url_util.cc",
     ],
     hdrs = [
         "marshalling.h",
         "stl_util.h",
+        "url_util.h",
     ],
     linkopts = select({
         "//:darwin": [],
@@ -75,6 +77,19 @@ cc_test(
     size = "small",
     srcs = [
         "status_test.cc",
+    ],
+    linkstatic = 1,
+    deps = [
+        ":utils",
+        "//external:googletest_main",
+    ],
+)
+
+cc_test(
+    name = "url_util_test",
+    size = "small",
+    srcs = [
+        "url_util_test.cc",
     ],
     linkstatic = 1,
     deps = [

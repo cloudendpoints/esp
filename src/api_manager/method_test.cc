@@ -37,7 +37,9 @@ namespace {
 const char kMethodName[] = "method";
 const char kIssuer1[] = "iss1";
 const char kIssuer2[] = "iss2";
+const char kIssuer2https[] = "https://iss2";
 const char kIssuer3[] = "iss3";
+const char kIssuer3http[] = "http://iss3/";
 const char kIssuer4[] = "iss4";
 
 TEST(MethodInfo, Create) {
@@ -61,8 +63,11 @@ TEST(MethodInfo, IssueAndAudiences) {
   method_info->addAudiencesForIssuer(kIssuer1, ",aud4");
   method_info->addAudiencesForIssuer(kIssuer1, "");
   method_info->addAudiencesForIssuer(kIssuer1, ",aud5,,,");
-  method_info->addAudiencesForIssuer(kIssuer2, ",,,aud6");
-  method_info->addAudiencesForIssuer(kIssuer3, "");
+  method_info->addAudiencesForIssuer(kIssuer2https, ",,,aud6");
+  method_info->addAudiencesForIssuer(kIssuer3http, "");
+  method_info->addAudiencesForIssuer(kIssuer3http, "https://aud7");
+  method_info->addAudiencesForIssuer(kIssuer3http, "http://aud8");
+  method_info->addAudiencesForIssuer(kIssuer3http, "https://aud9/");
 
   ASSERT_TRUE(method_info->isIssuerAllowed(kIssuer1));
   ASSERT_TRUE(method_info->isIssuerAllowed(kIssuer2));
@@ -83,6 +88,9 @@ TEST(MethodInfo, IssueAndAudiences) {
   ASSERT_FALSE(method_info->isAudienceAllowed(kIssuer2, {"aud1"}));
 
   ASSERT_FALSE(method_info->isAudienceAllowed(kIssuer3, {"aud1"}));
+  ASSERT_TRUE(method_info->isAudienceAllowed(kIssuer3, {"aud7"}));
+  ASSERT_TRUE(method_info->isAudienceAllowed(kIssuer3, {"aud8"}));
+  ASSERT_TRUE(method_info->isAudienceAllowed(kIssuer3, {"aud9"}));
 
   // some negative test cases
   ASSERT_FALSE(method_info->isAudienceAllowed("", {"aud1"}));

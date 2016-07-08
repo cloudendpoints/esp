@@ -34,6 +34,7 @@
 #include "src/api_manager/auth/lib/auth_jwt_validator.h"
 #include "src/api_manager/auth/lib/json_util.h"
 #include "src/api_manager/cloud_trace/cloud_trace.h"
+#include "src/api_manager/utils/url_util.h"
 
 using ::google::api_manager::auth::Certs;
 using ::google::api_manager::auth::JwtCache;
@@ -245,7 +246,9 @@ void AuthChecker::CheckAudience(bool cache_hit) {
   context_->set_auth_issuer(user_info_.issuer);
   context_->set_auth_audience(audience);
 
-  if (!context_->method()->isIssuerAllowed(user_info_.issuer)) {
+  // Remove http/s header and trailing '/' for issuer.
+  std::string issuer = utils::GetUrlContent(user_info_.issuer);
+  if (!context_->method()->isIssuerAllowed(issuer)) {
     Unauthenticated("Issuer not allowed");
     return;
   }
@@ -255,9 +258,13 @@ void AuthChecker::CheckAudience(bool cache_hit) {
   //   - Explicitly allowed by the issuer in the method configuration.
   // Otherwise the JWT is rejected.
   const std::string &service_name = context_->service_context()->service_name();
-  if (user_info_.audiences.find(service_name) == user_info_.audiences.end() &&
-      !context_->method()->isAudienceAllowed(user_info_.issuer,
-                                             user_info_.audiences)) {
+  // Remove http/s header and trailing '/' for audiences.
+  std::set<std::string> aud;
+  for (auto &it : user_info_.audiences) {
+    aud.insert(utils::GetUrlContent(it));
+  }
+  if (aud.find(service_name) == aud.end() &&
+      !context_->method()->isAudienceAllowed(issuer, aud)) {
     Unauthorized("Audience not allowed");
     return;
   }

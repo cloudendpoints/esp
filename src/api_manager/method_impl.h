@@ -45,9 +45,8 @@ class MethodInfoImpl : public MethodInfo {
   bool auth() const { return auth_; }
   bool allow_unregistered_calls() const { return allow_unregistered_calls_; }
 
-  bool isIssuerAllowed(const std::string &issuer) const {
-    return issuer_audiences_map_.find(issuer) != issuer_audiences_map_.end();
-  }
+  bool isIssuerAllowed(const std::string &issuer) const;
+
   bool isAudienceAllowed(const std::string &issuer,
                          const std::set<std::string> &jwt_audiences) const;
 

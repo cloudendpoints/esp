@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 #include "src/api_manager/method_impl.h"
+#include "src/api_manager/utils/url_util.h"
 
 #include <sstream>
 
@@ -53,15 +54,27 @@ void MethodInfoImpl::addAudiencesForIssuer(const string &issuer,
   if (issuer.empty()) {
     return;
   }
-  set<string> &audiences = issuer_audiences_map_[issuer];
+  std::string iss = utils::GetUrlContent(issuer);
+  if (iss.empty()) {
+    return;
+  }
+  set<string> &audiences = issuer_audiences_map_[iss];
   stringstream ss(audiences_list);
   string audience;
   // Audience list is comma-delimited.
   while (getline(ss, audience, ',')) {
     if (!audience.empty()) {  // Only adds non-empty audience.
-      audiences.insert(audience);
+      std::string aud = utils::GetUrlContent(audience);
+      if (!aud.empty()) {
+        audiences.insert(aud);
+      }
     }
   }
+}
+
+bool MethodInfoImpl::isIssuerAllowed(const std::string &issuer) const {
+  return !issuer.empty() &&
+         issuer_audiences_map_.find(issuer) != issuer_audiences_map_.end();
 }
 
 bool MethodInfoImpl::isAudienceAllowed(

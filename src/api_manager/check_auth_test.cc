@@ -206,6 +206,62 @@ const char kTokenBadAud[] =
     "VooZYt_8v2ClgdKx8I-iDa4zhOheIVgvOduKARW5p2yyptM__9Pr544ox-R1IO2YYh-"
     "70mLN05YowDM268OOjkdR1wC5vtsXGns5ZmT-h1vdQXluMuz-S2ppR3EqTUip4rBMOSAEQ";
 
+// kTokenHttpsAud is the same as kToken except that "aud" is
+// "https://endpoints-test.cloudendpointsapis.com".
+const char kTokenHttpsAud[] =
+    "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImIzMzE5YTE0NzUxNGRmN2VlNWU0Ym"
+    "NkZWU1MTM1MGNjODkwY2M4OWUifQ."
+    "eyJpc3MiOiJodHRwczovL2lzc3VlcjEuY29tIiwic3ViIjoiZW5kLXVzZXItaWQiLCJhdWQiOi"
+    "JodHRwczovL2VuZHBvaW50cy10ZXN0LmNsb3VkZW5kcG9pbnRzYXBpcy5jb20iLCJpYXQiOjE0"
+    "NjE3NzkzMjEsImV4cCI6MjQ2MTc4MjkyMX0."
+    "YVL4imxp7jS0RdvQhz7zflaqQzX7Q7TxVGZF9iHy9cxZKnB0wxGgXSb7jl_"
+    "KZ2tVCXvQLvErQAxrADDHUOLpXGbgdImF1UJz0YPQGffiyYPvXch2207czH9erKRNdMSxDCHrc"
+    "976Rvb9VTO9JFCTTbRwcGgBWz4H-gO55oCbErJCchyXdjLiMPiww-otw8n4tKqcNZhp_"
+    "xNDxkRExbk0oQH04epoIvmgmh6snAF06bi652Ag6Z4E842017DIZdaoy3VySbBsDMpZU2YLMil"
+    "fLJYUe5b64D6YvAfVAGgB01s7UJJb1b9KXoash5_nvM6xG0syr9URGF-kbqbWVccclA";
+
+// kTokenHttpsSlashAud is the same as kToken except that "aud" is
+// ""https://endpoints-test.cloudendpointsapis.com/".
+const char kTokenHttpsSlashAud[] =
+    "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImIzMzE5YTE0NzUxNGRmN2VlNWU0Ym"
+    "NkZWU1MTM1MGNjODkwY2M4OWUifQ."
+    "eyJpc3MiOiJodHRwczovL2lzc3VlcjEuY29tIiwic3ViIjoiZW5kLXVzZXItaWQiLCJhdWQiOi"
+    "JodHRwczovL2VuZHBvaW50cy10ZXN0LmNsb3VkZW5kcG9pbnRzYXBpcy5jb20vIiwiaWF0Ijox"
+    "NDYxNzc5MzIxLCJleHAiOjI0NjE3ODI5MjF9.OPN_7kPW2XR2qDNOB-"
+    "RNL1YLBTqJagbK7O2aieEr8VRWpUDR-BcY4LgbrVTY9kRvV1pb_T_"
+    "lCxX6tLIkKqC4QOZ1NuOVFhL1yAAjCI8oZB30m43JE8I0m6aEqjzelYcMBJFKp2Wfk16Hj-"
+    "Ain797f0u1F1tYJiat67bCfaPFJwWBsHHvyPbJ7NnxFvRYN6F1b8ddT9qAbELxj4fsj1F9rE0O"
+    "dmcp0lLhUa2OYrpyyipD5hv0eZIj4Yxlt962Qb6ZhewJULKULueIsWFXq3QZ-FPHXO8-B-"
+    "ZBDv5_INzDpTaUK0htgVMMvcbqCcr2DdAlloaZXUnnEINy-d57SBsw1w";
+
+// kTokenHttpAud is the same as kToken except that "aud" is
+// "http://endpoints-test.cloudendpointsapis.com".
+const char kTokenHttpAud[] =
+    "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImIzMzE5YTE0NzUxNGRmN2VlNWU0Ym"
+    "NkZWU1MTM1MGNjODkwY2M4OWUifQ."
+    "eyJpc3MiOiJodHRwczovL2lzc3VlcjEuY29tIiwic3ViIjoiZW5kLXVzZXItaWQiLCJhdWQiOi"
+    "JodHRwczovL2VuZHBvaW50cy10ZXN0LmNsb3VkZW5kcG9pbnRzYXBpcy5jb20iLCJpYXQiOjE0"
+    "NjE3NzkzMjEsImV4cCI6MjQ2MTc4MjkyMX0."
+    "YVL4imxp7jS0RdvQhz7zflaqQzX7Q7TxVGZF9iHy9cxZKnB0wxGgXSb7jl_"
+    "KZ2tVCXvQLvErQAxrADDHUOLpXGbgdImF1UJz0YPQGffiyYPvXch2207czH9erKRNdMSxDCHrc"
+    "976Rvb9VTO9JFCTTbRwcGgBWz4H-gO55oCbErJCchyXdjLiMPiww-otw8n4tKqcNZhp_"
+    "xNDxkRExbk0oQH04epoIvmgmh6snAF06bi652Ag6Z4E842017DIZdaoy3VySbBsDMpZU2YLMil"
+    "fLJYUe5b64D6YvAfVAGgB01s7UJJb1b9KXoash5_nvM6xG0syr9URGF-kbqbWVccclA";
+
+// kTokenHttpSlashAud is the same as kToken except that "aud" is
+// ""http://endpoints-test.cloudendpointsapis.com/".
+const char kTokenHttpSlashAud[] =
+    "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImIzMzE5YTE0NzUxNGRmN2VlNWU0Ym"
+    "NkZWU1MTM1MGNjODkwY2M4OWUifQ."
+    "eyJpc3MiOiJodHRwczovL2lzc3VlcjEuY29tIiwic3ViIjoiZW5kLXVzZXItaWQiLCJhdWQiOi"
+    "JodHRwczovL2VuZHBvaW50cy10ZXN0LmNsb3VkZW5kcG9pbnRzYXBpcy5jb20vIiwiaWF0Ijox"
+    "NDYxNzc5MzIxLCJleHAiOjI0NjE3ODI5MjF9.OPN_7kPW2XR2qDNOB-"
+    "RNL1YLBTqJagbK7O2aieEr8VRWpUDR-BcY4LgbrVTY9kRvV1pb_T_"
+    "lCxX6tLIkKqC4QOZ1NuOVFhL1yAAjCI8oZB30m43JE8I0m6aEqjzelYcMBJFKp2Wfk16Hj-"
+    "Ain797f0u1F1tYJiat67bCfaPFJwWBsHHvyPbJ7NnxFvRYN6F1b8ddT9qAbELxj4fsj1F9rE0O"
+    "dmcp0lLhUa2OYrpyyipD5hv0eZIj4Yxlt962Qb6ZhewJULKULueIsWFXq3QZ-FPHXO8-B-"
+    "ZBDv5_INzDpTaUK0htgVMMvcbqCcr2DdAlloaZXUnnEINy-d57SBsw1w";
+
 const char kOpenIdContent[] = "{\"jwks_uri\": \"https://issuer1.com/pubkey\"}";
 
 const char kPubkey[] =
@@ -281,26 +337,21 @@ class CheckAuthTest : public ::testing::Test {
     EXPECT_TRUE(Mock::VerifyAndClearExpectations(raw_request_));
   }
 
+  void TestValidToken(const std::string &auth_token);
+
   MockApiManagerEnvironment *raw_env_;
   std::shared_ptr<context::ServiceContext> service_context_;
   MockRequest *raw_request_;
   std::shared_ptr<context::RequestContext> context_;
 };
 
-// Possitive test.
-// Step 1: Check auth workflow that involves openID discovery and fetching
-//         public key.
-// Step 2. Use the same auth token, which should be cached in JWT cache.
-// Step 3. User a different auth token signed by the same issuer. This time,
-//         token is not cached, but key is cached.
-TEST_F(CheckAuthTest, TestOKAuth) {
-  // Step 1. Check auth requires open ID discovery and fetching public key.
+void CheckAuthTest::TestValidToken(const std::string &auth_token) {
   EXPECT_CALL(*raw_request_, FindHeader(kAuthHeader, _))
-      .WillOnce(Invoke([](const std::string &, std::string *token) {
-        *token = std::string(kBearer) + std::string(kToken);
+      .WillOnce(Invoke([auth_token](const std::string &, std::string *token) {
+        *token = std::string(kBearer) + auth_token;
         return true;
       }));
-  EXPECT_CALL(*raw_request_, SetAuthToken(kToken)).Times(1);
+  EXPECT_CALL(*raw_request_, SetAuthToken(auth_token)).Times(1);
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
       .Times(2)
       .WillOnce(Invoke([](HTTPRequest *req) {
@@ -320,6 +371,17 @@ TEST_F(CheckAuthTest, TestOKAuth) {
       .Times(1);
 
   CheckAuth(context_, [](Status status) { ASSERT_TRUE(status.ok()); });
+}
+
+// Positive test.
+// Step 1: Check auth workflow that involves openID discovery and fetching
+//         public key.
+// Step 2. Use the same auth token, which should be cached in JWT cache.
+// Step 3. Use a different auth token signed by the same issuer. This time,
+//         token is not cached, but key is cached.
+TEST_F(CheckAuthTest, TestOKAuth) {
+  // Step 1. Check auth requires open ID discovery and fetching public key.
+  TestValidToken(kToken);
 
   EXPECT_TRUE(Mock::VerifyAndClearExpectations(raw_request_));
   EXPECT_TRUE(Mock::VerifyAndClearExpectations(raw_env_));
@@ -483,6 +545,24 @@ TEST_F(CheckAuthTest, TestBadAudience) {
     ASSERT_EQ(status.code(), Code::PERMISSION_DENIED);
     ASSERT_EQ(status.message(), "JWT validation failed: Audience not allowed");
   });
+}
+
+// Positive test: audience is service name with https prefix.
+TEST_F(CheckAuthTest, TestHttpsAudience) { TestValidToken(kTokenHttpsAud); }
+
+// Positive test: audience is service name with https prefix and a trailing
+// slash.
+TEST_F(CheckAuthTest, TestHttpsSlashAudience) {
+  TestValidToken(kTokenHttpsSlashAud);
+}
+
+// Positive test: audience is service name with http prefix.
+TEST_F(CheckAuthTest, TestHttpAudience) { TestValidToken(kTokenHttpAud); }
+
+// Positive test: audience is service name with http prefix and a trailing
+// slash.
+TEST_F(CheckAuthTest, TestHttpSlashAudience) {
+  TestValidToken(kTokenHttpSlashAud);
 }
 
 }  // namespace
