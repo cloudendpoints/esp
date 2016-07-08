@@ -252,12 +252,10 @@ while true; do
     ${ROOT}/test/client/esp_bookstore_test.py \
       --host=${HOST} --endpoints=true \
       --api_key=${API_KEY} --auth_token=${JWT_TOKEN}
-    RESULT=${?}
   else
     echo "Test bookstore with endpoints=off."
     ${ROOT}/test/client/esp_bookstore_test.py \
       --host=${HOST} --endpoints=false
-    RESULT=${?}
   fi
 
   [[ ${RESULT} -eq 0 ]] \
@@ -278,6 +276,10 @@ done
 
 echo "Finished ${RUN_COUNT} test runs."
 echo "Failures: Stress: ${STRESS_FAILURES}, Bookstore: ${BOOKSTORE_FAILURES}."
+
+# We only fail the test if all bookstore runs failed.
+[[ ${BOOKSTORE_FAILURES} == ${RUN_COUNT} ]] \
+  && RESULT=1
 
 if [[ -n "${BUCKET}" ]] ; then
   create_status_file "${HOME}/nginx-logs/"$(json_filename)".json" "${RESULT}"

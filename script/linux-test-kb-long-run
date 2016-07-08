@@ -124,4 +124,10 @@ done
 echo "Finished ${RUN_COUNT} test runs."
 echo "Failures: Stress: ${STRESS_FAILURES}, Bookstore: ${BOOKSTORE_FAILURES}."
 
-exit ${BOOKSTORE_FAILURES}
+RESULT=0
+
+# We only fail the test if all bookstore runs failed.
+[[ ${BOOKSTORE_FAILURES} == ${RUN_COUNT} ]] \
+  && RESULT=1
+
+exit ${RESULT}
