@@ -43,5 +43,5 @@ GSUTIL="${HOME}/google-cloud-sdk/bin/gsutil"
 
 # Upload the ${HOME}/artifacts directory into the "travis-uploads" bucket under
 # the corresponding SHA and scenario directory.
-"${GSUTIL}" cp -R ${HOME}/artifacts "gs://travis-uploads/${SHA}/travis-${SCENARIO}" || \
+"${GSUTIL}" cp -R ${HOME}/artifacts "gs://esp-travis-uploads/${SHA}/${SCENARIO}" || \
   echo "WARNING: Failed to upload the logs."
