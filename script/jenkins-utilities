@@ -261,7 +261,8 @@ function long_running_test() {
     -f "${json_file}" \
     -s ${status} \
     -t "${final_test_id}" \
-    -r "${run_id}"
+    -r "${run_id}" \
+    || { echo "Could not create ${json_file}."; return 1; }
 
   return ${status}
 }

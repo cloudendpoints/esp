@@ -293,9 +293,10 @@ RESULT=${PIPESTATUS[0]}
 if [[ -n "${BUCKET}" ]] ; then
   create_status_file \
     -f "${JSON_FILE}" \
-    -s "${RESULT}" \
+    -s ${RESULT} \
     -t "${TEST_ID}" \
-    -r "${GAE_VERSION}"
+    -r "${GAE_VERSION}" \
+    || error_exit "Could not create ${JSON_FILE}."
 
   echo "Uploading NGINX server logs to ${BUCKET}."
   ${ROOT}/script/linux-gae-instance \

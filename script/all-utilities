@@ -122,21 +122,26 @@ function set_api_keys() {
 
 # Creates a simple Json Status file
 function create_status_file() {
-  local OPTARG ARG
+  local OPTIND OPTARG ARG
   local file_path=''
   local test_status=''
   local test_id=''
   local run_id=''
 
-  while getopts ":f:s:t:r:" ARG; do
+  while getopts :f:s:t:r: ARG; do
     case ${ARG} in
       f) file_path="${OPTARG}";;
-      s) test_tatus=${OPTARG};;
+      s) test_status=${OPTARG};;
       t) test_id="${OPTARG}";;
       r) run_id="${OPTARG}";;
       *) echo "Unrecognized argument: -${OPTARG}";;
     esac
   done
+
+  [[ -n  "${file_path}" ]] || { echo 'File path is not set.'; return 1; }
+  [[ -n  "${test_status}" ]] || { echo 'Status is not set.'; return 1; }
+  [[ -n  "${test_id}" ]] || { echo 'Test id is not set.'; return 1; }
+  [[ -n  "${run_id}" ]] || { echo 'Run id is not set.'; return 1; }
 
   mkdir -p "$(dirname "${file_path}")"
 
@@ -149,6 +154,7 @@ function create_status_file() {
   "headCommitHash": "$(git rev-parse --verify HEAD)"
 }
 __EOF__
+  return 0
 }
 
 # Extract key from test env json created from

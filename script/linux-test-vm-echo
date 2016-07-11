@@ -129,11 +129,13 @@ RESULT=${?}
 if [[ -n "${BUCKET}" ]] ; then
   LOG_DIRECTORY="${HOME}/nginx-logs"
   TEST_ID="$(extract_key_from_test_env_file 'test' "${TEST_ENV}")"
+  JSON_FILE="${LOG_DIRECTORY}/${TEST_ID}.json"
   create_status_file \
-    -f "${LOG_DIRECTORY}/${TEST_ID}.json" \
-    -s "${RESULT}" \
+    -f "${JSON_FILE}" \
+    -s ${RESULT} \
     -t "${TEST_ID}" \
-    -r "${GAE_VERSION}"
+    -r "${GAE_VERSION}" \
+    || error_exit "Could not create ${JSON_FILE}."
 
   echo "Uploading NGINX server logs."
   "${ROOT}/script/linux-gae-instance" \

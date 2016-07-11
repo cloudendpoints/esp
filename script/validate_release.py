@@ -113,8 +113,11 @@ class ReleaseValidation(object):
   def AddJsonData(self, json_file):
     """Parse Json file and add test info."""
     logging.info('Adding information from %s' % json_file)
-    with open(json_file) as log:
-      result = json.load(log)
+    try:
+      with open(json_file) as log:
+        result = json.load(log)
+    except:
+      raise JsonParsingError('Unable to parse %s' % json_file)
 
     status = result.get(STATUS, '')
     test_id = result.get(TEST_ID, '')
@@ -142,7 +145,7 @@ class ReleaseValidation(object):
       try:
         self.AddJsonData(json_file)
       except Error:
-        logging.exception('Could not parse %s', json_file)
+        logging.error('Could not parse %s', json_file)
 
   def PrintAllTests(self):
     """Prints all test information."""
