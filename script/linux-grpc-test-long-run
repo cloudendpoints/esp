@@ -82,7 +82,7 @@ while true; do
 
   case $((RUN_COUNT % 12)) in
     (0) CONCURRENT=10; STREAM_COUNT=10; BODY_FILE=${ROOT}/test/data/1k.data;;
-    (1) CONCURRENT=20; STREAM_COUNT=10; BODY_FILE=${ROOT}/test/data/1k.data};;
+    (1) CONCURRENT=20; STREAM_COUNT=10; BODY_FILE=${ROOT}/test/data/1k.data;;
     (2) CONCURRENT=50; STREAM_COUNT=10; BODY_FILE=${ROOT}/test/data/1k.data;;
     (3) CONCURRENT=10; STREAM_COUNT=50; BODY_FILE=${ROOT}/test/data/1k.data;;
     (4) CONCURRENT=20; STREAM_COUNT=50; BODY_FILE=${ROOT}/test/data/1k.data;;
