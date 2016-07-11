@@ -46,7 +46,7 @@ SERVICE_NAME='echo-dot-esp-grpc-load-test.appspot.com'
 HOST=''
 DURATION_IN_HOUR=0
 
-REQUEST_COUNT=100000
+REQUEST_COUNT=10000
 
 while getopts :a:h:l:s: arg; do
   case ${arg} in
@@ -65,36 +65,43 @@ fi
 
 [[ -n "${HOST}" ]] || error_exit 'Please specify a host with -h option.'
 
+CONCURRENT_TYPES=(10 50)
+CONCURRENT_TYPES_SIZE=${#CONCURRENT_TYPES[@]}
+STREAM_COUNT_TYPES=(10 50)
+STREAM_COUNT_TYPES_SIZE=${#STREAM_COUNT_TYPES[@]}
+# For now, total transfer size per stream direction should not pass 1 MB
+RANDOM_BODY_SIZE_TYPES=(1024 20000)
+RANDOM_BODY_SIZE_TYPES_SIZE=${#RANDOM_BODY_SIZE_TYPES[@]}
+ALL_CONFIG_TYPES=$((CONCURRENT_TYPES_SIZE * STREAM_COUNT_TYPES_SIZE * RANDOM_BODY_SIZE_TYPES_SIZE))
+
+function generate_run_config() {
+  CONCURRENT_RUN=${1}
+  CONCURRENT=${CONCURRENT_TYPES[$((CONCURRENT_RUN % CONCURRENT_TYPES_SIZE))]}
+  echo concurrent="${CONCURRENT}"
+
+  STREAM_COUNT_RUN=$((CONCURRENT_RUN / CONCURRENT_TYPES_SIZE))
+  STREAM_COUNT=${STREAM_COUNT_TYPES[$((STREAM_COUNT_RUN % STREAM_COUNT_TYPES_SIZE))]}
+  echo stream_count="${STREAM_COUNT}"
+
+  RANDOM_BODY_SIZE_RUN=$((STREAM_COUNT_RUN / STREAM_COUNT_TYPES_SIZE))
+  RANDOM_BODY_SIZE=${RANDOM_BODY_SIZE_TYPES[$((RANDOM_BODY_SIZE_RUN % RANDOM_BODY_SIZE_TYPES_SIZE))]}
+  echo random_body_size="${RANDOM_BODY_SIZE}"
+}
+
 END_TIME=$(date +"%s")
 END_TIME=$((END_TIME + DURATION_IN_HOUR * 60 * 60))
 RUN_COUNT=0
 STRESS_FAILURES=0
 
 while true; do
-  ((RUN_COUNT++))
+  echo "Starting test run ${RUN_COUNT} at $(date)."
+  echo "Failures so far: Stress: ${STRESS_FAILURES}."
 
   #######################
   # Insert tests here
   #######################
 
-  echo "Starting test run ${RUN_COUNT} at $(date)."
-  echo "Failures so far: Stress: ${STRESS_FAILURES}."
-
-  case $((RUN_COUNT % 12)) in
-    (0) CONCURRENT=10; STREAM_COUNT=10; BODY_FILE=${ROOT}/test/data/1k.data;;
-    (1) CONCURRENT=20; STREAM_COUNT=10; BODY_FILE=${ROOT}/test/data/1k.data;;
-    (2) CONCURRENT=50; STREAM_COUNT=10; BODY_FILE=${ROOT}/test/data/1k.data;;
-    (3) CONCURRENT=10; STREAM_COUNT=50; BODY_FILE=${ROOT}/test/data/1k.data;;
-    (4) CONCURRENT=20; STREAM_COUNT=50; BODY_FILE=${ROOT}/test/data/1k.data;;
-    (5) CONCURRENT=50; STREAM_COUNT=50; BODY_FILE=${ROOT}/test/data/1k.data;;
-    (6) CONCURRENT=10; STREAM_COUNT=10; BODY_FILE=${ROOT}/test/data/4k.data;;
-    (7) CONCURRENT=20; STREAM_COUNT=10; BODY_FILE=${ROOT}/test/data/4k.data;;
-    (8) CONCURRENT=50; STREAM_COUNT=10; BODY_FILE=${ROOT}/test/data/4k.data;;
-    (9) CONCURRENT=10; STREAM_COUNT=50; BODY_FILE=${ROOT}/test/data/4k.data;;
-    (10) CONCURRENT=20; STREAM_COUNT=50; BODY_FILE=${ROOT}/test/data/4k.data;;
-    (11) CONCURRENT=50; STREAM_COUNT=50; BODY_FILE=${ROOT}/test/data/4k.data;;
-  esac
-  echo concurrent="${CONCURRENT}" stream_count="${STREAM_COUNT}" body_file="${BODY_FILE}"
+  generate_run_config "${RUN_COUNT}"
 
   # Generating token for each run, that they expire in 1 hour.
   AUTH_TOKEN=$("${ROOT}/client/custom/gen-auth-token.sh" -a "${SERVICE_NAME}")
@@ -106,15 +113,16 @@ while true; do
     --request_count="${REQUEST_COUNT}" \
     --concurrent="${CONCURRENT}" \
     --requests_per_stream="${STREAM_COUNT}" \
-    --body_file="${BODY_FILE}" \
+    --random_body_size="${RANDOM_BODY_SIZE}" \
     |"${ROOT}/bazel-bin/test/grpc/grpc-test-client" || ((STRESS_FAILURES++))
 
   #######################
   # End of test suite
   #######################
 
+  ((RUN_COUNT++))
   # Break if test has run long enough.
-  [[ $(date +"%s") -lt ${END_TIME} ]] || break
+  [[ $(date +"%s") -lt ${END_TIME} ]] || [[ ${RUN_COUNT} -lt ${ALL_CONFIG_TYPES} ]] || break
 done
 
 echo "Finished ${RUN_COUNT} test runs."

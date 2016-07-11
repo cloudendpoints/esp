@@ -32,6 +32,7 @@
 #include <forward_list>
 #include <functional>
 #include <mutex>
+#include <random>
 #include <string>
 #include <type_traits>
 
@@ -99,6 +100,18 @@ void SetCallConfig(const CallConfig &call_config, ClientContext *ctx) {
   }
 }
 
+std::string RandomString(int size) {
+  static std::random_device rd;
+  static std::mt19937 gen(rd());
+  std::uniform_int_distribution<unsigned char> dist;
+
+  unsigned char buf[size];
+  for (int i = 0; i < size; i++) {
+    buf[i] = dist(gen);
+  }
+  return std::string(reinterpret_cast<const char *>(buf), size);
+}
+
 class Echo {
  public:
   typedef EchoTest TestDesc;
@@ -107,7 +120,7 @@ class Echo {
                     Test::Stub *direct_stub, CompletionQueue *cq,
                     std::function<void(bool, const TestResult &)> done) {
     std::shared_ptr<Echo> echo(new Echo(desc, done));
-    echo->rpc_ = server_stub->AsyncEcho(&echo->ctx_, desc.request(), cq);
+    echo->rpc_ = server_stub->AsyncEcho(&echo->ctx_, echo->desc_.request(), cq);
     echo->rpc_->Finish(
         &echo->response_, &echo->status_, new Tag([echo, done](bool ok) {
           TestResult result;
@@ -132,6 +145,10 @@ class Echo {
   Echo(const EchoTest &desc, std::function<void(bool, const TestResult &)> done)
       : desc_(desc), done_(done) {
     SetCallConfig(desc_.call_config(), &ctx_);
+    if (desc_.request().random_payload_size() > 0) {
+      desc_.mutable_request()->set_text(
+          RandomString(desc_.request().random_payload_size()));
+    }
   }
 
   EchoTest desc_;
@@ -170,6 +187,11 @@ class EchoStream {
         done_(done),
         read_count_expected_(desc.count()) {
     SetCallConfig(desc_.call_config(), &ctx_);
+    for (auto request : *desc_.mutable_request()) {
+      if (request.random_payload_size() > 0) {
+        request.set_text(RandomString(request.random_payload_size()));
+      }
+    }
   }
 
   static void StartWrite(std::shared_ptr<EchoStream> es,

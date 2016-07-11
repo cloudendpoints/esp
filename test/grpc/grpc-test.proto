@@ -28,10 +28,13 @@ service Test {
 // The echo request message.
 message EchoRequest {
   // The text to echo back in the response.
-  string text = 1;
+  bytes text = 1;
 
   // The final RPC status to use for the response.
   CallStatus return_status = 2;
+
+  // If non 0, the text payload is randomly generated to the size.
+  int32 random_payload_size = 3;
 }
 
 // The echo response message.

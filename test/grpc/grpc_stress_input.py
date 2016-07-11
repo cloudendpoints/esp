@@ -54,6 +54,10 @@ flags.DEFINE_string('body_string', 'Hollow World!', 'request body string')
 
 # This flag overrides "--body_string" flag.
 flags.DEFINE_string('body_file', '', 'the file name to read the request body')
+# If larger than 0, randomly generates request body with this size.
+# This flag overrides all other body related flags.
+flags.DEFINE_integer('random_body_size', 0,
+                     'randomly generate request body to this size')
 
 flags.DEFINE_integer('request_count', 10000,
                      'total number of requests to send')
@@ -68,19 +72,25 @@ kNoApiKeyError = ('Method doesn\'t allow unregistered callers (callers without'
                   ' API consumer identity to call this API.')
 
 
-def GetRequestBody():
-  if FLAGS.body_file:
-    return open(FLAGS.body_file, 'r').read()
+def GetRequest():
+  if FLAGS.random_body_size:
+    return {
+        'random_payload_size': FLAGS.random_body_size
+    }
+  elif FLAGS.body_file:
+    return {
+        'text': open(FLAGS.body_file, 'r').read()
+    }
   else:
-    return FLAGS.body_string
+    return {
+        'text': FLAGS.body_string
+    }
 
 def SubtestEcho():
   return {
       'weight': 1,
       'echo': {
-          'request': {
-              'text': GetRequestBody()
-          }
+          'request': GetRequest()
       }
   }
 
@@ -88,9 +98,7 @@ def SubtestEchoStream():
   return {
       'weight': 1,
       'echo_stream': {
-          'request': {
-              'text': GetRequestBody()
-          },
+          'request': GetRequest(),
           'count': FLAGS.requests_per_stream,
           'call_config': {
             'api_key': FLAGS.api_key,
@@ -103,9 +111,7 @@ def SubtestEchoStreamAuthFail():
   return {
       'weight': 1,
       'echo_stream': {
-          'request': {
-              'text': GetRequestBody()
-          },
+          'request': GetRequest(),
           'count': FLAGS.requests_per_stream,
           # Requires auth token.
           'expected_status': {
@@ -119,9 +125,7 @@ def SubtestEchoStreamNoApiKey():
   return {
       'weight': 1,
       'echo_stream': {
-          'request': {
-              'text': GetRequestBody()
-          },
+          'request': GetRequest(),
           'count': FLAGS.requests_per_stream,
           # Even auth check passed, it still requires api-key
           'call_config': {
@@ -155,4 +159,4 @@ if __name__ == "__main__":
               ],
             },
         }]
-     })
+     }, indent=4)
