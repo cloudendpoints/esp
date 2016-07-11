@@ -174,31 +174,16 @@ function create_service() {
     echo 'Deploying service'
     output="$(run gcloud alpha service-management deploy "${swagger_json}" 2>&1)"
 
-    # Parsing operation from output.
-    operation="$(parse_output "${output}" '.*(operations/services.*)\s*')"
-    [[ -z "${operation}" ]] && error_exit 'Could not parse operation from output.'
-    echo "Operation: ${operation}"
-
     # Parsing version from output.
     version="$(parse_output "${output}" "($(date +'%Y-%m-%d')[A-Za-z0-9]+)")"
     [[ -z "${version}" ]] && error_exit 'Could not parse version from output.'
     echo "ESP service version: ${version} exported to ESP_SERVICE_VERSION"
     ESP_SERVICE_VERSION="${version}"
 
-    echo 'Waiting up to 10 minutes for deployment to complete'
-    run timeout 600 gcloud alpha service-management operations wait "${operation}"
-
     echo 'Activating service'
     output="$(run gcloud alpha service-management enable \
       --consumer-project="${PROJECT_ID}" \
       --service="${esp_service}")"
-
-    # Parsing operation from output
-    operation="$(parse_output "${output}" '.*(operations/services.*)\s*')"
-    [[ -z "${operation}" ]] && error_exit 'Could not parse operation from output.'
-
-    echo 'Waiting up to 10 minutes for operation to complete'
-    run timeout 600 gcloud alpha service-management operations wait "${operation}"
   fi
 }
 
@@ -330,7 +315,7 @@ function e2e_options() {
     [[ -n "${API_KEY}" ]] || error_exit 'Could not set api key.'
   fi
 
-  [[ -n "${BUCKET}" ]] || usage "Must provide Bucket via '-b' parameter."
+  [[ -n "${BUCKET}" ]] || e2e_usage "Must provide Bucket via '-B' parameter."
   local git_commit="$(git rev-parse --verify HEAD)"
   REMOTE_LOG_DIR="gs://${BUCKET}/${git_commit}/logs/${UNIQUE_ID}"
 }
