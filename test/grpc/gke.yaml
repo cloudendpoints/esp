@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: grpc-test-server
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+    name: grpc
+  selector:
+    app: grpc-test-server
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: grpc-test-server
+spec:
+  replicas: 1
+  selector:
+    app: grpc-test-server
+  template:
+    metadata:
+      labels:
+        app: grpc-test-server
+    spec:
+      containers:
+      - name: endpoints-runtime
+        image: ${ENDPOINTS_RUNTIME_GRPC_IMAGE}
+        args: [
+          "-s", "${GRPC_TEST_SERVICE_NAME}",
+          "-v", "${GRPC_TEST_SERVICE_VESION}",
+          "-a", "localhost:8081",
+        ]
+        ports:
+          - containerPort: 8080
+        volumeMounts:
+      - name: grpc-test-server
+        image: ${GRPC_TEST_SERVER_IMAGE}
+        ports:
+          - containerPort: 8081
