@@ -42,6 +42,7 @@ DURATION_IN_HOUR=0
 ENDPOINTS_RUNTIME_VERSION=''
 ESP_IMAGE=''
 ESP_SERVICE="${DEFAULT_ESP_SERVICE}"
+GRPC='false'
 INSTANCE_NAME=''
 NAMESPACE=''
 REMOTE_LOG_DIR=''
@@ -69,12 +70,7 @@ ESP_SERVICE_VERSION=''
 # For both
 # $ gcloud alpha service-management deploy swagger.json
 # Take a note of the version and update here.
-PROD_ESP_SERVICE_VERSION='2016-05-12R1209'
 # Once the service is deployed it will take 24h to get to staging.
-STAGING_ESP_SERVICE_VERSION='2016-05-12R4'
-STAGING_SERVICE_MGMT_URL='https://staging-servicemanagement.sandbox.googleapis.com/'
-STAGING_SERVICE_MGMT_URL_PREFIX="${STAGING_SERVICE_MGMT_URL}v1/services"
-SERVICE_MGMT_URL_PREFIX=''
 
 # Echo and un command, exit on failure
 function run_nonfatal() {
@@ -134,84 +130,78 @@ function parse_output() {
   IFS=${ifs_backup}
 }
 
-# Check if this is a staging service management test
-function check_staging_service_management () {
+function set_esp_service_version() {
   local esp_service="${1}"
-  local staging_service='staging-testing-dot-endpoints-jenkins.appspot.com'
-
-  [[ "${esp_service}" == "${staging_service}" ]] || return 1
-  [[ -n "${CLOUDSDK_API_ENDPOINT_OVERRIDES_SERVICEMANAGEMENT}" ]] || return 1
-  echo 'Using staging Service Management'
-  return 0
+  local version="$(gcloud alpha service-management describe ${esp_service} \
+        | grep -P '\w*id:' | awk '{print $2}')" \
+    && ESP_SERVICE_VERSION="${version}" \
+    && return 0
+  return 1
 }
 
-# Creating and activating a sercice
+# Creating and activating a service
 function create_service() {
   local esp_service="${1}"
   local swagger_json="${2}"
   local output=''
   local operation=''
   local version=''
-  local use_staging=1
-
-  # TODO: Remove once we can direclty push to Staging Service
-  # Management
-
-  check_staging_service_management "${esp_service}"
-  use_staging="${?}"
 
   if [[ "${esp_service}" =~ "${DEFAULT_ESP_SERVICE}" ]]; then
-    if [[ "${use_staging}" -eq 0 ]]; then
-      ESP_SERVICE_VERSION="${STAGING_ESP_SERVICE_VERSION}"
-      SERVICE_MGMT_URL_PREFIX="${STAGING_SERVICE_MGMT_URL_PREFIX}"
-      echo "ESP service version: ${ESP_SERVICE_VERSION} exported to ESP_SERVICE_VERSION"
-      echo "Service Management URL prefix: ${SERVICE_MGMT_URL_PREFIX}"
-    else
-      ESP_SERVICE_VERSION="${PROD_ESP_SERVICE_VERSION}"
-    fi
+    retry -n 5 set_esp_service_version "${esp_service}" \
+      || error_exit 'Could not fetch the service version.'
+    echo "ESP service version: ${ESP_SERVICE_VERSION}"
     return
   else
     echo 'Deploying service'
-    run gcloud alpha service-management deploy "${swagger_json}"
+    retry -n 3 run gcloud alpha service-management deploy "${swagger_json}"
 
-    version="$(run gcloud alpha service-management describe ${esp_service} \
-      | grep -P '\w*id:' | awk '{print $2}')"
-
-    # Parsing version from output.
-    [[ -z "${version}" ]] && error_exit 'Could not parse version from output.'
-    echo "ESP service version: ${version} exported to ESP_SERVICE_VERSION"
-    ESP_SERVICE_VERSION="${version}"
+    retry -n 5 set_esp_service_version "${esp_service}" \
+      || error_exit 'Could not fetch the service version.'
+    echo "ESP service version: ${ESP_SERVICE_VERSION}"
 
     echo 'Activating service'
-    run gcloud alpha service-management enable \
+    retry -n 3 run gcloud alpha service-management enable \
       --consumer-project="${PROJECT_ID}" \
       --service="${esp_service}"
   fi
 }
 
 # Check for host http return code.
-function check_service_http_response () {
+function check_http_service () {
   local host=${1}
   local http_code="${2}"
   local errors="$(mktemp /tmp/curl.XXXXX)"
   local http_response="$(curl -k -m 20 --write-out %{http_code} --silent --output ${errors} ${host})"
   echo "Pinging host: ${host}, response: ${http_response}"
-  [[ "${http_response}" == "${http_code}" ]] && return 0
-  echo "Response body:"
-  cat $errors
-  return 1
+  if [[ "${http_response}" == "${http_code}" ]]; then
+    echo "Service is available at: ${host}"
+    return 0
+  else
+    echo "Response body:"
+    cat $errors
+    echo "Service ${host} is not ready"
+    return 1
+  fi
 }
 
-# Check for service readyness for Bookstore backend.
-function check_service() {
-  local host=${1}/shelves
-  local http_code='200'
-  retry -n 10 -t 90 check_service_http_response "${host}" "${http_code}"
+function check_grpc_service() {
+  local host=${1}
+  cat <<EOF | "${ESP_ROOT}/bazel-bin/test/grpc/grpc-test-client"
+server_addr: "${host}"
+plans {
+  echo {
+    request {
+      text: "Hello, world!"
+    }
+  }
+}
+EOF
   local status=${?}
   if [[ ${status} -eq 0 ]]; then
     echo "Service is available at: ${host}"
   else
-    echo "Service is not ready ${host} not ready"
+    echo "Service ${host} is not ready"
   fi
   return ${status}
 }
@@ -231,20 +221,35 @@ function long_running_test() {
   local log_file="${log_dir}/${final_test_id}.log"
   local json_file="${log_dir}/${final_test_id}.json"
   local status
+  local http_code='200'
 
-  # Checking Service before starting the test.
-  check_service "${HOST}"
-  status=${?}
-
-  if [[ ${status} -eq 0 ]]; then
-    echo 'Running long running test.'
-    run_nonfatal "${ESP_ROOT}"/script/linux-test-kb-long-run \
-      -h "${host}" \
-      -l "${duration_in_hour}" \
-      -a "${api_key}" \
-      -s "${esp_service}" | tee "${log_file}"
-
-    status=${PIPESTATUS[0]}
+  if [[ ${GRPC} == 'true' ]]; then
+    echo 'Checking grpc service.'
+    retry -n 10 -t 90 check_grpc_service "${host}"
+    status=${?}
+    if [[ ${status} -eq 0 ]]; then
+      echo 'Running grpc long running test.'
+      run_nonfatal "${ESP_ROOT}"/script/linux-grpc-test-long-run \
+        -h "${host}" \
+        -l "${duration_in_hour}" \
+        -a "${api_key}" \
+        -s "${esp_service}" | tee "${log_file}"
+        status=${PIPESTATUS[0]}
+    fi
+  else
+    # Checking Service before starting the test.
+    echo 'Checking http service.'
+    retry -n 10 -t 90 check_http_service "${host}" ${local http_code}
+    status=${?}
+    if [[ ${status} -eq 0 ]]; then
+      echo 'Running long running test.'
+      run_nonfatal "${ESP_ROOT}"/script/linux-test-kb-long-run \
+        -h "${host}" \
+        -l "${duration_in_hour}" \
+        -a "${api_key}" \
+        -s "${esp_service}" | tee "${log_file}"
+        status=${PIPESTATUS[0]}
+    fi
   fi
 
   create_status_file \
@@ -293,7 +298,7 @@ function upload_logs() {
 # End to End tests common options
 function e2e_options() {
   local OPTIND OPTARG arg
-  while getopts :a:b:B:c:d:e:i:k:l:r:st:v:V: arg; do
+  while getopts :a:b:B:c:d:e:gi:k:l:r:st:v:V: arg; do
     case ${arg} in
       a) ESP_SERVICE="${OPTARG}";;
       b) BOOKSTORE_IMAGE="${OPTARG}";;
@@ -301,6 +306,7 @@ function e2e_options() {
       c) COUPLING_OPTION="$(echo ${OPTARG} | tr '[A-Z]' '[a-z]')";;
       d) DEBIAN_PKG="${OPTARG}";;
       e) ESP_IMAGE="${OPTARG}";;
+      g) GRPC='true';;
       i) UNIQUE_ID="${OPTARG}";;
       k) API_KEY="${OPTARG}";;
       l) DURATION_IN_HOUR="${OPTARG}";;

@@ -54,8 +54,12 @@ e2e_options "${@}"
 [[ -n "${ESP_IMAGE}" ]] || e2e_usage "Must provide esp docker image via '-e' parameter."
 [[ -n "${INSTANCE_NAME}" ]] || e2e_usage "Must provide Instance name via 'i' parameter."
 
-HOST="http://${INSTANCE_NAME}:8080"
-
+if [[ ${GRPC} ]]; then
+  HOST="${INSTANCE_NAME}:8080"
+  echo "grpc service name is: ${ESP_SERVICE}"
+else
+  HOST="http://${INSTANCE_NAME}:8080"
+fi
 # Creating swagger template
 # TODO: refactor to reuse with raw GCE scripts
 run cp -f ${SWAGGER_TMPL} swagger.json

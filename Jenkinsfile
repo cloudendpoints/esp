@@ -131,7 +131,14 @@ def buildArtifacts(nodeLabel, buildBoosktore = true) {
       },
       'auth_token_gen': {
         node(nodeLabel) {
-          buildAndStashAuthTokenGen()
+          buildAndStash('//src/tools:auth_token_gen', 'bazel-bin/src/tools/auth_token_gen',
+            'auth_token_gen')
+        }
+      },
+      'grpc_test_client': {
+        node(nodeLabel) {
+          buildAndStash('//test/grpc:grpc-test-client', 'bazel-bin/test/grpc/grpc-test-client',
+            'grpc_test_client')
         }
       }
   ]
@@ -212,6 +219,11 @@ def e2eTest(nodeLabel) {
       'flex-off-endpoints-off': {
         node(nodeLabel) {
           e2eFlex(false, false)
+        }
+      },
+      'gce-container-vm-grpc': {
+        node(nodeLabel) {
+          e2eGCEContainer(CONTAINER_VM, true)
         }
       }
   ]
@@ -341,17 +353,17 @@ def buildBookstoreImage() {
   sh "test/bookstore/linux-build-bookstore-docker -i ${bookstoreImg}"
 }
 
-def buildAndStashAuthTokenGen() {
-  if (pathExistsCloudStorage(stashArchivePath('auth_token_gen'))) return
+def buildAndStash(buildTarget, stashTarget, name) {
+  if (pathExistsCloudStorage(stashArchivePath(name))) return
   checkoutSourceCode()
   setGCloud()
   retry(2) {
-    // Timeout after 10 minute
-    timeout(10) {
-      sh 'bazel build //src/tools:auth_token_gen'
+    // Timeout after 15 minutes
+    timeout(15) {
+      sh "bazel build ${buildTarget}"
     }
   }
-  fastStash('auth_token_gen', 'bazel-bin/src/tools/auth_token_gen')
+  fastStash(name, stashTarget)
 }
 
 def testCleanup() {
@@ -387,10 +399,10 @@ def buildNewDockerSlave(nodeLabel) {
       "-t ${finalDockerImage}"
 }
 
-def e2eCommonOptions(testId) {
+def e2eCommonOptions(testId, prefix='') {
   def uniqueID = getUniqueID(testId, true)
   def skipCleanup = getSkipCleanup() ? "-s" : ""
-  def serviceName = generateServiceName(uniqueID)
+  def serviceName = generateServiceName(uniqueID, prefix)
   def durationHour = getDurationHour()
   return "-a ${serviceName} " +
       "-B ${BUCKET} " +
@@ -432,19 +444,27 @@ def e2eGCE(vmImage) {
       "-r \"${debianPackageRepo}\""
 }
 
-def e2eGCEContainer(vmImage) {
+def e2eGCEContainer(vmImage, gRpc=false) {
   checkoutSourceCode()
   setGCloud()
   fastUnstash('auth_token_gen')
-  def commonOptions = e2eCommonOptions('gce-container')
+  def commonOptions = e2eCommonOptions('gce-container', gRpc ? 'grpc-': '')
   def espImage = espDockerImage()
-  def bookstoreImage = bookstoreDockerImage()
+  def backendImage = bookstoreDockerImage()
+  def gRpcFlag = ''
+  if (gRpc) {
+    fastUnstash('grpc_test_client')
+    backendImage = 'gcr.io/endpointsv2/grpc-test-server:latest'
+    espImage = espGrpcDockerImage()
+    gRpcFlag = '-g'
+  }
   echo 'Running GCE container test'
   sh "test/bookstore/gce-container/e2e.sh " +
       commonOptions +
-      "-b ${bookstoreImage} " +
+      "-b ${backendImage} " +
       "-e ${espImage} " +
-      "-v ${vmImage} "
+      "-v ${vmImage} " +
+      "${gRpcFlag}"
 }
 
 def localPerformanceTest() {
@@ -680,12 +700,11 @@ def getUniqueID(testId, useSha) {
   return "${prefix}-${sha}${identifier}${uuid.take(4)}-${date}"
 }
 
-def generateServiceName(uniqueID) {
+def generateServiceName(uniqueID, servicePrefix='') {
   //TODO: Use uniqueID when it becomes possible.
   def serviceUrl = getServiceManagementUrl()
-  def servicePrefix = ''
   if (serviceUrl != '') {
-    servicePrefix = 'staging-'
+    servicePrefix = 'staging-${servicePrefix}'
   }
   return "${servicePrefix}testing-dot-${PROJECT_ID}.appspot.com"
 }
