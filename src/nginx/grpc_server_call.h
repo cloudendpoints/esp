@@ -89,6 +89,8 @@ class NgxEspGrpcServerCall : public grpc::ServerCall {
   // The request
   ngx_http_request_t* r_;
 
+  ngx_http_cleanup_t cln_;
+
  private:
   static void OnDownstreamPreread(ngx_http_request_t* r);
   static void OnDownstreamReadable(ngx_http_request_t* r);
@@ -107,7 +109,6 @@ class NgxEspGrpcServerCall : public grpc::ServerCall {
   // completed with 'false'.
   static void Cleanup(void* server_call_ptr);
 
-  ngx_http_cleanup_t cln_;
   bool add_header_failed_;
   bool reading_;
   std::function<void(bool)> write_continuation_;

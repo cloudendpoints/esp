@@ -92,7 +92,7 @@ const ngx_str_t &NgxEspGrpcPassThroughServerCall::response_content_type()
 void NgxEspGrpcPassThroughServerCall::Finish(
     const utils::Status &status,
     std::multimap<std::string, std::string> response_trailers) {
-  if (!r_) {
+  if (!cln_.data) {
     return;
   }
 

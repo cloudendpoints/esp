@@ -102,7 +102,7 @@ const ngx_str_t &NgxEspTranscodedGrpcServerCall::response_content_type() const {
 void NgxEspTranscodedGrpcServerCall::Finish(
     const utils::Status &status,
     std::multimap<std::string, std::string> response_trailers) {
-  if (!r_) {
+  if (!cln_.data) {
     return;
   }
 

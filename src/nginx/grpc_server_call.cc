@@ -102,7 +102,7 @@ void NgxEspGrpcServerCall::ProcessPrereadRequestBody() {
 }
 
 NgxEspGrpcServerCall::~NgxEspGrpcServerCall() {
-  if (r_) {
+  if (cln_.data) {
     for (ngx_http_cleanup_t **c = &r_->cleanup; *c != nullptr;
          c = &(*c)->next) {
       if (*c == &cln_) {
@@ -111,12 +111,11 @@ NgxEspGrpcServerCall::~NgxEspGrpcServerCall() {
       }
     }
   }
-  cln_.data = nullptr;
 }
 
 void NgxEspGrpcServerCall::AddInitialMetadata(std::string key,
                                               std::string value) {
-  if (!r_) {
+  if (!cln_.data) {
     return;
   }
 
@@ -156,7 +155,7 @@ void NgxEspGrpcServerCall::AddInitialMetadata(std::string key,
 
 void NgxEspGrpcServerCall::SendInitialMetadata(
     std::function<void(bool)> continuation) {
-  if (!r_) {
+  if (!cln_.data) {
     continuation(false);
     return;
   }
@@ -252,7 +251,7 @@ void NgxEspGrpcServerCall::OnDownstreamReadable(ngx_http_request_t *r) {
 
 void NgxEspGrpcServerCall::Read(::grpc::ByteBuffer *msg,
                                 std::function<void(bool)> continuation) {
-  if (!r_) {
+  if (!cln_.data) {
     continuation(false);
     return;
   }
@@ -375,7 +374,7 @@ void NgxEspGrpcServerCall::RunPendingRead() {
 
   reading_ = false;
 
-  if (!read_continuation_ && r_) {
+  if (!read_continuation_ && cln_.data) {
     // Make sure to block subsequent downstream reads until there's a
     // continuation, so that flow control works correctly.
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r_->connection->log, 0,
@@ -487,7 +486,7 @@ bool NgxEspGrpcServerCall::TryReadDownstreamMessage() {
 
 void NgxEspGrpcServerCall::Write(const ::grpc::ByteBuffer &msg,
                                  std::function<void(bool)> continuation) {
-  if (!r_) {
+  if (!cln_.data) {
     continuation(false);
     return;
   }
@@ -550,9 +549,6 @@ void NgxEspGrpcServerCall::Cleanup(void *server_call_ptr) {
   if (server_call->read_continuation_) {
     server_call->CompletePendingRead(false);
   }
-  // Set r_ = nullptr only after calling CompletePendingRead() as it needs r_
-  // (for debug logging).
-  server_call->r_ = nullptr;
   server_call->cln_.data = nullptr;
 }
 
