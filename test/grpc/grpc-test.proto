@@ -40,7 +40,7 @@ message EchoRequest {
 // The echo response message.
 message EchoResponse {
   // The text supplied by the EchoRequest.
-  string text = 101;
+  bytes text = 101;
 
   // The length of time that's elapsed since the start of the RPC.
   fixed64 elapsed_micros = 102;
