@@ -5,7 +5,7 @@
 Jenkins runs all its slaves in a Kubernetes Cluster. The cluster name is
 hardcoded in the Jenkinsfile.
 
-    $ export CLUSTER_NAME='jenkins-cluster'
+    $ export CLUSTER_NAME='jenkins-cluster-tmp'
     $ export PROJECT_ID='endpoints-jenkins'
     $ export ZONE='us-central1-f'
 
@@ -14,9 +14,10 @@ hardcoded in the Jenkinsfile.
     clusters create "${CLUSTER_NAME}" \
     --zone "${ZONE}" \
     --machine-type "n1-highmem-32" \
-    --scope \
+    --scopes\
     "https://www.googleapis.com/auth/appengine.admin",\
     "https://www.googleapis.com/auth/appengine.apis",\
+    "https://www.googleapis.com/auth/bigquery",\
     "https://www.googleapis.com/auth/cloud-platform",\
     "https://www.googleapis.com/auth/compute",\
     "https://www.googleapis.com/auth/devstorage.full_control",\
