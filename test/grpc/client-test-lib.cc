@@ -100,14 +100,19 @@ void SetCallConfig(const CallConfig &call_config, ClientContext *ctx) {
   }
 }
 
-std::string RandomString(int size) {
+std::string RandomString(int max_size) {
   static std::random_device rd;
   static std::mt19937 gen(rd());
-  std::uniform_int_distribution<unsigned char> dist;
+  std::uniform_int_distribution<int> size_dist(0, max_size);
+  std::uniform_int_distribution<unsigned char> byte_dist;
 
+  int size = size_dist(gen);
+  if (size == 0) {
+    return std::string();
+  }
   unsigned char buf[size];
   for (int i = 0; i < size; i++) {
-    buf[i] = dist(gen);
+    buf[i] = byte_dist(gen);
   }
   return std::string(reinterpret_cast<const char *>(buf), size);
 }
@@ -145,9 +150,9 @@ class Echo {
   Echo(const EchoTest &desc, std::function<void(bool, const TestResult &)> done)
       : desc_(desc), done_(done) {
     SetCallConfig(desc_.call_config(), &ctx_);
-    if (desc_.request().random_payload_size() > 0) {
+    if (desc_.request().random_payload_max_size() > 0) {
       desc_.mutable_request()->set_text(
-          RandomString(desc_.request().random_payload_size()));
+          RandomString(desc_.request().random_payload_max_size()));
     }
   }
 
@@ -188,8 +193,8 @@ class EchoStream {
         read_count_expected_(desc.count()) {
     SetCallConfig(desc_.call_config(), &ctx_);
     for (auto request : *desc_.mutable_request()) {
-      if (request.random_payload_size() > 0) {
-        request.set_text(RandomString(request.random_payload_size()));
+      if (request.random_payload_max_size() > 0) {
+        request.set_text(RandomString(request.random_payload_max_size()));
       }
     }
   }

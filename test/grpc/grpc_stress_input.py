@@ -50,14 +50,15 @@ flags.DEFINE_string('api_key', '', 'api_key for the project')
 
 flags.DEFINE_string('auth_token', '', 'JWT token for auth')
 
-flags.DEFINE_string('body_string', 'Hollow World!', 'request body string')
+flags.DEFINE_string('payload_string', 'Hollow World!', 'request payload string')
 
-# This flag overrides "--body_string" flag.
-flags.DEFINE_string('body_file', '', 'the file name to read the request body')
-# If larger than 0, randomly generates request body with this size.
-# This flag overrides all other body related flags.
-flags.DEFINE_integer('random_body_size', 0,
-                     'randomly generate request body to this size')
+# This flag overrides "--payload_string" flag.
+flags.DEFINE_string('payload_file', '', 'the file name to read the request payload')
+# If larger than 0, randomly generates request payload.
+# The playload size is random between 0 and value of this flag.
+# This flag overrides all other payload related flags.
+flags.DEFINE_integer('random_payload_max_size', 0,
+                     'randomly generate request payload up to this size')
 
 flags.DEFINE_integer('request_count', 10000,
                      'total number of requests to send')
@@ -73,17 +74,17 @@ kNoApiKeyError = ('Method doesn\'t allow unregistered callers (callers without'
 
 
 def GetRequest():
-  if FLAGS.random_body_size:
+  if FLAGS.random_payload_max_size:
     return {
-        'random_payload_size': FLAGS.random_body_size
+        'random_payload_max_size': FLAGS.random_payload_max_size
     }
-  elif FLAGS.body_file:
+  elif FLAGS.payload_file:
     return {
-        'text': open(FLAGS.body_file, 'r').read()
+        'text': open(FLAGS.payload_file, 'r').read()
     }
   else:
     return {
-        'text': FLAGS.body_string
+        'text': FLAGS.payload_string
     }
 
 def SubtestEcho():

@@ -33,8 +33,9 @@ message EchoRequest {
   // The final RPC status to use for the response.
   CallStatus return_status = 2;
 
-  // If non 0, the text payload is randomly generated to the size.
-  int32 random_payload_size = 3;
+  // If non 0, the text payload is randomly generated.
+  // The payload size is random between 0 and value of this field.
+  int32 random_payload_max_size = 3;
 }
 
 // The echo response message.
