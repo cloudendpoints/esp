@@ -163,7 +163,7 @@ SHA=''
 PROJECT='endpoints-jenkins'
 ZONE='us-central1-f'
 GCLOUD="$(which gcloud)" || GCLOUD="${HOME}/google-cloud-sdk/bin/gcloud"
-KUBECLT="$(which kubectl)" || KUBECTL="${HOME}/google-cloud-sdk/bin/kubectl"
+KUBECTL="$(which kubectl)" || KUBECTL="${HOME}/google-cloud-sdk/bin/kubectl"
 
 while getopts :d:nr:p:s:z: arg; do
   case ${arg} in
