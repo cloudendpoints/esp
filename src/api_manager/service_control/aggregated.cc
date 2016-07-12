@@ -53,8 +53,11 @@ namespace {
 
 // Default config for check aggregator
 const int kCheckAggregationEntries = 10000;
-const int kCheckAggregationFlushIntervalMs = 1000;
-const int kCheckAggregationExpirationMs = 60000;
+// Check doesn't support quota yet. It is safe to increase
+// the cache life of check results.
+// Cache life is 5 minutes. It will be refreshed every minute.
+const int kCheckAggregationFlushIntervalMs = 60000;
+const int kCheckAggregationExpirationMs = 300000;
 
 // Default config for report aggregator
 const int kReportAggregationEntries = 10000;
