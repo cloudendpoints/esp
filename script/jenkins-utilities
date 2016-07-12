@@ -172,18 +172,20 @@ function create_service() {
     return
   else
     echo 'Deploying service'
-    output="$(run gcloud alpha service-management deploy "${swagger_json}" 2>&1)"
+    run gcloud alpha service-management deploy "${swagger_json}"
+
+    version="$(run gcloud alpha service-management describe ${esp_service} \
+      | grep -P '\w*id:' | awk '{print $2}')"
 
     # Parsing version from output.
-    version="$(parse_output "${output}" "($(date +'%Y-%m-%d')[A-Za-z0-9]+)")"
     [[ -z "${version}" ]] && error_exit 'Could not parse version from output.'
     echo "ESP service version: ${version} exported to ESP_SERVICE_VERSION"
     ESP_SERVICE_VERSION="${version}"
 
     echo 'Activating service'
-    output="$(run gcloud alpha service-management enable \
+    run gcloud alpha service-management enable \
       --consumer-project="${PROJECT_ID}" \
-      --service="${esp_service}")"
+      --service="${esp_service}"
   fi
 }
 
@@ -191,9 +193,12 @@ function create_service() {
 function check_service_http_response () {
   local host=${1}
   local http_code="${2}"
-  local http_response="$(curl -k -m 20 --write-out %{http_code} --silent --output /dev/null ${host})"
+  local errors="$(mktemp /tmp/curl.XXXXX)"
+  local http_response="$(curl -k -m 20 --write-out %{http_code} --silent --output ${errors} ${host})"
   echo "Pinging host: ${host}, response: ${http_response}"
   [[ "${http_response}" == "${http_code}" ]] && return 0
+  echo "Response body:"
+  cat $errors
   return 1
 }
 
@@ -288,7 +293,7 @@ function upload_logs() {
 # End to End tests common options
 function e2e_options() {
   local OPTIND OPTARG arg
-  while getopts :a:b:B:c:d:e:i:l:r:st:v:V: arg; do
+  while getopts :a:b:B:c:d:e:i:k:l:r:st:v:V: arg; do
     case ${arg} in
       a) ESP_SERVICE="${OPTARG}";;
       b) BOOKSTORE_IMAGE="${OPTARG}";;

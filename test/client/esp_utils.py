@@ -42,7 +42,7 @@ def IssueCommand(cmd, force_info_log=False, suppress_warning=False,
     Returns:
       A tuple of stdout, and retcode from running the provided command.
     """
-    print '==== Running: %s' % str(cmd)
+    print '=== Running: %s' % ' '.join(cmd)
     process = subprocess.Popen(cmd, env=env,
                                stdout=subprocess.PIPE)
     stdout = ''

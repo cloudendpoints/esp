@@ -72,7 +72,7 @@ ${SUDO} make install || error_exit "Cannot install ${ZLIB_ARCHIVE}"
 popd
 
 download_extract_tar "${BUILD_DEPS_URL}" "${PCRE_ARCHIVE}" pcre
-echo 'Building pcre.'
+echo 'Building pcre'
 pushd pcre
 ./configure \
   --enable-jit \
@@ -86,7 +86,7 @@ download_extract_tar "${APACHE_TARBALLS_URL}" "${HTTPD_ARCHIVE}" httpd
 download_extract_tar "${APACHE_TARBALLS_URL}" "${APR_ARCHIVE}" httpd/srclib/apr
 download_extract_tar "${APACHE_TARBALLS_URL}" "${APR_UTIL_ARCHIVE}" httpd/srclib/apr-util
 
-echo 'Building Apache.'
+echo 'Building Apache'
 pushd httpd
 ./configure \
     --with-included-apr \
@@ -98,8 +98,16 @@ make || error_exit 'Cannot compile Apache'
 ${SUDO} make install 'Cannot install Apache'
 popd
 
-echo 'Building python-gflags.'
+echo 'Building python-gflags'
 git clone https://github.com/google/python-gflags || error_exit 'Cannot clone python-gflags'
 pushd python-gflags
 ${SUDO} python ./setup.py install || error_exit 'Cannot install python-gflags'
+popd
+
+echo 'Building wrk'
+git clone https://github.com/wg/wrk
+pushd wrk
+make || error_exit 'Cannot build wrk'
+${SUDO} cp ./wrk /usr/local/bin/wrk
+${SUDO} chmod a+rx /usr/local/bin/wrk
 popd

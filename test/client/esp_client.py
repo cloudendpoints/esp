@@ -25,7 +25,7 @@
 # SUCH DAMAGE.
 
 """
-A ESP test client to use AB (Apache Benchmark) to drive HTTP load.
+A ESP test client to drive HTTP load.
 Its results will be uploaded to a BigQuery table in esp-test-dashboard
 project so they can be showed by its dashboard.
 
@@ -39,13 +39,13 @@ Note: Must run the script in the same folder where file
 results_table_schema.json is.
 """
 
-import esp_ab_runner
 import esp_perfkit_publisher
 import esp_wrk_runner
 import gflags as flags
 import json
 import sys
 
+from string import Template
 
 FLAGS = flags.FLAGS
 
@@ -53,64 +53,63 @@ INF = 100000000
 
 # Test suites are dict of name to list of a test cases,
 # Each test cases contains five fields:
-#  Runner: esp_ab_runner or esp_wrk_runner
-#  Number of requests: only effective for ab
+#  Runner: esp_wrk_runner
 #  Connection/Concurrency: number of connection that ab/wrk makes to ESP
 #  Thread: number of threads, only effective for wrk
 #  Duration: the timelimit of the test, in seconds
 TEST_SUITES = {
-    'debug': [(esp_ab_runner, 100, 5, 1, INF)],
-    'simple': [
-        (esp_ab_runner, 10000, 1, None, INF),
-        (esp_ab_runner, 10000, 5, None, INF),
-        (esp_ab_runner, 10000, 10, None, INF),
-        (esp_ab_runner, 10000, 15, None, INF)
-    ],
-    'stress': [
-        (esp_ab_runner, 20000, 50, None, INF),
-        (esp_ab_runner, 20000, 100, None, INF),
-        (esp_ab_runner, 20000, 150, None, INF),
-        (esp_ab_runner, 20000, 200, None, INF)
-    ],
-    'wrk_debug': [(esp_wrk_runner, 0, 1, 5, 1)],
-    '1s_debug': [
-        (esp_ab_runner, INF, 5, None, 1),
-        (esp_wrk_runner, None, 5, 1, 1)
-    ],
-    '2m_stress': [
-        (esp_ab_runner, INF, 1, None, 120),
-        (esp_ab_runner, INF, 5, None, 120),
-        (esp_ab_runner, INF, 10, None, 120),
-        (esp_ab_runner, INF, 50, None, 120),
-        (esp_ab_runner, INF, 100, None, 120),
-        (esp_wrk_runner, None, 1, 1, 120),
-        (esp_wrk_runner, None, 5, 1, 120),
-        (esp_wrk_runner, None, 10, 1, 120),
-        (esp_wrk_runner, None, 50, 1, 120),
-        (esp_wrk_runner, None, 50, 5, 120),
-        (esp_wrk_runner, None, 100, 1, 120),
-        (esp_wrk_runner, None, 100, 5, 120),
-    ]
-}
+        'debug': [
+                (esp_wrk_runner, 5, 2, 1)
+                ],
+        'simple': [
+                (esp_wrk_runner, 1, 1, 15),
+                (esp_wrk_runner, 5, 1, 15),
+                (esp_wrk_runner, 10, 1, 15),
+                (esp_wrk_runner, 15, 1, 15)
+                ],
+        'stress': [
+                (esp_wrk_runner, 50, 1, 60),
+                (esp_wrk_runner, 100, 1, 60),
+                (esp_wrk_runner, 100, 2, 60),
+                (esp_wrk_runner, 200, 1, 60),
+                ],
+        '2m_stress': [
+                (esp_wrk_runner, 1, 1, 120),
+                (esp_wrk_runner, 5, 1, 120),
+                (esp_wrk_runner, 10, 1, 120),
+                (esp_wrk_runner, 50, 1, 120),
+                (esp_wrk_runner, 50, 5, 120),
+                (esp_wrk_runner, 100, 1, 120),
+                (esp_wrk_runner, 100, 5, 120),
+                ]
+        }
 
 flags.DEFINE_enum(
-    'test', 'simple', TEST_SUITES.keys(),
-    'test suit name')
+        'test', 'simple', TEST_SUITES.keys(),
+        'test suit name')
 
 flags.DEFINE_string('test_env', '',
-                    ('A json file path to describe the test, some of '
-                     'fields will be set to the metric labels.'))
+        'JSON test description')
 
 flags.DEFINE_string('test_data', '',
-                    'A json file path with test data')
+        'Template for test data')
 
+flags.DEFINE_string('host', 'localhost:8080',
+        'Server location')
 
-def ReadJsonFile(file):
-    return json.load(open(file, 'r'))
+flags.DEFINE_string('api_key', '',
+        'API key')
 
-def CountFailedRequests(results):
+flags.DEFINE_string('auth_token', '',
+        'Authentication token')
+
+flags.DEFINE_string('post_file', '',
+        'File for request body content')
+
+def count_failed_requests(out):
+    """ Count failed and non-2xx responses """
     failed = 0
-    for metrics, meta in results:
+    for metrics, _, _ in out:
         failed += metrics.get('Failed requests', [0])[0]
         failed += metrics.get('Non-2xx responses', [0])[0]
     return failed
@@ -123,16 +122,24 @@ if __name__ == "__main__":
 
     test_env = {'test': FLAGS.test}
     if FLAGS.test_env:
-        test_env.update(ReadJsonFile(FLAGS.test_env))
+        test_env.update(json.load(open(FLAGS.test_env, 'r')))
 
     if not FLAGS.test_data:
         sys.exit('Error: flag test_data is required')
-    test_data = ReadJsonFile(FLAGS.test_data)
+    with open(FLAGS.test_data) as f:
+        test_data = json.loads(Template(f.read()).substitute(
+                HOST=FLAGS.host,
+                API_KEY=FLAGS.api_key,
+                JWT_TOKEN=FLAGS.auth_token,
+                POST_FILE=FLAGS.post_file))
+
+        print "=== Test data"
+    print test_data
 
     results = []
     for run in test_data['test_run']:
-        for runner, n, c, t, d in TEST_SUITES[FLAGS.test]:
-            ret = runner.RunTest(run, n, c, t, d)
+        for runner, c, t, d in TEST_SUITES[FLAGS.test]:
+            ret = runner.test(run, c, t, d)
             if ret:
                 results.append(ret)
 
@@ -140,6 +147,6 @@ if __name__ == "__main__":
         sys.exit('All load tests failed.')
     if FLAGS.test_env:
         esp_perfkit_publisher.Publish(results, test_env)
-    if CountFailedRequests(results) > 0:
+    if count_failed_requests(results) > 0:
         sys.exit('Some load tests failed.')
     print "All load tests are successful."

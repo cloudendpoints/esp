@@ -98,6 +98,9 @@ while getopts :d arg; do
   esac
 done
 
+echo 'Clearing packages in apt'
+${SUDO} apt-get clean
+
 retry install_packages || error_exit 'Cannot install required packages.'
 echo 'Removing older docker installation if any'
 ${SUDO} apt-get purge -y docker.io* \

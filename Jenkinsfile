@@ -580,13 +580,11 @@ def getDurationHour() {
 }
 
 def getUseTestSlave() {
-  def useTestSlave = false
   try {
-    useTestSlave = "${USE_TEST_SLAVE}"
-    useTestSlave = skipCleanup == 'true'
+    return  "${USE_TEST_SLAVE}" == 'true'
   } catch (MissingPropertyException e) {
+    return false
   }
-  return useTestSlave
 }
 
 def getReleaseQualification() {

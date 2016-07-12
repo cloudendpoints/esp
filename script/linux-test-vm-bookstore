@@ -244,12 +244,6 @@ JSON_FILE="${LOG_DIRECTORY}/${TEST_ID}.json"
       JWT_TOKEN=$(${ROOT}/client/custom/gen-auth-token.sh -a ${SERVICE_NAME})
     fi
     echo "Auth token is: ${JWT_TOKEN}"
-    sed -e "s|\${API_KEY}|${API_KEY}|g" \
-        -e "s|\${HOST}|${HOST}|g" \
-        -e "s|\${POST_FILE}|${POST_FILE}|g" \
-        -e "s|\${JWT_TOKEN}|${JWT_TOKEN}|g" \
-        ${ROOT}/test/client/test_data.json.temp > ${ROOT}/test/client/test_data.json
-    cat ${ROOT}/test/client/test_data.json
 
     if [[ "${ENABLE_ENDPOINTS}" == "true" ]]; then
       echo "Test bookstore with endpoints=on."
@@ -267,7 +261,13 @@ JSON_FILE="${LOG_DIRECTORY}/${TEST_ID}.json"
 
     if [[ ${DURATION_IN_HOUR} -ne 0 ]]; then
       echo "Starting stress test at $(date)."
-      ./esp_client.py --test=stress --test_data=${ROOT}/test/client/test_data.json \
+      ./esp_client.py
+        --test=stress \
+        --test_data=${ROOT}/test/client/test_data.json.temp \
+        --host=${HOST} \
+        --api_key=${API_KEY} \
+        --auth_token=${JWT_TOKEN} \
+        --post_file=${POST_FILE} \
         || ((STRESS_FAILURES++))
     fi
     #######################

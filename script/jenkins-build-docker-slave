@@ -71,7 +71,7 @@ if [[ "${BUILD}" == true ]]; then
   update_image "${IMAGE}"
   if [[ ${?} -eq 0 ]]; then
     echo "Building docker image ${IMAGE}."
-    run retry -n 2 docker build --no-cache -t ${IMAGE} \
+    run retry -n 10 docker build --no-cache -t ${IMAGE} \
       -f "${DOCKER_FILE}" . || error_exit "Could not build ${SLAVE}"
     echo "Pushing Docker image: ${IMAGE}"
     retry -n 3 gcloud docker push "${IMAGE}" \

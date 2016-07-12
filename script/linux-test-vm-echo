@@ -112,18 +112,16 @@ JWT_TOKEN="$("${ROOT}/client/custom/gen-auth-token.sh" \
   -s "${ROOT}/test/echo/esp-echo-client-secret-jwk.json" \
   -a "${SERVICE_NAME}")"
 POST_FILE="${ROOT}/test/echo/esp-echo-client-secret-x509.json"
-sed -e "s|\${API_KEY}|${API_KEY}|g" \
-    -e "s|\${HOST}|${HOST}|g" \
-    -e "s|\${POST_FILE}|${POST_FILE}|g" \
-    -e "s|\${JWT_TOKEN}|${JWT_TOKEN}|g" \
-    "${ROOT}/test/client/test_data.json.temp" > "${ROOT}/test/client/test_data.json"
-cat "${ROOT}/test/client/test_data.json"
 
 echo "Start perf testing"
 pushd "${ROOT}/test/client" > /dev/null
 ./esp_client.py \
-  --test_data="${ROOT}/test/client/test_data.json" \
-  --test_env="${TEST_ENV}"
+  --test_data=${ROOT}/test/client/test_data.json.temp \
+  --test_env="${TEST_ENV}" \
+  --host=${HOST} \
+  --api_key=${API_KEY} \
+  --auth_token=${JWT_TOKEN} \
+  --post_file=${POST_FILE}
 RESULT=${?}
 
 if [[ -n "${BUCKET}" ]] ; then

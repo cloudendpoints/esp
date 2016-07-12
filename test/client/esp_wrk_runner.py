@@ -26,94 +26,90 @@ import esp_utils
 import json
 import os
 import pprint
-import re
-import sys
 import time
 
+from string import Template
+from collections import Counter
 
 WRK_PATH = os.environ.get('WRK_PATH', '/usr/local/bin/wrk')
 
-WRK_SCRIPT = '''
-function read(file)
-    local f = io.open(file, "rb")
-    local content = f:read("*all")
-    f:close()
-    return content
-end
-
-done = function(summary, latency, requests)
-   io.write("JSON:")
-   io.write("{")
-   errors = summary.errors
-   failed = errors.connect + errors.read + errors.write + errors.timeout
-   io.write(string.format("\\"Failed requests\\":[%d,\\"number\\"],", failed));
-   io.write(string.format("\\"Failed requests\\":[%d,\\"number\\"],", failed));
-   for _, p in pairs({50, 66, 75, 80, 90, 95, 98, 99}) do
-      n = latency:percentile(p)
-      io.write(string.format("\\"Latency percentile: %d%%\\":[%g,\\"ms\\"],", p, n / 1000.0))
-   end
-   io.write(string.format("\\"Latency percentile: mean\\":[%g,\\"ms\\"],", latency.mean / 1000.0))
-   io.write(string.format("\\"Non-2xx responses\\":[%d,\\"number\\"],", errors.status))
-   io.write(string.format("\\"Requests per second\\":[%g,\\"qps\\"],", summary.requests / summary.duration * 1000000))
-   io.write(string.format("\\"Transfer rate\\":[%g,\\"Kbytes/sec\\"]", summary.bytes / 1024 / summary.duration * 1000000))
-
-   io.write("}\\n")
-end
-
-wrk.method = "__METHOD__"
-wrk.body   = __BODY__
-wrk.headers["Content-Type"] = "application/json"
-'''
-
-def ExtractMetrics(out):
-    """Extract metrics from the output of wrk.
-    out: a string from wrk stdout with report.lua script.
-    return: a dict of
-       metric name => (metric value, metric unit)
-    """
-    metrics_json = out.split("JSON:")[1]
-    metrics = json.loads(metrics_json)
-    for k in metrics.keys():
-        metrics[k] = tuple(metrics[k])
-
-    return metrics
-
-def RunTest(run, n, c, t, d):
-    """Run a ab test and extract its results.
+def test(run, c, t, d):
+    """Run a test and extract its results.
     run: is a dict {
        'url': a string
        'headers': [headers]
        'post_file': a string
        }
+    c: number of connections that wrk makes to ESP
+    t: number of threads
+    d: the timelimit of the test, in seconds
     return a tuple of (metric, metadata)
     metric: is a dict of metric name to a tuple of (value, unit)
     metadata: is per test metadata such time, n and c.
     """
-    cmd = [WRK_PATH, '-t', str(t), '-c', str(c),
-           '-d', str(d) + 's', '-s', 'wrk_script.lua']
+    cmd = [WRK_PATH,
+            '-t', str(t),
+            '-c', str(c),
+            '-d', str(d) + 's',
+            '-s', 'wrk_script.lua',
+            '-H', '"Content-Type:application/json"']
+
     if 'headers' in run:
         for h in run['headers']:
             cmd += ['-H', h]
-    method = "GET"
-    body = "\"\""
+
     if 'post_file' in run:
-        method = "POST"
-        body = "read(\"%s\")" % run['post_file']
-    with open("wrk_script.lua", "w") as f:
-        f.write(WRK_SCRIPT.replace("__METHOD__", method).replace("__BODY__", body))
-    cmd += [run['url']]
-    (out, ret) = esp_utils.IssueCommand(cmd)
+        wrk_method = "POST"
+        wrk_body_file = run['post_file']
+    else:
+        wrk_method = "GET"
+        wrk_body_file = "/dev/null"
+
+    wrk_out = 'wrk_out'
+    wrk_err = 'wrk_err'
+    with open('wrk_script.lua.temp', 'r') as f:
+        wrk_script = f.read()
+
+    with open('wrk_script.lua', 'w') as f:
+        f.write(Template(wrk_script).substitute(
+                HTTP_METHOD=wrk_method,
+                REQUEST_BODY_FILE=wrk_body_file,
+                OUT=wrk_out,
+                ERR=wrk_err))
+
+        cmd += [run['url']]
+    (_, ret) = esp_utils.IssueCommand(cmd)
+
     if ret != 0:
-        print '==== Failed to run=%s, n=%s, c=%s' % (str(run), n, c)
+        print '==== Failed to run=%s,t=%d,c=%s,ret=%d' % (str(run), t, c, ret)
         return None
-    metrics = ExtractMetrics(out)
+
+    with open(wrk_out, 'r') as f:
+        metrics = json.load(f)
+
+    for k in metrics.keys():
+        metrics[k] = tuple(metrics[k])
     print '==== Metrics:'
     pprint.pprint(metrics)
     metadata = {
-        'requests': str(n),
-        'concurrent': str(c),
-        'time': time.time(),
-    }
+            'concurrent': str(c),
+            'threads': str(t),
+            'duration': str(d) + 's',
+            'time': time.time(),
+            }
+    print '=== Metadata:'
+    pprint.pprint(metadata)
     if 'labels' in run:
         metadata.update(run['labels'])
-    return metrics, metadata
+
+    errors = []
+    for i in range(0, t):
+        with open(wrk_err + '_' + str(i), 'r') as f:
+            errors.extend(f.readlines())
+
+    if len(errors) > 0:
+        print '=== Error status responses:'
+        for error, count in Counter(errors).most_common():
+            print '= %06d: %s' % (count, error)
+
+    return metrics, metadata, errors
