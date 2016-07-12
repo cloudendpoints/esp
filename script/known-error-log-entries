@@ -3,3 +3,4 @@ sb|lo|do" matches "lo"
 " matches ""$
 signal process started$
 Using trusted CA certificates file: /etc/nginx/trusted-ca-certificates.crt$
+Print endpoints status
