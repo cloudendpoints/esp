@@ -79,16 +79,10 @@ bind(
     actual = "@nanopb_git//:nanopb",
 )
 
-new_git_repository(
+git_repository(
     name = "boringssl_git",
-    build_file = "third_party/BUILD.boringssl",
-    commit = "8ca0b4127da11d766067ea6ec4122017ba0edb0e",  # 2016-06-02
+    commit = "f7cc893d5032d11ae32646f93ace1c1237b9f463",  # 2016-07-07
     remote = "https://boringssl.googlesource.com/boringssl",
-)
-
-bind(
-    name = "boringssl",
-    actual = "@boringssl_git//:ssl",
 )
 
 bind(
@@ -101,21 +95,10 @@ bind(
     actual = "@boringssl_git//:ssl",
 )
 
+# Required by gRPC.
 bind(
     name = "libssl",
     actual = "@boringssl_git//:ssl",
-)
-
-
-# Reimplementation of error table generator Boring SSL uses in build.
-# Boring SSL implementation is in go which doesn't yet have complete Bazel
-# support and the temporary support used in nginx workspace
-# https://nginx.googlesource.com/workspace does not work well with
-# Bazel sandboxing. Therefore, we temporarily reimplement the error
-# table generator.
-bind(
-    name = "boringssl_error_gen",
-    actual = "//third_party:boringssl_error_gen",
 )
 
 new_http_archive(

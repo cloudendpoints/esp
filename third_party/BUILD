@@ -53,14 +53,6 @@ nginx_suite(
     ],
 )
 
-py_binary(
-    name = "boringssl_error_gen",
-    srcs = [
-        "boringssl_error_gen.py",
-    ],
-    visibility = ["//visibility:public"],
-)
-
 cc_proto_library(
     name = "service_config",
     srcs = [
