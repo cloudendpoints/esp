@@ -27,13 +27,22 @@
 #include "src/nginx/config.h"
 
 #include <fcntl.h>
+#include <string>
 
+#include "google/protobuf/text_format.h"
+#include "google/protobuf/util/json_util.h"
+#include "google/protobuf/util/type_resolver.h"
+#include "google/protobuf/util/type_resolver_util.h"
+#include "src/api_manager/proto/server_config.pb.h"
 #include "src/nginx/module.h"
 #include "src/nginx/status.h"
+#include "src/nginx/util.h"
 
 namespace google {
 namespace api_manager {
 namespace nginx {
+
+using ::google::api_manager::proto::ServerConfig;
 
 namespace {
 
@@ -101,37 +110,110 @@ const char *esp_config_include(ngx_conf_t *cf, void *conf) {
 
 ngx_str_t default_metadata_server = ngx_string("http://169.254.169.254");
 
-const char *esp_set_metadata_server(ngx_conf_t *cf, ngx_esp_main_conf_t *conf) {
-  if (cf->cmd_type != NGX_HTTP_MAIN_CONF) {
-    return "allowed only in the main context";
+const char *esp_set_metadata_server(ngx_conf_t *cf, ngx_esp_loc_conf_t *conf) {
+  if (conf->metadata_server != NGX_CONF_UNSET) {
+    return "duplicate";
   }
-  if (conf->metadata_server.data == nullptr) {
-    ngx_str_t *argv = reinterpret_cast<ngx_str_t *>(cf->args->elts);
-    if (cf->args->nelts == 1) {
-      conf->metadata_server = default_metadata_server;
-    } else {
-      conf->metadata_server = argv[1];
-    }
-    return NGX_CONF_OK;
+
+  ngx_str_t *argv = reinterpret_cast<ngx_str_t *>(cf->args->elts);
+  if (cf->args->nelts == 1 ||
+      ngx_string_equal(argv[1], ngx_string("default"))) {
+    // "metadata_server" or "metadata_server default"
+    conf->metadata_server = 1;
+    conf->metadata_server_url = default_metadata_server;
+  } else if (ngx_string_equal(argv[1], ngx_string("off"))) {
+    // metadata_server off
+    conf->metadata_server = 0;
+  } else {
+    // metadata_server <url>
+    conf->metadata_server = 1;
+    conf->metadata_server_url = argv[1];
   }
-  return "duplicate";
+
+  return NGX_CONF_OK;
 }
 
-const char *esp_set_servicecontrol_secret(ngx_conf_t *cf,
-                                          ngx_esp_loc_conf_t *conf) {
-  if (conf->endpoints_servicecontrol_secret.data != nullptr) return "duplicate";
+const char *esp_set_google_authentication_secret(ngx_conf_t *cf,
+                                                 ngx_esp_loc_conf_t *conf) {
+  if (conf->google_authentication_secret.data != nullptr) return "duplicate";
   ngx_str_t *argv = reinterpret_cast<ngx_str_t *>(cf->args->elts);
   ngx_str_t file_name = argv[1];
   ngx_str_t file_contents = ngx_null_string;
   if (ngx_conf_full_name(cf->cycle, &file_name, 1) == NGX_OK &&
       ngx_esp_read_file_null_terminate(reinterpret_cast<char *>(file_name.data),
                                        cf->pool, &file_contents) == NGX_OK) {
-    conf->endpoints_servicecontrol_secret = file_contents;
+    conf->google_authentication_secret = file_contents;
     return NGX_CONF_OK;
   }
   ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "Failed to open file: %V",
                      &file_name);
   return reinterpret_cast<char *>(NGX_CONF_ERROR);
+}
+
+const char *esp_configure_service_control(ngx_conf_t *cf,
+                                          ngx_esp_loc_conf_t *conf) {
+  if (conf->service_control != NGX_CONF_UNSET) {
+    return "duplicate";
+  }
+
+  ngx_str_t *argv = reinterpret_cast<ngx_str_t *>(cf->args->elts);
+  if (ngx_string_equal(argv[1], ngx_string("off"))) {
+    // service_control off
+    conf->service_control = 0;
+    // service_control default
+  } else if (ngx_string_equal(argv[1], ngx_string("default"))) {
+    conf->service_control = 1;
+    ngx_str_null(&conf->service_controller_url);
+  } else {
+    // service_control <url>
+    conf->service_control = 1;
+    conf->service_controller_url = argv[1];
+  }
+
+  return NGX_CONF_OK;
+}
+
+const char *esp_configure_cloud_tracing(ngx_conf_t *cf,
+                                        ngx_esp_loc_conf_t *conf) {
+  if (conf->cloud_tracing != NGX_CONF_UNSET) {
+    return "duplicate";
+  }
+
+  ngx_str_t *argv = reinterpret_cast<ngx_str_t *>(cf->args->elts);
+  if (ngx_string_equal(argv[1], ngx_string("off"))) {
+    // cloud_tracing off
+    conf->cloud_tracing = 0;
+  } else if (ngx_string_equal(argv[1], ngx_string("default"))) {
+    // cloud_tracing default
+    conf->cloud_tracing = 1;
+    ngx_str_null(&conf->cloud_trace_api_url);
+  } else {
+    // cloud_tracing <url>
+    conf->cloud_tracing = 1;
+    conf->cloud_trace_api_url = argv[1];
+  }
+
+  return NGX_CONF_OK;
+}
+
+const char *esp_configure_api_authentication(ngx_conf_t *cf,
+                                             ngx_esp_loc_conf_t *conf) {
+  if (conf->api_authentication != NGX_CONF_UNSET) {
+    return "duplicate";
+  }
+
+  ngx_str_t *argv = reinterpret_cast<ngx_str_t *>(cf->args->elts);
+  if (ngx_string_equal(argv[1], ngx_string("off"))) {
+    // api_authentication off
+    conf->api_authentication = 0;
+  } else if (ngx_string_equal(argv[1], ngx_string("default"))) {
+    // api_authentication default
+    conf->api_authentication = 1;
+  } else {
+    return "invalid";
+  }
+
+  return NGX_CONF_OK;
 }
 
 const char *esp_set_server_config(ngx_conf_t *cf, ngx_esp_loc_conf_t *conf) {
@@ -201,10 +283,34 @@ esp_command_t esp_commands[] = {
     // execution environment.
     // An optional argument can specify the metadata server URL. Defaults to
     // http://169.254.169.254.
-    ESP_COMMAND("metadata_server", 0, 1, ESP_MAIN_CONF,
-                esp_set_metadata_server),
-    ESP_DCOMMAND("servicecontrol_secret", 1, 1, ESP_LOC_CONF,
-                 esp_set_servicecontrol_secret),
+    ESP_COMMAND("metadata_server", 0, 1, ESP_LOC_CONF, esp_set_metadata_server),
+    // Client secret to generate tokens for authenticating against Google
+    // services like service-control, cloud-trace API, etc.
+    ESP_COMMAND("google_authentication_secret", 1, 1, ESP_LOC_CONF,
+                esp_set_google_authentication_secret),
+    // Old name for google_authentication_secret
+    ESP_COMMAND("servicecontrol_secret", 1, 1, ESP_LOC_CONF,
+                esp_set_google_authentication_secret),
+    // Service-control override, usage:
+    //   service_control off | default | <url>
+    // 'off' - force disables the service-control feature,
+    // 'default' - uses the configuration in service config,
+    // '<url>' - specifies the override url for the service controller.
+    ESP_COMMAND("service_control", 1, 1, ESP_LOC_CONF,
+                esp_configure_service_control),
+    // Cloud-tracing override, usage:
+    //   cloud_tracing off | default | <url>
+    // 'off' - force disables the cloud-tracing feature,
+    // 'default' - uses the configuration in service config,
+    // '<url>' - specifies the override url for the Cloud Trace API.
+    ESP_COMMAND("cloud_tracing", 1, 1, ESP_LOC_CONF,
+                esp_configure_cloud_tracing),
+    // Auth override, usage:
+    //   api_authentication off | default
+    // 'off' - force disables the authentication,
+    // 'default' - uses the configuration in service config,
+    ESP_COMMAND("api_authentication", 1, 1, ESP_LOC_CONF,
+                esp_configure_api_authentication),
     ESP_COMMAND("server_config", 1, 1, ESP_LOC_CONF, esp_set_server_config),
 };
 
@@ -219,14 +325,28 @@ esp_command_t esp_commands[] = {
 //   - Endpoints configuration file name
 // include <file/pattern>;
 //   - Nginx config include directive.
+// metadata_server [off | default | <url>]
+//   - 'off' - metadata server is not used
+//   - 'default' - uses the default metadata server (http://169.254.169.254),
+//   - '<url>' - specifies a custom metadata server.
+// service_control off | default | <url>
+//   - 'off' - force disables the service-control feature,
+//   - 'default' - uses the configuration in service config,
+//   - '<url>' - specifies the override url for the service controller.
+// cloud_tracing off | default | <url>
+//   - 'off' - force disables the cloud-tracing feature,
+//   - 'default' - uses the configuration in service config,
+//   - '<url>' - specifies the override url for the Cloud Trace API.
+// api_authentication off | default
+//   - 'off' - force disables the authentication,
+//   - 'default' - uses the configuration in service config,
+// google_authentication_secret <file path>;
+//   - path to a file containing an auth secret for authenticating Google
+//     services like Service Controller, Cloud Trace API.
 //
-// Following directives are supported but actively deprecated as they are
-// moving to the Endpoints configuration file.
-// servicecontrol_address <url>;
-//   - address of the Service Control server.
+// Following directives are supported but actively deprecated.
 // servicecontrol_secret <file path>;
-//   - path to a file containing an auth secret for authenticating service
-//   controller requests.
+//   - Same as google_authentication_secret
 char *ngx_http_endpoints_command(ngx_conf_t *cf, ngx_command_t *dummy,
                                  void *conf) {
   const char *result = "unrecognized";
@@ -291,8 +411,6 @@ char *ngx_http_endpoints_command(ngx_conf_t *cf, ngx_command_t *dummy,
 //   api <configuration file path>;
 //   on|off;
 // }
-//
-// Other directives are (temporarily) supported but deprecated;
 char *ngx_http_endpoints_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf) {
   ngx_esp_loc_conf_t *lc = reinterpret_cast<ngx_esp_loc_conf_t *>(conf);
 
@@ -332,6 +450,134 @@ ngx_int_t ngx_esp_read_file(const char *filename, ngx_pool_t *pool,
 ngx_int_t ngx_esp_read_file_null_terminate(const char *filename,
                                            ngx_pool_t *pool, ngx_str_t *data) {
   return ngx_esp_read_file_impl(filename, pool, data, 1);
+}
+
+namespace {
+
+// Parses a protobuf message from JSON. Returns true if successful; otherwise
+// returns false.
+bool ngx_esp_parse_message_from_json(const std::string &json,
+                                     ::google::protobuf::Message *message) {
+  static const char kTypeUrlPrefix[] = "type.googleapis.com";
+
+  // Create a TypeResolver based on the protoc generated descriptor pool
+  static ::google::protobuf::util::TypeResolver *type_resolver =
+      ::google::protobuf::util::NewTypeResolverForDescriptorPool(
+          kTypeUrlPrefix, ::google::protobuf::DescriptorPool::generated_pool());
+
+  // The type url of the message type to be converted
+  std::string type_url =
+      std::string(kTypeUrlPrefix) + "/" + message->GetDescriptor()->full_name();
+
+  // Try to convert to a binary message
+  std::string binary;
+  ::google::protobuf::util::Status status =
+      ::google::protobuf::util::JsonToBinaryString(type_resolver, type_url,
+                                                   json, &binary);
+  if (!status.ok()) {
+    return false;
+  }
+
+  // Now deserialize the binary message
+  return message->ParseFromString(binary);
+}
+
+// Reads server config from a string. Returns true if successful, otherwise
+// returns false.
+// NOTE: This is similiar to ReadConfigFromString() in
+//       src/api_manager/config.cc. We are repeating it here to avoid additional
+//       dependencies. If there are more utilities like this to be duplicated,
+//       we should think of a place for utilities that are common for
+//       api_manager library and NGINX module.
+bool ngx_esp_read_server_config_from_string(const std::string &str,
+                                            ServerConfig *config) {
+  // Try binary serialized proto first. Due to a bug in JSON parser,
+  // JSON parser may crash if presented with non-JSON data.
+  if (config->ParseFromString(str)) {
+    return true;
+  }
+
+  // Now try JSON
+  if (ngx_esp_parse_message_from_json(str, config)) {
+    return true;
+  }
+
+  // Finally, try text format.
+  return ::google::protobuf::TextFormat::ParseFromString(str, config);
+}
+
+}  // namespace
+
+ngx_int_t ngx_esp_build_server_config(ngx_conf_t *cf, ngx_esp_loc_conf_t *lc,
+                                      std::string *server_config) {
+  // NOTE: We serialize the server config here and then deserialize it in the
+  //       ApiManager layer for simplicity. If this turns out to slow-down ESP
+  //       startup time (unlikely), we can pass the ServerConfig object instead
+  //       of the string.
+
+  // Parse the base server config if specified
+  ServerConfig config;
+  if (lc->endpoints_server_config.data != nullptr &&
+      !ngx_esp_read_server_config_from_string(
+          ngx_str_to_std(lc->endpoints_server_config), &config)) {
+    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                       "Failed to parse the server config.");
+    return NGX_ERROR;
+  }
+
+  // Merge the values overwritten in nginx.conf
+
+  // Metadata Server URL
+  if (lc->metadata_server != NGX_CONF_UNSET) {
+    config.mutable_metadata_server_config()->set_enabled(lc->metadata_server ==
+                                                         1);
+    config.mutable_metadata_server_config()->set_url(
+        ngx_str_to_std(lc->metadata_server_url));
+  }
+
+  // Google Authentication Secret
+  if (lc->google_authentication_secret.data != nullptr) {
+    config.set_google_authentication_secret(
+        ngx_str_to_std(lc->google_authentication_secret));
+  }
+
+  // Service Control
+  if (lc->service_control != NGX_CONF_UNSET) {
+    config.mutable_service_control_config()->set_force_disable(
+        lc->service_control == 0);
+
+    if (lc->service_control == 1 &&
+        lc->service_controller_url.data != nullptr) {
+      config.mutable_service_control_config()->set_url_override(
+          ngx_str_to_std(lc->service_controller_url));
+    }
+  }
+
+  // Cloud Tracing
+  if (lc->cloud_tracing != NGX_CONF_UNSET) {
+    config.mutable_cloud_tracing_config()->set_force_disable(
+        lc->cloud_tracing == 0);
+
+    if (lc->cloud_tracing == 1 && lc->cloud_trace_api_url.data != nullptr) {
+      config.mutable_cloud_tracing_config()->set_url_override(
+          ngx_str_to_std(lc->cloud_trace_api_url));
+    }
+  }
+
+  // API Authentication
+  if (lc->api_authentication != NGX_CONF_UNSET) {
+    config.mutable_api_authentication_config()->set_force_disable(
+        lc->api_authentication == 0);
+  }
+
+  // Reserialize
+  if (!config.SerializeToString(server_config)) {
+    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                       "Failed to serialize the server config.");
+    return NGX_ERROR;
+  }
+
+  return NGX_OK;
 }
 
 }  // namespace nginx

@@ -26,9 +26,13 @@
 #ifndef NGINX_NGX_ESP_CONFIG_H_
 #define NGINX_NGX_ESP_CONFIG_H_
 
+#include <string>
+
 extern "C" {
 #include "third_party/nginx/src/http/ngx_http.h"
 }
+
+#include "src/nginx/module.h"
 
 namespace google {
 namespace api_manager {
@@ -52,6 +56,10 @@ ngx_int_t ngx_esp_read_file(const char *filename, ngx_pool_t *pool,
 // data read from the file.
 ngx_int_t ngx_esp_read_file_null_terminate(const char *filename,
                                            ngx_pool_t *pool, ngx_str_t *data);
+
+// Builds the ESP server config based on the NGINX location configuration
+ngx_int_t ngx_esp_build_server_config(ngx_conf_t *cf, ngx_esp_loc_conf_t *lc,
+                                      std::string *server_config);
 
 }  // namespace nginx
 }  // namespace api_manager

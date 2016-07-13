@@ -304,7 +304,16 @@ void *ngx_esp_create_loc_conf(ngx_conf_t *cf) {
 
   ngx_str_null(&lc->grpc_backend_address_override);
   ngx_str_null(&lc->grpc_backend_address_fallback);
+  ngx_str_null(&lc->metadata_server_url);
+  ngx_str_null(&lc->service_controller_url);
+  ngx_str_null(&lc->cloud_trace_api_url);
+
   lc->endpoints_api = NGX_CONF_UNSET;
+  lc->metadata_server = NGX_CONF_UNSET;
+  lc->service_control = NGX_CONF_UNSET;
+  lc->cloud_tracing = NGX_CONF_UNSET;
+  lc->api_authentication = NGX_CONF_UNSET;
+
   return lc;
 }
 
@@ -324,9 +333,8 @@ char *ngx_esp_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child) {
 
   ngx_conf_merge_value(conf->endpoints_api, prev->endpoints_api, 0);
 
-  if (conf->endpoints_servicecontrol_secret.data == nullptr) {
-    conf->endpoints_servicecontrol_secret =
-        prev->endpoints_servicecontrol_secret;
+  if (conf->google_authentication_secret.data == nullptr) {
+    conf->google_authentication_secret = prev->google_authentication_secret;
   }
   if (conf->endpoints_server_config.data == nullptr) {
     conf->endpoints_server_config = prev->endpoints_server_config;
@@ -352,6 +360,25 @@ char *ngx_esp_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child) {
 
   ngx_conf_merge_str_value(conf->grpc_backend_address_fallback,
                            prev->grpc_backend_address_fallback, nullptr);
+
+  if (conf->metadata_server == NGX_CONF_UNSET) {
+    conf->metadata_server = prev->metadata_server;
+    conf->metadata_server_url = prev->metadata_server_url;
+  }
+
+  if (conf->service_control == NGX_CONF_UNSET) {
+    conf->service_control = prev->service_control;
+    conf->service_controller_url = prev->service_controller_url;
+  }
+
+  if (conf->cloud_tracing == NGX_CONF_UNSET) {
+    conf->cloud_tracing = prev->cloud_tracing;
+    conf->cloud_trace_api_url = prev->cloud_trace_api_url;
+  }
+
+  if (conf->api_authentication == NGX_CONF_UNSET) {
+    conf->api_authentication = prev->api_authentication;
+  }
 
   return reinterpret_cast<char *>(NGX_CONF_OK);
 }
@@ -458,11 +485,18 @@ ngx_int_t ngx_esp_postconfiguration(ngx_conf_t *cf) {
         return NGX_ERROR;
       }
 
+      // Build the server config based on the esp loc conf to pass to the
+      // ApiManager.
+      std::string server_config;
+      if (ngx_esp_build_server_config(cf, lc, &server_config) != NGX_OK) {
+        handle_endpoints_config_error(cf, lc);
+        return NGX_ERROR;
+      }
+
       lc->esp = mc->esp_factory.GetOrCreateApiManager(
           std::unique_ptr<ApiManagerEnvInterface>(
               new NgxEspEnv(log, NgxEspGrpcQueue::TryInstance())),
-          ngx_str_to_std(file_contents),
-          ngx_str_to_std(lc->endpoints_server_config));
+          ngx_str_to_std(file_contents), server_config);
 
       if (!lc->esp) {
         ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
@@ -482,13 +516,13 @@ ngx_int_t ngx_esp_postconfiguration(ngx_conf_t *cf) {
       }
 
       // Set metadata server to esp
-      if (mc->metadata_server.data != NULL) {
-        lc->esp->SetMetadataServer(ngx_str_to_std(mc->metadata_server));
+      if (lc->metadata_server == 1 && lc->metadata_server_url.data != nullptr) {
+        lc->esp->SetMetadataServer(ngx_str_to_std(lc->metadata_server_url));
       }
 
-      if (lc->endpoints_servicecontrol_secret.data != nullptr) {
+      if (lc->google_authentication_secret.data != nullptr) {
         Status status = lc->esp->SetClientAuthSecret(
-            ngx_str_to_std(lc->endpoints_servicecontrol_secret));
+            ngx_str_to_std(lc->google_authentication_secret));
         if (!status.ok()) {
           ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, status.message().c_str());
           return NGX_ERROR;

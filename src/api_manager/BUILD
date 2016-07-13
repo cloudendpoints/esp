@@ -33,8 +33,14 @@ cc_proto_library(
     srcs = [
         "proto/server_config.proto",
     ],
-    protoc = "//external:protoc",
     default_runtime = "//external:protobuf",
+    protoc = "//external:protoc",
+    visibility = [
+        ":__subpackages__",
+        # TODO: Consider using a top-level proto directory for protos that are
+        # visible to NGINX module.
+        "//src/nginx:__subpackages__",
+    ],
 )
 
 cc_proto_library(
@@ -43,9 +49,11 @@ cc_proto_library(
         "proto/api_manager_status.proto",
     ],
     include = ".",
-    visibility = ["//src/nginx:__subpackages__"],
-    protoc = "//external:protoc",
     default_runtime = "//external:protobuf",
+    protoc = "//external:protoc",
+    # TODO: Consider using a top-level proto directory for protos that are
+    # visible to NGINX module.
+    visibility = ["//src/nginx:__subpackages__"],
 )
 
 cc_library(
@@ -120,10 +128,10 @@ cc_library(
         ":impl_headers",
         ":method_call_info",
         ":server_config_proto",
+        "//external:cc_wkt_protos",
         "//external:googletest_prod",
         "//external:grpc++",
         "//external:protobuf",
-        "//external:cc_wkt_protos",
         "//src/api_manager/auth",
         "//src/api_manager/cloud_trace",
         "//src/api_manager/context",

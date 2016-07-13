@@ -57,11 +57,6 @@ namespace nginx {
 // ESP Module Configuration - main context.
 //
 typedef struct {
-  // Address of the Google Compute Engine metadata server.
-  // Used to override metadata server address for testing.
-  // Defaults to "http://169.254.169.254".
-  ngx_str_t metadata_server;
-
   // Array of all endpoints loaded (array of ngx_esp_loc_conf_t*).
   // Endpoints API management is enabled if endpoints.nelts > 0.
   ngx_array_t endpoints;
@@ -140,8 +135,28 @@ typedef struct {
   unsigned endpoints_block : 1;  // location has `endpoints` block
   unsigned grpc_pass_block : 1;  // location has `grpc_pass` block
 
-  // TODO: Move the following into the Endpoints config protocol buffer.
-  ngx_str_t endpoints_servicecontrol_secret;
+  // Whether Google Compute Engine metadata server should be used or not.
+  ngx_flag_t metadata_server;
+
+  // Address of the Google Compute Engine metadata server.
+  // Used to override metadata server address for testing.
+  // Defaults to "http://169.254.169.254".
+  ngx_str_t metadata_server_url;
+
+  // Service account private key to generate auth tokens for using Google
+  // Services like service-control, cloud-tracing, etc
+  ngx_str_t google_authentication_secret;
+
+  // Service-control overrides
+  ngx_flag_t service_control;
+  ngx_str_t service_controller_url;
+
+  // Cloud-tracing overrides
+  ngx_flag_t cloud_tracing;
+  ngx_str_t cloud_trace_api_url;
+
+  // Authentication override
+  ngx_flag_t api_authentication;
 
   // Server config
   ngx_str_t endpoints_server_config;

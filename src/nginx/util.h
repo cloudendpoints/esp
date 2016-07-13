@@ -60,6 +60,11 @@ ngx_str_t ngx_std_to_str_unsafe(const std::string &src);
 // Create a heap-allocated copy of a string.
 ngx_str_t ngx_esp_copy_string(const char *src);
 
+// Compare two ngx_str_t strings
+inline bool ngx_string_equal(const ngx_str_t &str1, const ngx_str_t &str2) {
+  return str1.len == str2.len && !ngx_strncmp(str1.data, str2.data, str1.len);
+}
+
 // Log a message with a specific log level.
 void ngx_esp_log(ngx_log_t *log, ngx_uint_t level, ngx_str_t msg);
 
