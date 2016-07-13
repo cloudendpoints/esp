@@ -7,19 +7,14 @@ worker_processes 1;
 # Logging to stderr enables better integration with Docker and GKE/Kubernetes.
 error_log stderr warn;
 
-events {
-  worker_connections  32;
-}
+events { worker_connections 4096; }
 
 http {
   include /etc/nginx/mime.types;
-  client_body_timeout 600s;
-  client_header_timeout 600s;
-  proxy_send_timeout 600s;
-  proxy_read_timeout 600s;
+  server_tokens off;
+  client_max_body_size 32m;
 
   endpoints {
-     api /etc/nginx/endpoints/service.json;
      metadata_server;
   }
 
@@ -28,14 +23,15 @@ http {
     listen ${PORT} http2;
 
     include ssl.conf;
+
     # Logging to stdout enables better integration with Docker and GKE/Kubernetes.
     access_log /dev/stdout;
 
     location / {
       endpoints {
         on;
+        api /etc/nginx/endpoints/service.json;
       }
-      proxy_set_header X-Endpoint-API-UserInfo $endpoints_api_userinfo;
 
       grpc_pass {
         proxy_pass http://www.google.com/;

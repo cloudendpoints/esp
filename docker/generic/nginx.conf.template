@@ -65,8 +65,8 @@ http {
   }
 
   server {
-    # expose /nginx_status and /endpoints_status but on a different port to avoid
-    # external visibility / conflicts with the app.
+    # expose /nginx_status and /endpoints_status but on a different port to
+    # avoid external visibility / conflicts with the app.
     listen ${NGINX_STATUS_PORT};
     location /nginx_status {
       stub_status on;
