@@ -90,7 +90,7 @@ void FetchGceMetadata(std::shared_ptr<context::RequestContext> context,
       continuation(Status(Code::INTERNAL, kFailedMetadataFetch));
       return;
     case GceMetadata::FETCHING_STATE:
-      env->LogWarning("Another request fetching metadata. Duplicate fetch.");
+      env->LogDebug("Another request fetching metadata. Duplicate fetch.");
       continuation(Status(Code::UNAVAILABLE, kFailedMetadataFetch));
       return;
     case GceMetadata::INITIAL_STATE:
