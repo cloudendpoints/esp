@@ -35,7 +35,6 @@ using ::google::api::servicecontrol::v1::CheckResponse;
 using ::google::api::servicecontrol::v1::ReportRequest;
 using ::google::api::servicecontrol::v1::ReportResponse;
 using ::google::api_manager::proto::ServerConfig;
-using ::google::api_manager::proto::ServiceControlClientConfig;
 using ::google::api_manager::utils::Status;
 using ::google::protobuf::util::error::Code;
 
@@ -83,11 +82,10 @@ const char servicecontrol_service[] =
 // Generates CheckAggregationOptions.
 CheckAggregationOptions GetCheckAggregationOptions(
     const ServerConfig* server_config) {
-  if (server_config && server_config->has_service_control_client_config() &&
-      server_config->service_control_client_config()
-          .has_check_aggregator_config()) {
-    const auto& check_config = server_config->service_control_client_config()
-                                   .check_aggregator_config();
+  if (server_config && server_config->has_service_control_config() &&
+      server_config->service_control_config().has_check_aggregator_config()) {
+    const auto& check_config =
+        server_config->service_control_config().check_aggregator_config();
     return CheckAggregationOptions(check_config.cache_entries(),
                                    check_config.flush_interval_ms(),
                                    check_config.response_expiration_ms());
@@ -100,11 +98,10 @@ CheckAggregationOptions GetCheckAggregationOptions(
 // Generates ReportAggregationOptions.
 ReportAggregationOptions GetReportAggregationOptions(
     const ServerConfig* server_config) {
-  if (server_config && server_config->has_service_control_client_config() &&
-      server_config->service_control_client_config()
-          .has_report_aggregator_config()) {
-    const auto& report_config = server_config->service_control_client_config()
-                                    .report_aggregator_config();
+  if (server_config && server_config->has_service_control_config() &&
+      server_config->service_control_config().has_report_aggregator_config()) {
+    const auto& report_config =
+        server_config->service_control_config().report_aggregator_config();
     return ReportAggregationOptions(report_config.cache_entries(),
                                     report_config.flush_interval_ms());
   }
@@ -373,8 +370,8 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
     http_request->set_timeout_ms(kReportDefaultTimeoutInMs);
   }
   if (server_config_ != nullptr &&
-      server_config_->has_service_control_client_config()) {
-    const auto& config = server_config_->service_control_client_config();
+      server_config_->has_service_control_config()) {
+    const auto& config = server_config_->service_control_config();
     if (is_check) {
       if (config.check_timeout_ms() > 0) {
         http_request->set_timeout_ms(config.check_timeout_ms());

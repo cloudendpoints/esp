@@ -59,7 +59,7 @@ $t->write_file('service.pb.txt', $config);
 # Disable service control caching to guarantee consistent sequence of requests
 # to service control server
 $t->write_file('service_control.pb.txt', <<"EOF");
-service_control_client_config {
+service_control_config {
   check_aggregator_config {
     cache_entries: 0
   }

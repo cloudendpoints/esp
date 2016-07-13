@@ -29,8 +29,6 @@
 #include "src/api_manager/service_control/aggregated.h"
 #include "src/api_manager/transcoding/transcoder_factory.h"
 
-using ::google::api_manager::proto::ServiceControlClientConfig;
-
 namespace google {
 namespace api_manager {
 namespace context {
@@ -80,8 +78,11 @@ std::unique_ptr<cloud_trace::CloudTraceConfig>
 ServiceContext::CreateCloudTraceConfig() {
   std::string url;
   if (config_->server_config() &&
-      !config_->server_config()->cloud_trace_url().empty()) {
-    url = config_->server_config()->cloud_trace_url();
+      !config_->server_config()
+           ->cloud_tracing_config()
+           .url_override()
+           .empty()) {
+    url = config_->server_config()->cloud_tracing_config().url_override();
   } else {
     url = kCloudTraceUrl;
   }

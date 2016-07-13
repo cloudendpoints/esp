@@ -30,7 +30,6 @@
 #include "src/api_manager/request_handler.h"
 
 using ::google::api_manager::proto::ServerConfig;
-using ::google::api_manager::proto::ServiceControlClientConfig;
 
 namespace google {
 namespace api_manager {

@@ -68,7 +68,7 @@ TEST(Config, CreateFromBinaryProto) {
 }
 
 static const char kServerConfig[] = R"(
-service_control_client_config {
+service_control_config {
   check_aggregator_config {
     cache_entries: 1000
     flush_interval_ms: 10
@@ -94,16 +94,16 @@ TEST(Config, ServerConfigProto) {
   auto server_config = config->server_config();
   EXPECT_NE(nullptr, server_config);
 
-  ASSERT_EQ(1000, server_config->service_control_client_config()
+  ASSERT_EQ(1000, server_config->service_control_config()
                       .check_aggregator_config()
                       .cache_entries());
-  ASSERT_EQ(15, server_config->service_control_client_config()
+  ASSERT_EQ(15, server_config->service_control_config()
                     .report_aggregator_config()
                     .flush_interval_ms());
 }
 
 static const char kInvalidServerConfig[] = R"(
-service_control_client_config {
+service_control_config {
   type: 1
   config {
     cache_entries: 1020

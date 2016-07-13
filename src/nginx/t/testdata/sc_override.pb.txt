@@ -1,5 +1,5 @@
-service_control_server_config {
-  environment: "http://127.0.0.1:8082"
+service_control_config {
+  url_override: "http://127.0.0.1:8082"
 }
 
 

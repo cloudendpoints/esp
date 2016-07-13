@@ -59,7 +59,9 @@ EOF
 $t->write_file('service.pb.txt', $config);
 
 $t->write_file('server_config.pb.txt', <<"EOF");
-cloud_trace_url: "http://127.0.0.1:${CloudTracePort}"
+cloud_tracing_config {
+  url_override: "http://127.0.0.1:${CloudTracePort}"
+}
 EOF
 
 $t->write_file_expand('nginx.conf', <<"EOF");

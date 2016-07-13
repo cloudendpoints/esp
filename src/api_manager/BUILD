@@ -229,6 +229,9 @@ cc_test(
         ":server_config_proto",
         "//external:googletest_main",
     ],
+    data = [
+        "proto/sample_server_config.pb.txt",
+    ],
 )
 
 cc_inc_library(

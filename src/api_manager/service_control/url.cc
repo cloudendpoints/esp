@@ -46,11 +46,11 @@ const std::string& GetServiceControlAddress(
     const ::google::api::Service* service,
     const proto::ServerConfig* server_config) {
   // Return the value from the server config override if present.
-  if (server_config && server_config->has_service_control_server_config()) {
-    const ::google::api_manager::proto::ServiceControlServerConfig& scsc =
-        server_config->service_control_server_config();
-    if (!scsc.environment().empty()) {
-      return scsc.environment();
+  if (server_config && server_config->has_service_control_config()) {
+    const ::google::api_manager::proto::ServiceControlConfig& scc =
+        server_config->service_control_config();
+    if (!scc.url_override().empty()) {
+      return scc.url_override();
     }
   }
 

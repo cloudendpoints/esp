@@ -47,8 +47,8 @@ control: {
 )";
 
 static char server_config[] = R"(
-service_control_server_config {
-  environment: "servicecontrol-testing.googleapis.com"
+service_control_config {
+  url_override: "servicecontrol-testing.googleapis.com"
 }
 )";
 
