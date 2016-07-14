@@ -26,7 +26,7 @@
 #ifndef API_MANAGER_AUTH_LIB_JSON_H_
 #define API_MANAGER_AUTH_LIB_JSON_H_
 
-#include "include/api_manager/auth.h"
+#include "src/api_manager/auth.h"
 
 namespace google {
 namespace api_manager {

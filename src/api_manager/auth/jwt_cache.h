@@ -29,7 +29,7 @@
 #include <chrono>
 #include <string>
 
-#include "include/api_manager/auth.h"
+#include "src/api_manager/auth.h"
 #include "third_party/service-control-client-cxx/utils/simple_lru_cache_inl.h"
 
 namespace google {

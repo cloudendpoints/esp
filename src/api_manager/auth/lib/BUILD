@@ -45,8 +45,9 @@ cc_library(
     deps = [
         "//external:grpc",
         "//google/protobuf",
-        "//src/api_manager/utils",
         "//include:headers_only",
+        "//src/api_manager:auth_headers",
+        "//src/api_manager/utils",
     ],
 )
 

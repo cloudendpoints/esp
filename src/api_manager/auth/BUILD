@@ -46,6 +46,7 @@ cc_library(
     }),
     deps = [
         "//external:googletest_prod",
+        "//src/api_manager:auth_headers",
         "//src/api_manager/auth/lib",
         "//src/api_manager/utils",
         "//third_party/service-control-client-cxx:service_control_client_lib",
@@ -68,10 +69,10 @@ cc_library(
         ],
     }),
     deps = [
+        "//external:grpc++",
         "//include:headers_only",
         "//src/api_manager/auth/lib",
         "//src/api_manager/utils",
-        "//external:grpc++",
     ],
 )
 
@@ -97,7 +98,7 @@ cc_test(
     linkstatic = 1,
     deps = [
         ":service_account_token",
-        "//src/api_manager:mock_api_manager_environment",
         "//external:googletest_main",
+        "//src/api_manager:mock_api_manager_environment",
     ],
 )

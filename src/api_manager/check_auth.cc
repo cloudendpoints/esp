@@ -29,8 +29,8 @@
 #include <string>
 
 #include "include/api_manager/api_manager.h"
-#include "include/api_manager/auth.h"
 #include "include/api_manager/request.h"
+#include "src/api_manager/auth.h"
 #include "src/api_manager/auth/lib/auth_jwt_validator.h"
 #include "src/api_manager/auth/lib/auth_token.h"
 #include "src/api_manager/auth/lib/base64.h"

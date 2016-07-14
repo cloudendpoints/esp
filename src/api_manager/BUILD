@@ -46,6 +46,13 @@ cc_proto_library(
 )
 
 cc_library(
+    name = "auth_headers",
+    hdrs = [
+        "auth.h",
+    ],
+)
+
+cc_library(
     name = "method_call_info",
     hdrs = [
         "method.h",
@@ -106,6 +113,7 @@ cc_library(
         ":__subpackages__",
     ],
     deps = [
+        ":auth_headers",
         ":impl_headers",
         ":method_call_info",
         ":server_config_proto",
@@ -225,12 +233,12 @@ cc_test(
     srcs = [
         "server_config_proto_test.cc",
     ],
+    data = [
+        "proto/sample_server_config.pb.txt",
+    ],
     deps = [
         ":server_config_proto",
         "//external:googletest_main",
-    ],
-    data = [
-        "proto/sample_server_config.pb.txt",
     ],
 )
 
