@@ -68,15 +68,25 @@ set -x
 VERSION="$(command cat ${ROOT}/include/version)"
 BASE_VERSION="$(echo ${VERSION} | cut -d . -f -2)"
 
-IMAGE="b.gcr.io/endpoints/endpoints-runtime:${VERSION}"
-STABLE_IMAGE="b.gcr.io/endpoints/endpoints-runtime:${BASE_VERSION}"
-LATEST_IMAGE='b.gcr.io/endpoints/endpoints-runtime:latest'
+function tag_stable_image() {
+  local image="${1}"
+  local stable="${2}"
+  local latest="${3}"
 
-docker_tag_f "${IMAGE}" "${STABLE_IMAGE}"
-docker_tag_f "${IMAGE}" "${LATEST_IMAGE}"
+  docker_tag_f "${image}" "${stable}"
+  docker_tag_f "${image}" "${latest}"
 
-retry "${GCLOUD}" docker push "${STABLE_IMAGE}"
-retry "${GCLOUD}" docker push "${LATEST_IMAGE}"
+  retry "${GCLOUD}" docker push "${stable}"
+  retry "${GCLOUD}" docker push "${latest}"
+}
+
+# Tag generic and -grpc images as stable.
+for SUFFIX in '' '-grpc'; do
+  tag_stable_image \
+      "b.gcr.io/endpoints/endpoints-runtime${SUFFIX}:${VERSION}" \
+      "b.gcr.io/endpoints/endpoints-runtime${SUFFIX}:${BASE_VERSION}" \
+      "b.gcr.io/endpoints/endpoints-runtime${SUFFIX}:latest"
+done
 
 rapture --universe=cloud-apt settag ${DEBIAN_PACKAGE_REPOSITORY} \
   endpoints-dev.stable:true

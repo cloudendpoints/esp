@@ -79,8 +79,6 @@ set -x
 
 VERSION="$(command cat ${ROOT}/include/version)" \
   || error_exit "Cannot find release version (${ROOT}/include/version)"
-SOURCE_IMAGE="gcr.io/endpoints-jenkins/endpoints-runtime:debian-git-${SHA}"
-TARGET_IMAGE="b.gcr.io/endpoints/endpoints-runtime:${VERSION}"
 
 if RELEASE_BRANCH_SHA="$(git rev-parse origin/release/${VERSION})"; then
   if [[ "${SHA}" != "${RELEASE_BRANCH_SHA}" ]]; then
@@ -94,12 +92,26 @@ WARNING: Cannot find release branch origin/release-${VERSION}.
 \e[0m"
 fi
 
-docker_tag "${SOURCE_IMAGE}" "${TARGET_IMAGE}" \
-  || error_exit "Could not tag ${SOURCE_IMAGE} to ${TARGET_IMAGE}."
+function push_docker_image() {
+  local source_image="${1}"
+  local target_image="${2}"
 
-echo "Pushing ${TARGET_IMAGE} to Cloud Container Registry."
-"${GCLOUD}" docker push "${TARGET_IMAGE}" \
-  || error_exit "Cloud Container Registry push failed."
+  docker_tag "${source_image}" "${target_image}" \
+    || { echo "Could not tag ${source_image} to ${target_image}."; return 1; }
+
+  echo "Pushing ${target_image} to Cloud Container Registry."
+  "${GCLOUD}" docker push "${target_image}" \
+    || { echo "Cloud Container Registry push of ${target_image} failed."; return 1; }
+
+  return 0;
+}
+
+for SUFFIX in '' '-grpc'; do
+  push_docker_image \
+      "gcr.io/endpoints-jenkins/endpoints-runtime${SUFFIX}:debian-git-${SHA}" \
+      "b.gcr.io/endpoints/endpoints-runtime${SUFFIX}:${VERSION}" \
+    || error_exit "Docker image push failed."
+done
 
 SOURCE_PKG="gs://endpoints-jenkins.appspot.com/${SHA}/artifacts/endpoints-runtime-amd64.deb"
 TARGET_PKG="$(command mktemp -d)/endpoints-runtime-amd64.deb"
