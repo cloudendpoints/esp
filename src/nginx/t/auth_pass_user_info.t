@@ -87,7 +87,6 @@ http {
         on;
       }
       proxy_pass http://127.0.0.1:${BackendPort};
-      proxy_set_header X-Endpoint-API-UserInfo \$endpoints_api_userinfo;
     }
   }
 }

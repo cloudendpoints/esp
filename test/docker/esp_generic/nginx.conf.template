@@ -72,8 +72,6 @@ http {
       # 86400 seconds (24 hours) is the maximum a server is allowed.
       proxy_send_timeout 86400s;
       proxy_read_timeout 86400s;
-
-      proxy_set_header X-Endpoint-API-UserInfo $endpoints_api_userinfo;
     }
 
     include /var/lib/nginx/extra/*.conf;
