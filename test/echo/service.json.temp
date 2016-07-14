@@ -1,5 +1,6 @@
 {
  "name": "echo-${PROJECT}.cloudendpointsapis.com",
+ "producer_project_id": "${PROJECT}",
  "http": {
   "rules": [
    {

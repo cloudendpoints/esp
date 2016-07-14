@@ -30,7 +30,7 @@
 [[ "$(uname)" == 'Linux' ]] || { echo 'Run on Linux only.'; exit 1; }
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-. "${ROOT}/script/all-utilities" || { echo 'Cannot load Bash utilities'; exit 1; }
+. "${ROOT}/script/jenkins-utilities" || { echo 'Cannot load jenkins utilities'; exit 1; }
 
 TEST_ENV=""
 # This variable can be set by -m option. If set to a positive value, the nginx
@@ -103,6 +103,10 @@ echo 'Starting Endpoints Runtime.'
 mkdir --parents --mode=777 "${PREFIX}/logs" \
   || error_exit 'Cannot create NGINX logs directory.'
 
+echo 'Creating service.json'
+sed "s|\${PROJECT}|esp-load-test|g" ${ROOT}/test/echo/service.json.temp \
+  > ${ROOT}/test/echo/gce-vm/service.json
+
 NGINX_ARGS=(-p "${PREFIX}" -c "${NGINX_CONFIG}" -g "pid ${PREFIX}/.nginx.pid;")
 
 "${NGINX}" "${NGINX_ARGS[@]}" -T  \
@@ -117,7 +121,16 @@ JWT_TOKEN="$("${ROOT}/client/custom/gen-auth-token.sh" \
 POST_FILE="${ROOT}/test/data/8k.json"
 HOST='http://127.0.0.1:8090'
 
+#Status server always run in port 8090 and use HTTP protocol.
+STATUS_SERVER=${HOST/8080/8090}
+STATUS_SERVER=${STATUS_SERVER/443/8090}
+STATUS_SERVER=${STATUS_SERVER/https/http}
+
 trap quit_nginx EXIT
+
+echo "ESP status: ${STATUS_SERVER}/endpoints_status"
+check_service_http_response ${STATUS_SERVER}/statusz 200 \
+  || error_exit "ESP is not running"
 
 if [[ ${MANUAL_TEST_DURATION_MINUTES} -gt 0 ]]; then
   echo 'ESP listens at port 8090. You can start your manual test against it.'

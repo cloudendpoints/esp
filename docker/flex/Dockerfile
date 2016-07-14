@@ -27,7 +27,7 @@ RUN mkdir -p /var/lib/nginx/optional && \
     mkdir -p /var/lib/nginx/bin && \
     mkdir -p /var/lib/nginx/inc
 
-ADD static.conf /var/lib/nginx/optional/static.conf
+ADD status.conf /var/lib/nginx/extra/status.conf
 ADD start_nginx.sh /var/lib/nginx/bin/start_nginx.sh
 ADD proxy_pass.inc /var/lib/nginx/inc/proxy_pass.inc
 ADD nginx.logrotate /etc/logrotate.d/nginx
