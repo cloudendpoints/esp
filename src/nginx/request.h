@@ -48,8 +48,9 @@ class NgxEspRequest : public Request {
   virtual std::string GetUnparsedRequestPath();
   virtual std::string GetClientIP();
 
-  virtual void SetUserInfo(const UserInfo &user_info);
   virtual void SetAuthToken(const std::string &auth_token);
+  virtual utils::Status AddHeaderToBackend(const std::string &key,
+                                           const std::string &value);
 
   virtual bool FindQuery(const std::string &name, std::string *query);
   virtual bool FindHeader(const std::string &name, std::string *header);

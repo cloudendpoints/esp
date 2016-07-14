@@ -26,9 +26,6 @@
 //
 #include "src/nginx/request.h"
 
-#include "include/api_manager/auth.h"
-#include "src/api_manager/auth/lib/auth_token.h"
-#include "src/api_manager/auth/lib/json.h"
 #include "src/nginx/module.h"
 #include "src/nginx/util.h"
 
@@ -101,28 +98,37 @@ bool NgxEspRequest::FindHeader(const std::string &name, std::string *header) {
   return false;
 }
 
-void NgxEspRequest::SetUserInfo(const UserInfo &user_info) {
-  char *json_buf = auth::WriteUserInfoToJson(user_info);
-  if (json_buf == nullptr) {
-    return;
-  }
-
-  size_t json_size = strlen(json_buf);
-  ngx_str_t dst = ngx_null_string;
-  dst.data = reinterpret_cast<u_char *>(
-      ngx_palloc(r_->pool, ngx_base64_encoded_length(json_size)));
-  if (dst.data != nullptr) {
-    ngx_str_t src = {json_size, reinterpret_cast<u_char *>(json_buf)};
-    ngx_encode_base64(&dst, &src);
-    ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
-    ctx->endpoints_api_userinfo = dst;
-  }
-  auth::esp_grpc_free(json_buf);
-}
-
 void NgxEspRequest::SetAuthToken(const std::string &auth_token) {
   ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
   ngx_str_copy_from_std(r_->pool, auth_token, &ctx->auth_token);
+}
+
+utils::Status NgxEspRequest::AddHeaderToBackend(const std::string &key,
+                                                const std::string &value) {
+  ngx_table_elt_t *h = nullptr;
+  for (auto &h_in : r_->headers_in) {
+    if (key.size() == h_in.key.len &&
+        strncasecmp(key.c_str(), reinterpret_cast<const char *>(h_in.key.data),
+                    h_in.key.len) == 0) {
+      h = &h_in;
+      break;
+    }
+  }
+  if (h == nullptr) {
+    h = reinterpret_cast<ngx_table_elt_t *>(
+        ngx_list_push(&r_->headers_in.headers));
+    if (h == nullptr) {
+      return utils::Status(Code::INTERNAL, "Out of memory");
+    }
+  }
+
+  if (ngx_str_copy_from_std(r_->pool, key, &h->key) != NGX_OK ||
+      ngx_str_copy_from_std(r_->pool, value, &h->value) != NGX_OK) {
+    return utils::Status(Code::INTERNAL, "Out of memory");
+  }
+  ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r_->connection->log, 0,
+                 "updates header to backend: \"%V: %V\"", &h->key, &h->value);
+  return utils::Status::OK;
 }
 
 }  // namespace nginx

@@ -292,6 +292,34 @@ const char kIssuer2PubkeyUrl[] = "https://issuer2.com/pubkey";
 const char kOpenIdFailUrl[] =
     "http://openid_fail/.well-known/openid-configuration";
 
+// The header key to send endpoint api user info.
+const char kEndpointApiUserInfo[] = "X-Endpoint-API-UserInfo";
+
+// Base64 encoded string of
+// {
+//    "issuer": "https://issuer1.com",
+//    "id": "end-user-id"
+// }
+const char kUserInfo_kSub_kIss[] =
+    "eyJpc3N1ZXIiOiJodHRwczovL2lzc3VlcjEuY29tIiwiaWQiOiJlbmQtdXNlci1pZCJ9";
+
+// Base64 encoded string of
+// {
+//    "issuer": "https://issuer1.com",
+//    "id": "another-user-id"
+// }
+const char kUserInfo_kSub2_kIss[] =
+    "eyJpc3N1ZXIiOiJodHRwczovL2lzc3VlcjEuY29tIiwiaWQiOiJhbm90aGVyLXVzZXItaWQif"
+    "Q";
+
+// Base64 encoded string of
+// {
+//    "issuer": "https://issuer2.com",
+//    "id": "end-user-id"
+// }
+const char kUserInfo_kSub_kIss2[] =
+    "eyJpc3N1ZXIiOiJodHRwczovL2lzc3VlcjIuY29tIiwiaWQiOiJlbmQtdXNlci1pZCJ9";
+
 class CheckAuthTest : public ::testing::Test {
  public:
   void SetUp() {
@@ -366,9 +394,9 @@ void CheckAuthTest::TestValidToken(const std::string &auth_token) {
         std::map<std::string, std::string> empty;
         req->OnComplete(Status::OK, std::move(empty), std::move(body));
       }));
-  EXPECT_CALL(*raw_request_, SetUserInfo(AllOf(Field(&UserInfo::id, kSub),
-                                               Field(&UserInfo::issuer, kIss))))
-      .Times(1);
+  EXPECT_CALL(*raw_request_,
+              AddHeaderToBackend(kEndpointApiUserInfo, kUserInfo_kSub_kIss))
+      .WillOnce(Return(utils::Status::OK));
 
   CheckAuth(context_, [](Status status) { ASSERT_TRUE(status.ok()); });
 }
@@ -394,9 +422,9 @@ TEST_F(CheckAuthTest, TestOKAuth) {
       }));
   EXPECT_CALL(*raw_request_, SetAuthToken(kToken)).Times(1);
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_)).Times(0);
-  EXPECT_CALL(*raw_request_, SetUserInfo(AllOf(Field(&UserInfo::id, kSub),
-                                               Field(&UserInfo::issuer, kIss))))
-      .Times(1);
+  EXPECT_CALL(*raw_request_,
+              AddHeaderToBackend(kEndpointApiUserInfo, kUserInfo_kSub_kIss))
+      .WillOnce(Return(utils::Status::OK));
 
   CheckAuth(context_, [](Status status) { ASSERT_TRUE(status.ok()); });
 
@@ -412,9 +440,9 @@ TEST_F(CheckAuthTest, TestOKAuth) {
       }));
   EXPECT_CALL(*raw_request_, SetAuthToken(kToken2)).Times(1);
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_)).Times(0);
-  EXPECT_CALL(*raw_request_, SetUserInfo(AllOf(Field(&UserInfo::id, kSub2),
-                                               Field(&UserInfo::issuer, kIss))))
-      .Times(1);
+  EXPECT_CALL(*raw_request_,
+              AddHeaderToBackend(kEndpointApiUserInfo, kUserInfo_kSub2_kIss))
+      .WillOnce(Return(utils::Status::OK));
 
   CheckAuth(context_, [](Status status) { ASSERT_TRUE(status.ok()); });
 }
@@ -490,9 +518,8 @@ TEST_F(CheckAuthTest, TestNoOpenId) {
         req->OnComplete(Status::OK, std::move(empty), std::move(body));
       }));
   EXPECT_CALL(*raw_request_,
-              SetUserInfo(AllOf(Field(&UserInfo::id, kSub),
-                                Field(&UserInfo::issuer, kIss2))))
-      .Times(1);
+              AddHeaderToBackend(kEndpointApiUserInfo, kUserInfo_kSub_kIss2))
+      .WillOnce(Return(utils::Status::OK));
 
   CheckAuth(context_, [](Status status) { ASSERT_TRUE(status.ok()); });
 }

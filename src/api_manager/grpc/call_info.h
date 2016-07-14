@@ -94,7 +94,10 @@ class CallInfoRequest : public Request {
   }
   virtual bool FindHeader(const std::string &name, std::string *header);
 
-  virtual void SetUserInfo(const UserInfo &user_info) {}
+  virtual utils::Status AddHeaderToBackend(const std::string &name,
+                                           const std::string &value) {
+    return utils::Status::OK;
+  }
   virtual void SetAuthToken(const std::string &auth_token) {}
 
  private:

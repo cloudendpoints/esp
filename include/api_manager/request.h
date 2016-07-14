@@ -29,8 +29,8 @@
 #include <map>
 #include <string>
 
-#include "include/api_manager/auth.h"
 #include "include/api_manager/protocol.h"
+#include "include/api_manager/utils/status.h"
 
 namespace google {
 namespace api_manager {
@@ -64,13 +64,13 @@ class Request {
   // Returns the protocol used for this call.
   virtual ::google::api_manager::protocol::Protocol GetRequestProtocol() = 0;
 
-  // Sets user info to the request object, so that caller of
-  // RequestHandler::Check() can pass it to backend.
-  virtual void SetUserInfo(const UserInfo &user_info) = 0;
-
   // Sets auth token to the request object. Caller of RequestHandler::Check
   // need to use it compose error message if authentication fails.
   virtual void SetAuthToken(const std::string &auth_token) = 0;
+
+  // Adds a header to backend. If the header exists, overwrite its value
+  virtual utils::Status AddHeaderToBackend(const std::string &key,
+                                           const std::string &value) = 0;
 };
 
 }  // namespace api_manager

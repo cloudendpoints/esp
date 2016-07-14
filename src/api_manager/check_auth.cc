@@ -32,6 +32,9 @@
 #include "include/api_manager/auth.h"
 #include "include/api_manager/request.h"
 #include "src/api_manager/auth/lib/auth_jwt_validator.h"
+#include "src/api_manager/auth/lib/auth_token.h"
+#include "src/api_manager/auth/lib/base64.h"
+#include "src/api_manager/auth/lib/json.h"
 #include "src/api_manager/auth/lib/json_util.h"
 #include "src/api_manager/cloud_trace/cloud_trace.h"
 #include "src/api_manager/utils/url_util.h"
@@ -54,6 +57,9 @@ const char kAuthHeader[] = "authorization";
 const char kBearer[] = "Bearer ";
 // The lifetime of a public key cache entry. Unit: seconds.
 const int kPubKeyCacheDuration = 300;
+
+// The header key to send endpoint api user info.
+const char kEndpointApiUserInfo[] = "X-Endpoint-API-UserInfo";
 
 // An AuthChecker object is created for every incoming request. It authenticates
 // the request, extracts user info from the auth token and sets it to the
@@ -385,7 +391,17 @@ void AuthChecker::VerifySignature() {
 }
 
 void AuthChecker::PassUserInfoOnSuccess() {
-  context_->request()->SetUserInfo(user_info_);
+  char *json_buf = auth::WriteUserInfoToJson(user_info_);
+  if (json_buf == nullptr) {
+    return;
+  }
+  char *base64_json_buf =
+      auth::esp_base64_encode(json_buf, strlen(json_buf), true, false, false);
+  context_->request()->AddHeaderToBackend(kEndpointApiUserInfo,
+                                          base64_json_buf);
+  auth::esp_grpc_free(json_buf);
+  auth::esp_grpc_free(base64_json_buf);
+
   TRACE(trace_span_) << "Authenticated.";
   trace_span_.reset();
   on_done_(Status::OK);

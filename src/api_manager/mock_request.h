@@ -36,7 +36,8 @@ class MockRequest : public Request {
  public:
   MOCK_METHOD2(FindQuery, bool(const std::string &, std::string *));
   MOCK_METHOD2(FindHeader, bool(const std::string &, std::string *));
-  MOCK_METHOD1(SetUserInfo, void(const UserInfo &));
+  MOCK_METHOD2(AddHeaderToBackend,
+               utils::Status(const std::string &, const std::string &));
   MOCK_METHOD1(SetAuthToken, void(const std::string &));
   MOCK_METHOD0(GetRequestHTTPMethod, std::string());
   MOCK_METHOD0(GetRequestPath, std::string());
