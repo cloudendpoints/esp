@@ -65,11 +65,13 @@ ${DIR}/linux-test-vm-bookstore -i "${TEST_DOCKER}" -b "${BUCKET}" -e \
 ${DIR}/linux-test-vm-bookstore -i "${TEST_DOCKER}" -b "${BUCKET}" \
   || error_exit "Bookstore test with endpoints=off failed."
 
-${DIR}/linux-test-vm-bookstore -i "${TEST_DOCKER}" -b "${BUCKET}" -e -f \
-  || echo "WARNING!!!!! Bookstore test with endpoints=on & flex=on failed. This will become fatal when flex is stable..."
 
-${DIR}/linux-test-vm-bookstore -i "${TEST_DOCKER}" -b "${BUCKET}" -f \
-  || echo "WARNING!!!!! Bookstore test with endpoints=off & flex=on failed. This will become fatal when flex is stable..."
+# TODO: Enable these tests when env:flex becomes available without whitelisting.
+# ${DIR}/linux-test-vm-bookstore -i "${TEST_DOCKER}" -b "${BUCKET}" -e -f \
+#   || error_exit "Bookstore test with endpoints=on & env=flex failed."
+#
+# ${DIR}/linux-test-vm-bookstore -i "${TEST_DOCKER}" -b "${BUCKET}" -f \
+#  || error_exit "Bookstore test with endpoints=off & env=flex failed."
 
 ${DIR}/linux-test-vm-echo -i "${TEST_DOCKER}" -t "${TEST_ENV}" -b "${BUCKET}" \
   || error_exit "Echo test failed."
