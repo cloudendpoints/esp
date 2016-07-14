@@ -172,17 +172,17 @@ bool Config::AddOptionsMethodForAllUrls(ApiManagerEnvInterface *env,
   // For these OPTIONS methods, auth should be disabled and
   // allow_unregistered_calls should be true.
 
-  // All options have same selector as format: service_name . OPTIONS . suffix.
+  // All options have same selector as format: CORS.suffix.
   // Appends suffix to make sure it is not used by any http rules.
-  string options_selector_base = service_.name() + "." + http_options;
-  string options_selector = options_selector_base;
+  string cors_selector_base = "CORS";
+  string cors_selector = cors_selector_base;
   int n = 0;
-  while (method_map_.find(options_selector) != method_map_.end()) {
+  while (method_map_.find(cors_selector) != method_map_.end()) {
     std::ostringstream suffix;
     suffix << ++n;
-    options_selector = options_selector_base + "." + suffix.str();
+    cors_selector = cors_selector_base + "." + suffix.str();
   }
-  MethodInfoImpl *mi = GetOrCreateMethodInfoImpl(options_selector);
+  MethodInfoImpl *mi = GetOrCreateMethodInfoImpl(cors_selector);
   mi->set_auth(false);
   mi->set_allow_unregistered_calls(true);
 

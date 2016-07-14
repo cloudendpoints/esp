@@ -726,7 +726,7 @@ TEST(Config, TestHttpOptions) {
   for (auto path : {"/shelves/{shelf}", "/shelves/{shelf}/books"}) {
     auto method = config->GetMethodInfo("OPTIONS", path);
     ASSERT_NE(nullptr, method);
-    ASSERT_EQ("Service.Name.OPTIONS", method->name());
+    ASSERT_EQ("CORS", method->name());
     ASSERT_FALSE(method->auth());
     // For all added OPTIONS methods, allow_unregistered_calls is true.
     ASSERT_TRUE(method->allow_unregistered_calls());
@@ -744,11 +744,11 @@ TEST(Config, TestHttpOptionsSelector) {
  name: "Service.Name"
  http {
    rules {
-     selector: "Service.Name.OPTIONS"
+     selector: "CORS"
      get: "/shelves"
    }
    rules {
-     selector: "Service.Name.OPTIONS.1"
+     selector: "CORS.1"
      get: "/shelves/{shelf}"
    }
  }
@@ -760,7 +760,7 @@ TEST(Config, TestHttpOptionsSelector) {
   auto method1 = config->GetMethodInfo("OPTIONS", "/shelves");
   ASSERT_NE(nullptr, method1);
   // selector for options should be appended with suffix.
-  ASSERT_EQ("Service.Name.OPTIONS.2", method1->name());
+  ASSERT_EQ("CORS.2", method1->name());
   ASSERT_FALSE(method1->auth());
   ASSERT_TRUE(method1->allow_unregistered_calls());
 }
