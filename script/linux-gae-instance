@@ -98,9 +98,14 @@ function deploy_application() {
 }
 
 function delete_application() {
-  echo "Delete GAE instace ${VERSION}"
+  echo "Stop GAE instance ${VERSION}"
 
-  ${GCLOUD} --project "${PROJECT}" preview app versions delete \
+  retry -n 2 ${GCLOUD} --project "${PROJECT}" preview app versions stop \
+    ${VERSION} --service ${SERVICE} -q
+
+  echo "Delete GAE instance ${VERSION}"
+
+  retry -n 2 ${GCLOUD} --project "${PROJECT}" preview app versions delete \
     ${VERSION} --service ${SERVICE} -q
 }
 

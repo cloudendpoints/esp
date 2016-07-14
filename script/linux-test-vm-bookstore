@@ -58,6 +58,43 @@ GAE_VERSION=''
 # Whether to use a long-life token for esp-load-test project.
 USE_LONG_LIFE_TOKEN="false"
 
+function test_filename () {
+  local flex='on'
+  local endpoints='on'
+  local test_type=''
+
+  [[ "${ENABLE_FLEX}" == 'false' ]] && flex='off'
+  [[ "${ENABLE_ENDPOINTS}" == 'false' ]] && endpoints='off'
+  [[ ${DURATION_IN_HOUR} -gt 0 ]] && test_type='long-run-test_'
+
+  echo "${test_type}flex-${flex}-endpoints-${endpoints}"
+}
+
+function cleanup() {
+  # restore the original configs after we are done with the tests
+  git -C ${ROOT} checkout \
+      ${APP_DIR}/swagger.json \
+      ${APP_DIR}/app_esp.yaml \
+      ${APP_DIR}/bookstore.js
+
+  # Delete directory created by gcloud.
+  rm -rf ${APP_DIR}/endpoints
+
+  # deploying a flex app generates some files that cause
+  # subsequent deployments to fail
+  [[ "${ENABLE_FLEX}" == "true" ]] && \
+    rm -rf ${APP_DIR}/source_context*.json ${APP_DIR}/Dockerfile
+
+  [[ "${KEEP_VM}" == "true" ]] \
+    || "${ROOT}/script/linux-gae-instance" \
+          -v "${GAE_VERSION}" \
+          -p "${PROJECT_ID}" \
+          delete
+
+  echo "DONE!"
+}
+
+
 while getopts :a:b:defi:kl:p:v: arg; do
   case ${arg} in
     a) API_KEY="${OPTARG}";;
@@ -121,47 +158,11 @@ sed -i "s|\${IMAGE_NAME}|${IMAGE_NAME}|g" ${APP_DIR}//app_esp.yaml
 sed -i "s|\${ENABLE_ENDPOINTS}|${ENABLE_ENDPOINTS}|g" ${APP_DIR}/app_esp.yaml
 sed -i "s|\${APPENGINE_ENV}|${APPENGINE_ENV}|g" ${APP_DIR}/app_esp.yaml
 
+trap cleanup EXIT
+
 $ROOT/script/linux-gae-instance -a ${APP_DIR}/app_esp.yaml \
     -v ${GAE_VERSION} -p ${PROJECT_ID} create \
   || error_exit "Failed to deploy ${GAE_VERSION} to ${PROJECT_ID}."
-
-function test_filename () {
-  local flex='on'
-  local endpoints='on'
-  local test_type=''
-
-  [[ "${ENABLE_FLEX}" == 'false' ]] && flex='off'
-  [[ "${ENABLE_ENDPOINTS}" == 'false' ]] && endpoints='off'
-  [[ ${DURATION_IN_HOUR} -gt 0 ]] && test_type='long-run-test_'
-
-  echo "${test_type}flex-${flex}-endpoints-${endpoints}"
-}
-
-function cleanup() {
-  # restore the original configs after we are done with the tests
-  git -C ${ROOT} checkout \
-      ${APP_DIR}/swagger.json \
-      ${APP_DIR}/app_esp.yaml \
-      ${APP_DIR}/bookstore.js
-
-  # Delete directory created by gcloud.
-  rm -rf ${APP_DIR}/endpoints
-
-  # deploying a flex app generates some files that cause
-  # subsequent deployments to fail
-  [[ "${ENABLE_FLEX}" == "true" ]] && \
-    rm -rf ${APP_DIR}/source_context*.json ${APP_DIR}/Dockerfile
-
-  [[ "${KEEP_VM}" == "true" ]] \
-    || "${ROOT}/script/linux-gae-instance" \
-          -v "${GAE_VERSION}" \
-          -p "${PROJECT_ID}" \
-          delete
-
-  echo "DONE!"
-}
-
-trap cleanup EXIT
 
 SERVICE_NAME="${PROJECT_ID}.appspot.com"
 HOST="https://${GAE_VERSION}-dot-${SERVICE_NAME}"

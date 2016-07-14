@@ -43,6 +43,10 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . "${ROOT}/script/all-utilities" \
   || { echo 'Cannot load Bash utilities' ; exit 1 ; }
 
+function cleanup() {
+  retry -n 2 "${ROOT}/script/linux-gae-instance" -v "${GAE_VERSION}" -p "${PROJECT_ID}" delete
+}
+
 IMAGE_NAME="gcr.io/endpointsv2/endpoints-runtime-flex:debian-git-$(git log -1 --pretty=format:%H)"
 PROJECT_ID='esp-load-test'
 API_KEY=''
@@ -85,11 +89,11 @@ sed -i "s|\${MY_PROJECT_ID}|${PROJECT_ID}|g" "${APP_DIR}/swagger.json"
 sed -i "s|\${VERSION}|${APP_VERSION}|g" "${APP_DIR}/echo.js"
 sed -i "s|\${IMAGE_NAME}|${IMAGE_NAME}|g" "${APP_DIR}/app_esp.yaml"
 
+trap cleanup EXIT
+
 "${ROOT}/script/linux-gae-instance" -a "${ROOT}/test/echo/app_esp.yaml" \
     -v "${GAE_VERSION}" -p "${PROJECT_ID}" create \
   || error_exit "Failed to deploy ${GAE_VERSION} to ${PROJECT_ID}."
-
-trap "$ROOT/script/linux-gae-instance -v ${GAE_VERSION} -p ${PROJECT_ID} delete" EXIT
 
 HOST="https://${GAE_VERSION}-dot-${PROJECT_ID}.appspot.com"
 
