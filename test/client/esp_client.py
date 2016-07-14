@@ -91,7 +91,7 @@ flags.DEFINE_enum(
 flags.DEFINE_string('test_env', '',
         'JSON test description')
 
-flags.DEFINE_string('test_data', '',
+flags.DEFINE_string('test_data', 'test_data.json.temp',
         'Template for test data')
 
 flags.DEFINE_string('host', 'localhost:8080',

@@ -25,18 +25,11 @@
 import subprocess
 
 def IssueCommand(cmd, force_info_log=False, suppress_warning=False,
-                 env=None):
+        env=None):
     """Tries running the provided command once.
     Args:
       cmd: A list of strings such as is given to the subprocess.Popen()
           constructor.
-      force_info_log: A boolean indicating whether the command result should
-          always be logged at the info level. Command results will always be
-          logged at the debug level if they aren't logged at another level.
-      suppress_warning: A boolean indicating whether the results should
-          not be logged at the info level in the event of a non-zero
-          return code. When force_info_log is True, the output is logged
-          regardless of suppress_warning's value.
       env: A dict of key/value strings, such as is given to the subprocess.Popen()
           constructor, that contains environment variables to be injected.
     Returns:
@@ -44,7 +37,7 @@ def IssueCommand(cmd, force_info_log=False, suppress_warning=False,
     """
     print '=== Running: %s' % ' '.join(cmd)
     process = subprocess.Popen(cmd, env=env,
-                               stdout=subprocess.PIPE)
+            stdout=subprocess.PIPE)
     stdout = ''
     while True:
         output = process.stdout.readline()
@@ -52,6 +45,7 @@ def IssueCommand(cmd, force_info_log=False, suppress_warning=False,
             break
         if output:
             stdout += output
-            print output.strip()
+            print '= ' + output.strip()
     rc = process.poll()
+    print '=== Finished with code %d' % rc
     return stdout, rc

@@ -106,7 +106,6 @@ while true; do
   echo "Starting stress test at $(date)."
   ./esp_client.py \
     --test=stress \
-    --test_data=${ROOT}/test/client/test_data.json.temp \
     --host=${HOST} \
     --api_key=${API_KEY} \
     --auth_token=${JWT_TOKEN} \
