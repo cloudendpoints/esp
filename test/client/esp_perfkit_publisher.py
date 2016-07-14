@@ -83,7 +83,7 @@ def WriteSamplesToFile(file_path, results, test_env):
     }
     print '==== Test spec: %s' % str(spec)
     with open(file_path, 'wb') as fp:
-        for metrics, test_meta in results:
+        for metrics, test_meta, _ in results:
             for key, value in metrics.iteritems():
                 meta = test_meta.copy()
                 del meta['time']
