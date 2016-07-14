@@ -261,7 +261,7 @@ JSON_FILE="${LOG_DIRECTORY}/${TEST_ID}.json"
 
     if [[ ${DURATION_IN_HOUR} -ne 0 ]]; then
       echo "Starting stress test at $(date)."
-      ./esp_client.py
+      ./esp_client.py \
         --test=stress \
         --test_data=${ROOT}/test/client/test_data.json.temp \
         --host=${HOST} \
