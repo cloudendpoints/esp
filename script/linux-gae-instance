@@ -46,13 +46,14 @@ usage: ${BASH_SOURCE[0]} [options ...] <command>"
     nginx-logs: Download NGINX logs from the managed VM.
 
   options:
-    -g ... path to gcloud tool (default 'gcloud')
-    -s ... path to gsutil tool (default 'gsutil')
     -a ... path to the application's app.yaml file (required)
-    -v ... application version to deploy in GAE
-    -s ... app engine service (module) to use for deployment (default 'default')
-    -p ... project id of the target project (default 'esp-load-test')
     -d ... target directory for the NGINX logs (default '/tmp/nginx-logs')
+    -g ... path to gcloud tool (default 'gcloud')
+    -l ... skip activate_service_account step
+    -p ... project id of the target project (default 'esp-load-test')
+    -s ... app engine service (module) to use for deployment (default 'default')
+    -s ... path to gsutil tool (default 'gsutil')
+    -v ... application version to deploy in GAE
 EOF
   exit 2
 }
@@ -64,15 +65,17 @@ VERSION=""
 SERVICE="default"
 PROJECT="esp-load-test"
 LOG_DIRECTORY="/tmp/nginx-logs"
+SET_SERVICE_ACCOUNT=true
 
-while getopts :g:a:v:s:p:d: arg; do
+while getopts :g:la:v:s:p:d: arg; do
   case ${arg} in
-    g) GCLOUD="${OPTARG}";;
     a) APP_YAML_FILE="${OPTARG}";;
-    v) VERSION="${OPTARG}";;
-    s) SERVICE="${OPTARG}";;
-    p) PROJECT="${OPTARG}";;
     d) LOG_DIRECTORY="${OPTARG}";;
+    g) GCLOUD="${OPTARG}";;
+    l) SET_SERVICE_ACCOUNT=false;;
+    p) PROJECT="${OPTARG}";;
+    s) SERVICE="${OPTARG}";;
+    v) VERSION="${OPTARG}";;
     *) usage "Invalid option: -${OPTARG}";;
   esac
 done
@@ -189,7 +192,10 @@ function download_nginx_logs() {
 
 }
 
-activate_service_account "${PROJECT}"
+# Not needed when run by ESP Engineers.
+# This will leave the gcloud user unauhtenticated at exit.
+[[ ${SET_SERVICE_ACCOUNT} == true ]] \
+ && activate_service_account "${PROJECT}"
 
 case "${COMMAND}" in
   create | deploy)  retry -n 5 -s 10 deploy_application;;

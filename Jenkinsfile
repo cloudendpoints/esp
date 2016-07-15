@@ -91,9 +91,7 @@ node('master') {
   try {
     if (runStage(CLEANUP_STAGE)) {
       stage 'Test Cleanup'
-      node(nodeLabel) {
-        testCleanup()
-      }
+      cleanupOldTests(nodeLabel)
     }
     if (runStage(SLAVE_UPDATE_STAGE)) {
       stage 'Slave Update'
@@ -122,6 +120,30 @@ node('master') {
   }
 }
 
+def cleanupOldTests(nodeLabel) {
+  def branches = [
+      'cleanup_endpoints-jenkins': {
+        // Delete 6 days old namespaces and GCE instances on endpoints-jenkins.
+        node(nodeLabel) {
+          testCleanup(6, PROJECT_ID, '-i -n')
+        }
+      },
+      'cleanup_esp-load-test': {
+        // Delete 2 days old Flex versions on esp-load-test.
+        node(nodeLabel) {
+          testCleanup(2, 'esp-load-test', '-v')
+        }
+      },
+      'cleanup_esp-long-run': {
+        // Delete 7 days old Flex versions on esp-long-run.
+        node(nodeLabel) {
+          testCleanup(7, 'esp-long-run', '-v')
+        }
+      }
+  ]
+  parallel branches
+}
+
 def buildArtifacts(nodeLabel, buildBookstore = true, buildGrcpServer = true) {
   def branches = [
       'esp_debian': {
@@ -131,14 +153,18 @@ def buildArtifacts(nodeLabel, buildBookstore = true, buildGrcpServer = true) {
       },
       'auth_token_gen': {
         node(nodeLabel) {
-          buildAndStash('//src/tools:auth_token_gen', 'bazel-bin/src/tools/auth_token_gen',
-            'auth_token_gen')
+          buildAndStash(
+              '//src/tools:auth_token_gen',
+              'bazel-bin/src/tools/auth_token_gen',
+              'auth_token_gen')
         }
       },
       'grpc_test_client': {
         node(nodeLabel) {
-          buildAndStash('//test/grpc:grpc-test-client', 'bazel-bin/test/grpc/grpc-test-client',
-            'grpc_test_client')
+          buildAndStash(
+              '//test/grpc:grpc-test-client',
+              'bazel-bin/test/grpc/grpc-test-client',
+              'grpc_test_client')
         }
       }
   ]
@@ -352,8 +378,6 @@ def buildPackages() {
         fastStash('nginx-esp', 'bazel-bin/src/nginx/main/nginx-esp')
       }
     }
-
-
   }
 }
 
@@ -384,12 +408,10 @@ def buildAndStash(buildTarget, stashTarget, name) {
   fastStash(name, stashTarget)
 }
 
-def testCleanup() {
-  checkoutSourceCode()
+def testCleanup(daysOld, project, flags) {
   setGCloud()
-  // Clean up 5 days old tests instances
-  def daysOld = 5
-  sh "script/jenkins-tests-cleanup.sh -d ${daysOld} -n"
+  checkoutSourceCode()
+  sh "script/jenkins-tests-cleanup.sh -d ${daysOld} -p ${project} -f ${flags}"
 }
 
 def buildNewDockerSlave(nodeLabel) {
@@ -417,7 +439,7 @@ def buildNewDockerSlave(nodeLabel) {
       "-t ${finalDockerImage}"
 }
 
-def e2eCommonOptions(testId, prefix='') {
+def e2eCommonOptions(testId, prefix = '') {
   def uniqueID = getUniqueID(testId, true)
   def skipCleanup = getSkipCleanup() ? "-s" : ""
   def serviceName = generateServiceName(uniqueID, prefix)
@@ -462,11 +484,11 @@ def e2eGCE(vmImage) {
       "-r \"${debianPackageRepo}\""
 }
 
-def e2eGCEContainer(vmImage, gRpc=false) {
+def e2eGCEContainer(vmImage, gRpc = false) {
   checkoutSourceCode()
   setGCloud()
   fastUnstash('auth_token_gen')
-  def commonOptions = e2eCommonOptions('gce-container', gRpc ? 'grpc-': '')
+  def commonOptions = e2eCommonOptions('gce-container', gRpc ? 'grpc-' : '')
   def espImage = espDockerImage()
   def backendImage = bookstoreDockerImage()
   def gRpcFlag = ''
@@ -619,7 +641,7 @@ def getDurationHour() {
 
 def getUseTestSlave() {
   try {
-    return  "${USE_TEST_SLAVE}" == 'true'
+    return "${USE_TEST_SLAVE}" == 'true'
   } catch (MissingPropertyException e) {
     return false
   }
@@ -718,7 +740,7 @@ def getUniqueID(testId, useSha) {
   return "${prefix}-${sha}${identifier}${uuid.take(4)}-${date}"
 }
 
-def generateServiceName(uniqueID, servicePrefix='') {
+def generateServiceName(uniqueID, servicePrefix = '') {
   //TODO: Use uniqueID when it becomes possible.
   def serviceUrl = getServiceManagementUrl()
   if (serviceUrl != '') {

@@ -34,12 +34,17 @@ function usage() {
   [[ -n "${1}" ]] && echo "${1}"
   cat <<EOF
 usage: ${BASH_SOURCE[0]}
-  -d <days old>
-  -n <no prompt>
-  -r <regex>
-  -s <git commit SHA>
-  -p <project>
-  -z <zone>
+  -a ...  delete services
+  -d ...  days old
+  -f ...  no prompt
+  -i ...  delete instances
+  -l ...  skip activate service account step in linux-gae-instance
+  -n ...  delete namespaces
+  -p ...  project
+  -r ...  regex
+  -s ...  git commit sha
+  -v ...  delete AppEngine version
+  -z ...  zone
 EOF
   exit 1
 }
@@ -47,8 +52,8 @@ EOF
 # Deleting filtered esp instances
 function delete_instances() {
   local instances=("${@}")
-  [[ -z "${instances}" ]] && return
-
+  [[ -z "${instances}" ]] \
+    && { echo 'No GCE instance to delete'; return; }
   for instance in "${instances[@]}"; do
     echo "Deleting instances: ${instance}"
     user_input \
@@ -62,8 +67,8 @@ function delete_instances() {
 # Deleting filtered esp kubernetes namespaces
 function delete_namespaces() {
   local namespaces=("${@}")
-  [[ -z "${namespaces}" ]] && return
-
+  [[ -z "${namespaces}" ]] \
+    && { echo 'No GKE namespace to delete'; return; }
   for namespace in "${namespaces[@]}"; do
     echo "Deleting namespaces: ${namespace}"
     user_input \
@@ -74,8 +79,8 @@ function delete_namespaces() {
 # Deleting filtered esp services
 function delete_services() {
   local services=("${@}")
-  [[ -z "${services}" ]] && return
-
+  [[ -z "${services}" ]] \
+    && { echo 'No API service to delete'; return; }
   for service in "${services[@]}"; do
     echo "Deleting services: ${service}"
     user_input \
@@ -83,73 +88,139 @@ function delete_services() {
   done
 }
 
+# Deleting filtered AppEngine Versions
+function delete_versions() {
+  local versions=("${@}")
+  [[ -z "${versions}" ]] \
+    && { echo 'No AppEngine version to delete'; return; }
+  local extra_args=()
+  [[ ${SET_SERVICE_ACCOUNT} == false ]] \
+    && extra_args+=(-l )
+
+  for version in "${versions[@]}"; do
+    echo "Deleting AppEngine version: ${version}"
+    user_input \
+      && run "${DIR}/linux-gae-instance" \
+          -v "${version}" \
+          -p "${PROJECT}" \
+          "${extra_args[@]}" \
+          delete
+  done
+}
+
+function parse_gcloud_json() {
+  local json_path="${1}"
+  local json_key="${2}"
+  local key_regex="${3}"
+
+  python - << __EOF__ "${json_path}" "${json_key}" "${key_regex}"
+import json
+import re
+import sys
+
+regex_str = '.*'
+
+if len(sys.argv) != 4 :
+  exit (1)
+
+json_file = sys.argv[1]
+json_key = sys.argv[2]
+regex_str = sys.argv[3]
+regex = re.compile(r'%s' % regex_str)
+filtered_items = []
+
+if None in [json_file, json_key, regex_str]:
+  exit(1)
+
+with open(json_file, 'r') as f:
+  items = json.load(f)
+
+for item in items:
+  value = item.get(json_key, None)
+  if value and regex.match(value):
+    filtered_items.append(value)
+
+for value in filtered_items:
+  print value
+
+exit(0 if filtered_items else 1)
+__EOF__
+  local status=${?}
+  rm -f "${json_path}"
+  [[ ${status} -eq 0 ]] && return 0
+  return 1
+}
+
 # List esp instances
 function list_instances() {
-  local instances="$("${GCLOUD}" compute instances list \
-        --project "${PROJECT}" \
-        --zone "${ZONE}" \
-    | grep 'test-' \
-    | cut -d ' ' -f 1)"
-  [[ -n "${instances}" ]] && echo "${instances}"
+  local regex=${1}
+  local json_path="$(mktemp /tmp/XXXXX.json)"
+  "${GCLOUD}" compute instances list \
+    --project "${PROJECT}" \
+    --zone "${ZONE}" \
+    --format=json > "${json_path}"
+  parse_gcloud_json "${json_path}" 'name' "${regex}"
+  rm -f "${json_path}"
 }
 
 # List existing esp Kubernetes namespaces
 function list_namespaces() {
+  local regex=${1}
   local namespaces="$("${KUBECTL}" get namespaces \
-    | grep 'test-' \
-    | cut -d ' ' -f 1)"
-  [[ -n "${namespaces}" ]] && echo "${namespaces}"
+    -o=custom-columns=NAME:.metadata.name \
+    | grep ${regex})"
+  [[ -n "${namespaces}" ]] && { echo "${namespaces}"; return 0; }
+  return 1
 }
 
 # List existing esp services
 function list_services() {
-  local services="$(run "${GCLOUD}" alpha service-management list \
-      --project "${PROJECT}" \
-      --produced \
-    | grep 'test-' \
-    | cut -d ' ' -f 1)"
-  [[ -n "${services}" ]] && echo "${services}"
+  local regex=${1}
+  local json_path="$(mktemp /tmp/XXXXX.json)"
+  "${GCLOUD}" alpha service-management list \
+    --project "${PROJECT}" \
+    --produced \
+    --format=json > "${json_path}"
+  parse_gcloud_json "${json_path}" 'serviceName' "${regex}"
+  rm -f "${json_path}"
 }
 
+# List Flex versions
+function list_versions() {
+  local regex=${1}
+  local json_path="$(mktemp /tmp/XXXXX.json)"
+  "${GCLOUD}" app versions list \
+    --project "${PROJECT}" \
+    --format=json > "${json_path}"
+  parse_gcloud_json "${json_path}" 'id' "${regex}"
+  rm -f "${json_path}"
+}
 
 function filter_results() {
   local results=("${@}")
-  local prefix='test'
   [[ -z "${results}" ]] && return
 
-  # We use only the first 7 ascii from the SHA
-  if [[ -n "${SHA}" ]]; then
-    prefix="test-${SHA:0:7}"
-  fi
-
   for result in "${results[@]}"; do
-    local keep='false'
-    if [[ "${result}" =~ "${prefix}" ]]; then
-      keep='true'
+    if [[ -n "${DAYS_OLD}" ]]; then
+      # Extracting date from result
+      local creation_date="${result: -10:6}"
+      if [[ -n "${creation_date}" ]]; then
+        # Date validation
+        date -d "${creation_date}" +'%y%m%d' &> /dev/null || continue
+        # Getting expiration date in the same format
+        local expiration_date="$(date +'%y%m%d' -d "${DAYS_OLD} days ago")"
+        # Hack to compare date
+        [[ ${expiration_date#0} -ge  ${creation_date#0} ]] \
+          && echo "${result}"
+      fi
     else
-      if [[ -n "${REGEX}" ]]; then
-        [[ "${result}" =~ ${REGEX} ]] && keep='true'
-      fi
+       echo "${result}"
     fi
-    if [[ "${keep}"  == 'true' ]]; then
-      if [[ -n "${DAYS_OLD}" ]]; then
-        # Extracting date from result
-        local creation_date="${result: -10:6}"
-        if [[ -n "${creation_date}" ]]; then
-          # Getting expiration date in the same format
-          local expiration_date="$(date +'%y%m%d' -d "${DAYS_OLD} days ago")"
-          # Hack to compare date
-          [[ ${expiration_date#0} -ge  ${creation_date#0} ]] || keep='false'
-         fi
-      fi
-    fi
-
-    [[ "${keep}"  == 'true' ]] && echo "${result}"
   done
 }
 
 function user_input() {
-  [[ "${INTERACTIVE}" == 'false' ]] && return 0
+  [[ ${INTERACTIVE} == false ]] && return 0
   local reply=''
   read -r -p 'Are you sure? ' reply
   [[ "${reply}" =~ ^[Yy]$ ]] && return 0
@@ -157,21 +228,32 @@ function user_input() {
 }
 
 DAYS_OLD=''
-INTERACTIVE='true'
-REGEX=''
-SHA=''
-PROJECT='endpoints-jenkins'
-ZONE='us-central1-f'
+DELETE_INSTANCES=false
+DELETE_NAMESPACES=false
+DELETE_SERVICES=false
+DELETE_VERSIONS=false
+DEFAULT_FILTER='test-'
 GCLOUD="$(which gcloud)" || GCLOUD="${HOME}/google-cloud-sdk/bin/gcloud"
+INTERACTIVE=true
 KUBECTL="$(which kubectl)" || KUBECTL="${HOME}/google-cloud-sdk/bin/kubectl"
+PROJECT='endpoints-jenkins'
+REGEX=''
+SET_SERVICE_ACCOUNT=true
+SHA=''
+ZONE='us-central1-f'
 
-while getopts :d:nr:p:s:z: arg; do
+while getopts :ad:filnp:r:s:vz: arg; do
   case ${arg} in
+    a) DELETE_SERVICES=true;;
     d) DAYS_OLD="${OPTARG}";;
-    n) INTERACTIVE='false';;
-    r) REGEX="${OPTARG}";;
+    f) INTERACTIVE=false;;
+    i) DELETE_INSTANCES=true;;
+    l) SET_SERVICE_ACCOUNT=false;;
+    n) DELETE_NAMESPACES=true;;
     p) PROJECT="${OPTARG}";;
+    r) REGEX="${OPTARG}";;
     s) SHA="${OPTARG}";;
+    v) DELETE_VERSIONS=true;;
     z) ZONE="${OPTARG}";;
     *) usage "Invalid option: -${OPTARG}";;
   esac
@@ -182,14 +264,31 @@ done
   || [[ -n "${SHA}" ]] \
   || usage "Should specify at least an option"
 
-instances=($(list_instances))
-filtered_instances=($(filter_results "${instances[@]}"))
-delete_instances "${filtered_instances[@]}"
+# We use only the first 7 ascii from the SHA
+if [[ -z "${REGEX}" ]]; then
+  REGEX=".*${DEFAULT_FILTER}${SHA:0:7}.*"
+fi
 
-namespaces=($(list_namespaces))
-filtered_namespaces=($(filter_results "${namespaces[@]}"))
-delete_namespaces "${filtered_namespaces[@]}"
+if [[ ${DELETE_INSTANCES} == true ]]; then
+  instances=($(list_instances ${REGEX}))
+  filtered_instances=($(filter_results "${instances[@]}"))
+  delete_instances "${filtered_instances[@]}"
+fi
 
-services=($(list_services))
-filtered_services=($(filter_results "${services[@]}"))
-delete_services "${filtered_services[@]}"
+if [[ ${DELETE_NAMESPACES} == true ]]; then
+  namespaces=($(list_namespaces ${REGEX}))
+  filtered_namespaces=($(filter_results "${namespaces[@]}"))
+  delete_namespaces "${filtered_namespaces[@]}"
+fi
+
+if [[ ${DELETE_SERVICES} == true ]]; then
+  services=($(list_services ${REGEX}))
+  filtered_services=($(filter_results "${services[@]}"))
+  delete_services "${filtered_services[@]}"
+fi
+
+if [[ ${DELETE_VERSIONS} == true ]]; then
+  versions=($(list_versions ${REGEX}))
+  filtered_versions=($(filter_results "${versions[@]}"))
+  delete_versions "${filtered_versions[@]}"
+fi
