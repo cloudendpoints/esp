@@ -221,7 +221,7 @@ function long_running_test() {
   local log_file="${log_dir}/${final_test_id}.log"
   local json_file="${log_dir}/${final_test_id}.json"
   local status
-  local http_code='200'
+  local http_code=200
 
   if [[ ${GRPC} == 'true' ]]; then
     echo 'Checking grpc service.'
@@ -239,7 +239,7 @@ function long_running_test() {
   else
     # Checking Service before starting the test.
     echo 'Checking http service.'
-    retry -n 10 -t 90 check_http_service "${host}" ${local http_code}
+    retry -n 10 -t 90 check_http_service "${host}" ${http_code}
     status=${?}
     if [[ ${status} -eq 0 ]]; then
       echo 'Running long running test.'
