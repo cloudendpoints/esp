@@ -92,7 +92,7 @@ function deploy_application() {
     # deploying an endpoints app requires the current directory
     # to be the app directory
     cd "${APP_DIR}"
-    ${GCLOUD} --project "${PROJECT}" preview app deploy \
+    ${GCLOUD} --project "${PROJECT}" app deploy \
       "${APP_YAML_FILE}" "${ARGS[@]}" --no-promote -q
   )
 }
@@ -100,12 +100,12 @@ function deploy_application() {
 function delete_application() {
   echo "Stop GAE instance ${VERSION}"
 
-  retry -n 2 ${GCLOUD} --project "${PROJECT}" preview app versions stop \
+  retry -n 2 ${GCLOUD} --project "${PROJECT}" app versions stop \
     ${VERSION} --service ${SERVICE} -q
 
   echo "Delete GAE instance ${VERSION}"
 
-  retry -n 2 ${GCLOUD} --project "${PROJECT}" preview app versions delete \
+  retry -n 2 ${GCLOUD} --project "${PROJECT}" app versions delete \
     ${VERSION} --service ${SERVICE} -q
 }
 
@@ -145,7 +145,7 @@ function download_nginx_logs() {
   # If the output format is changed, we will fail to extract fields.
   # Here the output is always printed for easy debug.
   function instances_list () {
-    ${GCLOUD} preview app instances list \
+    ${GCLOUD} app instances list \
         --project "${PROJECT}" --service "${SERVICE}" --version "${VERSION}" \
         --format json > $ROOT/instance-list
     return ${?}
@@ -160,7 +160,7 @@ function download_nginx_logs() {
   [[ -n "${vm_id}" && -n "${vm_zone}" && -n "${vm_name}" ]] \
     || error_exit "Cannot identify backend VM name and zone. Aborting."
 
-  retry -n 5 -s 10 ${GCLOUD} preview app instances enable-debug ${vm_id} \
+  retry -n 5 -s 10 ${GCLOUD} app instances enable-debug ${vm_id} \
           --service "${SERVICE}" --version "${VERSION}" \
           --project ${PROJECT} -q \
     || error_exit "Cannot enable-debug on the managed VM. Aborting."

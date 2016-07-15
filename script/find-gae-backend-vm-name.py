@@ -28,7 +28,7 @@ import json
 """
 This Python script processes JSON output from the gcloud command:
 
-gcloud preview app instances list ...
+gcloud app instances list ...
 
 The command outputs list of virtual machine instances managed by
 Google App Engine. This script extracts:
