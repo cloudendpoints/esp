@@ -15,6 +15,7 @@ done = function(summary, latency, requests)
   errors = summary.errors
   failed = errors.connect + errors.read + errors.write + errors.timeout
   f:write(string.format("\"Failed requests\":[%d,\"number\"],", failed));
+  f:write(string.format("\"Timeout requests\":[%d,\"number\"],", errors.timeout));
   f:write(string.format("\"Non-2xx responses\":[%d,\"number\"],", errors.status))
 
   -- latency and duration are measured in microseconds
@@ -24,6 +25,7 @@ done = function(summary, latency, requests)
   end
   f:write(string.format("\"Latency percentile: 100%%\":[%g,\"ms\"],", latency.max / 1000.0))
   f:write(string.format("\"Latency percentile: mean\":[%g,\"ms\"],", latency.mean / 1000.0))
+  f:write(string.format("\"Requests\":[%g,\"number\"],", summary.requests))
   f:write(string.format("\"Requests per second\":[%g,\"qps\"],", summary.requests / summary.duration * 1000000))
   f:write(string.format("\"Transfer rate\":[%g,\"Kbytes/sec\"]", summary.bytes / 1024 / summary.duration * 1000000))
 
