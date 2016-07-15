@@ -129,7 +129,8 @@ STATUS_SERVER=${STATUS_SERVER/https/http}
 trap quit_nginx EXIT
 
 echo "ESP status: ${STATUS_SERVER}/endpoints_status"
-check_service_http_response ${STATUS_SERVER}/statusz 200 \
+retry -s 1 -t 5 \
+    check_http_service ${STATUS_SERVER}/endpoints_status 200 \
   || error_exit "ESP is not running"
 
 if [[ ${MANUAL_TEST_DURATION_MINUTES} -gt 0 ]]; then
