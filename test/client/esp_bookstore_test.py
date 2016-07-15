@@ -168,7 +168,7 @@ class EspBookstoreTest(object):
                 r = self._call_http(path, api_key, None, data, method)
                 self.assertEqual(r.status_code, 401)
                 self.assertEqual(
-                    r.json()['error']['message'],
+                    r.json()['message'],
                     'JWT validation failed: Missing or invalid credentials')
                 print 'Completed Negative test.'
             if api_key:
@@ -176,7 +176,7 @@ class EspBookstoreTest(object):
                 r = self._call_http(path, None, auth, data, method)
                 self.assertEqual(r.status_code, 401)
                 self.assertEqual(
-                    r.json()['error']['message'],
+                    r.json()['message'],
                     ('Method doesn\'t allow unregistered callers (callers without '
                      'established identity). Please use API Key or other form of '
                      'API consumer identity to call this API.'))
