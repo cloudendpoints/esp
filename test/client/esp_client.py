@@ -109,10 +109,11 @@ flags.DEFINE_string('post_file', '',
 def count_failed_requests(out):
     """ Count failed and non-2xx responses """
     failed = 0
+    non2xx = 0
     for metrics, _, _ in out:
         failed += metrics.get('Failed requests', [0])[0]
-        failed += metrics.get('Non-2xx responses', [0])[0]
-    return failed
+        non2xx += metrics.get('Non-2xx responses', [0])[0]
+    return failed, non2xx
 
 if __name__ == "__main__":
     try:
@@ -147,6 +148,12 @@ if __name__ == "__main__":
         sys.exit('All load tests failed.')
     if FLAGS.test_env:
         esp_perfkit_publisher.Publish(results, test_env)
-    if count_failed_requests(results) > 0:
-        sys.exit('Some load tests failed.')
+
+    failed, non2xx = count_failed_requests(results)
+    if failed + non2xx > 0:
+        sys.exit(
+            ('Load test failed:\n'
+             '  {} failed requests,\n'
+             '  {} non-2xx responses.').format(failed, non2xx))
+
     print "All load tests are successful."
