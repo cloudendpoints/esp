@@ -77,6 +77,8 @@ cc_binary(
         "//third_party/nginx:stream",
         "//third_party/nginx:stream_access",
         "//third_party/nginx:stream_limit_conn",
+        "//third_party/nginx:stream_map",
+        "//third_party/nginx:stream_return",
         "//third_party/nginx:stream_upstream_hash",
         "//third_party/nginx:stream_upstream_least_conn",
     ],

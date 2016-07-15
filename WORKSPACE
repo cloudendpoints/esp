@@ -26,6 +26,10 @@
 #
 # A Bazel (http://bazel.io) workspace for the Google Cloud Endpoints runtime.
 
+load("//third_party/nginx:build.bzl", "nginx_repositories")
+
+nginx_repositories(bind = True)
+
 bind(
     name = "protobuf_compiler",
     actual = "//google/protobuf:protoc_lib",
@@ -67,6 +71,12 @@ bind(
     actual = "@grpc_git//:grpc++_reflection",
 )
 
+# Required by gRPC.
+bind(
+    name = "libssl",
+    actual = "@boringssl//:ssl",
+)
+
 new_git_repository(
     name = "nanopb_git",
     build_file = "third_party/BUILD.nanopb",
@@ -77,54 +87,6 @@ new_git_repository(
 bind(
     name = "nanopb",
     actual = "@nanopb_git//:nanopb",
-)
-
-git_repository(
-    name = "boringssl_git",
-    commit = "f7cc893d5032d11ae32646f93ace1c1237b9f463",  # 2016-07-07
-    remote = "https://boringssl.googlesource.com/boringssl",
-)
-
-bind(
-    name = "boringssl_crypto",
-    actual = "@boringssl_git//:crypto",
-)
-
-bind(
-    name = "boringssl_ssl",
-    actual = "@boringssl_git//:ssl",
-)
-
-# Required by gRPC.
-bind(
-    name = "libssl",
-    actual = "@boringssl_git//:ssl",
-)
-
-new_http_archive(
-    name = "pcre_http",
-    build_file = "third_party/BUILD.pcre",
-    sha256 = "9883e419c336c63b0cb5202b09537c140966d585e4d0da66147dc513da13e629",
-    strip_prefix = "pcre-8.38",
-    type = "tar.gz",
-    url = "https://storage.googleapis.com/build-dependencies/pcre-8.38.tar.gz",
-)
-
-bind(
-    name = "pcre",
-    actual = "@pcre_http//:pcre",
-)
-
-new_git_repository(
-    name = "zlib_git",
-    build_file = "third_party/BUILD.zlib",
-    commit = "50893291621658f355bc5b4d450a8d06a563053d",
-    remote = "https://github.com/madler/zlib.git",
-)
-
-bind(
-    name = "zlib",
-    actual = "@zlib_git//:zlib",
 )
 
 new_git_repository(
