@@ -105,7 +105,7 @@ node('master') {
     }
     if (runStage(PERFORMANCE_STAGE)) {
       stage 'Build Artifacts'
-      buildArtifacts(nodeLabel, false)
+      buildArtifacts(nodeLabel, false, false)
       stage 'Performance Test'
       performance(nodeLabel)
 
@@ -122,7 +122,7 @@ node('master') {
   }
 }
 
-def buildArtifacts(nodeLabel, buildBoosktore = true) {
+def buildArtifacts(nodeLabel, buildBookstore = true, buildGrcpServer = true) {
   def branches = [
       'esp_debian': {
         node(nodeLabel) {
@@ -142,10 +142,17 @@ def buildArtifacts(nodeLabel, buildBoosktore = true) {
         }
       }
   ]
-  if (buildBoosktore) {
+  if (buildBookstore) {
     branches['bookstore'] = {
       node(nodeLabel) {
         buildBookstoreImage()
+      }
+    }
+  }
+  if (buildGrcpServer) {
+    branches['grpcServer'] = {
+      node(nodeLabel) {
+        buildGrcpTestServerImage()
       }
     }
   }
@@ -288,6 +295,10 @@ def bookstoreDockerImage() {
   return "gcr.io/${PROJECT_ID}/bookstore:${GIT_SHA}"
 }
 
+def gRpcTestServerImage() {
+  return "gcr.io/${PROJECT_ID}/grpc-test-server:${GIT_SHA}"
+}
+
 def espDebianPackage() {
   def suffix = ''
   if (getServiceManagementUrl() != '') {
@@ -351,6 +362,13 @@ def buildBookstoreImage() {
   setGCloud()
   def bookstoreImg = bookstoreDockerImage()
   sh "test/bookstore/linux-build-bookstore-docker -i ${bookstoreImg}"
+}
+
+def buildGrcpTestServerImage() {
+  checkoutSourceCode()
+  setGCloud()
+  def gRpcServerImg = gRpcTestServerImage()
+  sh "test/grpc/linux-build-grpc-docker -i ${gRpcServerImg}"
 }
 
 def buildAndStash(buildTarget, stashTarget, name) {
@@ -454,7 +472,7 @@ def e2eGCEContainer(vmImage, gRpc=false) {
   def gRpcFlag = ''
   if (gRpc) {
     fastUnstash('grpc_test_client')
-    backendImage = 'gcr.io/endpointsv2/grpc-test-server:latest'
+    backendImage = gRpcTestServerImage()
     espImage = espGrpcDockerImage()
     gRpcFlag = '-g'
   }

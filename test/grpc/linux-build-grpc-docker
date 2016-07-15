@@ -28,9 +28,9 @@
 #
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-BOOKSTORE_ROOT="${ROOT}/test/bookstore"
+GRPC_ROOT="${ROOT}/test/grpc"
 
-. ${ROOT}/script/all-utilities || { echo "Cannot load Bash utilities"; exit 1; }
+. "${ROOT}/script/all-utilities" || { echo "Cannot load Bash utilities"; exit 1; }
 
 while getopts :i: arg; do
   case ${arg} in
@@ -39,6 +39,9 @@ while getopts :i: arg; do
   esac
 done
 
+bazel build --config=release //test/grpc:grpc-test-server
+cp "${ROOT}/bazel-bin/test/grpc/grpc-test-server" "${GRPC_ROOT}"
+
 [[ -n "${IMAGE}" ]] || error_exit "Specify required image argument via '-i'"
 
 echo "Checking if docker image ${IMAGE} exists.."
@@ -46,9 +49,9 @@ gcloud docker pull "${IMAGE}" \
   && echo "Image ${IMAGE} already exists; skipping" \
   && exit 0
 
-echo "Building Endpoints Runtime docker image."
-retry -n 3 docker build --no-cache -t ${IMAGE} \
-  -f "${BOOKSTORE_ROOT}/bookstore.Dockerfile" "${BOOKSTORE_ROOT}" \
+echo "Building Endpoints Runtime grpc docker image."
+retry -n 3 docker build --no-cache -t "${IMAGE}" \
+  -f "${GRPC_ROOT}/Dockerfile" "${GRPC_ROOT}" \
   || error_exit "Docker image build failed."
 
 echo "Pushing Docker image: ${IMAGE}"
