@@ -381,10 +381,9 @@ ngx_int_t ngx_esp_preconfiguration(ngx_conf_t *cf) {
 static void handle_endpoints_config_error(ngx_conf_t *cf,
                                           ngx_esp_loc_conf_t *lc) {
   ngx_log_error(NGX_LOG_EMERG, cf->log, 0,
-                "There were errors with Endpoints api service configuration. "
-                "Endpoints will be disabled.");
+                "There were errors with Endpoints api service configuration. ");
 
-  // Disable endpoints but continue Nginx startup process.
+  // Disable endpoints
   lc->endpoints_api = 0;
   lc->esp.reset();
 }
@@ -442,7 +441,7 @@ ngx_int_t ngx_esp_postconfiguration(ngx_conf_t *cf) {
             NGX_LOG_EMERG, cf, 0,
             "Failed to open an api service configuration file: %V", &file_name);
         handle_endpoints_config_error(cf, lc);
-        continue;
+        return NGX_ERROR;
       }
 
       ngx_log_t *log = lc->http_core_loc_conf->error_log;
@@ -456,7 +455,7 @@ ngx_int_t ngx_esp_postconfiguration(ngx_conf_t *cf) {
             "No resolver defined by the api service configuration file: %V",
             &file_name);
         handle_endpoints_config_error(cf, lc);
-        continue;
+        return NGX_ERROR;
       }
 
       lc->esp = mc->esp_factory.GetOrCreateApiManager(
@@ -469,7 +468,7 @@ ngx_int_t ngx_esp_postconfiguration(ngx_conf_t *cf) {
         ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
                            "Failed to initialize API Management");
         handle_endpoints_config_error(cf, lc);
-        continue;
+        return NGX_ERROR;
       }
 
       // Verify we have service name.
@@ -479,7 +478,7 @@ ngx_int_t ngx_esp_postconfiguration(ngx_conf_t *cf) {
             "API service name not specified in configuration file %V.",
             &file_name);
         handle_endpoints_config_error(cf, lc);
-        continue;
+        return NGX_ERROR;
       }
 
       // Set metadata server to esp

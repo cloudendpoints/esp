@@ -42,7 +42,7 @@ use HttpServer;
 my $NginxPort = 8080;
 my $BackendPort = 8081;
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(8);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(2);
 
 # Write an nginx.conf file that points to a non-existent service config.
 # Nginx should still come up with a warning, but ESP will be disabled.
@@ -73,43 +73,23 @@ EOF
 $t->run_daemon(\&bookstore, $t, $BackendPort, 'requests.log');
 is($t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'Bookstore socket ready.');
 
-ApiManager::run_nginx_with_stderr_redirect($t);
+eval { ApiManager::run_nginx_with_stderr_redirect($t) };
 
 ################################################################################
 my $response = http_get('/shelves');
 
 $t->stop_daemons();
 
-# Verify that we got the response. Because the service config was not found,
-# Endpoints should be disabled, but Nginx should be running and accepting
-# requests.
+# Verify that we did not get the response
 
-my ($response_headers, $response_body) = split /\r\n\r\n/, $response, 2;
-
-like($response_headers, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');
-is($response_body, <<'EOF', 'Shelves returned in the response body.');
-{ "shelves": [
-    { "name": "shelves/1", "theme": "Fiction" },
-    { "name": "shelves/2", "theme": "Fantasy" }
-  ]
-}
-EOF
+is($response, undef, 'No response');
 
 my @requests = ApiManager::read_http_stream($t, 'requests.log');
-is(scalar @requests, 1, 'Backend received one request');
-
-my $r = shift @requests;
-is($r->{verb}, 'GET', 'Backend request was a get');
-is($r->{uri}, '/shelves', 'Backend uri was /shelves');
-is($r->{headers}->{host}, "127.0.0.1:${BackendPort}", 'Host header was set');
+is(scalar @requests, 0, 'Backend received no request');
 
 # Verify the warning in STDERR
-
 my $error_log = $t->read_file('stderr.log');
-my $errors_expected = <<'EOF';
-.*[emerg].*Failed to open an api service configuration file:.*
-.*[emerg].*Endpoints will be disabled.
-EOF
+my $errors_expected = '.*[emerg].*Failed to open an api service configuration file:.*';
 
 like($error_log, qr/$errors_expected/m, 'Got the warnings from nginx.');
 
