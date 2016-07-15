@@ -36,7 +36,7 @@ function service_endpoint() {
   local namespace="${1}"
   local service="${2}"
   local endpoint="$(kubectl describe service "${service}" --namespace "${namespace}" \
-    | grep "Endpoints:" | awk '{print $2}')"
+    | grep "LoadBalancer Ingress:" | awk '{print $3}')"
   if [[ "${endpoint}" =~ [0-9\.\:] ]]; then
     echo "${endpoint}"
     return 0
@@ -203,8 +203,8 @@ ENDPOINT="$(service_endpoint "${NAMESPACE}" "${KB_SERVICE}")"
 echo "Service is available at: ${ENDPOINT}"
 
 case "${TEST_TYPE}" in
-  'https') HOST="https://${ENDPOINT}";;
-  *) HOST="http://${ENDPOINT}";;
+  'https') HOST="https://${ENDPOINT}:443";;
+  *) HOST="http://${ENDPOINT}:8080";;
 esac
 
 

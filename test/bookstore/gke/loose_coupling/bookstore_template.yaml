@@ -33,7 +33,7 @@ spec:
     name: http
   selector:
     app: bookstore
-  type: ClusterIP
+  type: LoadBalancer
 ---
 apiVersion: v1
 kind: ReplicationController

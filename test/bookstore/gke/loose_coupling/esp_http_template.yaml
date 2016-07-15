@@ -31,9 +31,12 @@ spec:
   - port: 8080
     protocol: TCP
     name: http
+  - port: 8090
+    protocol: TCP
+    name: status
   selector:
     app: esp
-  type: ClusterIP
+  type: LoadBalancer
 ---
 apiVersion: v1
 kind: ReplicationController
@@ -59,3 +62,4 @@ spec:
         ]
         ports:
           - containerPort: 8080
+          - containerPort: 8090

@@ -238,7 +238,7 @@ function long_running_test() {
     fi
   else
     # Checking Service before starting the test.
-    echo 'Checking http service.'
+    echo "Checking service: ${host}"
     retry -n 10 -t 90 check_http_service "${host}/shelves" ${http_code}
     status=${?}
     if [[ ${status} -eq 0 ]]; then

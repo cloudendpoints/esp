@@ -31,9 +31,12 @@ spec:
   - port: 443
     protocol: TCP
     name: https
+  - port: 8090
+    protocol: TCP
+    name: status
   selector:
     app: esp-bookstore
-  type: ClusterIP
+  type: LoadBalancer
 ---
 apiVersion: v1
 kind: ReplicationController
@@ -64,6 +67,7 @@ spec:
         ]
         ports:
           - containerPort: 443
+          - containerPort: 8090
         volumeMounts:
         - mountPath: /etc/nginx/ssl
           name: nginx-ssl
