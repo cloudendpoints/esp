@@ -110,8 +110,13 @@ class EspBookstoreTest(object):
             host = FLAGS.host[len(HTTPS_PREFIX):]
             print 'Use https to connect: %s' % host
             if FLAGS.allow_unverified_cert:
-                self.conn = httplib.HTTPSConnection(
-                    host, timeout=5, context=ssl._create_unverified_context())
+                try:
+                  self.conn = httplib.HTTPSConnection(
+                      host, timeout=5, context=ssl._create_unverified_context())
+                except AttributeError:
+                  # Legacy versions of python do not check certificate.
+                  self.conn = httplib.HTTPSConnection(
+                      host, timeout=5)
             else:
                 self.conn = httplib.HTTPSConnection(host)
         else:

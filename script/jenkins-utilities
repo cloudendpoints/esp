@@ -30,6 +30,11 @@
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ESP_ROOT="$(cd "${DIR}/.." && pwd)"
+
+. ${DIR}/all-utilities || { echo "Cannot load Bash utilities" ; exit 1 ; }
+
+PROJECT_ID="$(gcloud config list core/project --format flattened | cut -d ' ' -f 2)"
+DEFAULT_ESP_SERVICE="testang-dot-${PROJECT_ID}.appspot.com"
 GSUTIL=$(which gsutil) || GSUTIL=~/google-cloud-sdk/bin/gsutil
 
 # End to End tests options
@@ -51,12 +56,8 @@ SWAGGER_TMPL="${ESP_ROOT}/test/bookstore/swagger_template.json"
 TEST_TYPE=''
 UNIQUE_ID=''
 VM_IMAGE=''
-
-. ${DIR}/all-utilities || { echo "Cannot load Bash utilities" ; exit 1 ; }
-
-PROJECT_ID="$(gcloud config list core/project --format flattened | cut -d ' ' -f 2)"
-DEFAULT_ESP_SERVICE="testing-dot-${PROJECT_ID}.appspot.com"
 ESP_SERVICE_VERSION=''
+
 # To generate new version
 # $ cp test/bookstore/swagger_template.json swagger.json
 # For Prod
