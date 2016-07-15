@@ -47,7 +47,7 @@ function start_debug() {
   cp /usr/sbin/nginx-debug /usr/sbin/nginx
 
   # Sending USR2 to Nginx to reload the binary
-  kill -USR2 ${cat /var/run/nginx.pid}
+  kill -USR2 "$(cat /var/run/nginx.pid)"
 }
 
 function stop_debug() {
@@ -55,7 +55,7 @@ function stop_debug() {
   [[ -e /usr/sbin/nginx.original ]] && cp /usr/sbin/nginx.original /usr/sbin/nginx
 
   # Sending USR2 to Nginx to reload the binary
-  kill -USR2 ${cat /var/run/nginx.pid}
+  kill -USR2 "$(cat /var/run/nginx.pid)"
 }
 
 case $1 in
