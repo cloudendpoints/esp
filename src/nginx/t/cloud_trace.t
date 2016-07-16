@@ -46,7 +46,7 @@ my $BackendPort = 8081;
 my $ServiceControlPort = 8082;
 my $CloudTracePort = 8083;
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(21);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(22);
 
 my $config = ApiManager::get_bookstore_service_config_allow_unregistered .
     ApiManager::read_test_file('testdata/logs_metrics.pb.txt') . <<"EOF";
@@ -132,6 +132,8 @@ is($json_obj->{traces}->[0]->{spans}->[0]->{name}, 'API_MANAGER_ROOT', 'First tr
 is($json_obj->{traces}->[0]->{spans}->[0]->{kind}, 'RPC_SERVER', 'Trace span kind is RPC_SERVER');
 is($json_obj->{traces}->[0]->{spans}->[0]->{parentSpanId}, $parent_span_id,
     'Parent span of root should be the provided one');
+my $agent = $json_obj->{traces}->[0]->{spans}->[0]->{labels}->{'trace.cloud.google.com/agent'};
+is($agent, 'esp/' . ServiceControl::get_version(), 'Agent is set to "esp/xxx".');
 my $rootid = $json_obj->{traces}->[0]->{spans}->[0]->{spanId};
 is($json_obj->{traces}->[0]->{spans}->[1]->{name}, 'CheckServiceControl',
     'Next trace span is CheckServiceControl');

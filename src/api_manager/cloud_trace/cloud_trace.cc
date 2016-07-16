@@ -33,6 +33,7 @@
 #include <sstream>
 #include <string>
 #include "google/protobuf/timestamp.pb.h"
+#include "include/api_manager/version.h"
 
 using google::devtools::cloudtrace::v1::Trace;
 using google::devtools::cloudtrace::v1::TraceSpan;
@@ -46,6 +47,10 @@ namespace {
 
 const char kCloudTraceService[] = "/google.devtools.cloudtrace.v1.TraceService";
 const char kApiManagerRoot[] = "API_MANAGER_ROOT";
+// Cloud Trace agent label key
+const char kCloudTraceAgentKey[] = "trace.cloud.google.com/agent";
+// Cloud Trace agent label value
+const char kServiceAgent[] = "esp/" API_MANAGER_VERSION_STRING;
 
 // Generate a random unsigned 64-bit integer.
 uint64_t RandomUInt64();
@@ -254,6 +259,8 @@ Trace *GetTraceFromContextHeader(const std::string &trace_context) {
   root_span->set_kind(TraceSpan_SpanKind::TraceSpan_SpanKind_RPC_SERVER);
   root_span->set_span_id(RandomUInt64());
   root_span->set_name(kApiManagerRoot);
+  // Agent label is defined as "<agent>/<version>".
+  root_span->mutable_labels()->insert({kCloudTraceAgentKey, kServiceAgent});
   GetNow(root_span->mutable_start_time());
   // Set parent of root span to the given one if provided.
   if (span_id != 0) {
