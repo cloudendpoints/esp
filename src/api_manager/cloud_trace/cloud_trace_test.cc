@@ -155,13 +155,21 @@ TEST_F(CloudTraceTest, TestParseContextHeader) {
   ASSERT_TRUE(cloud_trace);
   ASSERT_EQ(0, cloud_trace->root_span()->parent_span_id());
   ASSERT_EQ(1, cloud_trace->trace()->spans_size());
+  ASSERT_EQ("o=1", cloud_trace->options());
 
   // Should also be enabled for "o=3"
   cloud_trace.reset(CreateCloudTrace("e133eacd437d8a12068fd902af3962d8;o=3"));
   ASSERT_TRUE(cloud_trace);
+  ASSERT_EQ("o=3", cloud_trace->options());
+
+  cloud_trace.reset(CreateCloudTrace("e133eacd437d8a12068fd902af3962d8;o=1;"));
+  ASSERT_TRUE(cloud_trace);
+  ASSERT_EQ("o=1;", cloud_trace->options());
+
   cloud_trace.reset(
       CreateCloudTrace("e133eacd437d8a12068fd902af3962d8;o=1;o=0"));
   ASSERT_TRUE(cloud_trace);
+  ASSERT_EQ("o=1;o=0", cloud_trace->options());
 
   // Verify capital hex digits should pass
   cloud_trace.reset(CreateCloudTrace("46F1ADB8573CC0F3C4156B5EA7E0E3DC;o=1"));
@@ -182,11 +190,16 @@ TEST_F(CloudTraceTest, TestParseContextHeader) {
   cloud_trace.reset(
       CreateCloudTrace("e133eacd437d8a12068fd902af3962d8;foo=bar;o=1"));
   ASSERT_TRUE(cloud_trace);
+  ASSERT_EQ("foo=bar;o=1", cloud_trace->options());
+
   cloud_trace.reset(CreateCloudTrace("e133eacd437d8a12068fd902af3962d8;x;o=1"));
   ASSERT_TRUE(cloud_trace);
+  ASSERT_EQ("x;o=1", cloud_trace->options());
+
   cloud_trace.reset(
       CreateCloudTrace("e133eacd437d8a12068fd902af3962d8;o=1;foo=bar"));
   ASSERT_TRUE(cloud_trace);
+  ASSERT_EQ("o=1;foo=bar", cloud_trace->options());
 }
 
 }  // namespace

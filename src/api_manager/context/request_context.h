@@ -90,8 +90,9 @@ class RequestContext {
   // Get CloudTrace object.
   cloud_trace::CloudTrace *cloud_trace() { return cloud_trace_.get(); }
 
-  // Marks the start of backend trace span.
-  void StartBackendSpan();
+  // Marks the start of backend trace span, set the trace context header to
+  // backend.
+  void StartBackendSpanAndSetTraceContext();
 
   // Marks the end of backend trace span.
   void EndBackendSpan() { backend_span_.reset(); }

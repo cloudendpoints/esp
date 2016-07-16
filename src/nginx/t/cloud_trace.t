@@ -46,7 +46,7 @@ my $BackendPort = 8081;
 my $ServiceControlPort = 8082;
 my $CloudTracePort = 8083;
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(22);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(27);
 
 my $config = ApiManager::get_bookstore_service_config_allow_unregistered .
     ApiManager::read_test_file('testdata/logs_metrics.pb.txt') . <<"EOF";
@@ -116,16 +116,17 @@ is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.
 is($t->waitforfile("$t->{_testdir}/${trace_done}"), 1, 'Trace body file ready.');
 $t->stop_daemons();
 
-my @requests = ApiManager::read_http_stream($t, 'cloudtrace.log');
+my @trace_requests = ApiManager::read_http_stream($t, 'cloudtrace.log');
+
 
 # Verify there is only one trace request.
-is(scalar @requests, 1, 'Cloud Trace received 1 request.');
+is(scalar @trace_requests, 1, 'Cloud Trace received 1 request.');
 
-my $r = shift @requests;
-is($r->{verb}, 'PATCH', 'Cloud Trace: request is PATCH.');
-is($r->{uri}, '/v1/projects/api-manager-project/traces', 'Trace request was called with correct project id in url.');
+my $trace_request = shift @trace_requests;
+is($trace_request->{verb}, 'PATCH', 'Cloud Trace: request is PATCH.');
+is($trace_request->{uri}, '/v1/projects/api-manager-project/traces', 'Trace request was called with correct project id in url.');
 
-my $json_obj = decode_json($r->{body});
+my $json_obj = decode_json($trace_request->{body});
 is($json_obj->{traces}->[0]->{projectId}, 'api-manager-project', 'Project ID in body is correct.');
 is($json_obj->{traces}->[0]->{traceId}, $trace_id, 'Trace ID matches the provided one.');
 is($json_obj->{traces}->[0]->{spans}->[0]->{name}, 'API_MANAGER_ROOT', 'First trace span is ESP_ROOT');
@@ -153,6 +154,19 @@ is($json_obj->{traces}->[0]->{spans}->[4]->{name}, 'Backend',
     'Next trace span is Backend');
 is($json_obj->{traces}->[0]->{spans}->[4]->{parentSpanId}, $rootid,
     'Parent of Beckend span is root');
+my $backend_span_id = $json_obj->{traces}->[0]->{spans}->[4]->{spanId};
+
+my @bookstore_requests = ApiManager::read_http_stream($t, 'bookstore.log');
+is(scalar @bookstore_requests, 1, 'Bookstore received 1 request.');
+
+my $bookstore_request = shift @bookstore_requests;
+is($bookstore_request->{verb}, 'GET', 'backend received a get');
+is($bookstore_request->{path}, '/shelves', 'backend received get /shelves');
+my $backend_trace_header = $bookstore_request->{headers}->{'x-cloud-trace-context'};
+isnt($backend_trace_header, undef, 'X-Cloud-Trace-Context was received');
+is($backend_trace_header, $trace_id . '/' . $backend_span_id . ';o=1',
+    'X-Cloud-Trace-Context header is correct.');
+
 
 ################################################################################
 

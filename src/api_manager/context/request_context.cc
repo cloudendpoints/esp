@@ -28,6 +28,7 @@
 #include "src/api_manager/context/request_context.h"
 
 #include <uuid/uuid.h>
+#include <sstream>
 
 using ::google::api_manager::utils::Status;
 
@@ -246,8 +247,21 @@ void RequestContext::FillReportRequestInfo(
   response->GetLatencyInfo(&info->latency);
 }
 
-void RequestContext::StartBackendSpan() {
+void RequestContext::StartBackendSpanAndSetTraceContext() {
   backend_span_.reset(CreateSpan(cloud_trace_.get(), "Backend"));
+
+  // Set trace context header to backend. The span id in the header will
+  // be the backend span's id.
+  std::ostringstream trace_context_stream;
+  trace_context_stream << cloud_trace()->trace()->trace_id() << "/"
+                       << backend_span_->trace_span()->span_id() << ";"
+                       << cloud_trace()->options();
+  Status status = request()->AddHeaderToBackend(kCloudTraceContextHeader,
+                                                trace_context_stream.str());
+  if (!status.ok()) {
+    service_context()->env()->LogError(
+        "Failed to set trace context header to backend.");
+  }
 }
 
 }  // namespace context

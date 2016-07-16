@@ -41,9 +41,8 @@ namespace api_manager {
 
 void RequestHandler::Check(std::function<void(Status status)> continuation) {
   auto interception = [continuation, this](Status status) {
-    if (status.ok()) {
-      // Start backend trace span. Noop if trace is disabled.
-      context_->StartBackendSpan();
+    if (status.ok() && context_->cloud_trace()) {
+      context_->StartBackendSpanAndSetTraceContext();
     }
     continuation(status);
   };

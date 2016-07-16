@@ -64,7 +64,8 @@ class CloudTrace final {
  public:
   // Construct with give Trace proto object. This constructor must only be
   // called with non-null pointer.
-  CloudTrace(google::devtools::cloudtrace::v1::Trace *trace);
+  CloudTrace(google::devtools::cloudtrace::v1::Trace *trace,
+             const std::string &options);
 
   void SetProjectId(const std::string &project_id);
 
@@ -81,9 +82,12 @@ class CloudTrace final {
     return trace_.release();
   }
 
+  const std::string &options() const { return options_; }
+
  private:
   std::unique_ptr<google::devtools::cloudtrace::v1::Trace> trace_;
   google::devtools::cloudtrace::v1::TraceSpan *root_span_;
+  std::string options_;
 };
 
 // This class stores messages written to a single trace span. There can be
@@ -111,6 +115,10 @@ class CloudTraceSpan {
   CloudTraceSpan(CloudTraceSpan *parent, const std::string &span_name);
 
   ~CloudTraceSpan();
+
+  const google::devtools::cloudtrace::v1::TraceSpan *trace_span() const {
+    return trace_span_;
+  }
 
  private:
   void Write(const std::string &msg);
