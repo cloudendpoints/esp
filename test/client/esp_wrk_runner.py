@@ -49,6 +49,7 @@ def test(run, c, t, d):
     """
     cmd = [WRK_PATH,
             '-t', str(t),
+            '--timeout', '2m',
             '-c', str(c),
             '-d', str(d) + 's',
             '-s', 'wrk_script.lua',
