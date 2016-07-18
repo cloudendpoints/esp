@@ -52,18 +52,17 @@ class ServiceAccountTokenTest : public ::testing::Test {
 
 TEST_F(ServiceAccountTokenTest, TestAccessToken) {
   // Needed.
-  ASSERT_TRUE(sa_token_->NeedToFetchAccessToken());
-
+  ASSERT_FALSE(sa_token_->is_access_token_valid(0));
   // Adds a token, not needed now
-  sa_token_->SetAccessToken("Dummy Token", 1);
-  ASSERT_FALSE(sa_token_->NeedToFetchAccessToken());
+  sa_token_->set_access_token("Dummy Token", 1);
+  ASSERT_TRUE(sa_token_->is_access_token_valid(0));
   ASSERT_EQ("Dummy Token",
             sa_token_->GetAuthToken(
                 ServiceAccountToken::JWT_TOKEN_FOR_SERVICE_CONTROL));
 
   sleep(2);
   // Token is expired, needed now.
-  ASSERT_TRUE(sa_token_->NeedToFetchAccessToken());
+  ASSERT_FALSE(sa_token_->is_access_token_valid(0));
   // Returns expired token.
   ASSERT_EQ("Dummy Token",
             sa_token_->GetAuthToken(
@@ -72,7 +71,8 @@ TEST_F(ServiceAccountTokenTest, TestAccessToken) {
 
 TEST_F(ServiceAccountTokenTest, TestClientAuthSecret) {
   // Needed.
-  ASSERT_TRUE(sa_token_->NeedToFetchAccessToken());
+  ASSERT_FALSE(sa_token_->is_access_token_valid(0));
+  ASSERT_EQ(ServiceAccountToken::NONE, sa_token_->state());
 
   sa_token_->SetAudience(ServiceAccountToken::JWT_TOKEN_FOR_SERVICE_CONTROL,
                          "audience");
@@ -80,7 +80,7 @@ TEST_F(ServiceAccountTokenTest, TestClientAuthSecret) {
   ASSERT_EQ(status.code(), Code::INVALID_ARGUMENT);
 
   // As long as there is a client auth secret. no need to get token.
-  ASSERT_FALSE(sa_token_->NeedToFetchAccessToken());
+  ASSERT_TRUE(sa_token_->has_client_secret());
   // Returns empty string for an invalid secret.
   ASSERT_EQ("", sa_token_->GetAuthToken(
                     ServiceAccountToken::JWT_TOKEN_FOR_SERVICE_CONTROL));

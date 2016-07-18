@@ -63,16 +63,6 @@ Status ServiceAccountToken::SetClientAuthSecret(const std::string& secret) {
   return Status::OK;
 }
 
-bool ServiceAccountToken::NeedToFetchAccessToken() const {
-  return client_auth_secret_.empty() && !access_token_.is_valid();
-}
-
-void ServiceAccountToken::SetAccessToken(const std::string& token,
-                                         int token_life_in_second) {
-  access_token_.set_token(token);
-  access_token_.set_expire_time(time(nullptr) + token_life_in_second);
-}
-
 void ServiceAccountToken::SetAudience(JWT_TOKEN_TYPE type,
                                       const std::string& audience) {
   GOOGLE_CHECK(type >= 0 && type < JWT_TOKEN_TYPE_MAX);
@@ -83,7 +73,7 @@ const std::string& ServiceAccountToken::GetAuthToken(JWT_TOKEN_TYPE type) {
   // Uses authentication secret if available.
   if (!client_auth_secret_.empty()) {
     GOOGLE_CHECK(type >= 0 && type < JWT_TOKEN_TYPE_MAX);
-    if (!jwt_tokens_[type].is_valid()) {
+    if (!jwt_tokens_[type].is_valid(0)) {
       Status status = jwt_tokens_[type].GenerateJwtToken(client_auth_secret_);
       if (!status.ok()) {
         if (env_) {
@@ -98,10 +88,6 @@ const std::string& ServiceAccountToken::GetAuthToken(JWT_TOKEN_TYPE type) {
   return access_token_.token();
 }
 
-bool ServiceAccountToken::TokenInfo::is_valid() const {
-  return !token_.empty() && expire_time_ >= time(nullptr);
-}
-
 Status ServiceAccountToken::JwtTokenInfo::GenerateJwtToken(
     const std::string& client_auth_secret) {
   // Make sure audience is set.
@@ -112,10 +98,8 @@ Status ServiceAccountToken::JwtTokenInfo::GenerateJwtToken(
     return Status(Code::INVALID_ARGUMENT,
                   "Invalid client auth secret, the file may be corrupted.");
   }
-  set_token(token);
+  set_token(token, kClientSecretAuthTokenExpiration);
   auth::esp_grpc_free(token);
-
-  set_expire_time(time(nullptr) + kClientSecretAuthTokenExpiration);
   return Status::OK;
 }
 

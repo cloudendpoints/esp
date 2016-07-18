@@ -43,19 +43,33 @@ namespace auth {
 // This auth token can be used for any Google services.
 class ServiceAccountToken {
  public:
-  ServiceAccountToken(ApiManagerEnvInterface* env) : env_(env) {}
+  ServiceAccountToken(ApiManagerEnvInterface* env) : env_(env), state_(NONE) {}
 
   // Sets the client auth secret and it can be used to generate JWT token.
   utils::Status SetClientAuthSecret(const std::string& secret);
 
-  // Checks if needs to fetch service account token from metadata server.
-  // Returns false if client auth secret exists. Otherwise returns true
-  // either auth token doesn't present, or it is expired.
-  bool NeedToFetchAccessToken() const;
+  // Fetching state of the token from the metadata server
+  enum FetchState { NONE = 0, FETCHING, FETCHED, FAILED };
 
-  // Sets the service account token fetched from the GCP metadata server
-  // and its life time.
-  void SetAccessToken(const std::string& token, int token_life_in_second);
+  // Set fetching state
+  void set_state(FetchState state) { state_ = state; }
+
+  // Get fetching state
+  FetchState state() const { return state_; }
+
+  // Returns whether the client auth secret exists
+  bool has_client_secret() const { return !client_auth_secret_.empty(); }
+
+  // Set access token value and expiration duration
+  void set_access_token(const std::string& token, time_t expiration) {
+    access_token_.set_token(token, expiration);
+  }
+
+  // Returns true if access token is valid `duration` seconds from now.
+  // Use 0 for `duration` to check if the token is valid now.
+  bool is_access_token_valid(time_t duration) const {
+    return access_token_.is_valid(duration);
+  }
 
   // JWT token calcualted from client auth secret are audience dependent.
   enum JWT_TOKEN_TYPE {
@@ -75,20 +89,28 @@ class ServiceAccountToken {
   // Stores base token info. Used for both OAuth and JWT tokens.
   class TokenInfo {
    public:
-    // If token is valid.
-    bool is_valid() const;
+    // Token available and not expired in `duration` seconds
+    bool is_valid(time_t duration) const {
+      return !token_.empty() && expiration_time_ >= time(nullptr) + duration;
+    }
 
-    void set_token(const std::string& token) { token_ = token; }
-    void set_expire_time(time_t expire_time) { expire_time_ = expire_time; }
+    // Set token and its expiration duration
+    void set_token(const std::string& token, time_t expiration) {
+      token_ = token;
+      expiration_time_ = time(nullptr) + expiration;
+    }
 
-    // get the token
+    // Get the token
     const std::string& token() const { return token_; }
+
+    // Get expiration time in seconds
+    time_t expiration_time() const { return expiration_time_; }
 
    private:
     // The auth token.
     std::string token_;
     // The token expiration time.
-    time_t expire_time_;
+    time_t expiration_time_;
   };
 
   // Stores JWT token info
@@ -116,6 +138,9 @@ class ServiceAccountToken {
 
   // GCE service account access token fetched from GCE metadata server.
   TokenInfo access_token_;
+
+  // Fetching state
+  FetchState state_;
 };
 
 }  // namespace auth

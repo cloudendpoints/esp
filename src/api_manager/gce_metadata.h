@@ -35,20 +35,20 @@ namespace api_manager {
 // server.
 class GceMetadata {
  public:
-  enum STATE {
-    INITIAL_STATE = 0,
+  enum FetchState {
+    NONE = 0,
     // Fetching,
-    FETCHING_STATE,
+    FETCHING,
     // Fetch failed
-    FAILED_STATE,
+    FAILED,
     // Data is go
-    DONE_STATE,
+    FETCHED,
   };
-  GceMetadata() : state_(INITIAL_STATE) {}
+  GceMetadata() : state_(NONE) {}
 
-  STATE state() const { return state_; }
-  void set_state(STATE state) { state_ = state; }
-  bool has_valid_data() const { return state_ == DONE_STATE; }
+  FetchState state() const { return state_; }
+  void set_state(FetchState state) { state_ = state; }
+  bool has_valid_data() const { return state_ == FETCHED; }
 
   utils::Status ParseFromJson(std::string* json);
 
@@ -60,7 +60,7 @@ class GceMetadata {
   const std::string& kube_env() const { return kube_env_; }
 
  private:
-  STATE state_;
+  FetchState state_;
   std::string project_id_;
   std::string zone_;
   std::string gae_server_software_;
