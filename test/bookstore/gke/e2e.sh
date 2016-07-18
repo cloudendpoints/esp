@@ -117,7 +117,7 @@ case "${COUPLING_OPTION}" in
     BOOKSTORE_YAML_TMPL="${YAML_DIR}/bookstore_template.yaml"
     KB_SERVICE='esp'
     case "${TEST_TYPE}" in
-      'http')
+      'http'|'grpc')
         YAML_TMPL="${YAML_DIR}/esp_http_template.yaml"
         YAML_FILE='esp_http.yaml';;
       'https')
@@ -133,7 +133,7 @@ case "${COUPLING_OPTION}" in
     YAML_DIR="${SCRIPT_PATH}/tight_coupling"
     KB_SERVICE='esp-bookstore'
     case "${TEST_TYPE}" in
-      'http')
+      'http'|'grpc')
         YAML_TMPL="${YAML_DIR}/esp_bookstore_http_template.yaml"
         YAML_FILE='esp_bookstore_http.yaml';;
       'https')
@@ -204,6 +204,7 @@ echo "Service is available at: ${ENDPOINT}"
 
 case "${TEST_TYPE}" in
   'https') HOST="https://${ENDPOINT}:443";;
+  'grpc') HOST="${ENDPOINT}:8080";;
   *) HOST="http://${ENDPOINT}:8080";;
 esac
 

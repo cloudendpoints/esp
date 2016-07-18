@@ -72,9 +72,10 @@ DOCKER_SLAVES = [
 // Please Update script/validate_release.py when adding or removing long-run-test.
 RELEASE_QUALIFICATION_BRANCHES = [
     'flex-off-endpoints-on',
-    'gke-tight-coupling-https',
+    'gce-container-vm',
     'gce-debian-8',
-    'gce-container-vm'
+    'gke-tight-coupling-grpc',
+    'gke-tight-coupling-https'
 ]
 
 // Source Code related variables. Set in stashSourceCode.
@@ -144,7 +145,7 @@ def cleanupOldTests(nodeLabel) {
   parallel branches
 }
 
-def buildArtifacts(nodeLabel, buildBookstore = true, buildGrcpServer = true) {
+def buildArtifacts(nodeLabel, buildBookstore = true, buildGrpcTest = true) {
   def branches = [
       'esp_debian': {
         node(nodeLabel) {
@@ -158,14 +159,6 @@ def buildArtifacts(nodeLabel, buildBookstore = true, buildGrcpServer = true) {
               'bazel-bin/src/tools/auth_token_gen',
               'auth_token_gen')
         }
-      },
-      'grpc_test_client': {
-        node(nodeLabel) {
-          buildAndStash(
-              '//test/grpc:grpc-test-client',
-              'bazel-bin/test/grpc/grpc-test-client',
-              'grpc_test_client')
-        }
       }
   ]
   if (buildBookstore) {
@@ -175,10 +168,10 @@ def buildArtifacts(nodeLabel, buildBookstore = true, buildGrcpServer = true) {
       }
     }
   }
-  if (buildGrcpServer) {
-    branches['grpcServer'] = {
+  if (buildGrpcTest) {
+    branches['grpc_test'] = {
       node(nodeLabel) {
-        buildGrcpTestServerImage()
+        buildGrcpTest()
       }
     }
   }
@@ -258,7 +251,12 @@ def e2eTest(nodeLabel) {
         node(nodeLabel) {
           e2eGCEContainer(CONTAINER_VM, true)
         }
-      }
+      },
+      'gke-tight-coupling-grpc': {
+        node(nodeLabel) {
+          e2eGKE('tight', 'grpc')
+        }
+      },
   ]
 
   branches = filterBranches(branches, getE2eFilters())
@@ -382,28 +380,29 @@ def buildPackages() {
 }
 
 def buildBookstoreImage() {
-  checkoutSourceCode()
   setGCloud()
+  checkoutSourceCode()
   def bookstoreImg = bookstoreDockerImage()
   sh "test/bookstore/linux-build-bookstore-docker -i ${bookstoreImg}"
 }
 
-def buildGrcpTestServerImage() {
-  checkoutSourceCode()
-  setGCloud()
+def buildGrcpTest() {
   def gRpcServerImg = gRpcTestServerImage()
+  buildAndStash(
+      '//test/grpc:grpc-test-client //test/grpc:grpc-test-server',
+      'bazel-bin/test/grpc/grpc-test-client',
+      'grpc_test_client')
   sh "test/grpc/linux-build-grpc-docker -i ${gRpcServerImg}"
 }
 
 def buildAndStash(buildTarget, stashTarget, name) {
   if (pathExistsCloudStorage(stashArchivePath(name))) return
-  checkoutSourceCode()
   setGCloud()
-  retry(2) {
-    // Timeout after 15 minutes
-    timeout(15) {
-      sh "bazel build ${buildTarget}"
-    }
+  checkoutSourceCode()
+  // Turns out Bazel does not like to be terminated.
+  // Setting this to 30 minutes.
+  timeout(30) {
+    sh "bazel build --config=release ${buildTarget}"
   }
   fastStash(name, stashTarget)
 }
@@ -415,8 +414,8 @@ def testCleanup(daysOld, project, flags) {
 }
 
 def buildNewDockerSlave(nodeLabel) {
-  checkoutSourceCode()
   setGCloud()
+  checkoutSourceCode()
   def dockerImage = "${DOCKER_SLAVES[nodeLabel]}:${GIT_SHA}"
   // Test Slave image setup in Jenkins
   def testDockerImage = "${DOCKER_SLAVES[nodeLabel]}:test"
@@ -429,8 +428,8 @@ def buildNewDockerSlave(nodeLabel) {
       "-s ${nodeLabel}"
   echo "Testing ${testDockerImage}"
   node(getTestSlaveLabel(nodeLabel)) {
-    checkoutSourceCode()
     setGCloud()
+    checkoutSourceCode()
     sh "jenkins/slaves/slave-test"
   }
   echo "Retagging ${testDockerImage} to ${dockerImage}"
@@ -452,25 +451,34 @@ def e2eCommonOptions(testId, prefix = '') {
 }
 
 def e2eGKE(coupling, testType) {
-  checkoutSourceCode()
   setGCloud()
+  checkoutSourceCode()
   fastUnstash('auth_token_gen')
   def testId = "gke-${coupling}-${testType}"
-  def commonOptions = e2eCommonOptions(testId)
+  def gRpc = testType == 'grpc'
+  def gRpcFlag = ''
+  def commonOptions = e2eCommonOptions(testId, gRpc ? 'grpc-' : '')
   def espImage = espDockerImage()
-  def bookstoreImage = bookstoreDockerImage()
+  def backendImage = bookstoreDockerImage()
+  if (gRpc) {
+    fastUnstash('grpc_test_client')
+    backendImage = gRpcTestServerImage()
+    espImage = espGrpcDockerImage()
+    gRpcFlag = '-g'
+  }
   echo 'Running GKE test'
   sh "test/bookstore/gke/e2e.sh " +
       commonOptions +
-      "-b ${bookstoreImage} " +
+      "-b ${backendImage} " +
       "-e ${espImage} " +
       "-t ${testType} " +
-      "-c ${coupling}"
+      "-c ${coupling} " +
+      "${gRpcFlag}"
 }
 
 def e2eGCE(vmImage) {
-  checkoutSourceCode()
   setGCloud()
+  checkoutSourceCode()
   fastUnstash('auth_token_gen')
   def commonOptions = e2eCommonOptions('gce-raw')
   def espDebianPkg = espDebianPackage()
@@ -485,8 +493,8 @@ def e2eGCE(vmImage) {
 }
 
 def e2eGCEContainer(vmImage, gRpc = false) {
-  checkoutSourceCode()
   setGCloud()
+  checkoutSourceCode()
   fastUnstash('auth_token_gen')
   def commonOptions = e2eCommonOptions('gce-container', gRpc ? 'grpc-' : '')
   def espImage = espDockerImage()
@@ -511,8 +519,8 @@ def localPerformanceTest() {
   // This will not work for staging or server-config.
   // In order to fully support this we'll need to use the debian
   // packages created in buildPackages().
-  checkoutSourceCode()
   setGCloud()
+  checkoutSourceCode()
   if (pathExistsCloudStorage(stashArchivePath('nginx-esp'))) {
     // Using binary build by buildArtifacts()
     fastUnstash('auth_token_gen')
@@ -532,8 +540,8 @@ def localPerformanceTest() {
 }
 
 def flexPerformance() {
-  checkoutSourceCode()
   setGCloud()
+  checkoutSourceCode()
   fastUnstash('auth_token_gen')
   def testId = 'jenkins-perf-test-vm-esp'
   def uniqueId = getUniqueID('flex-perf', false)
@@ -550,8 +558,8 @@ def flexPerformance() {
 }
 
 def e2eFlex(endpoints, flex) {
-  checkoutSourceCode()
   setGCloud()
+  checkoutSourceCode()
   fastUnstash('auth_token_gen')
   def espImgFlex = espFlexDockerImage()
   def rcTestVersion = getUniqueID('', false)

@@ -29,6 +29,7 @@
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 GRPC_ROOT="${ROOT}/test/grpc"
+GRPC_TEST_SERVER_TARGET="${ROOT}/bazel-bin/test/grpc/grpc-test-server"
 
 . "${ROOT}/script/all-utilities" || { echo "Cannot load Bash utilities"; exit 1; }
 
@@ -39,15 +40,20 @@ while getopts :i: arg; do
   esac
 done
 
-bazel build --config=release //test/grpc:grpc-test-server
-cp "${ROOT}/bazel-bin/test/grpc/grpc-test-server" "${GRPC_ROOT}"
-
 [[ -n "${IMAGE}" ]] || error_exit "Specify required image argument via '-i'"
 
 echo "Checking if docker image ${IMAGE} exists.."
 gcloud docker pull "${IMAGE}" \
-  && echo "Image ${IMAGE} already exists; skipping" \
-  && exit 0
+  && { echo "Image ${IMAGE} already exists; skipping"; exit 0; }
+
+if ! [[ -e "${GRPC_TEST_SERVER_TARGET}" ]]; then
+  echo "Building grpc-test-server"
+  bazel build --config=release //test/grpc:grpc-test-server \
+    || error_exit 'Could not build grpc-test-server'
+fi
+
+cp "${GRPC_TEST_SERVER_TARGET}" "${GRPC_ROOT}" \
+  || error_exit "Could not copy ${GRPC_TEST_SERVER_TARGET} to ${GRPC_ROOT}"
 
 echo "Building Endpoints Runtime grpc docker image."
 retry -n 3 docker build --no-cache -t "${IMAGE}" \
