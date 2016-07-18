@@ -400,6 +400,11 @@ Interface* Aggregated::Create(const ::google::api::Service& service,
                               const ServerConfig* server_config,
                               ApiManagerEnvInterface* env,
                               auth::ServiceAccountToken* sa_token) {
+  if (server_config &&
+      server_config->service_control_config().force_disable()) {
+    env->LogError("Service control is disabled.");
+    return nullptr;
+  }
   Url url(&service, server_config);
   if (url.service_control().empty()) {
     env->LogError(
