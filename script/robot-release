@@ -27,24 +27,23 @@
 ################################################################################
 #
 
-RELEASE_TAR=""
-RELEASE_DEB=""
-VERSIONED_DEB=""
-RELEASE_JSON=""
-SKIP_TESTS="false"
+RELEASE_TAR=''
+RELEASE_DEB=''
+RELEASE_JSON=''
+SKIP_TESTS='false'
 
 # Generic docker image format. Docker image name is computed using:
 # git show -q HEAD --pretty=format:"${RELEASE_FLEX_IMAGE_FORMAT}"
 # The format string can therefore contain format placeholders:
 # https://git-scm.com/docs/git-show
-RELEASE_FLEX_IMAGE_FORMAT="gcr.io/endpointsv2/endpoints-runtime-flex:debian-git-%H"
-RELEASE_GENERIC_IMAGE_FORMAT="gcr.io/endpointsv2/endpoints-runtime"
-RELEASE_GENERIC_IMAGE_FORMAT+=":debian-git-%H"
-RELEASE_GENERIC_GRPC_IMAGE_FORMAT="gcr.io/endpointsv2/endpoints-runtime-grpc"
-RELEASE_GENERIC_GRPC_IMAGE_FORMAT+=":debian-git-%H"
+RELEASE_FLEX_IMAGE_FORMAT='gcr.io/endpointsv2/endpoints-runtime-flex:debian-git-%H'
+RELEASE_GENERIC_IMAGE_FORMAT='gcr.io/endpointsv2/endpoints-runtime'
+RELEASE_GENERIC_IMAGE_FORMAT+=':debian-git-%H'
+RELEASE_GENERIC_GRPC_IMAGE_FORMAT='gcr.io/endpointsv2/endpoints-runtime-grpc'
+RELEASE_GENERIC_GRPC_IMAGE_FORMAT+=':debian-git-%H'
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-. ${ROOT}/script/all-utilities || { echo "Cannot load Bash utilities"; exit 1; }
+. ${ROOT}/script/all-utilities || { echo 'Cannot load Bash utilities'; exit 1; }
 
 CONFIG=''
 
@@ -57,9 +56,8 @@ while getopts :c:d:f:g:j:m:r:st:v: arg; do
     j) RELEASE_JSON="${OPTARG}";;
     m) RELEASE_FLEX_IMAGE_FORMAT="${OPTARG}";;
     r) RELEASE_GENERIC_GRPC_IMAGE_FORMAT="${OPTARG}";;
-    s) SKIP_TESTS="true";;
+    s) SKIP_TESTS='true';;
     t) RELEASE_TAR="${OPTARG}";;
-    v) VERSIONED_DEB="${OPTARG}";;
     *) echo "Invalid argument -${OPTARG}, ignoring.";;
   esac
 done
@@ -68,20 +66,20 @@ done
   && CONFIG="${ROOT}/${CONFIG}" \
   && echo "Using server config ${CONFIG}"
 
-( echo "Building and installing dependencies."
+( echo 'Building and installing dependencies.'
   ${ROOT}/script/linux-build-dependencies \
-    || error_exit "Failed to build and install dependencies."
-) || error_exit "Build of dependencies failed."
+    || error_exit 'Failed to build and install dependencies.'
+) || error_exit 'Build of dependencies failed.'
 
 bazel clean \
-  || error_exit "Failed to bazel clean before the release build."
+  || error_exit 'Failed to bazel clean before the release build.'
 
-if [[ "${SKIP_TESTS}" == "false" ]]; then
-  echo "Running pre-release tests."
+if [[ "${SKIP_TESTS}" == 'false' ]]; then
+  echo 'Running pre-release tests.'
   bazel test --config=release \
       //src/... \
       //third_party:all \
-    || error_exit "Failed release tests."
+    || error_exit 'Failed release tests.'
 fi
 
 read ENDPOINTS_RUNTIME_VERSION < ${ROOT}/include/version
@@ -101,90 +99,44 @@ if [[ -n "${RELEASE_DEB}" ]]; then
 fi
 
 if ! [[ -e "${TMP_DEBIAN_PACKAGE}" ]]; then
-  echo "Building debug nginx...."
+  echo 'Building debug nginx....'
   bazel build -c dbg //src/nginx/main:nginx-esp
-  echo "Copying debug nginx..."
+  echo 'Copying debug nginx...'
   cp -f "${NGINX}" "${ROOT}/src/nginx/main/nginx-debug"
-  echo "Building Endpoints Runtime .deb package."
+  echo 'Building Endpoints Runtime .deb package.'
   bazel build --config=release //src/nginx/main:endpoints-server-proxy \
-    || error_exit "Failed to build Endpoints Runtime .deb package."
+    || error_exit 'Failed to build Endpoints Runtime .deb package.'
 
   if [[ -n "${RELEASE_DEB}" ]]; then
     echo "Uploading ${DEB} to ${RELEASE_DEB}"
     retry -n 3 gsutil -h Content-Type:application/x-deb cp \
         ${DEB} \
         ${RELEASE_DEB} \
-      || error_exit "Debian package upload failed."
+      || error_exit 'Debian package upload failed.'
   fi
   cp -f "${DEB}" "${TMP_DEBIAN_PACKAGE}" \
     || error_exit "Could not copy ${DEB} to ${TMP_DEBIAN_PACKAGE}"
-fi
-
-# Compute .deb name if not provided.
-if [[ -z "${VERSIONED_DEB}" && -n "${RELEASE_DEB}" ]]; then
-  VERSIONED_DEB="${RELEASE_DEB%.deb}-precise.deb"
-fi
-
-if [[ -n "${VERSIONED_DEB}" ]]; then
-  echo "Attempting to download ${VERSIONED_DEB}."
-  rm -f ${TMP_DEBIAN_PACKAGE}
-  gsutil cp "${VERSIONED_DEB}" "${TMP_DEBIAN_PACKAGE}" \
-    || echo "Failed to download ${VERSIONED_DEB}. Building it."
-fi
-
-if ! [[ -e "${TMP_DEBIAN_PACKAGE}" ]]; then
-  echo "Building Endpoints Runtime verbatim version .deb package."
-  COMMITS=$(git rev-list HEAD | wc -l)
-  SHA=$(git rev-parse --short HEAD)
-  echo "${ENDPOINTS_RUNTIME_VERSION}~${COMMITS}.${SHA}" \
-    > ${ROOT}/include/version
-
-  cat <<__EOF__ >> ${ROOT}/src/nginx/main/description
- .
- .
-  Version: ${ENDPOINTS_RUNTIME_VERSION}
-  Commit: $(git rev-parse HEAD)
-__EOF__
-
-  echo "Building debug nginx...."
-  bazel build -c dbg //src/nginx/main:nginx-esp
-  echo "Copying debug nginx...."
-  cp -f "${NGINX}" "${ROOT}/src/nginx/main/nginx-debug"
-  bazel build --config=release //src/nginx/main:endpoints-server-proxy \
-    || error_exit "Failed to build Endpoints Runtime verbatim version .deb package."
-
-  if [[ -n "${VERSIONED_DEB}" ]]; then
-    echo "Uploading ${DEB} to ${VERSIONED_DEB}"
-    retry -n 3 gsutil -h Content-Type:application/x-deb cp \
-        ${DEB} \
-        ${VERSIONED_DEB} \
-      || error_exit "Debian package upload failed."
-  fi
-
-  cp -f "${DEB}" "${TMP_DEBIAN_PACKAGE}" \
-    || error_exit "Could not copy ${DEB} to ${TMP_DEBIAN_PACKAGE}"
-
 fi
 
 # Build docker container image for FLEX deployment.
 if [[ -n "${RELEASE_FLEX_IMAGE_FORMAT}" ]]; then
   FLEX_IMAGE="$(git show -q HEAD --pretty=format:"${RELEASE_FLEX_IMAGE_FORMAT}")"
   ${ROOT}/script/linux-build-docker -d "${TMP_DEBIAN_PACKAGE}" -i "${FLEX_IMAGE}" -p flex \
-    || error_exit "Failed to build a Flex Docker Image."
+    || error_exit 'Failed to build a Flex Docker Image.'
 fi
 
 # Build docker container image for GKE/GCE deployment.
 if  [[ -n "${RELEASE_GENERIC_IMAGE_FORMAT}" ]]; then
   GENERIC_IMAGE="$(git show -q HEAD --pretty=format:"${RELEASE_GENERIC_IMAGE_FORMAT}")"
   ${ROOT}/script/linux-build-docker -c "${CONFIG}" -d "${TMP_DEBIAN_PACKAGE}" -i "${GENERIC_IMAGE}" -p generic \
-    || error_exit "Failed to build a generic Docker Image."
+    || error_exit 'Failed to build a generic Docker Image.'
 fi
 
 # Build docker container image for GKE/GCE deployment with GRPC backend.
 if  [[ -n "${RELEASE_GENERIC_GRPC_IMAGE_FORMAT}" ]]; then
   GENERIC_GRPC_IMAGE="$(git show -q HEAD --pretty=format:"${RELEASE_GENERIC_GRPC_IMAGE_FORMAT}")"
   ${ROOT}/script/linux-build-docker -c "${CONFIG}" -d "${TMP_DEBIAN_PACKAGE}" -g -i "${GENERIC_GRPC_IMAGE}" -p generic \
-    || error_exit "Failed to build a grpc Docker Image."
+    || error_exit 'Failed to build a grpc Docker Image.'
 fi
 
 if [[ -n "${RELEASE_JSON}" ]]; then
@@ -196,9 +148,9 @@ if [[ -n "${RELEASE_JSON}" ]]; then
   "flexDocker": "${FLEX_IMAGE}",
   "genericDocker": "${GENERIC_IMAGE}",
   "releaseDeb": "${RELEASE_DEB}",
-  "versionedDeb": "${VERSIONED_DEB}"
+  "versionedDeb": "${RELEASE_DEB}"
 }
 __EOF__
-  } || error_exit "Docker status upload failed."
+  } || error_exit 'Docker status upload failed.'
 fi
 
