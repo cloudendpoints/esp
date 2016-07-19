@@ -133,9 +133,21 @@ function parse_output() {
 
 function set_esp_service_version() {
   local esp_service="${1}"
-  local version="$(gcloud alpha service-management describe ${esp_service} \
-        | grep -P '\w*id:' | awk '{print $2}')" \
-    && ESP_SERVICE_VERSION="${version}" \
+  local json_path="$(mktemp /tmp/XXXXX.json)"
+  local version=''
+  gcloud alpha service-management describe \
+    ${esp_service} --format=json > "${json_path}" || return 1
+  version="$(python - << __EOF__ "${json_path}"
+import json
+import sys
+json_path = sys.argv[1]
+with open(json_path, 'r') as f:
+  result = json.load(f)
+print str(result['serviceConfig']['id'])
+__EOF__
+  )" || version=''
+  rm -f "${json_path}"
+  [[ -n "${version}" ]] && ESP_SERVICE_VERSION="${version}" \
     && return 0
   return 1
 }
