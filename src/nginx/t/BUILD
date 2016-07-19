@@ -158,6 +158,7 @@ nginx_suite(
     nginx = "//src/nginx/main:nginx-esp",
     tests = [
         "aggregated_check_report.t",
+        "auth_disabled.t",
         "auth_no_auth.t",
         "auth_no_pkey.t",
         "by_consumer_metrics.t",

@@ -45,7 +45,11 @@ ServiceContext::ServiceContext(std::unique_ptr<ApiManagerEnvInterface> env,
       service_account_token_(env_.get()),
       service_control_(CreateInterface()),
       cloud_trace_config_(CreateCloudTraceConfig()),
-      transcoder_factory_(config_->service()) {}
+      transcoder_factory_(config_->service()),
+      is_auth_force_disabled_(config_->server_config() &&
+                              config_->server_config()
+                                  ->api_authentication_config()
+                                  .force_disable()) {}
 
 MethodCallInfo ServiceContext::GetMethodCallInfo(const char *http_method,
                                                  size_t http_method_size,

@@ -73,7 +73,9 @@ class ServiceContext {
     return service_control_.get();
   }
 
-  bool RequireAuth() const { return config_->HasAuth(); }
+  bool RequireAuth() const {
+    return !is_auth_force_disabled_ && config_->HasAuth();
+  }
 
   auth::Certs &certs() { return certs_; }
   auth::JwtCache &jwt_cache() { return jwt_cache_; }
@@ -124,6 +126,9 @@ class ServiceContext {
   GceMetadata gce_metadata_;
   // Transcoder factory
   transcoding::TranscoderFactory transcoder_factory_;
+
+  // Is auth force-disabled
+  bool is_auth_force_disabled_;
 };
 
 }  // namespace context
