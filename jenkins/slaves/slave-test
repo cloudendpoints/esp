@@ -40,9 +40,6 @@ run docker run hello-world || error_exit 'Docker is not installed properly'
 echo 'Verifying Bazel installation'
 run bazel version || error_exit 'Bazel is not installed properly'
 
-echo 'Verifying AB installation'
-run ab -V || error_exit 'AB is not installed properly'
-
 echo 'Verifying gcloud installation'
 run gcloud version || error_exit 'gcloud is not installed properly'
 
@@ -51,6 +48,12 @@ run kubectl version || error_exit 'kubectl is not installed properly'
 
 echo 'Verifying gsutil installation'
 run gsutil version || error_exit 'gsutil is not installed properly'
+
+echo 'Verifying that WRK is installed'
+[[ -f /usr/local/bin/wrk ]] || error_exit 'wrk is not installed properly'
+
+echo 'Verifying that h2load is installed'
+run ${ESP_ROOT}/nghttp2/src/h2load --version || error_exit 'h2load is not installed properly'
 
 echo 'Verifying that the user is jenkins'
 THIS_USER="$(whoami)"

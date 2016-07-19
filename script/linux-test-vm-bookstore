@@ -29,10 +29,6 @@
 
 # This script deploys the bookstore into a GAEv2 VM with ESP
 # and run basic bookstore API test as well as a long-running test.
-#
-# This script requires AB(apache benchmark), python gflags
-# and auth_token_gen.
-# script/linux-install-test-client can be used to install them.
 
 if [[ "$(uname)" != "Linux" ]]; then
   echo "Run on Linux only."

@@ -57,6 +57,7 @@ function install_packages() {
   && ${SUDO} apt-get -qqy install \
     apt-transport-https \
     autoconf \
+    automake \
     autotools-dev \
     ca-certificates \
     curl \
@@ -65,6 +66,9 @@ function install_packages() {
     gettext \
     git \
     lcov \
+    libev-dev \
+    libevent-dev \
+    libjemalloc-dev \
     libssl-dev \
     libio-socket-ssl-perl \
     libtool \
@@ -169,5 +173,39 @@ fi
 echo "Updating gcloud."
 ${SUDO} gcloud -q components update
 ${SUDO} gcloud -q components install beta
+
+echo 'Installing test client dependencies'
+export LDFLAGS=-L/usr/local/lib
+export CPPFLAGS=-I/usr/local/include
+export CXXFLAGS=-std=c++1y
+export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/usr/local/ssl/lib/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig
+
+echo 'Building python-gflags'
+git clone https://github.com/google/python-gflags || error_exit 'Cannot clone python-gflags'
+pushd python-gflags
+${SUDO} python ./setup.py install || error_exit 'Cannot install python-gflags'
+popd
+
+echo 'Building wrk'
+git clone https://github.com/wg/wrk || error_exit 'Cannot clone wrk'
+pushd wrk
+make WITH_OPENSSL=/usr || error_exit 'Cannot build wrk'
+${SUDO} cp ./wrk /usr/local/bin/wrk
+${SUDO} chmod a+rx /usr/local/bin/wrk
+popd
+export WRK=/usr/local/bin/wrk
+${WRK} --version
+
+echo 'Building nghttp2'
+git clone https://github.com/nghttp2/nghttp2.git || error_exit 'Cannot clone nghttp2'
+pushd nghttp2
+(autoreconf -i \
+&& automake \
+&& autoconf \
+&&./configure --enable-app) || error_exit 'Cannot configure nghttp2'
+make || error_exit 'Cannot make nghttp2'
+popd
+export H2LOAD=$(readlink --canonicalize ./nghttp2/src/h2load)
+${H2LOAD} --version
 
 echo "Software installation complete."

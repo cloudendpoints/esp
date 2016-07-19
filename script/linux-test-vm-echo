@@ -29,10 +29,6 @@
 
 # This script deploys the echo API into a GAEv2 VM with ESP
 # and use AB to test performance against it.
-#
-# This script requires AB(apache benchmark), python gflag
-# and auth_token_gen.
-# script/linux-install-test-client can be used to install them.
 
 if [[ "$(uname)" != 'Linux' ]]; then
   echo 'Run on Linux only.'

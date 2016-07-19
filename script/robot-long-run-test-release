@@ -52,9 +52,6 @@ done
 ${DIR}/linux-build-dependencies \
   || error_exit "Failed to build and install dependencies."
 
-${DIR}/linux-install-test-client \
-  || error_exit "Cannot install test client."
-
 # Set default bucket until Robot serves it to us.
 [[ -n "${BUCKET}" ]] || BUCKET="gs://endpoints-robot-temp/$(git show -q HEAD --pretty=format:%H)"
 

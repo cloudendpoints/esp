@@ -28,10 +28,6 @@
 #
 
 # This script runs a long-running test against it.
-#
-# This script requires AB(apache benchmark), python gflag
-# and auth_token_gen.
-# script/linux-install-test-client can be used to install them.
 
 if [[ "$(uname)" != "Linux" ]]; then
   echo "Run on Linux only."

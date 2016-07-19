@@ -54,9 +54,6 @@ if [[ "${SKIP_SETUP}" == false ]]; then
   echo "Building and installing dependencies."
   ${DIR}/linux-build-dependencies \
     || error_exit "Failed to build and install dependencies."
-
-  ${DIR}/linux-install-test-client \
-    || error_exit "Cannot install test client."
 fi
 
 ${DIR}/linux-test-vm-bookstore -i "${TEST_DOCKER}" -b "${BUCKET}" -e \

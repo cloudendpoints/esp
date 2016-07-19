@@ -27,14 +27,12 @@ RUN rm -rf /usr/lib/google-cloud-sdk \
     && ln -s /usr/lib/google-cloud-sdk/bin/gcloud /usr/bin/gcloud \
     && gcloud components update kubectl alpha -q
 
-ENV PATH /usr/lib/google-cloud-sdk/bin:/usr/local/apache2/bin:$PATH
+ENV PATH /usr/lib/google-cloud-sdk/bin:$PATH
 
 # Installing Tools
 ADD script /tmp/esp_tmp/script
-RUN chmod +x /tmp/esp_tmp/script/linux-install-test-client \
-    && chmod +x /tmp/esp_tmp/script/linux-install-software
+RUN chmod +x /tmp/esp_tmp/script/linux-install-software
 RUN /tmp/esp_tmp/script/linux-install-software -d \
-    && /tmp/esp_tmp/script/linux-install-test-client \
     && rm -rf /tmp/esp_tmp
 
 # Docker settings.
