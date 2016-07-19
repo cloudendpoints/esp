@@ -34,7 +34,7 @@ ESP_ROOT="$(cd "${DIR}/.." && pwd)"
 . ${DIR}/all-utilities || { echo "Cannot load Bash utilities" ; exit 1 ; }
 
 PROJECT_ID="$(gcloud config list core/project --format flattened | cut -d ' ' -f 2)"
-DEFAULT_ESP_SERVICE="testang-dot-${PROJECT_ID}.appspot.com"
+DEFAULT_ESP_SERVICE="testing-dot-${PROJECT_ID}.appspot.com"
 GSUTIL=$(which gsutil) || GSUTIL=~/google-cloud-sdk/bin/gsutil
 
 # End to End tests options
