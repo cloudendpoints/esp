@@ -95,7 +95,7 @@ function deploy_application() {
     # deploying an endpoints app requires the current directory
     # to be the app directory
     cd "${APP_DIR}"
-    ${GCLOUD} --project "${PROJECT}" app deploy \
+    ${GCLOUD} --project "${PROJECT}" beta app deploy \
       "${APP_YAML_FILE}" "${ARGS[@]}" --no-promote -q
   )
 }

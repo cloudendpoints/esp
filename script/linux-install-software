@@ -168,5 +168,6 @@ fi
 
 echo "Updating gcloud."
 ${SUDO} gcloud -q components update
+${SUDO} gcloud -q components install beta
 
 echo "Software installation complete."
