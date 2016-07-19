@@ -78,35 +78,46 @@ ngx_int_t ngx_esp_error_header_filter(ngx_http_request_t *r) {
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "ESP error header code: %d", r->err_status);
 
-    // TODO: detect that request was application/json or that the client accepts
-    // application/json
-    // Update header to JSON content type
-    r->headers_out.content_type = application_json;
-    r->headers_out.content_type_len = application_json.len;
-    r->headers_out.content_type_lowcase = nullptr;
+    // NGINX generates internal errors in the GRPC processing pipeline
+    // (for example, if the original request exceeds the limits)
+    if (IsGrpcRequest(r)) {
+      // GRPC always uses 200 OK as HTTP status
+      r->headers_out.status = NGX_HTTP_OK;
+      r->headers_out.content_type = application_grpc;
+      r->headers_out.content_type_len = application_grpc.len;
+      r->headers_out.content_type_lowcase = nullptr;
+    } else {
+      // TODO: detect that request was application/json or that the client
+      // accepts
+      // application/json
+      // Update header to JSON content type
+      r->headers_out.content_type = application_json;
+      r->headers_out.content_type_len = application_json.len;
+      r->headers_out.content_type_lowcase = nullptr;
 
-    // Returns WWW-Authenticate header for authentication/authorization
-    // responses.
-    // See https://tools.ietf.org/html/rfc6750#section-3.
-    if (r->err_status == NGX_HTTP_UNAUTHORIZED ||
-        r->err_status == NGX_HTTP_FORBIDDEN) {
-      r->headers_out.www_authenticate = reinterpret_cast<ngx_table_elt_t *>(
-          ngx_list_push(&r->headers_out.headers));
-      if (r->headers_out.www_authenticate == nullptr) {
-        return NGX_ERROR;
-      }
+      // Returns WWW-Authenticate header for authentication/authorization
+      // responses.
+      // See https://tools.ietf.org/html/rfc6750#section-3.
+      if (r->err_status == NGX_HTTP_UNAUTHORIZED ||
+          r->err_status == NGX_HTTP_FORBIDDEN) {
+        r->headers_out.www_authenticate = reinterpret_cast<ngx_table_elt_t *>(
+            ngx_list_push(&r->headers_out.headers));
+        if (r->headers_out.www_authenticate == nullptr) {
+          return NGX_ERROR;
+        }
 
-      r->headers_out.www_authenticate->key = www_authenticate;
-      r->headers_out.www_authenticate->lowcase_key =
-          const_cast<u_char *>(www_authenticate_lowcase);
-      r->headers_out.www_authenticate->hash =
-          ngx_hash_key(const_cast<u_char *>(www_authenticate_lowcase),
-                       sizeof(www_authenticate_lowcase) - 1);
+        r->headers_out.www_authenticate->key = www_authenticate;
+        r->headers_out.www_authenticate->lowcase_key =
+            const_cast<u_char *>(www_authenticate_lowcase);
+        r->headers_out.www_authenticate->hash =
+            ngx_hash_key(const_cast<u_char *>(www_authenticate_lowcase),
+                         sizeof(www_authenticate_lowcase) - 1);
 
-      if (ctx->auth_token.len == 0) {
-        r->headers_out.www_authenticate->value = missing_credential;
-      } else {
-        r->headers_out.www_authenticate->value = invalid_token;
+        if (ctx->auth_token.len == 0) {
+          r->headers_out.www_authenticate->value = missing_credential;
+        } else {
+          r->headers_out.www_authenticate->value = invalid_token;
+        }
       }
     }
 
@@ -137,29 +148,41 @@ ngx_int_t ngx_esp_error_body_filter(ngx_http_request_t *r, ngx_chain_t *in) {
                            Status::APPLICATION);
     }
 
-    // TODO: considering sending constant payload
+    if (IsGrpcRequest(r)) {
+      // discard the body
+      ngx_int_t rc = ngx_http_next_body_filter(r, nullptr);
+      if (rc != NGX_OK) {
+        return rc;
+      }
 
-    // Serialize error as JSON
-    ngx_str_t json_error;
-    if (ngx_str_copy_from_std(r->pool, ctx->status.ToJson(), &json_error) !=
-        NGX_OK) {
-      return NGX_ERROR;
+      // send header frame with status
+      GrpcFinish(r, ctx->status, {});
+      return NGX_OK;
+    } else {
+      // TODO: consider sending constant payload
+
+      // Serialize error as JSON
+      ngx_buf_t *body = nullptr;
+      ngx_str_t json_error;
+      if (ngx_str_copy_from_std(r->pool, ctx->status.ToJson(), &json_error) !=
+          NGX_OK) {
+        return NGX_ERROR;
+      }
+
+      // Create temporary buffer to hold data, discard "in"
+      body = reinterpret_cast<ngx_buf_t *>(ngx_calloc_buf(r->pool));
+      if (body == nullptr) {
+        return NGX_ERROR;
+      }
+
+      body->temporary = 1;
+      body->pos = json_error.data;
+      body->last = json_error.data + json_error.len;
+      body->last_in_chain = 1;
+      body->last_buf = 1;
+      ngx_chain_t out = {body, nullptr};
+      return ngx_http_next_body_filter(r, &out);
     }
-
-    // Create temporary buffer to hold data, discard "in"
-    ngx_buf_t *body = reinterpret_cast<ngx_buf_t *>(ngx_calloc_buf(r->pool));
-    if (body == nullptr) {
-      return NGX_ERROR;
-    }
-
-    body->temporary = 1;
-    body->pos = json_error.data;
-    body->last = json_error.data + json_error.len;
-    body->last_in_chain = 1;
-    body->last_buf = 1;
-    ngx_chain_t out = {body, nullptr};
-
-    return ngx_http_next_body_filter(r, &out);
   }
 
   return ngx_http_next_body_filter(r, in);
@@ -194,6 +217,7 @@ ngx_int_t ngx_esp_return_json_error(ngx_http_request_t *r) {
   }
 
   // Error status marks errors generated by ESP
+  // This field update activates the error filter
   r->err_status = ctx->status.HttpCode();
 
   if (ngx_http_discard_request_body(r) != NGX_OK) {
@@ -214,6 +238,8 @@ ngx_int_t ngx_esp_return_json_error(ngx_http_request_t *r) {
   if (r->header_only) {
     return NGX_DONE;
   }
+
+  // kick in the filter chain that includes the error filter
   return ngx_http_output_filter(r, nullptr);
 }
 

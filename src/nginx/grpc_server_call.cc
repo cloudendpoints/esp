@@ -31,6 +31,7 @@
 
 #include <grpc++/support/byte_buffer.h>
 
+#include "src/nginx/error.h"
 #include "src/nginx/grpc_finish.h"
 #include "src/nginx/module.h"
 #include "src/nginx/util.h"
@@ -85,7 +86,7 @@ NgxEspGrpcServerCall::NgxEspGrpcServerCall(ngx_http_request_t *r)
   r->cleanup = &cln_;
 }
 
-void NgxEspGrpcServerCall::ProcessPrereadRequestBody() {
+utils::Status NgxEspGrpcServerCall::ProcessPrereadRequestBody() {
   ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
   ctx->grpc_server_call = this;
   // In the typical case, there will actually be a body to be passed
@@ -96,9 +97,14 @@ void NgxEspGrpcServerCall::ProcessPrereadRequestBody() {
   r_->request_body_no_buffering = 1;
   ngx_int_t rc = ngx_http_read_client_request_body(
       r_, &NgxEspGrpcServerCall::OnDownstreamPreread);
+
   if (rc >= NGX_HTTP_SPECIAL_RESPONSE) {
-    ngx_http_finalize_request(r_, rc);
+    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r_->connection->log, 0,
+                   "NgxEspGrpcServerCall: received special response %d", rc);
+    return utils::Status(rc, utils::Status::CodeToString(rc));
   }
+
+  return utils::Status::OK;
 }
 
 NgxEspGrpcServerCall::~NgxEspGrpcServerCall() {

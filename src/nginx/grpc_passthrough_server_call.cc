@@ -80,8 +80,21 @@ struct GrpcDeleter {
 
 NgxEspGrpcPassThroughServerCall::NgxEspGrpcPassThroughServerCall(
     ngx_http_request_t *r)
-    : NgxEspGrpcServerCall(r) {
-  NgxEspGrpcServerCall::ProcessPrereadRequestBody();
+    : NgxEspGrpcServerCall(r) {}
+
+utils::Status NgxEspGrpcPassThroughServerCall::Create(
+    ngx_http_request_t *r,
+    std::shared_ptr<NgxEspGrpcPassThroughServerCall> *out) {
+  std::shared_ptr<NgxEspGrpcPassThroughServerCall> call(
+      new NgxEspGrpcPassThroughServerCall(r));
+  auto status = call->ProcessPrereadRequestBody();
+
+  if (!status.ok()) {
+    return status;
+  }
+
+  *out = call;
+  return utils::Status::OK;
 }
 
 const ngx_str_t &NgxEspGrpcPassThroughServerCall::response_content_type()

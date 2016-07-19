@@ -84,7 +84,7 @@ class NgxEspGrpcServerCall : public grpc::ServerCall {
 
   // Calls ngx_http_read_client_request_body() to process the preread request
   // body.
-  void ProcessPrereadRequestBody();
+  utils::Status ProcessPrereadRequestBody();
 
   // The request
   ngx_http_request_t* r_;

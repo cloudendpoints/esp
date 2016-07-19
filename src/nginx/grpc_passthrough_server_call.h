@@ -50,7 +50,12 @@ namespace nginx {
 // NgxEspGrpcServerCall.
 class NgxEspGrpcPassThroughServerCall : public NgxEspGrpcServerCall {
  public:
-  NgxEspGrpcPassThroughServerCall(ngx_http_request_t* r);
+  // Creates an instance of NgxEspGrpcPassThroughServerCall. If successful,
+  // returns an OK status and out points to the created instance. Otherwise,
+  // returns the error status.
+  static utils::Status Create(
+      ngx_http_request_t* r,
+      std::shared_ptr<NgxEspGrpcPassThroughServerCall>* out);
 
   // ServerCall::Finish() implementation
   virtual void Finish(
@@ -59,6 +64,9 @@ class NgxEspGrpcPassThroughServerCall : public NgxEspGrpcServerCall {
 
  private:
   // NgxEspGrpcServerCall implementation
+
+  // Constructor
+  NgxEspGrpcPassThroughServerCall(ngx_http_request_t* r);
   virtual bool ConvertRequestBody(std::vector<gpr_slice>* out);
   virtual bool ConvertResponseMessage(const ::grpc::ByteBuffer& msg,
                                       ngx_chain_t* out);

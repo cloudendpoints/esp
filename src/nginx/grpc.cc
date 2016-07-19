@@ -219,17 +219,21 @@ ngx_int_t GrpcBackendHandler(ngx_http_request_t *r) {
 
       // TODO: Fill in the headers from the request.
       std::multimap<std::string, std::string> headers;
-      auto server_call = std::make_shared<NgxEspGrpcPassThroughServerCall>(r);
-      std::string method(reinterpret_cast<char *>(r->uri.data), r->uri.len);
+      std::shared_ptr<NgxEspGrpcPassThroughServerCall> server_call;
+      status = NgxEspGrpcPassThroughServerCall::Create(r, &server_call);
 
-      ngx_log_debug1(NGX_LOG_DEBUG, r->connection->log, 0,
-                     "GrpcBackendHandler: gRPC pass-through - method %s",
-                     method.c_str());
+      if (status.ok()) {
+        std::string method(reinterpret_cast<char *>(r->uri.data), r->uri.len);
 
-      grpc::ProxyFlow::Start(
-          espcf->esp_srv_conf->esp_main_conf->grpc_queue.get(),
-          std::move(server_call), std::move(stub), method, headers);
-      return NGX_DONE;
+        ngx_log_debug1(NGX_LOG_DEBUG, r->connection->log, 0,
+                       "GrpcBackendHandler: gRPC pass-through - method %s",
+                       method.c_str());
+
+        grpc::ProxyFlow::Start(
+            espcf->esp_srv_conf->esp_main_conf->grpc_queue.get(),
+            std::move(server_call), std::move(stub), method, headers);
+        return NGX_DONE;
+      }
     }
 
     if (status.code() != NGX_DECLINED) {

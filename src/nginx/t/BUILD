@@ -122,6 +122,7 @@ nginx_suite(
         "grpc_pass_errors.t",
         "grpc_pass_grpc_fallback.t",
         "grpc_pass_grpc_override.t",
+        "grpc_pass_large_request.t",
         "grpc_pass_non_grpc.t",
         "grpc_pass_shared_port_ssl.t",
         "grpc_pass_ssl_downstream.t",

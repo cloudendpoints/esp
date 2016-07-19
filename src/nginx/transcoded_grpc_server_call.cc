@@ -56,9 +56,7 @@ NgxEspTranscodedGrpcServerCall::NgxEspTranscodedGrpcServerCall(
     : NgxEspGrpcServerCall(r),
       nginx_request_stream_(std::move(nginx_request_stream)),
       grpc_response_stream_(std::move(grpc_response_stream)),
-      transcoder_(std::move(transcoder)) {
-  NgxEspGrpcServerCall::ProcessPrereadRequestBody();
-}
+      transcoder_(std::move(transcoder)) {}
 
 utils::Status NgxEspTranscodedGrpcServerCall::Create(
     ngx_http_request_t *r,
@@ -88,10 +86,16 @@ utils::Status NgxEspTranscodedGrpcServerCall::Create(
   }
 
   // Create the NgxEspTranscodedGrpcServerCall instance
-  out->reset(new NgxEspTranscodedGrpcServerCall(
-      r, std::move(nginx_request_stream), std::move(grpc_response_stream),
-      std::move(transcoder)));
+  std::shared_ptr<NgxEspTranscodedGrpcServerCall> call(
+      new NgxEspTranscodedGrpcServerCall(r, std::move(nginx_request_stream),
+                                         std::move(grpc_response_stream),
+                                         std::move(transcoder)));
+  status = call->ProcessPrereadRequestBody();
+  if (!status.ok()) {
+    return status;
+  }
 
+  *out = call;
   return utils::Status::OK;
 }
 
