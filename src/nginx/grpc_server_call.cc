@@ -175,7 +175,12 @@ void NgxEspGrpcServerCall::SendInitialMetadata(
                  "NgxEspGrpcServerCall::SendInitialMetadata: "
                  "ngx_http_send_header: %i",
                  rc);
-  continuation(rc == NGX_OK);
+
+  if (rc == NGX_ERROR || rc > NGX_OK) {
+    continuation(false);
+  } else {
+    continuation(true);
+  }
 }
 
 void NgxEspGrpcServerCall::OnDownstreamWriteable(ngx_http_request_t *r) {
