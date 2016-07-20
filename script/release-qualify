@@ -34,23 +34,26 @@ function usage() {
   [[ -n "${1}" ]] && echo "${1}"
   echo "usage: ${BASH_SOURCE[0]}
   -g <path_to_gsutil>
+  -r <to skip checking robot logs>
   -s <commit sha>
-  -t <output dir>
-  -j <to include Jenkins logs>"
+  -p <pre-submit sha>; in some cases, the last passed presubmit sha is different.
+  -t <output dir>"
   exit 1
 }
 
 GSUTIL=$(which gsutil) || GSUTIL=~/google-cloud-sdk/bin/gsutil
 SHA=""
+PRE_SUBMIT_SHA=""
 TMP=~/tmp
 # Testing only.
 SKIP_ROBOT_CHECK=false
 
-while getopts :g:rs:t: arg; do
+while getopts :g:rs:p:t: arg; do
   case ${arg} in
     g) GSUTIL="${OPTARG}";;
     r) SKIP_ROBOT_CHECK=true;;
     s) SHA="${OPTARG}";;
+    p) PRE_SUBMIT_SHA="${OPTARG}";;
     t) TMP="${OPTARG}";;
     *) usage "Invalid option: -${OPTARG}";;
   esac
@@ -122,6 +125,20 @@ function count_stress_failures() {
     }' "${@}"
 }
 
+function check_robot_presubmit() {
+  local sha=${1}
+
+  [[ -f "${LOGS}/${sha}/presubmit.json" ]] \
+    || error_exit "Cannot find presubmit results ${LOGS}/${sha}/presubmit.json"
+  [[ -f "${LOGS}/${sha}/coverage.json" ]] \
+    || error_exit "Cannot find code coverage results ${LOGS}/${sha}/coverage.json"
+
+  check_result "${LOGS}/${sha}/presubmit.json" "${sha}" \
+    || error_exit "Presubmit run failed - Release is not qualified."
+  check_result "${LOGS}/${sha}/coverage.json" "${sha}" \
+    || error_exit "Code coverage run failed - Release is not qualified."
+}
+
 (
   echo "Release qualification of ${SHA}."
   echo "It is now: $(date)"
@@ -134,16 +151,14 @@ function count_stress_failures() {
     ${GSUTIL} -m -q cp -r "gs://endpoints-robot-temp/${SHA}/" "${LOGS}/" 2>&1 \
       || error_exit "Failed to download logs from endpoints-robot-temp."
 
-    [[ -f "${LOGS}/${SHA}/presubmit.json" ]] \
-      || error_exit "Cannot find presubmit results ${LOGS}/${SHA}/presubmit.json"
-    [[ -f "${LOGS}/${SHA}/coverage.json" ]] \
-      || error_exit "Cannot find code coverage results ${LOGS}/${SHA}/coverage.json"
+    if [[ -n "${PRE_SUBMIT_SHA}" ]]; then
+      ${GSUTIL} -m -q cp -r "gs://endpoints-robot-temp/${PRE_SUBMIT_SHA}/" "${LOGS}/" 2>&1 \
+        || error_exit "Failed to download presubmit logs from endpoints-robot-temp."
 
-    check_result "${LOGS}/${SHA}/presubmit.json" "${SHA}" \
-      || error_exit "Presubmit run failed - Release is not qualified."
-    check_result "${LOGS}/${SHA}/coverage.json" "${SHA}" \
-      || error_exit "Code coverage run failed - Release is not qualified."
-
+      check_robot_presubmit "${PRE_SUBMIT_SHA}"
+    else
+      check_robot_presubmit "${SHA}"
+    fi
   else
     mkdir -p "${LOGS}/${SHA}"
   fi
