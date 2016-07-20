@@ -392,6 +392,11 @@ def buildGrcpTest() {
       '//test/grpc:grpc-test-client //test/grpc:grpc-test-server',
       'bazel-bin/test/grpc/grpc-test-client',
       'grpc_test_client')
+  def codeCheckedOut = fileExists 'test/grpc/linux-build-grpc-docker'
+  if (!codeCheckedOut) {
+    setGCloud()
+    checkoutSourceCode()
+  }
   sh "test/grpc/linux-build-grpc-docker -i ${gRpcServerImg}"
 }
 
