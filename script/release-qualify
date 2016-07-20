@@ -250,6 +250,15 @@ __EOF__
         || tar xvf ${TAR} -C "${DIR}" --strip=3 var/log/nginx
     done 3< <(find "${DIR}" -type f -name '*.tar.gz')
 
+    echo ""
+    echo "Looking for error_stderr.log.gz file in ${DIR}"
+    echo ""
+    if [[ -f "${DIR}/error_stderr.log.gz" ]]; then
+      echo "Extracting NGINX logs from ${DIR}/error_stderr.log.gz"
+      gunzip -f "${DIR}/error_stderr.log.gz" \
+        || error_exit "Failed to gunzip NGINX logs"
+    fi
+
     echo ''
     echo 'Checking for presence of error.log'
     ls "${DIR}"/error*.log || error_exit 'Cannot find any log files'

@@ -223,6 +223,7 @@ run_nonfatal long_running_test \
 
 STATUS=${?}
 save_logs "${NAMESPACE}" "${LOG_DIR}"
+save_gke_esp_logs "${NAMESPACE}" "${LOG_DIR}"
 upload_logs "${REMOTE_LOG_DIR}" "${LOG_DIR}"
 rm -rf "${LOG_DIR}"
 exit ${STATUS}

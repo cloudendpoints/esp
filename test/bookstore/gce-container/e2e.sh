@@ -101,6 +101,7 @@ run_nonfatal long_running_test \
 
 STATUS=${?}
 save_vm_logs "${INSTANCE_NAME}" "${LOG_DIR}"
+save_gce_container_esp_logs "${INSTANCE_NAME}" "${LOG_DIR}"
 upload_logs "${REMOTE_LOG_DIR}" "${LOG_DIR}"
 rm -rf "${LOG_DIR}"
 exit ${STATUS}

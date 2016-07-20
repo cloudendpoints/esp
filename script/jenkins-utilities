@@ -275,26 +275,96 @@ function long_running_test() {
   return ${status}
 }
 
-# Extract logs from VM and save it to a given directory.
-function save_vm_logs() {
-  local vm="${1}"
-  local log_dir="${2}"
-  local tar_file="${log_dir}/${vm}.tar.gz"
+# Point SSH_PRIVATE_KEY to the private key path and make sure it exists.
+function set_ssh_private_key() {
   local ssh_path="${HOME}/.ssh"
-  local private_ssh_key="${ssh_path}/google_compute_engine"
-  if ! [[ -a "${private_ssh_key}" ]]; then
+  SSH_PRIVATE_KEY="${ssh_path}/google_compute_engine"
+  if ! [[ -a "${SSH_PRIVATE_KEY}" ]]; then
     mkdir -p "${ssh_path}"
     local remote_path="gs://${BUCKET}/ssh_keys/*"
     echo "Getting ssh key from ${remote_path}"
     retry -n 3 ${GSUTIL} cp "${remote_path}" "${ssh_path}/"
     chmod -R 700 "${ssh_path}"
   fi
+}
+
+# Extract logs from VM and save it to a given directory.
+function save_vm_logs() {
+  local vm="${1}"
+  local log_dir="${2}"
+  local tar_file="${log_dir}/${vm}.tar.gz"
+
+  # Make sure we have the private key to SSH to the VM
   # Using ssh instead of gcloud compute ssh, as gcloud uses external IP
   # address which does not work with restrictive firewall rules
-  ssh -i "${private_ssh_key}" \
+  set_ssh_private_key
+  [[ ${?} -eq 0 ]] || { echo 'Failed to download SSH private key'; return 1; }
+
+  ssh -i "${SSH_PRIVATE_KEY}" \
     -o StrictHostKeyChecking=no \
     "${vm}" sudo tar czf - /var/log/ > "${tar_file}"
-  [[ ${?} -eq 0 ]] || echo 'Failed to get logs'
+  [[ ${?} -eq 0 ]] || { echo 'Failed to get logs'; return 1; }
+}
+
+# Save ESP logs from the ESP container running in the specified VM container
+function save_gce_container_esp_logs() {
+  local vm="${1}"
+  local log_dir="${2}"
+  # An extra filter for container. In GKE case, the same worker instance might
+  # run ESP containers from multiple jobs. We use this extra filter to find the
+  # correct container.
+  local container_filter="${3}"
+  local output_file="${log_dir}/error_stderr.log.gz"
+
+  echo "Getting ESP logs from a container in the VM: '${vm}'..."
+
+  # Make sure we have the private key to SSH to the VM
+  # Using ssh instead of gcloud compute ssh, as gcloud uses external IP
+  # address which does not work with restrictive firewall rules
+  set_ssh_private_key
+  [[ ${?} -eq 0 ]] || { echo 'Failed to download SSH private key'; return 1; }
+
+  # Find the ESP container
+  local container="$(ssh -i ${SSH_PRIVATE_KEY} \
+    -o StrictHostKeyChecking=no "${vm}" \
+    sudo docker ps | grep 'endpoints-runtime' | grep "${container_filter}" | awk '{print $1}')"
+  [[ -n "${container}" ]] || { echo 'Failed to find ESP container'; return 1; }
+
+  echo "Found ESP container: ${container}. Getting the logs..."
+  # Capture stderr only and discard stdout as it contains access logs and is
+  # huge for long-run tests. Then pipe it to gzip to compress the logs before
+  # downloading.
+  ssh -i "${SSH_PRIVATE_KEY}" \
+    -o StrictHostKeyChecking=no "${vm}" \
+    "sudo docker logs ${container} 2>&1 1>/dev/null | gzip" > "${output_file}"
+  [[ ${?} -eq 0 ]] || { echo 'Failed to get logs from container'; return 1; }
+
+  echo "Done! Logs saved!"
+}
+
+# Save ESP logs from a GKE run
+function save_gke_esp_logs() {
+  local namespace="${1}"
+  local log_dir="${2}"
+
+  echo "Saving ESP logs from GKE namespace: ${namespace}..."
+
+  # Find the ESP pod and the node where it's running
+  local pod_with_node="$(kubectl get pods --namespace ${namespace} \
+    -o='custom-columns=NAME:.metadata.name,NODE:.spec.nodeName' | grep '^esp')"
+  [[ ${?} -eq 0 ]] || { echo 'Failed to find ESP pod'; return 1; }
+
+  local pod="$(echo ${pod_with_node} | awk '{print $1}')"
+  local node="$(echo ${pod_with_node} | awk '{print $2}')"
+  [[ -n "${pod}" ]] || { echo 'Failed to extract the pod'; return 1; }
+  [[ -n "${node}" ]] || { echo 'Failed to extract the node'; return 1; }
+
+  # We don't use "kubectl logs" as it is not able to differentiate between
+  # stderr and stdout (https://github.com/kubernetes/kubernetes/issues/28167).
+  # Instead we ssh to the VM and use "docker logs" as in the "GCE container"
+  # test case.
+  echo "Found ESP pod and its node: ${pod} - ${node}. Getting the logs from the node..."
+  save_gce_container_esp_logs "${node}" "${log_dir}" "${pod}"
 }
 
 # Upload logs remote directory
