@@ -41,10 +41,14 @@ function start_debug() {
   [[ -e /usr/sbin/nginx.original ]] || cp /usr/sbin/nginx /usr/sbin/nginx.original
 
   echo "error_log /var/log/nginx/error.log debug;" > /etc/nginx/nginx.conf-debug
+  echo "worker_rlimit_core 512m;" >> /etc/nginx/nginx.conf-debug
+  echo "working_directory /tmp;" >> /etc/nginx/nginx.conf-debug
   cat /etc/nginx/nginx.conf.original >> /etc/nginx/nginx.conf-debug
 
   cp /etc/nginx/nginx.conf-debug /etc/nginx/nginx.conf
   cp /usr/sbin/nginx-debug /usr/sbin/nginx
+
+  ulimit -c unlimited
 
   # Sending USR2 to Nginx to reload the binary
   kill -USR2 "$(cat /var/run/nginx.pid)"
