@@ -120,6 +120,16 @@ utils::Status NgxEspRequest::AddHeaderToBackend(const std::string &key,
     if (h == nullptr) {
       return utils::Status(Code::INTERNAL, "Out of memory");
     }
+
+    h->lowcase_key =
+        reinterpret_cast<u_char *>(ngx_pcalloc(r_->pool, key.size()));
+    if (h->lowcase_key == nullptr) {
+      return utils::Status(Code::INTERNAL, "Out of memory");
+    }
+    h->hash = ngx_hash_strlow(
+        h->lowcase_key,
+        reinterpret_cast<u_char *>(const_cast<char *>(key.c_str())),
+        key.size());
   }
 
   if (ngx_str_copy_from_std(r_->pool, key, &h->key) != NGX_OK ||
