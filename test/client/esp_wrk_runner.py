@@ -88,6 +88,13 @@ def test(run, c, t, d):
     with open(wrk_out, 'r') as f:
         metrics = json.load(f)
 
+    # Print out these fields for easy awk extraction in release-qualify script
+    for k, nice_key in [('Requests', 'Complete requests: '),
+                        ('Failed requests', 'Failed requests: '),
+                        ('Non-2xx responses', 'Non-2xx responses: ')]:
+      if metrics.get(k, None):
+        print "%s %s" % (nice_key, metrics[k][0])
+
     for k in metrics.keys():
         metrics[k] = tuple(metrics[k])
     print '==== Metrics:'
