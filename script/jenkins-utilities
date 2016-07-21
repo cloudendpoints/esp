@@ -236,7 +236,7 @@ function long_running_test() {
   local status
   local http_code=200
 
-  if [[ ${GRPC} == 'true' ]]; then
+  if [[ "${GRPC}" == 'true' ]]; then
     echo 'Checking grpc service.'
     retry -n 10 -t 90 check_grpc_service "${host}"
     status=${?}

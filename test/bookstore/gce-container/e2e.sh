@@ -54,7 +54,7 @@ e2e_options "${@}"
 [[ -n "${ESP_IMAGE}" ]] || e2e_usage "Must provide esp docker image via '-e' parameter."
 [[ -n "${INSTANCE_NAME}" ]] || e2e_usage "Must provide Instance name via 'i' parameter."
 
-if [[ ${GRPC} ]]; then
+if [[ "${GRPC}" == 'true' ]]; then
   HOST="${INSTANCE_NAME}:8080"
   echo "grpc service name is: ${ESP_SERVICE}"
 else

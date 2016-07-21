@@ -405,9 +405,11 @@ def buildAndStash(buildTarget, stashTarget, name) {
   setGCloud()
   checkoutSourceCode()
   // Turns out Bazel does not like to be terminated.
-  // Setting this to 30 minutes.
-  timeout(30) {
-    sh "bazel build --config=release ${buildTarget}"
+  // Timing out after 40 minutes.
+  timeout(40) {
+    retry(2) {
+      sh "bazel build --config=release ${buildTarget}"
+    }
   }
   fastStash(name, stashTarget)
 }
@@ -501,7 +503,7 @@ def e2eGCEContainer(vmImage, gRpc = false) {
   setGCloud()
   checkoutSourceCode()
   fastUnstash('auth_token_gen')
-  def commonOptions = e2eCommonOptions('gce-container', gRpc ? 'grpc-' : '')
+  def testType = 'gce-container'
   def espImage = espDockerImage()
   def backendImage = bookstoreDockerImage()
   def gRpcFlag = ''
@@ -510,7 +512,9 @@ def e2eGCEContainer(vmImage, gRpc = false) {
     backendImage = gRpcTestServerImage()
     espImage = espGrpcDockerImage()
     gRpcFlag = '-g'
+    testType = "${testType}-grpc"
   }
+  def commonOptions = e2eCommonOptions(testType, gRpc ? 'grpc-' : '')
   echo 'Running GCE container test'
   sh "test/bookstore/gce-container/e2e.sh " +
       commonOptions +
