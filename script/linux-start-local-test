@@ -60,18 +60,16 @@ while getopts :b:m:t: arg; do
   esac
 done
 
+echo 'Tweaking Linux net interface'
+sudo sh -c 'echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse'
+sudo sh -c 'echo 1 > /proc/sys/net/ipv4/tcp_tw_recycle'
+sudo sh -c 'echo "1024 65000" > /proc/sys/net/ipv4/ip_local_port_range'
+
 echo 'Installing Node.js and npm.'
 wget https://storage.googleapis.com/apache_tarballs/node-v4.2.1-linux-x64.tar.gz \
   || error_exit 'Failed to download Node.js package.'
 sudo tar -C /usr/local --strip-components 1 -xzf node-v4.2.1-linux-x64.tar.gz \
   || error_exit 'Failed to install Node.js.'
-
-echo 'Starting backend.'
-pushd test/echo
-npm install
-node echo.js 2>&1 > /dev/null&
-trap 'kill %node' EXIT
-popd
 
 NGINX=${ROOT}/nginx-esp
 
@@ -84,9 +82,19 @@ API_KEY="${ESP_LOAD_TEST_API_KEY}"
 [[ -n "${API_KEY}" ]] || error_exit 'Could not set api key.'
 NGINX_CONFIG="${ROOT}/test/echo/gce-vm/nginx.conf"
 PREFIX="${ROOT}/.nginx"
-# clean up the error log before the run
-rm "${PREFIX}/logs/error.log"
 
+# clean up the logs before the run
+rm "${PREFIX}/logs/error.log"
+rm "${PREFIX}/logs/backend.log"
+mkdir --parents --mode=777 "${PREFIX}/logs" \
+  || error_exit 'Cannot create NGINX logs directory.'
+
+echo 'Starting backend.'
+pushd test/echo
+npm install
+node echo.js 2>&1 | tee "${PREFIX}/logs/backend.log" &
+trap 'kill %node' EXIT
+popd
 
 NGINX_BAZEL_BIN="${ROOT}/bazel-bin/src/nginx/main/nginx-esp"
 if ! [[ -e "${NGINX_BAZEL_BIN}" ]]; then
@@ -99,14 +107,11 @@ fi
 cp -f "${NGINX_BAZEL_BIN}" "${NGINX}" \
   || error_exit 'Error copying nginx-esp, aborting.'
 
-echo 'Starting Endpoints Runtime.'
-mkdir --parents --mode=777 "${PREFIX}/logs" \
-  || error_exit 'Cannot create NGINX logs directory.'
-
 echo 'Creating service.json'
 sed "s|\${PROJECT}|esp-load-test|g" ${ROOT}/test/echo/service.json.temp \
   > ${ROOT}/test/echo/gce-vm/service.json
 
+echo 'Starting Endpoints Runtime.'
 NGINX_ARGS=(-p "${PREFIX}" -c "${NGINX_CONFIG}" -g "pid ${PREFIX}/.nginx.pid;")
 
 "${NGINX}" "${NGINX_ARGS[@]}" -T  \

@@ -31,10 +31,11 @@
 var http = require('http');
 var server = http.createServer();
 
+var totalReceived = 0;
 var totalData = 0;
-var totalRequests = 0;
 
 server.on('request', function(req, res) {
+  totalReceived += 1;
   var method = req.method;
   var url = req.url;
   if (method == 'GET' && url == '/version') {
@@ -48,7 +49,6 @@ server.on('request', function(req, res) {
     res.write(chunk);
   })
   req.on('end', function() {
-    totalRequests += 1;
     res.end();
   });
 
@@ -69,7 +69,7 @@ server.on('request', function(req, res) {
 
 
 setInterval(function() {
-  console.log("Requests:", totalRequests, " Data: ", totalData);
+  console.log("Requests received:", totalReceived, " Data: ", totalData);
 }, 1000);
 
 var port = process.env.PORT || 8080;
@@ -77,4 +77,3 @@ var port = process.env.PORT || 8080;
 server.listen(port, function() {
   console.log('Listening on port', port);
 });
-
