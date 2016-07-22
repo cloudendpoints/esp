@@ -49,7 +49,10 @@ ServiceContext::ServiceContext(std::unique_ptr<ApiManagerEnvInterface> env,
       is_auth_force_disabled_(config_->server_config() &&
                               config_->server_config()
                                   ->api_authentication_config()
-                                  .force_disable()) {}
+                                  .force_disable()),
+      is_cloud_tracing_force_disabled_(
+          config_->server_config() &&
+          config_->server_config()->cloud_tracing_config().force_disable()) {}
 
 MethodCallInfo ServiceContext::GetMethodCallInfo(const char *http_method,
                                                  size_t http_method_size,

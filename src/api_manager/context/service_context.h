@@ -100,6 +100,10 @@ class ServiceContext {
     return &transcoder_factory_;
   }
 
+  bool is_cloud_trace_force_disabled() const {
+    return is_cloud_tracing_force_disabled_;
+  }
+
  private:
   std::unique_ptr<service_control::Interface> CreateInterface();
 
@@ -129,6 +133,8 @@ class ServiceContext {
 
   // Is auth force-disabled
   bool is_auth_force_disabled_;
+  // Is cloud-tracing force-disabled
+  bool is_cloud_tracing_force_disabled_;
 };
 
 }  // namespace context

@@ -104,11 +104,13 @@ RequestContext::RequestContext(std::shared_ptr<ServiceContext> service_context,
   }
   request_->FindHeader("referer", &http_referer_);
 
-  // Enable trace if the triggering header is set.
-  std::string trace_context_header;
-  request_->FindHeader(kCloudTraceContextHeader, &trace_context_header);
+  if (!service_context_->is_cloud_trace_force_disabled()) {
+    // Enable trace if the triggering header is set.
+    std::string trace_context_header;
+    request_->FindHeader(kCloudTraceContextHeader, &trace_context_header);
 
-  cloud_trace_.reset(cloud_trace::CreateCloudTrace(trace_context_header));
+    cloud_trace_.reset(cloud_trace::CreateCloudTrace(trace_context_header));
+  }
 }
 
 void RequestContext::ExtractApiKey() {
