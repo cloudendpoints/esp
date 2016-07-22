@@ -46,7 +46,7 @@ my $BackendPort = 8081;
 my $ServiceControlPort = 8082;
 my $CloudTracePort = 8083;
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(5);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(10);
 
 # Save service name in the service configuration protocol buffer file.
 my $config = ApiManager::get_bookstore_service_config_allow_unregistered .
@@ -58,13 +58,13 @@ control {
 EOF
 $t->write_file('service.pb.txt', $config);
 
-# Set cache size to 0 so that each trace request should trigger flush.
+# Set a very large timer timeout to test trigger flush by max count.
 $t->write_file('server_config.pb.txt', <<"EOF");
 cloud_tracing_config {
   url_override: "http://127.0.0.1:${CloudTracePort}"
   aggregation_config {
-    time_millisec: 300
-    cache_max_size: 0
+    time_millisec: 1000000
+    cache_max_size: 1
   }
 }
 EOF
@@ -93,11 +93,11 @@ http {
 }
 EOF
 
-my $report_done = 'report_done';
+my $trace_done = 'trace_done';
 
 $t->run_daemon(\&bookstore, $t, $BackendPort, 'bookstore.log');
-$t->run_daemon(\&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log', $report_done);
-$t->run_daemon(\&cloudtrace, $t, $CloudTracePort, 'cloudtrace.log');
+$t->run_daemon(\&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log');
+$t->run_daemon(\&cloudtrace, $t, $CloudTracePort, 'cloudtrace.log', $trace_done);
 
 is($t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'Bookstore socket ready.');
 is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control socket ready.');
@@ -107,31 +107,43 @@ $t->run();
 
 ################################################################################
 
-# These requests should not trigger trace.
-http(<<'EOF');
+# These requests should both trigger trace, the second one will cause cache
+# to be full and trigger flush.
+my $trace_id_0 = "000a5f706abfdb2b6b257826ca503e63";
+http(<<"EOF");
 GET /shelves?key=this-is-an-api-key HTTP/1.0
 Host: localhost
+X-Cloud-Trace-Context: ${trace_id_0};o=1
 
 EOF
 
-http(<<'EOF');
+my $trace_id_1 = "370835b626fd525dfd1b46d34755140d";
+http(<<"EOF");
 GET /shelves?key=this-is-an-api-key HTTP/1.0
 Host: localhost
-X-Cloud-Trace-Context: 370835b626fd525dfd1b46d34755140d;o=0
+X-Cloud-Trace-Context: ${trace_id_1};o=1
 
 EOF
 
-is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');
+is($t->waitforfile("$t->{_testdir}/${trace_done}"), 1, 'Trace body file ready.');
 
 my @requests = ApiManager::read_http_stream($t, 'cloudtrace.log');
 
-# Verify there is no trace request sent.
-is(scalar @requests, 0, 'Cloud Trace received no request.');
+# Verify the trace request received.
+is(scalar @requests, 1, 'Cloud Trace received 1 request.');
+my $trace_request = shift @requests;
+is($trace_request->{verb}, 'PATCH', 'Cloud Trace: request is PATCH.');
+is($trace_request->{uri}, '/v1/projects/api-manager-project/traces', 'Trace request was called with correct project id in url.');
+my $json_obj = decode_json($trace_request->{body});
+my $traces = $json_obj->{traces};
+is(scalar @$traces, 2, 'Trace request contains two traces.');
+is($json_obj->{traces}->[0]->{traceId}, $trace_id_0, 'First Trace ID matches the provided one.');
+is($json_obj->{traces}->[1]->{traceId}, $trace_id_1, 'Second Trace ID matches the provided one.');
 
 ################################################################################
 
 sub servicecontrol {
-  my ($t, $port, $file, $done) = @_;
+  my ($t, $port, $file) = @_;
   my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
@@ -152,7 +164,6 @@ HTTP/1.1 200 OK
 Connection: close
 
 EOF
-    $t->write_file($done, ':report done');
   });
 
   $server->run();
@@ -182,20 +193,21 @@ EOF
 ################################################################################
 
 sub cloudtrace {
-  my ($t, $port, $file) = @_;
+  my ($t, $port, $file, $done) = @_;
   my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
       or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
 
   $server->on_sub('PATCH', '/v1/projects/api-manager-project/traces', sub {
-    my ($headers, $body, $client) = @_;
-    print $client <<'EOF';
+        my ($headers, $body, $client) = @_;
+        print $client <<'EOF';
 HTTP/1.1 200 OK
 Connection: close
 
 {}
 EOF
-  });
+        $t->write_file($done, ':trace done');
+      });
 
   $server->run();
 }

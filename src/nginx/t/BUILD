@@ -205,6 +205,7 @@ nginx_suite(
         "auth_openid.t",
         "auth_ssl.t",
         "cloud_trace.t",
+        "cloud_trace_count_trigger.t",
         "cloud_trace_disabled.t",
         "cloud_trace_force_disabled.t",
         "endpoints_off.t",

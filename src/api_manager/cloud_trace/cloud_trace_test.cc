@@ -49,13 +49,6 @@ class CloudTraceTest : public ::testing::Test {
   std::unique_ptr<auth::ServiceAccountToken> sa_token_;
 };
 
-TEST_F(CloudTraceTest, TestCloudTraceConfig) {
-  CloudTraceConfig cloud_trace_config(sa_token_.get(),
-                                      "http://fake.googleapis.com");
-  ASSERT_EQ(cloud_trace_config.cloud_trace_address(),
-            "http://fake.googleapis.com");
-}
-
 TEST_F(CloudTraceTest, TestCloudTrace) {
   std::unique_ptr<CloudTrace> cloud_trace(
       CreateCloudTrace("e133eacd437d8a12068fd902af3962d8;o=1"));

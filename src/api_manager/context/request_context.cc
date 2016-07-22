@@ -104,8 +104,9 @@ RequestContext::RequestContext(std::shared_ptr<ServiceContext> service_context,
   }
   request_->FindHeader("referer", &http_referer_);
 
-  if (!service_context_->is_cloud_trace_force_disabled()) {
-    // Enable trace if the triggering header is set.
+  // Enable trace if tracing is not force disabled and the triggering header is
+  // set.
+  if (service_context_->cloud_trace_aggregator()) {
     std::string trace_context_header;
     request_->FindHeader(kCloudTraceContextHeader, &trace_context_header);
 

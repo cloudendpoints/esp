@@ -58,9 +58,14 @@ control {
 EOF
 $t->write_file('service.pb.txt', $config);
 
+# Set cache size to 0 so that each trace request should trigger flush.
 $t->write_file('server_config.pb.txt', <<"EOF");
 cloud_tracing_config {
   url_override: "http://127.0.0.1:${CloudTracePort}"
+  aggregation_config {
+    time_millisec: 300
+    cache_max_size: 0
+  }
 }
 EOF
 
@@ -206,4 +211,3 @@ EOF
 }
 
 ################################################################################
-

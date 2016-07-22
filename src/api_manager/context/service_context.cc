@@ -35,7 +35,15 @@ namespace context {
 
 namespace {
 
+// Default Cloud Trace URL. Points to prod Cloud Trace.
 const char kCloudTraceUrl[] = "https://cloudtrace.googleapis.com";
+
+// Default maximum time to aggregate traces.
+const int kDefaultAggregateTimeMillisec = 1000;
+
+// Default maximum amount of traces to aggregate. The amount should ensure
+// the http request payload with the aggregated traces not reaching MB in size.
+const int kDefaultTraceCacheMaxSize = 100;
 }
 
 ServiceContext::ServiceContext(std::unique_ptr<ApiManagerEnvInterface> env,
@@ -44,15 +52,12 @@ ServiceContext::ServiceContext(std::unique_ptr<ApiManagerEnvInterface> env,
       config_(std::move(config)),
       service_account_token_(env_.get()),
       service_control_(CreateInterface()),
-      cloud_trace_config_(CreateCloudTraceConfig()),
+      cloud_trace_aggregator_(CreateCloudTraceAggregator()),
       transcoder_factory_(config_->service()),
       is_auth_force_disabled_(config_->server_config() &&
                               config_->server_config()
                                   ->api_authentication_config()
-                                  .force_disable()),
-      is_cloud_tracing_force_disabled_(
-          config_->server_config() &&
-          config_->server_config()->cloud_tracing_config().force_disable()) {}
+                                  .force_disable()) {}
 
 MethodCallInfo ServiceContext::GetMethodCallInfo(const char *http_method,
                                                  size_t http_method_size,
@@ -81,20 +86,39 @@ std::unique_ptr<service_control::Interface> ServiceContext::CreateInterface() {
                                           &service_account_token_));
 }
 
-std::unique_ptr<cloud_trace::CloudTraceConfig>
-ServiceContext::CreateCloudTraceConfig() {
-  std::string url;
+std::unique_ptr<cloud_trace::Aggregator>
+ServiceContext::CreateCloudTraceAggregator() {
+  // If force_disable is set in server config, completely disable tracing.
   if (config_->server_config() &&
-      !config_->server_config()
-           ->cloud_tracing_config()
-           .url_override()
-           .empty()) {
-    url = config_->server_config()->cloud_tracing_config().url_override();
-  } else {
-    url = kCloudTraceUrl;
+      config_->server_config()->cloud_tracing_config().force_disable()) {
+    env()->LogInfo(
+        "Cloud Trace is force disabled. There will be no trace written.");
+    return std::unique_ptr<cloud_trace::Aggregator>();
   }
-  return std::unique_ptr<cloud_trace::CloudTraceConfig>(
-      new cloud_trace::CloudTraceConfig(&service_account_token_, url));
+
+  std::string url = kCloudTraceUrl;
+  int aggregate_time_millisec = kDefaultAggregateTimeMillisec;
+  int cache_max_size = kDefaultTraceCacheMaxSize;
+  if (config_->server_config() &&
+      config_->server_config()->has_cloud_tracing_config()) {
+    // If url_override is set in server config, use it to query Cloud Trace.
+    const auto &tracing_config =
+        config_->server_config()->cloud_tracing_config();
+    if (!tracing_config.url_override().empty()) {
+      url = tracing_config.url_override();
+    }
+
+    // If aggregation config is set, take the values from it.
+    if (tracing_config.has_aggregation_config()) {
+      aggregate_time_millisec =
+          tracing_config.aggregation_config().time_millisec();
+      cache_max_size = tracing_config.aggregation_config().cache_max_size();
+    }
+  }
+
+  return std::unique_ptr<cloud_trace::Aggregator>(new cloud_trace::Aggregator(
+      &service_account_token_, url, aggregate_time_millisec, cache_max_size,
+      env_.get()));
 }
 
 }  // namespace context

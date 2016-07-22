@@ -33,9 +33,13 @@
 #include <sstream>
 #include <string>
 #include "google/protobuf/timestamp.pb.h"
+#include "include/api_manager/utils/status.h"
 #include "include/api_manager/version.h"
+#include "src/api_manager/utils/marshalling.h"
 
+using google::api_manager::utils::Status;
 using google::devtools::cloudtrace::v1::Trace;
+using google::devtools::cloudtrace::v1::Traces;
 using google::devtools::cloudtrace::v1::TraceSpan;
 using google::devtools::cloudtrace::v1::TraceSpan_SpanKind;
 using google::protobuf::Timestamp;
@@ -74,11 +78,84 @@ void GetTraceFromContextHeader(const std::string &trace_context, Trace **trace,
                                std::string *options);
 }  // namespace
 
-CloudTraceConfig::CloudTraceConfig(auth::ServiceAccountToken *sa_token,
-                                   std::string cloud_trace_address)
-    : cloud_trace_address_(cloud_trace_address) {
-  sa_token->SetAudience(auth::ServiceAccountToken::JWT_TOKEN_FOR_CLOUD_TRACING,
-                        cloud_trace_address_ + kCloudTraceService);
+Aggregator::Aggregator(auth::ServiceAccountToken *sa_token,
+                       const std::string &cloud_trace_address,
+                       int aggregate_time_millisec, int cache_max_size,
+                       ApiManagerEnvInterface *env)
+    : sa_token_(sa_token),
+      cloud_trace_address_(cloud_trace_address),
+      aggregate_time_millisec_(aggregate_time_millisec),
+      cache_max_size_(cache_max_size),
+      traces_(new Traces),
+      env_(env) {
+  sa_token_->SetAudience(auth::ServiceAccountToken::JWT_TOKEN_FOR_CLOUD_TRACING,
+                         cloud_trace_address_ + kCloudTraceService);
+}
+
+void Aggregator::Init() {
+  if (aggregate_time_millisec_ == 0) {
+    return;
+  }
+  timer_ = env_->StartPeriodicTimer(
+      std::chrono::milliseconds(aggregate_time_millisec_),
+      [this]() { SendAndClearTraces(); });
+}
+
+Aggregator::~Aggregator() {
+  if (timer_) {
+    timer_->Stop();
+  }
+}
+
+void Aggregator::SendAndClearTraces() {
+  if (traces_->traces_size() == 0 || project_id_.empty()) {
+    env_->LogDebug(
+        "Not sending request to CloudTrace: no traces or "
+        "project_id is empty.");
+    traces_->clear_traces();
+    return;
+  }
+
+  // Add project id into each trace object.
+  for (int i = 0; i < traces_->traces_size(); ++i) {
+    traces_->mutable_traces(i)->set_project_id(project_id_);
+  }
+
+  std::unique_ptr<HTTPRequest> http_request(new HTTPRequest(
+      [this](Status status, std::map<std::string, std::string> &&,
+             std::string &&body) {
+        if (status.code() < 0) {
+          env_->LogError("Trace Request Failed." + status.ToString());
+        } else {
+          env_->LogDebug("Trace Response: " + status.ToString() + "\n" + body);
+        }
+      }));
+
+  std::string url =
+      cloud_trace_address_ + "/v1/projects/" + project_id_ + "/traces";
+
+  std::string request_body;
+
+  ProtoToJson(*traces_, &request_body, utils::DEFAULT);
+  traces_->clear_traces();
+  env_->LogDebug("Sending request to Cloud Trace.");
+  env_->LogDebug(request_body);
+
+  http_request->set_url(url)
+      .set_method("PATCH")
+      .set_auth_token(sa_token_->GetAuthToken(
+          auth::ServiceAccountToken::JWT_TOKEN_FOR_CLOUD_TRACING))
+      .set_header("Content-Type", "application/json")
+      .set_body(request_body);
+
+  env_->RunHTTPRequest(std::move(http_request));
+}
+
+void Aggregator::AppendTrace(google::devtools::cloudtrace::v1::Trace *trace) {
+  traces_->mutable_traces()->AddAllocated(trace);
+  if (traces_->traces_size() > cache_max_size_) {
+    SendAndClearTraces();
+  }
 }
 
 CloudTrace::CloudTrace(Trace *trace, const std::string &options)

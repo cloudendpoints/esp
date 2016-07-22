@@ -57,6 +57,9 @@ class ApiManagerImpl : public ApiManager {
   }
 
   virtual utils::Status Init() {
+    if (service_context_->cloud_trace_aggregator()) {
+      service_context_->cloud_trace_aggregator()->Init();
+    }
     if (service_control()) {
       return service_control()->Init();
     } else {
@@ -65,6 +68,9 @@ class ApiManagerImpl : public ApiManager {
   }
 
   virtual utils::Status Close() {
+    if (service_context_->cloud_trace_aggregator()) {
+      service_context_->cloud_trace_aggregator()->SendAndClearTraces();
+    }
     if (service_control()) {
       return service_control()->Close();
     } else {

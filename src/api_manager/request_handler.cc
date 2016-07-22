@@ -73,7 +73,19 @@ void RequestHandler::Report(std::unique_ptr<Response> response,
   }
 
   if (context_->cloud_trace()) {
-    SendTraces();
+    context_->cloud_trace()->EndRootSpan();
+    // Always set the project_id to the latest one.
+    //
+    // this is how project_id is calculated: if gce metadata is fetched, use
+    // its project_id. Otherwise, use the project_id from service_config if it
+    // is configured.
+    // gce metadata fetching is started by the first request. While fetching is
+    // in progress, subsequent requests will fail.  These failed requests may
+    // have wrong project_id until gce metadata is fetched successfully.
+    context_->service_context()->cloud_trace_aggregator()->SetProjectId(
+        context_->service_context()->project_id());
+    context_->service_context()->cloud_trace_aggregator()->AppendTrace(
+        context_->cloud_trace()->ReleaseTrace());
   }
 
   continuation();
@@ -114,44 +126,6 @@ Status RequestHandler::CreateTranscoder(
   auto status = context_->service_context()->transcoder_factory()->Create(
       *context_->method_call(), request_in, response_in, transcoder);
   return Status::FromProto(status);
-}
-
-void RequestHandler::SendTraces() {
-  context_->cloud_trace()->EndRootSpan();
-  context_->cloud_trace()->SetProjectId(
-      context_->service_context()->project_id());
-
-  auto env = context_->service_context()->env();
-  std::unique_ptr<HTTPRequest> http_request(new HTTPRequest([env](
-      Status status, std::map<std::string, std::string>&&, std::string&& body) {
-    if (status.code() < 0) {
-      env->LogError("Trace Request Failed." + status.ToString());
-    } else {
-      env->LogDebug("Trace Response: " + status.ToString() + "\n" + body);
-    }
-  }));
-
-  std::string url =
-      context_->service_context()->cloud_trace_config()->cloud_trace_address() +
-      "/v1/projects/" + context_->service_context()->project_id() + "/traces";
-
-  std::string request_body;
-  Traces traces;
-  traces.mutable_traces()->AddAllocated(
-      context_->cloud_trace()->ReleaseTrace());
-  ProtoToJson(traces, &request_body, utils::DEFAULT);
-  env->LogDebug("Sending request to Cloud Trace.");
-  env->LogDebug(request_body);
-
-  http_request->set_url(url)
-      .set_method("PATCH")
-      .set_auth_token(
-          context_->service_context()->service_account_token()->GetAuthToken(
-              auth::ServiceAccountToken::JWT_TOKEN_FOR_CLOUD_TRACING))
-      .set_header("Content-Type", "application/json")
-      .set_body(request_body);
-
-  env->RunHTTPRequest(std::move(http_request));
 }
 
 }  // namespace api_manager

@@ -92,22 +92,18 @@ class ServiceContext {
   const std::string &metadata_server() const { return metadata_server_; }
   GceMetadata *gce_metadata() { return &gce_metadata_; }
   const std::string &project_id() const;
-  const cloud_trace::CloudTraceConfig *cloud_trace_config() const {
-    return cloud_trace_config_.get();
+  cloud_trace::Aggregator *cloud_trace_aggregator() const {
+    return cloud_trace_aggregator_.get();
   }
 
   transcoding::TranscoderFactory *transcoder_factory() {
     return &transcoder_factory_;
   }
 
-  bool is_cloud_trace_force_disabled() const {
-    return is_cloud_tracing_force_disabled_;
-  }
-
  private:
   std::unique_ptr<service_control::Interface> CreateInterface();
 
-  std::unique_ptr<cloud_trace::CloudTraceConfig> CreateCloudTraceConfig();
+  std::unique_ptr<cloud_trace::Aggregator> CreateCloudTraceAggregator();
 
   std::unique_ptr<ApiManagerEnvInterface> env_;
   std::unique_ptr<Config> config_;
@@ -121,8 +117,9 @@ class ServiceContext {
   // The service control object.
   std::unique_ptr<service_control::Interface> service_control_;
 
-  // The service control object.
-  std::unique_ptr<cloud_trace::CloudTraceConfig> cloud_trace_config_;
+  // The service control object. When trace is force disabled, this will be a
+  // nullptr.
+  std::unique_ptr<cloud_trace::Aggregator> cloud_trace_aggregator_;
 
   // meta data server.
   std::string metadata_server_;
@@ -133,8 +130,6 @@ class ServiceContext {
 
   // Is auth force-disabled
   bool is_auth_force_disabled_;
-  // Is cloud-tracing force-disabled
-  bool is_cloud_tracing_force_disabled_;
 };
 
 }  // namespace context

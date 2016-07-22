@@ -63,8 +63,6 @@ class RequestHandler : public RequestHandlerInterface {
       std::unique_ptr<transcoding::Transcoder>* transcoder) const;
 
  private:
-  void SendTraces();
-
   // The context object needs to pass to the continuation function the check
   // handler as a lambda capture so it can be passed to the next check handler.
   // In order to control the life time of context object, a shared_ptr is used.
