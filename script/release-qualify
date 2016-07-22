@@ -151,6 +151,8 @@ function check_robot_presubmit() {
     ${GSUTIL} -m -q cp -r "gs://endpoints-robot-temp/${SHA}/" "${LOGS}/" 2>&1 \
       || error_exit "Failed to download logs from endpoints-robot-temp."
 
+    # TODO: Remove this work around once we can re-run presubmit at any given
+    # SHA.
     if [[ -n "${PRE_SUBMIT_SHA}" ]]; then
       ${GSUTIL} -m -q cp -r "gs://endpoints-robot-temp/${PRE_SUBMIT_SHA}/" "${LOGS}/" 2>&1 \
         || error_exit "Failed to download presubmit logs from endpoints-robot-temp."
@@ -196,7 +198,7 @@ function check_robot_presubmit() {
     echo ''
     echo "Checking ${JSON_FILE}"
     echo ''
-    check_result "${JSON_FILE}" "${SHA}"
+    check_result "${JSON_FILE}" "${SHA}" || continue
 
     echo ''
     echo "Checking ${LOG_FILE}"
@@ -239,7 +241,7 @@ __EOF__
     KNOWN_ERRORS_REGEX+="\($entry\)"
   done<"${ROOT}/script/known-error-log-entries"
 
-  while read -u3 DIR; do
+  for DIR in ${RQ_TESTS[@]}; do
 
     echo ""
     echo "Looking for tar.gz files in ${DIR}"
@@ -273,7 +275,7 @@ DIR: ${DIR}
 __EOF__
     grep -v "${KNOWN_ERRORS_REGEX}" "${DIR}"/error*.log \
       >> "${NGINX_LOG_ANALYSIS}"
-  done 3< <(find "${LOGS}/${SHA}" -type d -name 'rc-test*')
+  done;
 
   printf "\e[31m
 Please review the NGINX log analysis results in ${NGINX_LOG_ANALYSIS}
