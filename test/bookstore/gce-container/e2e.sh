@@ -87,6 +87,7 @@ run retry -n 3 gcloud compute instances create "${INSTANCE_NAME}" \
 
 LOG_DIR="$(mktemp -d /tmp/log.XXXX)"
 TEST_ID="gce-${VM_IMAGE}"
+[[ "${GRPC}" == 'true' ]] && TEST_ID="${TEST_ID}-grpc"
 
 # Running Test
 run_nonfatal long_running_test \
