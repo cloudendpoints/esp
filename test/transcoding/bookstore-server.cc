@@ -95,7 +95,8 @@ class BookstoreServiceImpl : public Bookstore::Service {
 
   // Bookstore::Service implementation
 
-  ::grpc::Status ListShelves(::grpc::ServerContext*, const Empty* request,
+  ::grpc::Status ListShelves(::grpc::ServerContext*,
+                             const ::google::protobuf::Empty* request,
                              ListShelvesResponse* reply) {
     std::cerr << "GRPC-BACKEND: ListShelves" << std::endl;
     PrintRequest(*request);
@@ -157,7 +158,8 @@ class BookstoreServiceImpl : public Bookstore::Service {
   }
 
   ::grpc::Status DeleteShelf(::grpc::ServerContext*,
-                             const DeleteShelfRequest* request, Empty* reply) {
+                             const DeleteShelfRequest* request,
+                             ::google::protobuf::Empty* reply) {
     std::cerr << "GRPC-BACKEND: DeleteShelf" << std::endl;
     PrintRequest(*request);
 
@@ -200,7 +202,8 @@ class BookstoreServiceImpl : public Bookstore::Service {
   }
 
   ::grpc::Status DeleteBook(::grpc::ServerContext*,
-                            const DeleteBookRequest* request, Empty* reply) {
+                            const DeleteBookRequest* request,
+                            ::google::protobuf::Empty* reply) {
     std::cerr << "GRPC-BACKEND: DeleteBook" << std::endl;
     PrintRequest(*request);
     // Not implemented yet

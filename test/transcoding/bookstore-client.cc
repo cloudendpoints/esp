@@ -34,7 +34,6 @@
 
 using endpoints::examples::bookstore::Bookstore;
 using endpoints::examples::bookstore::CreateShelfRequest;
-using endpoints::examples::bookstore::Empty;
 using endpoints::examples::bookstore::ListShelvesResponse;
 using endpoints::examples::bookstore::Shelf;
 
@@ -61,7 +60,7 @@ int main(int argc, char** argv) {
   // ListShelves
   {
     ::grpc::ClientContext ctx;
-    Empty e;
+    ::google::protobuf::Empty e;
     ListShelvesResponse shelves;
     ::grpc::Status status = stub->ListShelves(&ctx, e, &shelves);
     PrintResult(status, shelves);

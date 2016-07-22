@@ -28,6 +28,8 @@ syntax = "proto3";
 
 package endpoints.examples.bookstore;
 
+import "google/protobuf/empty.proto";
+
 option java_multiple_files = true;
 option java_outer_classname = "BookstoreProto";
 option java_package = "com.google.endpoints.examples.bookstore";
@@ -37,7 +39,7 @@ option java_package = "com.google.endpoints.examples.bookstore";
 // The API manages shelves and books resources. Shelves contain books.
 service Bookstore {
   // Returns a list of all shelves in the bookstore.
-  rpc ListShelves(Empty) returns (ListShelvesResponse) {
+  rpc ListShelves(google.protobuf.Empty) returns (ListShelvesResponse) {
   }
   // Creates a new shelf in the bookstore.
   rpc CreateShelf(CreateShelfRequest) returns (Shelf) {
@@ -49,7 +51,7 @@ service Bookstore {
   rpc GetShelf(GetShelfRequest) returns (Shelf) {
   }
   // Deletes a shelf, including all books that are stored on the shelf.
-  rpc DeleteShelf(DeleteShelfRequest) returns (Empty) {
+  rpc DeleteShelf(DeleteShelfRequest) returns (google.protobuf.Empty) {
   }
   // Returns a list of books on a shelf.
   rpc ListBooks(ListBooksRequest) returns (ListBooksResponse) {
@@ -61,7 +63,7 @@ service Bookstore {
   rpc GetBook(GetBookRequest) returns (Book) {
   }
   // Deletes a book from a shelf.
-  rpc DeleteBook(DeleteBookRequest) returns (Empty) {
+  rpc DeleteBook(DeleteBookRequest) returns (google.protobuf.Empty) {
   }
 }
 
@@ -141,26 +143,4 @@ message DeleteBookRequest {
   int64 shelf = 1;
   // The ID of the book to delete.
   int64 book = 2;
-}
-
-// cc_grpc_library() Bazel rule defined in grpc.bzl does not support importing
-// other proto files from other directories. So we inline
-// google/protobuf/empty.proto here. This will be fixed with protobuf
-// 3.0.0-beta-3. The cc_proto_library() Bazel rule will have an option to
-// invoke the gRPC protoc plugin.
-// TODO: import "google/protobuf/empty.proto" and remove below when protobuf is
-// upgraded to 3.0.0-beta-3.
-//
-// From "google/protobuf/empty.proto"
-//
-// A generic empty message that you can re-use to avoid defining duplicated
-// empty messages in your APIs. A typical example is to use it as the request
-// or the response type of an API method. For instance:
-//
-//     service Foo {
-//       rpc Bar(google.protobuf.Empty) returns (google.protobuf.Empty);
-//     }
-//
-// The JSON representation for `Empty` is empty JSON object `{}`.
-message Empty {
 }
