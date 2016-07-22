@@ -65,11 +65,13 @@ sudo sh -c 'echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse'
 sudo sh -c 'echo 1 > /proc/sys/net/ipv4/tcp_tw_recycle'
 sudo sh -c 'echo "1024 65000" > /proc/sys/net/ipv4/ip_local_port_range'
 
-echo 'Installing Node.js and npm.'
-wget https://storage.googleapis.com/apache_tarballs/node-v4.2.1-linux-x64.tar.gz \
-  || error_exit 'Failed to download Node.js package.'
-sudo tar -C /usr/local --strip-components 1 -xzf node-v4.2.1-linux-x64.tar.gz \
-  || error_exit 'Failed to install Node.js.'
+if [[ ! -e /usr/local/bin/node  ]]; then
+  echo 'Installing Node.js and npm.'
+  wget https://storage.googleapis.com/apache_tarballs/node-v4.2.1-linux-x64.tar.gz \
+    || error_exit 'Failed to download Node.js package.'
+  sudo tar -C /usr/local --strip-components 1 -xzf node-v4.2.1-linux-x64.tar.gz \
+    || error_exit 'Failed to install Node.js.'
+fi
 
 NGINX=${ROOT}/nginx-esp
 

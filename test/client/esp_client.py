@@ -41,46 +41,51 @@ results_table_schema.json is.
 
 import esp_perfkit_publisher
 import esp_wrk_runner
+import esp_h2load_runner
 import gflags as flags
 import json
 import sys
+import time
 
 from string import Template
 
 FLAGS = flags.FLAGS
 
-INF = 100000000
-
 # Test suites are dict of name to list of a test cases,
+#
 # Each test cases contains five fields:
-#  Runner: esp_wrk_runner
-#  Connection/Concurrency: number of connection that ab/wrk makes to ESP
-#  Thread: number of threads, only effective for wrk
-#  Duration: the timelimit of the test, in seconds
+#   Runner: test execution module
+#   n: number of requests
+#   c: number of connections to ESP
+#   t: number of threads
+#   d: test duration in seconds
 TEST_SUITES = {
         'debug': [
-                (esp_wrk_runner, 5, 2, 1)
+                (esp_wrk_runner, 0, 5, 2, 1)
                 ],
         'simple': [
-                (esp_wrk_runner, 1, 1, 15),
-                (esp_wrk_runner, 5, 1, 15),
-                (esp_wrk_runner, 10, 1, 15),
-                (esp_wrk_runner, 15, 1, 15)
+                (esp_wrk_runner, 0, 1, 1, 15),
+                (esp_wrk_runner, 0, 5, 1, 15),
+                (esp_wrk_runner, 0, 10, 1, 15),
+                (esp_wrk_runner, 0, 15, 1, 15)
                 ],
         'stress': [
-                (esp_wrk_runner, 50, 1, 60),
-                (esp_wrk_runner, 100, 1, 60),
-                (esp_wrk_runner, 100, 2, 60),
-                (esp_wrk_runner, 200, 1, 60),
+                (esp_wrk_runner, 0, 50, 1, 60),
+                (esp_wrk_runner, 0, 100, 1, 60),
+                (esp_wrk_runner, 0, 100, 2, 60),
+                (esp_wrk_runner, 0, 200, 1, 60),
                 ],
         '2m_stress': [
-                (esp_wrk_runner, 1, 1, 120),
-                (esp_wrk_runner, 5, 1, 120),
-                (esp_wrk_runner, 10, 1, 120),
-                (esp_wrk_runner, 50, 1, 120),
-                (esp_wrk_runner, 50, 5, 120),
-                (esp_wrk_runner, 100, 1, 120),
-                (esp_wrk_runner, 100, 5, 120),
+                (esp_wrk_runner, 0, 1, 1, 120),
+                (esp_wrk_runner, 0, 5, 1, 120),
+                (esp_wrk_runner, 0, 10, 1, 120),
+                (esp_wrk_runner, 0, 50, 1, 120),
+                (esp_wrk_runner, 0, 50, 5, 120),
+                (esp_wrk_runner, 0, 100, 1, 120),
+                (esp_wrk_runner, 0, 100, 5, 120),
+                ],
+        'http2': [
+                (esp_h2load_runner, 1000, 1, 1, 0)
                 ]
         }
 
@@ -135,14 +140,38 @@ if __name__ == "__main__":
                 POST_FILE=FLAGS.post_file))
 
         print "=== Test data"
-    print test_data
+    print json.dumps(test_data)
 
     results = []
     for run in test_data['test_run']:
-        for runner, c, t, d in TEST_SUITES[FLAGS.test]:
-            ret = runner.test(run, c, t, d)
+        for runner, n, c, t, d in TEST_SUITES[FLAGS.test]:
+            ret = runner.test(run, n, c, t, d)
             if ret:
-                results.append(ret)
+                metrics, errors = ret
+
+                print '=== Metric:'
+                for k in metrics.keys():
+                    print k, metrics[k][0], metrics[k][1]
+
+                print '=== Metadata:'
+                metadata = {
+                        'runner': runner.__name__,
+                        'number': str(n),
+                        'concurrent': str(c),
+                        'threads': str(t),
+                        'duration': str(d) + 's',
+                        'time': time.time(),
+                        }
+                if 'labels' in run:
+                    metadata.update(run['labels'])
+                print json.dumps(metadata)
+
+                if len(errors) > 0:
+                    print '=== Error status responses:'
+                    for error, count in Counter(errors).most_common():
+                        print '= %06d: %s' % (count, error)
+
+                results.append((metrics, metadata, errors))
 
     if not results:
         sys.exit('All load tests failed.')

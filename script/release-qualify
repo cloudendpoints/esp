@@ -103,15 +103,15 @@ function count_stress_failures() {
       non2xx=0
     }
 
-    /Complete requests: *[0-9]*/ {
+    /Complete requests *[0-9]*/ {
       total+=$3
     }
 
-    /Failed requests: *[0-9]*/ {
+    /Failed requests *[0-9]*/ {
       failed+=$3
     }
 
-    /Non-2xx responses: *[0-9]*/ {
+    /Non-2xx responses *[0-9]*/ {
       non2xx+=$3
     }
 

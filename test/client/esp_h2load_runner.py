@@ -25,10 +25,14 @@
 import esp_utils
 import json
 import os
+import pprint
+import time
+import re
 
 from string import Template
+from collections import Counter
 
-WRK_PATH = os.environ.get('WRK_PATH', '/usr/local/bin/wrk')
+H2LOAD = os.environ.get('H2LOAD', '/nghttp2/src/h2load')
 
 def test(run, n, c, t, d):
     """Run a test and extract its results.
@@ -39,21 +43,22 @@ def test(run, n, c, t, d):
            'headers': [headers]
            'post_file': a string
            }
-        n: number of requests (ignored by wrk)
+        n: number of requests
         c: number of connections
         t: number of threads
         d: test duration in seconds
 
     Returns:
-        metrics: is a dict of metric name to a tuple of (value, unit)
+        metric: is a dict of metric name to a tuple of (value, unit)
+        metadata: is per test metadata such time, n and c.
         errors: a list of non-200 responses
     """
-    cmd = [WRK_PATH,
+    cmd = [H2LOAD,
+            '-n', str(n),
             '-t', str(t),
-            '--timeout', '2m',
             '-c', str(c),
-            '-d', str(d) + 's',
-            '-s', 'wrk_script.lua',
+            '-r', str(1),
+            '--verbose',
             '-H', '"Content-Type:application/json"']
 
     if 'headers' in run:
@@ -61,41 +66,39 @@ def test(run, n, c, t, d):
             cmd += ['-H', h]
 
     if 'post_file' in run:
-        wrk_method = "POST"
-        wrk_body_file = run['post_file']
-    else:
-        wrk_method = "GET"
-        wrk_body_file = "/dev/null"
-
-    wrk_out = 'wrk_out'
-    wrk_err = 'wrk_err'
-    with open('wrk_script.lua.temp', 'r') as f:
-        wrk_script = f.read()
-
-    with open('wrk_script.lua', 'w') as f:
-        f.write(Template(wrk_script).substitute(
-                HTTP_METHOD=wrk_method,
-                REQUEST_BODY_FILE=wrk_body_file,
-                OUT=wrk_out,
-                ERR=wrk_err))
+        cmd += ['-d', run['post_file']]
 
     cmd += [run['url']]
 
-    (_, ret) = esp_utils.IssueCommand(cmd)
+    (out, ret) = esp_utils.IssueCommand(cmd)
 
     if ret != 0:
-        print '==== Failed to run=%s,t=%d,c=%s,ret=%d' % (str(run), t, c, ret)
+        print '==== Failed to run'
         return None
 
-    with open(wrk_out, 'r') as f:
-        metrics = json.load(f)
+    metrics = {}
 
-    for k in metrics.keys():
-        metrics[k] = tuple(metrics[k])
-
+    # h2load does not output non-2xx error responses
     errors = []
-    for i in range(0, t):
-        with open(wrk_err + '_' + str(i), 'r') as f:
-            errors.extend(f.readlines())
+
+    # Parse the output of h2load
+    for line in out.split("\n"):
+        print line
+        if line.startswith('requests:'):
+            r = re.search(r'requests: (\d+) total, (\d+) started, (\d+) done, (\d+) succeeded, (\d+) failed, (\d+) errored, (\d+) timeout', line)
+            metrics['Complete requests'] = (int(r.group(4)), 'number')
+            metrics['Failed requests'] = (int(r.group(5)), 'number')
+            metrics['Timeout requests'] = (int(r.group(7)), 'number')
+        if line.startswith('finished in'):
+            r = re.search(r'finished in (\d+\.?\d+\w+), (\d+\.?\d+) req/s', line)
+            metrics['Requests per second'] = (r.group(2), 'qps')
+        if line.startswith('status codes:'):
+            r = re.search(r'status codes: (\d+) 2xx, (\d+) 3xx, (\d+) 4xx, (\d+) 5xx', line)
+            metrics['Non-2xx responses'] = (int(r.group(2)) + int(r.group(3)) + int(r.group(4)), 'number')
+        if line.startswith('time for request:'):
+            r = re.search('time for request:\s+(\d+\.?\d+)(\w+)\s+(\d+\.?\d+)(\w+)\s+(\d+\.?\d+)(\w+)\s+(\d+\.?\d+)(\w+)\s+(\d+\.?\d+)%', line)
+            metrics['Latency percentile: 100%'] = (r.group(3), r.group(4))
+            metrics['Latency percentile: mean'] = (r.group(5), r.group(6))
 
     return metrics, errors
+
