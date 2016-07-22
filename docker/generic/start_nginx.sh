@@ -138,4 +138,9 @@ fi
 /usr/sbin/fetch_service_config.sh \
   -s "${SERVICE_NAME}" -v "${SERVICE_VERSION}" || exit $?
 
+# Increase ephemeral port range
+sudo sh -c 'echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse'
+sudo sh -c 'echo 1 > /proc/sys/net/ipv4/tcp_tw_recycle'
+sudo sh -c 'echo "1024 65000" > /proc/sys/net/ipv4/ip_local_port_range'
+
 /usr/sbin/nginx -p /usr -c "${NGINX_CONF_PATH}"

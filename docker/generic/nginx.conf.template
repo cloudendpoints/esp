@@ -16,7 +16,7 @@ http {
 
   upstream app_server {
     server ${SERVER_ADDRESS};
-    keepalive 32;
+    keepalive 128;
   }
 
   endpoints {

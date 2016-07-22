@@ -68,16 +68,29 @@ function bookstore(options) {
     });
   });
 
+  var echoCount = 0;
+
   // Echo method for stress test.
   function echo(req, res) {
+    echoCount += 1;
     res.status(200).json(req.body);
   }
+
   app.all('/echo', echo);
   app.get('/echo/auth', echo);
   app.post('/echo/auth', echo);
 
-  // Install tracing middleware.
+  // Show number of echo requests
+  setInterval(function() {
+    if (echoCount > 0) {
+      var date = new Date();
+      var timestamp = date.getHours() + ":" + date.getMinutes() + ":" +
+        date.getSeconds() + ":" + date.getMilliseconds();
+      console.log(timestamp + ' Echo requests received: ', echoCount);
+    }
+  }, 1000);
 
+  // Install tracing middleware.
   if (options.log === true) {
     app.use(function(req, res, next) {
       console.log(req.method, req.originalUrl);
@@ -369,7 +382,7 @@ if (module.parent) {
 } else {
   var port = process.env.PORT || '8080';
   var swagger = loadSwagger(port);
-  var server = bookstore({ log: true, swagger: swagger }).listen(port, '0.0.0.0',
+  var server = bookstore({ log: false, swagger: swagger }).listen(port, '0.0.0.0',
       function() {
         var host = server.address().address;
         var port = server.address().port;
