@@ -323,8 +323,10 @@ ngx_int_t ngx_esp_init_process_stats(ngx_cycle_t *cycle) {
   mc->stats_timer.reset(
       new NgxEspTimer(kRefreshInterval, timer_func, cycle->log));
 
-  mc->log_stats_timer.reset(
-      new NgxEspTimer(kLogStatusInterval, log_func, cycle->log));
+  if (process_stat->num_esp > 0) {
+    mc->log_stats_timer.reset(
+        new NgxEspTimer(kLogStatusInterval, log_func, cycle->log));
+  }
 
   return NGX_OK;
 }
