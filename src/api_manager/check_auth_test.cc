@@ -94,11 +94,6 @@ const char kServiceConfig[] =
     "  environment : \"http://127.0.0.1:8081\"\n"
     "}\n";
 
-const char kSub[] = "end-user-id";
-const char kSub2[] = "another-user-id";
-const char kIss[] = "https://issuer1.com";
-const char kIss2[] = "https://issuer2.com";
-
 // Auth token generated with the following header and payload.
 //{
 // "alg": "RS256",
