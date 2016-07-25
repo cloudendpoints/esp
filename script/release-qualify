@@ -99,12 +99,12 @@ function count_stress_failures() {
   awk '
     BEGIN {
       failed=0
-      total=0
+      complete=0
       non2xx=0
     }
 
     /Complete requests *[0-9]*/ {
-      total+=$3
+      complete+=$3
     }
 
     /Failed requests *[0-9]*/ {
@@ -116,11 +116,12 @@ function count_stress_failures() {
     }
 
     END {
+      total = complete + failed
       print "Failed requests:   ", failed
       print "Non-2xx responses: ", non2xx
       print "Total requests:    ", total
       if (total > 0) {
-        print "Failed/Total:      ", failed / total
+        print "Failed/Total:      ", (failed + non2xx) / total
       }
     }' "${@}"
 }

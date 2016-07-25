@@ -454,6 +454,9 @@ class Parallel {
       result_.mutable_status()->set_code(::grpc::UNKNOWN);
       result_.mutable_status()->set_details("Parallel test failed.");
     }
+    // These two lines are for the result extraction in script/release-qualify
+    std::cerr << "Complete requests " << total_succeeded_count << std::endl
+              << "Failed requests " << total_failed_count << std::endl;
   }
 
   class AggregatedStatus {
