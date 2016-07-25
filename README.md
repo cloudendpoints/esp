@@ -58,11 +58,12 @@ To download the Endpoints Server Proxy source code, clone the ESP repository:
 * [tools](/tools): Assorted tooling.
 
 
-## Building ESP ##
+## ESP Tutorial ##
 
-ESP can be built using [Bazel](http://bazel.io).
+To find out more about building, running, and testing ESP, please review
 
-* [Building with Bazel](/doc/bazel.md)
+* [ESP Tutorial](/doc/tutorial.md)
+* [Testing ESP with Bazel](/doc/testing.md)
 
 
 ## Contributing ##
