@@ -1,3 +1,5 @@
+#!/bin/bash
+#
 # Copyright (C) Endpoints Server Proxy Authors
 # All rights reserved.
 #
