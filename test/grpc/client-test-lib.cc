@@ -39,6 +39,8 @@
 #include <grpc++/alarm.h>
 #include <grpc++/grpc++.h>
 
+#include "src/api_manager/utils/marshalling.h"
+
 using ::grpc::Alarm;
 using ::grpc::Channel;
 using ::grpc::ChannelCredentials;
@@ -115,6 +117,17 @@ std::string RandomString(int max_size) {
     buf[i] = byte_dist(gen);
   }
   return std::string(reinterpret_cast<const char *>(buf), size);
+}
+
+std::string GetStatusAggregationKey(const CallStatus &status) {
+  std::string details = status.details();
+  ::test::grpc::GrpcErrorDetail grpc_error;
+  // grpc error message has time stamp fields.
+  // only keep description and http2_error fields as key.
+  if (::google::api_manager::utils::JsonToProto(details, &grpc_error).ok()) {
+    grpc_error.SerializeToString(&details);
+  }
+  return details + std::to_string(status.code());
 }
 
 class Echo {
@@ -491,7 +504,7 @@ class Parallel {
     std::map<std::string, AggregatedStatus> failures;
 
     void AddFailure(const CallStatus &status) {
-      std::string key = status.details() + std::to_string(status.code());
+      std::string key = GetStatusAggregationKey(status);
       std::map<std::string, AggregatedStatus>::iterator it = failures.find(key);
       if (it == failures.end()) {
         failures.emplace(key, status);

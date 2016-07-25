@@ -34,9 +34,9 @@ load("@protobuf_git//:protobuf.bzl", "cc_proto_library")
 cc_proto_library(
     name = "grpc-test_proto",
     srcs = ["grpc-test.proto"],
-    use_grpc_plugin = True,
-    protoc = "//external:protoc",
     default_runtime = "//external:protobuf",
+    protoc = "//external:protoc",
+    use_grpc_plugin = True,
 )
 
 cc_library(
@@ -46,7 +46,10 @@ cc_library(
     hdrs = ["client-test-lib.h"],
     linkopts = ["-lm"],
     visibility = ["//visibility:private"],
-    deps = [":grpc-test_proto"],
+    deps = [
+        ":grpc-test_proto",
+        "//src/api_manager/utils",
+    ],
 )
 
 cc_binary(

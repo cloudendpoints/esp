@@ -240,6 +240,23 @@ message ProbeUpstreamMessageLimitResult {
   int64 message_limit = 1;
 }
 
+// Client may receive grpc detail message. It is in JSON format as:
+// {
+//  "created":"@1468448442.366709868",
+//  "description":"RST_STREAM",
+//  "file":"frame_rst_stream.c",
+//  "file_line":107,
+//  "http2_error":7
+// }
+// Use this proto messgae to extract its description and http2_error
+message GrpcErrorDetail {
+  // error description
+  string description = 1;
+
+  // http2_error code.
+  int32 http2_error = 2;
+}
+
 // A particular test to be run.
 message TestPlan {
   oneof plan {
