@@ -63,6 +63,8 @@ spec:
         ports:
           - containerPort: 8080
           - containerPort: 8090
+        securityContext:
+          privileged: true
       - name: bookstore
         image: ${BOOKSTORE_IMAGE}
         ports:

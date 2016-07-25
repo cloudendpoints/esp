@@ -72,3 +72,5 @@ spec:
         - mountPath: /etc/nginx/ssl
           name: nginx-ssl
           readOnly: true
+        securityContext:
+          privileged: true

@@ -68,6 +68,8 @@ spec:
         ports:
           - containerPort: 443
           - containerPort: 8090
+        securityContext:
+          privileged: true
         volumeMounts:
         - mountPath: /etc/nginx/ssl
           name: nginx-ssl

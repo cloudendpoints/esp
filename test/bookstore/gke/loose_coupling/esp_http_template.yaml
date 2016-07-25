@@ -63,3 +63,5 @@ spec:
         ports:
           - containerPort: 8080
           - containerPort: 8090
+        securityContext:
+          privileged: true
