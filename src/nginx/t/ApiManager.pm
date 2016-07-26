@@ -247,6 +247,10 @@ apis {
 EOF
 }
 
+sub get_grpc_interop_service_config {
+  return read_test_file("testdata/grpc_interop_service.pb.txt");
+}
+
 sub get_transcoding_test_service_config {
   my ($host_name, $service_control_address) = @_;
   my $path = $ENV{TEST_SRCDIR} . '/test/transcoding/service.json';
@@ -299,6 +303,12 @@ sub grpc_test_server {
   exec $server, @args;
 }
 
+sub grpc_interop_server {
+  my ($t, $port) = @_;
+  my $server = $ENV{TEST_SRCDIR} . '/test/grpc/interop-server';
+  exec $server, "--port", $port;
+}
+
 sub transcoding_test_server {
   my ($t, @args) = @_;
   my $server = $ENV{TEST_SRCDIR} . '/test/transcoding/bookstore-server';
@@ -325,6 +335,13 @@ sub run_grpc_test {
   my $client = $ENV{TEST_SRCDIR} . '/test/grpc/grpc-test-client';
   system "$client < $testdir/test_plans.txt > $testdir/test_results.txt";
   return $t->read_file('test_results.txt');
+}
+
+sub run_grpc_interop_test {
+  my ($t, $port, $test_case) = @_;
+  my $testdir = $t->testdir();
+  my $client = $ENV{TEST_SRCDIR} . '/test/grpc/interop-client';
+  return system $client, '--server_port', $port, '--test_case', $test_case;
 }
 
 sub run_nginx_with_stderr_redirect {

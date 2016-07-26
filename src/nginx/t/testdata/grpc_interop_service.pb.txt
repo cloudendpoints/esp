@@ -1,0 +1,1454 @@
+name: "endpoints-grpc-interop.cloudendpointsapis.com"
+title: "gRPC Testing API"
+producer_project_id: "endpoints-grpc-interop"
+apis {
+  name: "grpc.testing.TestService"
+  methods {
+    name: "EmptyCall"
+    request_type_url: "type.googleapis.com/grpc.testing.Empty"
+    response_type_url: "type.googleapis.com/grpc.testing.Empty"
+    options {
+      name: "google.protobuf.MethodOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+  }
+  methods {
+    name: "UnaryCall"
+    request_type_url: "type.googleapis.com/grpc.testing.SimpleRequest"
+    response_type_url: "type.googleapis.com/grpc.testing.SimpleResponse"
+    options {
+      name: "google.protobuf.MethodOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+  }
+  methods {
+    name: "StreamingOutputCall"
+    request_type_url: "type.googleapis.com/grpc.testing.StreamingOutputCallRequest"
+    response_type_url: "type.googleapis.com/grpc.testing.StreamingOutputCallResponse"
+    response_streaming: true
+    options {
+      name: "google.protobuf.MethodOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+  }
+  methods {
+    name: "StreamingInputCall"
+    request_type_url: "type.googleapis.com/grpc.testing.StreamingInputCallRequest"
+    request_streaming: true
+    response_type_url: "type.googleapis.com/grpc.testing.StreamingInputCallResponse"
+    options {
+      name: "google.protobuf.MethodOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+  }
+  methods {
+    name: "FullDuplexCall"
+    request_type_url: "type.googleapis.com/grpc.testing.StreamingOutputCallRequest"
+    request_streaming: true
+    response_type_url: "type.googleapis.com/grpc.testing.StreamingOutputCallResponse"
+    response_streaming: true
+    options {
+      name: "google.protobuf.MethodOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+  }
+  methods {
+    name: "HalfDuplexCall"
+    request_type_url: "type.googleapis.com/grpc.testing.StreamingOutputCallRequest"
+    request_streaming: true
+    response_type_url: "type.googleapis.com/grpc.testing.StreamingOutputCallResponse"
+    response_streaming: true
+    options {
+      name: "google.protobuf.MethodOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+  }
+  options {
+    name: "google.protobuf.ServiceOptions.deprecated"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  version: "v1"
+  source_context {
+    file_name: "grpc_test/test.proto"
+  }
+  syntax: SYNTAX_PROTO3
+}
+types {
+  name: "grpc.testing.Empty"
+  options {
+    name: "google.protobuf.MessageOptions.message_set_wire_format"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.deprecated"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  source_context {
+    file_name: "grpc_test/empty.proto"
+  }
+  syntax: SYNTAX_PROTO3
+}
+types {
+  name: "grpc.testing.BoolValue"
+  fields {
+    kind: TYPE_BOOL
+    cardinality: CARDINALITY_OPTIONAL
+    number: 1
+    name: "value"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "value"
+  }
+  options {
+    name: "google.protobuf.MessageOptions.message_set_wire_format"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.deprecated"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  source_context {
+    file_name: "grpc_test/messages.proto"
+  }
+  syntax: SYNTAX_PROTO3
+}
+types {
+  name: "grpc.testing.Payload"
+  fields {
+    kind: TYPE_ENUM
+    cardinality: CARDINALITY_OPTIONAL
+    number: 1
+    name: "type"
+    type_url: "type.googleapis.com/grpc.testing.PayloadType"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "type"
+  }
+  fields {
+    kind: TYPE_BYTES
+    cardinality: CARDINALITY_OPTIONAL
+    number: 2
+    name: "body"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "body"
+  }
+  options {
+    name: "google.protobuf.MessageOptions.message_set_wire_format"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.deprecated"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  source_context {
+    file_name: "grpc_test/messages.proto"
+  }
+  syntax: SYNTAX_PROTO3
+}
+types {
+  name: "grpc.testing.EchoStatus"
+  fields {
+    kind: TYPE_INT32
+    cardinality: CARDINALITY_OPTIONAL
+    number: 1
+    name: "code"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "code"
+  }
+  fields {
+    kind: TYPE_STRING
+    cardinality: CARDINALITY_OPTIONAL
+    number: 2
+    name: "message"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "message"
+  }
+  options {
+    name: "google.protobuf.MessageOptions.message_set_wire_format"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.deprecated"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  source_context {
+    file_name: "grpc_test/messages.proto"
+  }
+  syntax: SYNTAX_PROTO3
+}
+types {
+  name: "grpc.testing.SimpleRequest"
+  fields {
+    kind: TYPE_ENUM
+    cardinality: CARDINALITY_OPTIONAL
+    number: 1
+    name: "response_type"
+    type_url: "type.googleapis.com/grpc.testing.PayloadType"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "responseType"
+  }
+  fields {
+    kind: TYPE_INT32
+    cardinality: CARDINALITY_OPTIONAL
+    number: 2
+    name: "response_size"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "responseSize"
+  }
+  fields {
+    kind: TYPE_MESSAGE
+    cardinality: CARDINALITY_OPTIONAL
+    number: 3
+    name: "payload"
+    type_url: "type.googleapis.com/grpc.testing.Payload"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "payload"
+  }
+  fields {
+    kind: TYPE_BOOL
+    cardinality: CARDINALITY_OPTIONAL
+    number: 4
+    name: "fill_username"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "fillUsername"
+  }
+  fields {
+    kind: TYPE_BOOL
+    cardinality: CARDINALITY_OPTIONAL
+    number: 5
+    name: "fill_oauth_scope"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "fillOauthScope"
+  }
+  fields {
+    kind: TYPE_MESSAGE
+    cardinality: CARDINALITY_OPTIONAL
+    number: 6
+    name: "response_compressed"
+    type_url: "type.googleapis.com/grpc.testing.BoolValue"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "responseCompressed"
+  }
+  fields {
+    kind: TYPE_MESSAGE
+    cardinality: CARDINALITY_OPTIONAL
+    number: 7
+    name: "response_status"
+    type_url: "type.googleapis.com/grpc.testing.EchoStatus"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "responseStatus"
+  }
+  fields {
+    kind: TYPE_MESSAGE
+    cardinality: CARDINALITY_OPTIONAL
+    number: 8
+    name: "expect_compressed"
+    type_url: "type.googleapis.com/grpc.testing.BoolValue"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "expectCompressed"
+  }
+  options {
+    name: "google.protobuf.MessageOptions.message_set_wire_format"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.deprecated"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  source_context {
+    file_name: "grpc_test/messages.proto"
+  }
+  syntax: SYNTAX_PROTO3
+}
+types {
+  name: "grpc.testing.SimpleResponse"
+  fields {
+    kind: TYPE_MESSAGE
+    cardinality: CARDINALITY_OPTIONAL
+    number: 1
+    name: "payload"
+    type_url: "type.googleapis.com/grpc.testing.Payload"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "payload"
+  }
+  fields {
+    kind: TYPE_STRING
+    cardinality: CARDINALITY_OPTIONAL
+    number: 2
+    name: "username"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "username"
+  }
+  fields {
+    kind: TYPE_STRING
+    cardinality: CARDINALITY_OPTIONAL
+    number: 3
+    name: "oauth_scope"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "oauthScope"
+  }
+  options {
+    name: "google.protobuf.MessageOptions.message_set_wire_format"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.deprecated"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  source_context {
+    file_name: "grpc_test/messages.proto"
+  }
+  syntax: SYNTAX_PROTO3
+}
+types {
+  name: "grpc.testing.StreamingInputCallRequest"
+  fields {
+    kind: TYPE_MESSAGE
+    cardinality: CARDINALITY_OPTIONAL
+    number: 1
+    name: "payload"
+    type_url: "type.googleapis.com/grpc.testing.Payload"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "payload"
+  }
+  fields {
+    kind: TYPE_MESSAGE
+    cardinality: CARDINALITY_OPTIONAL
+    number: 2
+    name: "expect_compressed"
+    type_url: "type.googleapis.com/grpc.testing.BoolValue"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "expectCompressed"
+  }
+  options {
+    name: "google.protobuf.MessageOptions.message_set_wire_format"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.deprecated"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  source_context {
+    file_name: "grpc_test/messages.proto"
+  }
+  syntax: SYNTAX_PROTO3
+}
+types {
+  name: "grpc.testing.StreamingInputCallResponse"
+  fields {
+    kind: TYPE_INT32
+    cardinality: CARDINALITY_OPTIONAL
+    number: 1
+    name: "aggregated_payload_size"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "aggregatedPayloadSize"
+  }
+  options {
+    name: "google.protobuf.MessageOptions.message_set_wire_format"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.deprecated"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  source_context {
+    file_name: "grpc_test/messages.proto"
+  }
+  syntax: SYNTAX_PROTO3
+}
+types {
+  name: "grpc.testing.ResponseParameters"
+  fields {
+    kind: TYPE_INT32
+    cardinality: CARDINALITY_OPTIONAL
+    number: 1
+    name: "size"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "size"
+  }
+  fields {
+    kind: TYPE_INT32
+    cardinality: CARDINALITY_OPTIONAL
+    number: 2
+    name: "interval_us"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "intervalUs"
+  }
+  fields {
+    kind: TYPE_MESSAGE
+    cardinality: CARDINALITY_OPTIONAL
+    number: 3
+    name: "compressed"
+    type_url: "type.googleapis.com/grpc.testing.BoolValue"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "compressed"
+  }
+  options {
+    name: "google.protobuf.MessageOptions.message_set_wire_format"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.deprecated"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  source_context {
+    file_name: "grpc_test/messages.proto"
+  }
+  syntax: SYNTAX_PROTO3
+}
+types {
+  name: "grpc.testing.StreamingOutputCallRequest"
+  fields {
+    kind: TYPE_ENUM
+    cardinality: CARDINALITY_OPTIONAL
+    number: 1
+    name: "response_type"
+    type_url: "type.googleapis.com/grpc.testing.PayloadType"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "responseType"
+  }
+  fields {
+    kind: TYPE_MESSAGE
+    cardinality: CARDINALITY_REPEATED
+    number: 2
+    name: "response_parameters"
+    type_url: "type.googleapis.com/grpc.testing.ResponseParameters"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "responseParameters"
+  }
+  fields {
+    kind: TYPE_MESSAGE
+    cardinality: CARDINALITY_OPTIONAL
+    number: 3
+    name: "payload"
+    type_url: "type.googleapis.com/grpc.testing.Payload"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "payload"
+  }
+  fields {
+    kind: TYPE_MESSAGE
+    cardinality: CARDINALITY_OPTIONAL
+    number: 7
+    name: "response_status"
+    type_url: "type.googleapis.com/grpc.testing.EchoStatus"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "responseStatus"
+  }
+  options {
+    name: "google.protobuf.MessageOptions.message_set_wire_format"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.deprecated"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  source_context {
+    file_name: "grpc_test/messages.proto"
+  }
+  syntax: SYNTAX_PROTO3
+}
+types {
+  name: "grpc.testing.StreamingOutputCallResponse"
+  fields {
+    kind: TYPE_MESSAGE
+    cardinality: CARDINALITY_OPTIONAL
+    number: 1
+    name: "payload"
+    type_url: "type.googleapis.com/grpc.testing.Payload"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "payload"
+  }
+  options {
+    name: "google.protobuf.MessageOptions.message_set_wire_format"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.deprecated"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  source_context {
+    file_name: "grpc_test/messages.proto"
+  }
+  syntax: SYNTAX_PROTO3
+}
+enums {
+  name: "grpc.testing.PayloadType"
+  enumvalue {
+    name: "COMPRESSABLE"
+    options {
+      name: "google.protobuf.EnumValueOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+  }
+  options {
+    name: "google.protobuf.EnumOptions.deprecated"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  source_context {
+    file_name: "grpc_test/messages.proto"
+  }
+  syntax: SYNTAX_PROTO3
+}

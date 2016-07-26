@@ -126,6 +126,25 @@ nginx_suite(
 )
 
 nginx_suite(
+    size = "small",
+    data = [
+        "testdata/grpc_tsan_suppressions",
+        "//test/grpc:interop-client",
+        "//test/grpc:interop-server",
+    ],
+    env = {
+        "TSAN_OPTIONS": "suppressions=$TEST_SRCDIR/src/nginx/t/testdata/grpc_tsan_suppressions",
+    },
+    nginx = "//src/nginx/main:nginx-esp",
+    tests = [
+        "grpc_interop_unary.t",
+    ],
+    deps = [
+        ":perl_library",
+    ],
+)
+
+nginx_suite(
     size = "medium",
     data = [
         "testdata/grpc_tsan_suppressions",

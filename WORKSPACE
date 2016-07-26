@@ -36,10 +36,16 @@ bind(
     actual = "@boringssl//:ssl",
 )
 
-git_repository(
+# Though GRPC has BUILD file, our own BUILD.grpc file is needed since it contains
+# more targets including testing server and client.
+# To generate the BUILD.grpc file, cherry-pick
+# https://github.com/grpc/grpc/pull/7556
+# and run ./tools/buildgen/generate_projects.sh in GRPC repo.
+new_git_repository(
     name = "grpc_git",
     commit = "03efbd34ce64615f58007eae667b375accc6c8e6",  # 0.15.0
     remote = "https://github.com/grpc/grpc.git",
+    build_file = "third_party/BUILD.grpc",
 )
 
 bind(
@@ -153,3 +159,15 @@ bind(
     name = "nginx_html_files",
     actual = "//third_party/nginx:html_files",
 )
+
+git_repository(
+    name = "gflags_git",
+    commit = "fe57e5af4db74ab298523f06d2c43aa895ba9f98", # 2016-07-22
+    remote = "https://github.com/gflags/gflags",
+)
+
+bind(
+    name = "gflags",
+    actual = "@gflags_git//:gflags",
+)
+

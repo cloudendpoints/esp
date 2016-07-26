@@ -79,3 +79,19 @@ cc_binary(
     srcs = ["grpc-test-server.cc"],
     deps = [":grpc-test_proto"],
 )
+
+cc_binary(
+    name = "interop-server",
+    testonly = 1,
+    deps = [
+        "@grpc_git//:interop_server_main",
+    ],
+)
+
+cc_binary(
+    name = "interop-client",
+    testonly = 1,
+    deps = [
+        "@grpc_git//:interop_client_main",
+    ],
+)
