@@ -102,18 +102,6 @@ nginx_suite(
     },
     nginx = "//src/nginx/main:nginx-esp",
     tests = [
-        "grpc_lib_big_streaming_report.t",
-        "grpc_lib_downstream_flow_control.t",
-        "grpc_lib_error_report.t",
-        "grpc_lib_failed_check.t",
-        "grpc_lib_forbidden_service_control.t",
-        "grpc_lib_grpc.t",
-        "grpc_lib_grpc_error_report.t",
-        "grpc_lib_grpc_no_backend.t",
-        "grpc_lib_simple_report.t",
-        "grpc_lib_ssl_downstream.t",
-        "grpc_lib_streaming_report.t",
-        "grpc_lib_upstream_flow_control.t",
         "grpc_pass_api_key.t",
         "grpc_pass_auth_pkey.t",
         "grpc_pass_call_flow_control.t",
@@ -146,8 +134,6 @@ nginx_suite(
     },
     nginx = "//src/nginx/main:nginx-esp",
     tests = [
-        "grpc_lib_call_flow_control.t",
-        "grpc_lib_ministress.t",
         "grpc_pass_ministress.t",
     ],
     deps = [
@@ -225,27 +211,6 @@ nginx_suite(
         "no_check.t",
         "no_http.t",
         "status.t",
-    ],
-    deps = [
-        ":perl_library",
-    ],
-)
-
-# Tests in this suite don't use %%TEST_CONFIG%%. so it is not using
-# config_list parameter.
-nginx_suite(
-    data = [
-        "testdata/grpc_tsan_suppressions",
-        "//test/grpc:grpc-test-client",
-        "//test/grpc:grpc-test-server",
-    ],
-    env = {
-        "TSAN_OPTIONS": "suppressions=$TEST_SRCDIR/src/nginx/t/testdata/grpc_tsan_suppressions",
-    },
-    nginx = "//src/nginx/main:nginx-esp",
-    tests = [
-        "grpc_lib_grpc_override.t",
-        "grpc_lib_grpc_with_http.t",
     ],
     deps = [
         ":perl_library",

@@ -181,8 +181,6 @@ extern ngx_module_t  ngx_http_stub_status_module;
 #endif
 #if (NGX_HTTP_ENDPOINTS_RUNTIME)
 extern ngx_module_t  ngx_esp_module;
-extern ngx_module_t  ngx_grpc_module;
-extern ngx_module_t  ngx_grpc_server_module;
 #endif
 #if (NGX_HTTP)
 extern ngx_module_t  ngx_http_write_filter_module;
@@ -449,8 +447,6 @@ ngx_module_t *ngx_modules[] = {
 #endif
 #if (NGX_HTTP_ENDPOINTS_RUNTIME)
     &ngx_esp_module,
-    &ngx_grpc_module,
-    &ngx_grpc_server_module,
 #endif
 #if (NGX_HTTP)
     &ngx_http_write_filter_module,
@@ -720,8 +716,6 @@ char *ngx_module_names[] = {
 #endif
 #if (NGX_HTTP_ENDPOINTS_RUNTIME)
     "ngx_esp_module",
-    "ngx_grpc_module",
-    "ngx_grpc_server_module",
 #endif
 #if (NGX_HTTP)
     "ngx_http_write_filter_module",
