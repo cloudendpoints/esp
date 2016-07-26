@@ -1,3 +1,14 @@
+# Release 0.3.3 26-07-2016
+
+- Add HTTP2 load test. Refactored common functionality in the load test
+  client to support both wrk and h2load.
+- Check logs on passing release quals only.
+- Clean-up test transcoding proto.
+- Add test to share port with HTTPS and GRPC.
+- Increase keepalive and port range for GKE tests.
+- Save GKE & GCE container logs.
+
+
 # Release 0.3.2 22-07-2016
 
 - Improve grpc_pass stability; fixed a crash with large payload.
