@@ -28,6 +28,10 @@
 #include <ngx_core.h>
 #include <ngx_modules.h>
 
+#if (NGX_HTTP_ENDPOINTS_RUNTIME)
+#include "include/api_manager/version.h"
+#endif
+
 /* clang-format off */
 extern ngx_module_t  ngx_core_module;
 extern ngx_module_t  ngx_errlog_module;
@@ -834,6 +838,11 @@ char *ngx_module_names[] = {
 void
 ngx_show_configure_options(void)
 {
+
+#if (NGX_HTTP_ENDPOINTS_RUNTIME)
+    ngx_write_stderr("ESP version: " API_MANAGER_VERSION_STRING NGX_LINEFEED);
+#endif
+
     ngx_write_stderr("configure arguments:");
 
 #ifdef NGX_PREFIX
