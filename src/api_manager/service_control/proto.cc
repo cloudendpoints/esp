@@ -723,10 +723,6 @@ void SetOperationCommonFields(const OperationInfo& info,
   *op->mutable_end_time() = current_time;
 }
 
-Status CreateErrorStatus(int code, StringPiece message) {
-  return Status((Code)code, message, Status::SERVICE_CONTROL);
-}
-
 void FillLogEntry(const ReportRequestInfo& info, const std::string& name,
                   const Timestamp& current_time, LogEntry* log_entry) {
   log_entry->set_name(name);
@@ -893,74 +889,87 @@ Status Proto::FillReportRequest(const ReportRequestInfo& info,
 }
 
 Status Proto::ConvertCheckResponse(const CheckResponse& check_response,
-                                   const std::string& project_id,
+                                   const CheckRequestInfo& info,
                                    CheckResponseInfo* check_response_info) {
   if (check_response_info) check_response_info->is_api_key_valid = true;
   if (check_response.check_errors().size() == 0) {
     return Status::OK;
   }
-  // We only check the first error for now, same as ESF now.
+
+  const std::string service_name = info.service_name;
+
+  // TODO: aggregate status responses for all errors (including error.detail)
+  // TODO: report a detailed status to the producer project, but hide it from
+  // consumer
+  // TODO: unless they are the same entity
   const CheckError& error = check_response.check_errors(0);
   switch (error.code()) {
     case CheckError::NOT_FOUND:  // The consumer's project id is not found.
-      return CreateErrorStatus(
-          Code::INVALID_ARGUMENT,
-          "Client project not found. Please pass a valid project.");
+      return Status(Code::INVALID_ARGUMENT,
+                    "Client project not found. Please pass a valid project.",
+                    Status::SERVICE_CONTROL);
     case CheckError::API_KEY_NOT_FOUND:
       if (check_response_info) check_response_info->is_api_key_valid = false;
-      return CreateErrorStatus(
-          Code::INVALID_ARGUMENT,
-          "API key not found. Please pass a valid API key.");
+      return Status(Code::INVALID_ARGUMENT,
+                    "API key not found. Please pass a valid API key.",
+                    Status::SERVICE_CONTROL);
     case CheckError::API_KEY_EXPIRED:
       if (check_response_info) check_response_info->is_api_key_valid = false;
-      return CreateErrorStatus(Code::INVALID_ARGUMENT,
-                               "API key expired. Please renew the API key.");
+      return Status(Code::INVALID_ARGUMENT,
+                    "API key expired. Please renew the API key.",
+                    Status::SERVICE_CONTROL);
     case CheckError::API_KEY_INVALID:
       if (check_response_info) check_response_info->is_api_key_valid = false;
-      return CreateErrorStatus(
-          Code::INVALID_ARGUMENT,
-          "API key not valid. Please pass a valid API key.");
+      return Status(Code::INVALID_ARGUMENT,
+                    "API key not valid. Please pass a valid API key.",
+                    Status::SERVICE_CONTROL);
     case CheckError::SERVICE_NOT_ACTIVATED:
-      return CreateErrorStatus(Code::PERMISSION_DENIED,
-                               error.detail() +
-                                   " Please enable the API for project " +
-                                   project_id + ".");
+      return Status(Code::PERMISSION_DENIED,
+                    std::string("API ") + service_name +
+                        " is not enabled for the project.",
+                    Status::SERVICE_CONTROL);
     case CheckError::PERMISSION_DENIED:
-      return CreateErrorStatus(
-          Code::PERMISSION_DENIED,
-          std::string("Permission denied: ") + error.detail());
+      return Status(Code::PERMISSION_DENIED, "Permission denied.",
+                    Status::SERVICE_CONTROL);
     case CheckError::IP_ADDRESS_BLOCKED:
-      return CreateErrorStatus(Code::PERMISSION_DENIED, error.detail());
+      return Status(Code::PERMISSION_DENIED, "IP address blocked.",
+                    Status::SERVICE_CONTROL);
     case CheckError::REFERER_BLOCKED:
-      return CreateErrorStatus(Code::PERMISSION_DENIED, error.detail());
+      return Status(Code::PERMISSION_DENIED, "Referer blocked.",
+                    Status::SERVICE_CONTROL);
     case CheckError::CLIENT_APP_BLOCKED:
-      return CreateErrorStatus(Code::PERMISSION_DENIED, error.detail());
+      return Status(Code::PERMISSION_DENIED, "Client application blocked.",
+                    Status::SERVICE_CONTROL);
     case CheckError::PROJECT_DELETED:
-      return CreateErrorStatus(
-          Code::PERMISSION_DENIED,
-          std::string("Project ") + project_id + " has been deleted.");
+      return Status(Code::PERMISSION_DENIED, "Project has been deleted.",
+                    Status::SERVICE_CONTROL);
     case CheckError::PROJECT_INVALID:
-      return CreateErrorStatus(
-          Code::INVALID_ARGUMENT,
-          "Client project not valid. Please pass a valid project.");
+      return Status(Code::INVALID_ARGUMENT,
+                    "Client project not valid. Please pass a valid project.",
+                    Status::SERVICE_CONTROL);
     case CheckError::VISIBILITY_DENIED:
-      return CreateErrorStatus(Code::PERMISSION_DENIED,
-                               std::string("Project ") + project_id +
-                                   " has no visibility access to the service.");
+      return Status(
+          Code::PERMISSION_DENIED,
+          std::string("Client project has no visibility access to API ") +
+              service_name,
+          Status::SERVICE_CONTROL);
     case CheckError::BILLING_DISABLED:
-      return CreateErrorStatus(Code::PERMISSION_DENIED,
-                               std::string("Project ") + project_id +
-                                   " has billing disabled. Please enable it.");
+      return Status(Code::PERMISSION_DENIED,
+                    std::string("API ") + service_name +
+                        " has billing disabled. Please enable it.",
+                    Status::SERVICE_CONTROL);
     case CheckError::NAMESPACE_LOOKUP_UNAVAILABLE:
     case CheckError::SERVICE_STATUS_UNAVAILABLE:
     case CheckError::BILLING_STATUS_UNAVAILABLE:
     case CheckError::QUOTA_CHECK_UNAVAILABLE:
-      return Status::OK;  // Fail open for internal server errors
+      // Fail open for internal server errors per recommendation
+      return Status::OK;
     default:
-      return CreateErrorStatus(
+      return Status(
           Code::INTERNAL,
-          std::string("Request blocked due to unsupported BlockReason: ") +
-              error.detail());
+          std::string("Request blocked due to unsupported error code: ") +
+              std::to_string(error.code()),
+          Status::SERVICE_CONTROL);
   }
   return Status::OK;
 }

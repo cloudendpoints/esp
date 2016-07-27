@@ -42,18 +42,21 @@ namespace {
 
 Status ConvertCheckErrorToStatus(gasv1::CheckError::Code code,
                                  const char* error_detail,
-                                 const char* project_id) {
+                                 const char* service_name) {
   gasv1::CheckResponse response;
   gasv1::CheckError* check_error = response.add_check_errors();
+  CheckRequestInfo info;
+  info.service_name = service_name;
   check_error->set_code(code);
   check_error->set_detail(error_detail);
-  return Proto::ConvertCheckResponse(response, project_id, nullptr);
+  return Proto::ConvertCheckResponse(response, info, nullptr);
 }
 
 Status ConvertCheckErrorToStatus(gasv1::CheckError::Code code) {
   gasv1::CheckResponse response;
+  CheckRequestInfo info;
   response.add_check_errors()->set_code(code);
-  return Proto::ConvertCheckResponse(response, "", nullptr);
+  return Proto::ConvertCheckResponse(response, info, nullptr);
 }
 
 }  // namespace
@@ -82,13 +85,10 @@ TEST(CheckResponseTest,
 
 TEST(CheckResponseTest,
      AbortedWithPermissionDeniedWhenRespIsBlockedWithServiceNotActivated) {
-  Status result =
-      ConvertCheckErrorToStatus(CheckError::SERVICE_NOT_ACTIVATED,
-                                "Service not activated.", "project_id_xxxx");
+  Status result = ConvertCheckErrorToStatus(
+      CheckError::SERVICE_NOT_ACTIVATED, "Service not activated.", "api_xxxx");
   EXPECT_EQ(Code::PERMISSION_DENIED, result.code());
-  EXPECT_EQ(result.message(),
-            "Service not activated. "
-            "Please enable the API for project project_id_xxxx.");
+  EXPECT_EQ(result.message(), "API api_xxxx is not enabled for the project.");
 }
 
 TEST(CheckResponseTest,

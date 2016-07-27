@@ -258,17 +258,15 @@ void Aggregated::Check(
     return;
   }
 
-  // Makes a copy of project_id since it needs to pass to lambda.
-  std::string project_id = info.producer_project_id;
   CheckResponse* response = new CheckResponse;
 
-  auto check_on_done = [response, project_id, on_done, trace_span](
+  auto check_on_done = [response, info, on_done, trace_span](
       const ::google::protobuf::util::Status& status) {
     TRACE(trace_span) << "Check returned with status: " << status.ToString();
     CheckResponseInfo response_info;
     if (status.ok()) {
       Status status =
-          Proto::ConvertCheckResponse(*response, project_id, &response_info);
+          Proto::ConvertCheckResponse(*response, info, &response_info);
       on_done(status, response_info);
     } else {
       // Propagate error response from upstream, and network/parsing errors
