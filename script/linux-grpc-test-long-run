@@ -65,7 +65,9 @@ fi
 
 [[ -n "${HOST}" ]] || error_exit 'Please specify a host with -h option.'
 
-CONCURRENT_TYPES=(50 100 200)
+# Nginx default max_concurrent_streams is 128.
+# If CONCURRENT > 128, some requests will fail with RST_STREAM.
+CONCURRENT_TYPES=(50 128)
 CONCURRENT_TYPES_SIZE=${#CONCURRENT_TYPES[@]}
 STREAM_COUNT_TYPES=(10 50 100)
 STREAM_COUNT_TYPES_SIZE=${#STREAM_COUNT_TYPES[@]}
