@@ -39,8 +39,8 @@ use HttpServer;
 ################################################################################
 
 # Port assignments
-my $NginxPort = 8080;
-my $NoopPort = 8081;
+my $NginxPort = ApiManager::pick_port();
+my $NoopPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(8);
 $t->write_file('service.pb.txt', ApiManager::get_bookstore_service_config . <<"EOF");
@@ -83,7 +83,7 @@ $t->run();
 
 ################################################################################
 
-my $response = http_get('/status');
+my $response = ApiManager::http_get($NginxPort,'/status');
 $t->stop_daemons();
 
 like($response, qr/"totalCalledChecks": "0"/, 'Returned total called checks.');

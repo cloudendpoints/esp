@@ -41,10 +41,10 @@ use JSON::PP;
 ################################################################################
 
 # Port assignments
-my $NginxPort = 8080;
-my $ServiceControlPort = 8081;
-my $GrpcServerPort = 8082;
-my $DummyNonGrpcTrafficPort = 8083;
+my $NginxPort = ApiManager::pick_port();
+my $ServiceControlPort = ApiManager::pick_port();
+my $GrpcServerPort = ApiManager::pick_port();
+my $DummyNonGrpcTrafficPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(19);
 
@@ -92,9 +92,9 @@ is($t->waitforsocket("127.0.0.1:${NginxPort}"), 1, "Nginx socket ready.");
 
 ################################################################################
 
-my $initial_shelves_response = http_get('/shelves?key=api-key');
+my $initial_shelves_response = ApiManager::http_get($NginxPort,'/shelves?key=api-key');
 
-my $shelf1_response = http(<<EOF);
+my $shelf1_response = ApiManager::http($NginxPort,<<EOF);
 POST /shelves?key=api-key HTTP/1.0
 Host: 127.0.0.1:${NginxPort}
 Content-Type: application/json
@@ -103,7 +103,7 @@ Content-Length: 24
 { "theme" : "Classics" }
 EOF
 
-my $shelf2_response = http(<<EOF);
+my $shelf2_response = ApiManager::http($NginxPort,<<EOF);
 POST /shelves?key=api-key HTTP/1.0
 Host: 127.0.0.1:${NginxPort}
 Content-Type: application/json
@@ -119,7 +119,7 @@ ldren" }
 
 EOF
 
-my $final_shelves_response = http_get('/shelves?key=api-key');
+my $final_shelves_response = ApiManager::http_get($NginxPort,'/shelves?key=api-key');
 
 # Wait for the service control report
 is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');

@@ -42,10 +42,10 @@ use JSON::PP;
 ################################################################################
 
 # Port assignments
-my $NginxPort = 8080;
-my $BackendPort = 8081;
-my $ServiceControlPort = 8082;
-my $MetadataPort = 8083;
+my $NginxPort = ApiManager::pick_port();
+my $BackendPort = ApiManager::pick_port();
+my $ServiceControlPort = ApiManager::pick_port();
+my $MetadataPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(55);
 
@@ -98,8 +98,8 @@ $t->run();
 ################################################################################
 
 # Call two methods. One returns 200, the other 404.
-my $rshelf = http_get('/shelves/1?key=an-api-key');
-my $rbook  = http_get('/shelves/1/books/2?key=an-api-key');
+my $rshelf = ApiManager::http_get($NginxPort,'/shelves/1?key=an-api-key');
+my $rbook  = ApiManager::http_get($NginxPort,'/shelves/1/books/2?key=an-api-key');
 
 # Wait for :report body.
 is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ');

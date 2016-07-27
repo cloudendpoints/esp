@@ -41,9 +41,9 @@ use JSON::PP;
 ################################################################################
 
 # Port assignments
-my $NginxPort = 8080;
-my $BackendPort = 8081;
-my $ServiceControlPort = 8082;
+my $NginxPort = ApiManager::pick_port();
+my $BackendPort = ApiManager::pick_port();
+my $ServiceControlPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(11);
 
@@ -90,7 +90,7 @@ $t->run();
 
 ################################################################################
 
-my $response = http_get('/shelves');
+my $response = ApiManager::http_get($NginxPort,'/shelves');
 
 $t->waitforfile("$t->{_testdir}/${report_done}");
 $t->stop_daemons();

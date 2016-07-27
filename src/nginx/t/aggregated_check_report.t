@@ -40,9 +40,9 @@ use ServiceControl;
 ################################################################################
 
 # Port assignments
-my $NginxPort = 8080;
-my $BackendPort = 8081;
-my $ServiceControlPort = 8082;
+my $NginxPort = ApiManager::pick_port();
+my $BackendPort = ApiManager::pick_port();
+my $ServiceControlPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(18);
 
@@ -92,9 +92,9 @@ $t->run();
 ################################################################################
 
 # Issues two identical requests
-my $response1 = http_get('/shelves?key=this-is-an-api-key');
-my $response2 = http_get('/shelves?key=this-is-an-api-key');
-my $response3 = http_get('/shelves?key=this-is-an-api-key');
+my $response1 = ApiManager::http_get($NginxPort, '/shelves?key=this-is-an-api-key');
+my $response2 = ApiManager::http_get($NginxPort, '/shelves?key=this-is-an-api-key');
+my $response3 = ApiManager::http_get($NginxPort, '/shelves?key=this-is-an-api-key');
 
 is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');
 $t->stop_daemons();

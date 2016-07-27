@@ -41,10 +41,10 @@ use ServiceControl;
 ################################################################################
 
 # Port assignments
-my $NginxPort = 8080;
-my $BackendPort = 8081;
-my $ServiceControlPort = 8082;
-my $MetadataPort = 8083;
+my $NginxPort = ApiManager::pick_port();
+my $BackendPort = ApiManager::pick_port();
+my $ServiceControlPort = ApiManager::pick_port();
+my $MetadataPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(13);
 
@@ -95,8 +95,8 @@ $t->run();
 
 ################################################################################
 
-my $shelves = http_get('/shelves');
-my $books = http_get('/shelves/Musicals/books');
+my $shelves = ApiManager::http_get($NginxPort,'/shelves');
+my $books = ApiManager::http_get($NginxPort,'/shelves/Musicals/books');
 
 is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');
 

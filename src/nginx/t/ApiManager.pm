@@ -221,7 +221,30 @@ sub get_echo_service_config {
 }
 
 sub get_grpc_test_service_config {
-  return read_test_file("testdata/grpc_test_service_config.pb.txt");
+  my ($GrpcBackendPort) = @_;
+  return <<EOF
+name: "endpoints-grpc-test.cloudendpointsapis.com"
+producer_project_id: "endpoints-grpc-test"
+backend {
+  rules {
+    selector: "test.grpc.Test.Echo"
+    address: "127.0.0.1:$GrpcBackendPort"
+  }
+  rules {
+    selector: "test.grpc.Test.EchoStream"
+    address: "127.0.0.1:$GrpcBackendPort"
+  }
+}
+apis {
+  name: "test.grpc.Test"
+  methods {
+    name: "Echo"
+  }
+  methods {
+    name: "EchoStream"
+  }
+}
+EOF
 }
 
 sub get_transcoding_test_service_config {
@@ -390,6 +413,140 @@ sub compare_http_response_json_body {
 
   like($headers, qr/content-type:(\s)*application\/json/i, 'Response is JSON');
   ok(compare_json($actual_body, $expected_body), 'Response matches');
+}
+
+# Initial port is 8080 or $PORT env variable
+sub initial_port {
+  if (!defined $ENV{TEST_PORT}) {
+    return 8080;
+  } else {
+    print "Initial port: " . $ENV{TEST_PORT} . "\n";
+    return $ENV{TEST_PORT};
+  }
+}
+
+my $port = initial_port() - 1;
+
+# Select an open port
+sub pick_port {
+  $port = $port + 1;
+  print "Pick port: $port\n";
+  my $server = IO::Socket::INET->new(
+      Proto => 'tcp',
+      LocalHost => '127.0.0.1',
+      LocalPort => $port,
+  )
+  or die "Can't create test server socket: $!\n";
+  close $server;
+  return $port;
+}
+
+#
+# These routines are copied from Nginx.pm to support custom ports
+#
+
+sub log_core {
+  my ($prefix, $msg) = @_;
+  ($prefix, $msg) = ('', $prefix) unless defined $msg;
+  $prefix .= ' ' if length($prefix) > 0;
+
+  if (length($msg) > 2048) {
+    $msg = substr($msg, 0, 2048)
+      . "(...logged only 2048 of " . length($msg)
+      . " bytes)";
+  }
+
+  $msg =~ s/^/# $prefix/gm;
+  $msg =~ s/([^\x20-\x7e])/sprintf('\\x%02x', ord($1)) . (($1 eq "\n") ? "\n" : '')/gmxe;
+  $msg .= "\n" unless $msg =~ /\n\Z/;
+  print $msg;
+}
+
+sub log_out {
+  log_core('>>', @_);
+}
+
+sub log_in {
+  log_core('<<', @_);
+}
+
+sub http_get($;$;%) {
+  my ($port, $url, %extra) = @_;
+  return http($port, <<EOF, %extra);
+GET $url HTTP/1.0
+Host: localhost
+
+EOF
+}
+
+sub http($;$;%) {
+  my ($port, $request, %extra) = @_;
+
+  my $s = http_start($port, $request, %extra);
+
+  return $s if $extra{start} or !defined $s;
+  return http_end($s);
+}
+
+sub http_start($;$;%) {
+  my ($port, $request, %extra) = @_;
+  my $s;
+
+  eval {
+    local $SIG{ALRM} = sub { die "timeout\n" };
+    local $SIG{PIPE} = sub { die "sigpipe\n" };
+    alarm(8);
+
+    $s = $extra{socket} || IO::Socket::INET->new(
+      Proto => 'tcp',
+      PeerAddr => "127.0.0.1:$port"
+    )
+      or die "Can't connect to nginx: $!\n";
+
+    log_out($request);
+    $s->print($request);
+
+    select undef, undef, undef, $extra{sleep} if $extra{sleep};
+    return '' if $extra{aborted};
+
+    if ($extra{body}) {
+      log_out($extra{body});
+      $s->print($extra{body});
+    }
+
+    alarm(0);
+  };
+  alarm(0);
+  if ($@) {
+    log_in("died: $@");
+    return undef;
+  }
+
+  return $s;
+}
+
+sub http_end($;%) {
+  my ($s) = @_;
+  my $reply;
+
+  eval {
+    local $SIG{ALRM} = sub { die "timeout\n" };
+    local $SIG{PIPE} = sub { die "sigpipe\n" };
+    alarm(8);
+
+    local $/;
+    $reply = $s->getline();
+
+    alarm(0);
+  };
+  alarm(0);
+  if ($@) {
+    log_in("died: $@");
+    return undef;
+  }
+
+  log_in($reply);
+  return $reply;
 }
 
 1;

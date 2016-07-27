@@ -41,10 +41,10 @@ use ServiceControl;
 ################################################################################
 
 # Port assignments
-my $NginxPort = 8080;
-my $BackendPort = 8081;
-my $ServiceControlPort = 8082;
-my $MetadataPort = 8083;
+my $NginxPort = ApiManager::pick_port();
+my $BackendPort = ApiManager::pick_port();
+my $ServiceControlPort = ApiManager::pick_port();
+my $MetadataPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(36);
 
@@ -109,7 +109,7 @@ sub run_test_case {
 
   $t->run();
 
-  my $response = http_get('/echo?key=this-is-an-api-key');
+  my $response = ApiManager::http_get($NginxPort,'/echo?key=this-is-an-api-key');
 
   is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, "${name}: Report body file ready.");
   $t->stop();

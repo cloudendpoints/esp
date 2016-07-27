@@ -40,10 +40,10 @@ use Auth;
 ################################################################################
 
 # Port assignments
-my $NginxPort = 8080;
-my $BackendPort = 8081;
-my $ServiceControlPort = 8082;
-my $PubkeyPort = 8083;
+my $NginxPort = ApiManager::pick_port();
+my $BackendPort = ApiManager::pick_port();
+my $ServiceControlPort = ApiManager::pick_port();
+my $PubkeyPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(50 * 2);
 
@@ -109,7 +109,7 @@ foreach my $pkey($pkey_jwk, $pkey_x509) {
   ################################################################################
 
   # Missing credentials.
-  my $response = http_get('/shelves');
+  my $response = ApiManager::http_get($NginxPort,'/shelves');
   like($response, qr/HTTP\/1\.1 401 Unauthorized/, 'Returned HTTP 401, missing creds.');
   like($response, qr/WWW-Authenticate: Bearer/, 'Returned auth challenge.');
   like($response, qr/Content-Type: application\/json/i,
@@ -118,7 +118,7 @@ foreach my $pkey($pkey_jwk, $pkey_x509) {
        "Error body contains 'Missing or invalid credentials'.");
 
   # Invalid credentials.
-  $response = http(<<'EOF');
+  $response = ApiManager::http($NginxPort,<<'EOF');
 GET /shelves HTTP/1.0
 Host: localhost
 Authorization: Bearer invalid.token
@@ -132,7 +132,7 @@ EOF
 
   # Token generated from different issuer/key.
   my $token = Auth::get_auth_token('./wrong-client-secret.json');
-  $response = http(<<"EOF");
+  $response = ApiManager::http($NginxPort,<<"EOF");
 GET /shelves HTTP/1.0
 Host: localhost
 Authorization: Bearer $token
@@ -147,7 +147,7 @@ EOF
 
   # Audience not allowed.
   $token = Auth::get_auth_token('./matching-client-secret.json', 'bad_audience');
-  $response = http(<<"EOF");
+  $response = ApiManager::http($NginxPort,<<"EOF");
 GET /shelves HTTP/1.0
 Host: localhost
 Authorization: Bearer $token
@@ -167,7 +167,7 @@ EOF
 
   # Key is unreachable.
   $token = Auth::get_auth_token('./matching-client-secret.json', 'ok_audience_1');
-  $response = http(<<"EOF");
+  $response = ApiManager::http($NginxPort,<<"EOF");
 GET /shelves?key=this-is-an-api-key HTTP/1.0
 Host: localhost
 Authorization: Bearer $token
@@ -188,7 +188,7 @@ EOF
 
   $token = Auth::get_auth_token('./matching-client-secret.json', 'ok_audience_1');
   # OK requests need to use different api-keys to avoid service_control cache.
-  $response = http(<<"EOF");
+  $response = ApiManager::http($NginxPort,<<"EOF");
 GET /shelves?key=this-is-an-api-key1 HTTP/1.0
 Host: localhost
 Authorization: Bearer $token
@@ -233,7 +233,7 @@ EOF
 
   $token = Auth::get_auth_token('./matching-client-secret.json');
   # OK requests need to use different api-keys to avoid service_control cache.
-  $response = http(<<"EOF");
+  $response = ApiManager::http($NginxPort,<<"EOF");
 GET /shelves?key=this-is-an-api-key2&access_token=$token HTTP/1.0
 Host: localhost
 

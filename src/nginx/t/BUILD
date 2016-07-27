@@ -40,6 +40,9 @@ perl_library(
     ],
 )
 
+# Tests are allocated 10 ports starting from the base_port
+# in each suite consecutively.
+
 nginx_suite(
     data = [
         "matching-client-secret.json",
@@ -57,6 +60,7 @@ nginx_suite(
     deps = [
         ":perl_library",
     ],
+    base_port = "9000",
 )
 
 nginx_suite(
@@ -65,13 +69,13 @@ nginx_suite(
         "wrong-client-secret.json",
     ],
     nginx = "//src/nginx/main:nginx-esp",
-    tags = ["exclusive"],
     tests = [
         "auth_pkey.t",
     ],
     deps = [
         ":perl_library",
     ],
+    base_port = "9100",
 )
 
 nginx_suite(
@@ -80,13 +84,13 @@ nginx_suite(
         "wrong-client-secret-symmetric.json",
     ],
     nginx = "//src/nginx/main:nginx-esp",
-    tags = ["exclusive"],
     tests = [
         "auth_symmetrickey.t",
     ],
     deps = [
         ":perl_library",
     ],
+    base_port = "9200",
 )
 
 nginx_suite(
@@ -120,6 +124,7 @@ nginx_suite(
     deps = [
         ":perl_library",
     ],
+    base_port = "9300",
 )
 
 nginx_suite(
@@ -139,6 +144,7 @@ nginx_suite(
     deps = [
         ":perl_library",
     ],
+    base_port = "9500",
 )
 
 nginx_suite(
@@ -181,12 +187,10 @@ nginx_suite(
     deps = [
         ":perl_library",
     ],
+    base_port = "11000",
 )
 
 nginx_suite(
-    config_list = [
-        "//src/nginx/t:testdata/sc_timeout.pb.txt",
-    ],
     nginx = "//src/nginx/main:nginx-esp",
     tests = [
         "check_network_failures.t",
@@ -194,16 +198,12 @@ nginx_suite(
     deps = [
         ":perl_library",
     ],
+    base_port = "9900",
 )
 
-# Tests in this suite don't use %%TEST_CONFIG%%. so it is not using
-# config_list parameter.
 nginx_suite(
     nginx = "//src/nginx/main:nginx-esp",
-    tags = ["exclusive"],
     tests = [
-        "auth_openid.t",
-        "auth_ssl.t",
         "cloud_trace.t",
         "cloud_trace_count_trigger.t",
         "cloud_trace_disabled.t",
@@ -216,6 +216,20 @@ nginx_suite(
     deps = [
         ":perl_library",
     ],
+    base_port = "10000",
+)
+
+nginx_suite(
+    nginx = "//src/nginx/main:nginx-esp",
+    tests = [
+        "auth_openid.t",
+        "auth_ssl.t",
+    ],
+    tags = ["exclusive"],
+    deps = [
+        ":perl_library",
+    ],
+    base_port = "10100",
 )
 
 # This test suite contains the server config flavor for the new HTTP
@@ -225,17 +239,14 @@ nginx_suite(
 # in the larger test suites.
 nginx_suite(
     size = "small",
-    config_list = [
-        "//src/nginx/t:testdata/sc_override.pb.txt",
-    ],
     nginx = "//src/nginx/main:nginx-esp",
-    tags = ["exclusive"],
     tests = [
         "override_service_control.t",
     ],
     deps = [
         ":perl_library",
     ],
+    base_port = "10300",
 )
 
 nginx_suite(
@@ -256,4 +267,5 @@ nginx_suite(
     deps = [
         ":perl_library",
     ],
+    base_port = "10400",
 )

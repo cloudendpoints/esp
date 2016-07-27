@@ -28,7 +28,7 @@
 
 load("//:perl.bzl", "perl_test")
 
-def nginx_test(name, nginx, data=None, env=None, config=None, **kwargs):
+def nginx_test(name, nginx, base_port, data=None, env=None, config=None, **kwargs):
   if nginx == None or len(nginx) == 0:
     fail("'nginx' parameter must be a non-empty string (target).")
 
@@ -47,29 +47,14 @@ def nginx_test(name, nginx, data=None, env=None, config=None, **kwargs):
 
   l = Label(nginx)
   env["TEST_NGINX_BINARY"] = "${TEST_SRCDIR}/" + l.package + "/" + l.name
+  env["TEST_PORT"] = base_port
   perl_test(name=name, data=data, env=env, **kwargs)
 
-# If a test has %%TEST_CONFIG%% in its nginx.conf, use config_list to specify the server
-# config files the test can support. Otherwise, pass [] or None for config_list.
-def nginx_suite(tests, deps, nginx, size="small", data=None, tags=[], config_list=[],
+def nginx_suite(tests, deps, nginx, base_port, size="small", config_list=[], data=None, tags=[],
                 timeout="short", env=None):
-  for test in tests:
+  for (i, test) in enumerate(tests):
     if not config_list:
       nginx_test(
-        name = test.split(".")[0],
-        size = size,
-        timeout = timeout,
-        srcs = [test],
-        deps = deps,
-        data = data,
-        nginx = nginx,
-        config = None,
-        tags = ["exclusive"] + tags,
-        env = env,
-      )
-    else:
-      for config in config_list:
-        nginx_test(
           name = test.split(".")[0],
           size = size,
           timeout = timeout,
@@ -77,7 +62,23 @@ def nginx_suite(tests, deps, nginx, size="small", data=None, tags=[], config_lis
           deps = deps,
           data = data,
           nginx = nginx,
-          config = config,
-          tags = ["exclusive"] + tags,
+          config = None,
+          tags = tags,
           env = env,
+          base_port = str(int(base_port) + 10*i),
+      )
+    else:
+      for (j, config) in enumerate(config_list):
+        nginx_test(
+            name = test.split(".")[0],
+            size = size,
+            timeout = timeout,
+            srcs = [test],
+            deps = deps,
+            data = data,
+            nginx = nginx,
+            config = config,
+            tags = tags,
+            env = env,
+            base_port = str(int(base_port) + 10*i + len(tests)*j*10),
         )

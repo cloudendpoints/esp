@@ -40,10 +40,10 @@ use Auth;
 ################################################################################
 
 # Port assignments
-my $NginxPort = 8080;
-my $BackendPort = 8081;
-my $ServiceControlPort = 8082;
-my $PubkeyPort = 8083;
+my $NginxPort = ApiManager::pick_port();
+my $BackendPort = ApiManager::pick_port();
+my $ServiceControlPort = ApiManager::pick_port();
+my $PubkeyPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(6);
 
@@ -103,7 +103,7 @@ is($t->waitforsocket("127.0.0.1:${PubkeyPort}"), 1, 'Pubkey socket ready.');
 
 $t->run();
 
-my $response = http_get('/shelves/1/books/2?key=this-is-an-api-key');
+my $response = ApiManager::http_get($NginxPort,'/shelves/1/books/2?key=this-is-an-api-key');
 
 $t->stop_daemons();
 $t->stop();

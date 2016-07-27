@@ -40,9 +40,9 @@ use ServiceControl;
 ################################################################################
 
 # Port assignments
-my $NginxPort = 8080;
-my $BackendPort = 8081;
-my $ServiceControlPort = 8082;
+my $NginxPort = ApiManager::pick_port();
+my $BackendPort = ApiManager::pick_port();
+my $ServiceControlPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(17);
 
@@ -104,7 +104,7 @@ is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control soc
 $t->run();
 
 ################################################################################
-my $response1 = http(<<'EOF');
+my $response1 = ApiManager::http($NginxPort,<<'EOF');
 OPTIONS /shelves?key=this-is-an-api-key HTTP/1.0
 Host: localhost
 Access-Control-Request-Method: GET
@@ -114,7 +114,7 @@ Referer: http://google.com/bookstore/root
 
 EOF
 
-my $response2 = http(<<'EOF');
+my $response2 = ApiManager::http($NginxPort,<<'EOF');
 OPTIONS /shelves/1 HTTP/1.0
 Host: localhost
 Access-Control-Request-Method: GET

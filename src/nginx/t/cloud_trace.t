@@ -41,10 +41,10 @@ use ServiceControl;
 ################################################################################
 
 # Port assignments
-my $NginxPort = 8080;
-my $BackendPort = 8081;
-my $ServiceControlPort = 8082;
-my $CloudTracePort = 8083;
+my $NginxPort = ApiManager::pick_port();
+my $BackendPort = ApiManager::pick_port();
+my $ServiceControlPort = ApiManager::pick_port();
+my $CloudTracePort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(27);
 
@@ -105,7 +105,7 @@ $t->run();
 # This request triggers trace.
 my $trace_id = 'e133eacd437d8a12068fd902af3962d8';
 my $parent_span_id = '12345678';
-my $response = http(<<"EOF");
+my $response = ApiManager::http($NginxPort,<<"EOF");
 GET /shelves?key=this-is-an-api-key HTTP/1.0
 Host: localhost
 X-Cloud-Trace-Context: ${trace_id}/${parent_span_id};o=1

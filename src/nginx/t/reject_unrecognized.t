@@ -42,10 +42,10 @@ use JSON::PP;
 ################################################################################
 
 # Port assigments
-my $NginxPort = 8080;
-my $BackendPort = 8081;
-my $ServiceControlPort = 8082;
-my $MetadataPort = 8083;
+my $NginxPort = ApiManager::pick_port();
+my $BackendPort = ApiManager::pick_port();
+my $ServiceControlPort = ApiManager::pick_port();
+my $MetadataPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(16);
 
@@ -98,7 +98,7 @@ $t->run();
 ################################################################################
 
 # Call an unrecognized method "merge shelves"
-my $response = http_get('/shelves/1:merge?other=2');
+my $response = ApiManager::http_get($NginxPort,'/shelves/1:merge?other=2');
 
 # Wait for :report body.
 is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');

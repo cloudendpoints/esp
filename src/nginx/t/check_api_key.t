@@ -41,9 +41,9 @@ use JSON::PP;
 ################################################################################
 
 # Port assignments
-my $NginxPort = 8080;
-my $BackendPort = 8081;
-my $ServiceControlPort = 8082;
+my $NginxPort = ApiManager::pick_port();
+my $BackendPort = ApiManager::pick_port();
+my $ServiceControlPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(21);
 
@@ -92,9 +92,9 @@ $t->run();
 
 ################################################################################
 
-my $response1 = http_get('/shelves?key=key-1');
-my $response2 = http_get('/shelves?api_key=api-key-1');
-my $response3 = http_get('/shelves?api_key=api-key-2&key=key-2');
+my $response1 = ApiManager::http_get($NginxPort,'/shelves?key=key-1');
+my $response2 = ApiManager::http_get($NginxPort,'/shelves?api_key=api-key-1');
+my $response3 = ApiManager::http_get($NginxPort,'/shelves?api_key=api-key-2&key=key-2');
 
 is($t->waitforfile($report_done), 1, 'Report body file ready.');
 $t->stop_daemons();

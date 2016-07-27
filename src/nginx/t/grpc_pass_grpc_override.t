@@ -41,10 +41,10 @@ use JSON::PP;
 ################################################################################
 
 # Port assignment
-my $Http2NginxPort = 8080;
-my $ServiceControlPort = 8081;
-my $GrpcBackendPort = 8082;
-my $HttpBackendPort = 8085;
+my $Http2NginxPort = ApiManager::pick_port();
+my $ServiceControlPort = ApiManager::pick_port();
+my $GrpcBackendPort = ApiManager::pick_port();
+my $HttpBackendPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(4);
 

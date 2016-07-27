@@ -40,15 +40,15 @@ use Auth;
 ################################################################################
 
 # Port assignments
-my $ServiceControlPort = 8081;
-my $Http2NginxPort = 8080;
-my $HttpBackendPort = 8083;
-my $GrpcBackendPort = 8082;
-my $PubkeyPort = 8085;
+my $ServiceControlPort = ApiManager::pick_port();
+my $Http2NginxPort = ApiManager::pick_port();
+my $HttpBackendPort = ApiManager::pick_port();
+my $GrpcBackendPort = ApiManager::pick_port();
+my $PubkeyPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(5);
 
-$t->write_file('service.pb.txt', ApiManager::get_grpc_test_service_config . <<"EOF");
+$t->write_file('service.pb.txt', ApiManager::get_grpc_test_service_config($GrpcBackendPort) . <<"EOF");
 authentication {
   providers {
     id: "test_auth"

@@ -39,9 +39,9 @@ use HttpServer;
 ################################################################################
 
 # Port assignments
-my $NginxPort = 8080;
-my $BackendPort = 8081;
-my $InvalidServiceControlPort = 8082;
+my $NginxPort = ApiManager::pick_port();
+my $BackendPort = ApiManager::pick_port();
+my $InvalidServiceControlPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(5);
 
@@ -83,7 +83,7 @@ $t->run();
 
 ################################################################################
 
-my $response = http_get('/shelves?key=this-is-an-api-key');
+my $response = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key');
 
 $t->stop_daemons();
 like($response, qr/HTTP\/1\.1 503 Service Temporarily Unavailable/, 'Returned HTTP 503');

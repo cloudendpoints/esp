@@ -40,6 +40,8 @@ use HttpServer;
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(7);
 
+my $NginxPort = ApiManager::pick_port();
+
 $t->write_file_expand('nginx.conf', <<"EOF");
 %%TEST_GLOBALS%%
 daemon off;
@@ -49,7 +51,7 @@ http {
   server_tokens off;
   endpoints { off; }
   server {
-    listen 127.0.0.1:8080;
+    listen 127.0.0.1:$NginxPort;
     server_name localhost;
     location /status {
       endpoints_status;
@@ -62,7 +64,7 @@ $t->run();
 
 ################################################################################
 
-my $response = http_get('/status');
+my $response = ApiManager::http_get($NginxPort,'/status');
 $t->stop_daemons();
 
 like($response, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');

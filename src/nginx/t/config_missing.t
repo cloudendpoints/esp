@@ -39,8 +39,8 @@ use HttpServer;
 ################################################################################
 
 # Port assignments
-my $NginxPort = 8080;
-my $BackendPort = 8081;
+my $NginxPort = ApiManager::pick_port();
+my $BackendPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(2);
 
@@ -76,7 +76,7 @@ is($t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'Bookstore socket ready.');
 eval { ApiManager::run_nginx_with_stderr_redirect($t) };
 
 ################################################################################
-my $response = http_get('/shelves');
+my $response = ApiManager::http_get($NginxPort,'/shelves');
 
 $t->stop_daemons();
 

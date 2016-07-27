@@ -54,10 +54,10 @@ plan(skip_all => 'IO::Socket::SSL too old') if $@;
 ################################################################################
 
 # Port assignments
-my $NginxPort = 8080;
-my $BackendPort = 8081;
-my $GrpcBackendPort = 8082;
-my $ServiceControlPort = 8083;
+my $NginxPort = ApiManager::pick_port();
+my $BackendPort = ApiManager::pick_port();
+my $GrpcBackendPort = ApiManager::pick_port();
+my $ServiceControlPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(14);
 
@@ -158,8 +158,8 @@ my $ctx = new IO::Socket::SSL::SSL_Context(
   SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_NONE(),
   SSL_session_cache_size => 100);
 
-my $response = http_get('/shelves?key=this-is-an-api-key',
-  socket => get_ssl_socket($ctx, port($NginxPort)));
+my $response = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key',
+  socket => get_ssl_socket($ctx, $NginxPort));
 
 # Note: libgrpc will use this environment variable to look up its root
 # certificates file.  Pointing it at the server's certificate

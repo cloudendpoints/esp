@@ -40,10 +40,10 @@ use HttpServer;
 ################################################################################
 
 # Port assignments.
-my $NginxPort = 8080;
-my $BackendPort = 8081;
-my $ServiceControlPort = 8082;          # A valid port used in the server config.
-my $InvalidServiceControlPort = 8085;   # An invalid port used in service config.
+my $NginxPort = ApiManager::pick_port();
+my $BackendPort = ApiManager::pick_port();
+my $ServiceControlPort = ApiManager::pick_port();          # A valid port used in the server config.
+my $InvalidServiceControlPort = ApiManager::pick_port();   # An invalid port used in service config.
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(9);
 
@@ -51,6 +51,12 @@ $t->write_file('service.pb.txt',
                ApiManager::get_bookstore_service_config . <<"EOF");
 control {
   environment: "http://127.0.0.1:$InvalidServiceControlPort"
+}
+EOF
+
+ApiManager::write_file_expand($t, 'sc_override.pb.txt', <<"EOF");
+service_control_config {
+  url_override: "http://127.0.0.1:${ServiceControlPort}"
 }
 EOF
 
@@ -67,7 +73,7 @@ http {
     location / {
       endpoints {
         api service.pb.txt;
-        %%TEST_CONFIG%%
+        server_config sc_override.pb.txt;
         on;
       }
       proxy_pass http://127.0.0.1:$BackendPort;
@@ -88,7 +94,7 @@ $t->run();
 
 ################################################################################
 
-my $response = http_get('/shelves?key=this-is-an-api-key');
+my $response = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key');
 is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file is ready.');
 $t->stop_daemons();
 

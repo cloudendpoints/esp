@@ -40,10 +40,10 @@ use Auth;
 ################################################################################
 
 # Port assignments
-my $NginxPort = 8080;
-my $BackendPort = 8081;
-my $PubkeyPort = 8082;
-my $ServiceControlPort = 8083;
+my $NginxPort = ApiManager::pick_port();
+my $BackendPort = ApiManager::pick_port();
+my $PubkeyPort = ApiManager::pick_port();
+my $ServiceControlPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(10);
 
@@ -110,7 +110,7 @@ $t->run();
 ################################################################################
 
 # A call without an API key
-my $response = http_get('/shelves');
+my $response = ApiManager::http_get($NginxPort,'/shelves');
 
 my ($response_headers, $response_body) = split /\r\n\r\n/, $response, 2;
 like($response_headers, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');
@@ -123,7 +123,7 @@ is($response_body, <<'EOF', 'Shelves returned in the response body.');
 EOF
 
 # A call with an API key
-my $response = http_get('/shelves?key=api-key');
+my $response = ApiManager::http_get($NginxPort,'/shelves?key=api-key');
 
 my ($response_headers, $response_body) = split /\r\n\r\n/, $response, 2;
 like($response_headers, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');
@@ -136,13 +136,13 @@ is($response_body, <<'EOF', 'Shelves returned in the response body.');
 EOF
 
 # Unsuccessful unauthenticated call. Makes sure that auth checks work.
-$response = http_get('/shelves/1');
+$response = ApiManager::http_get($NginxPort,'/shelves/1');
 like($response,
   qr/HTTP\/1\.1 401 Unauthorized/, 'Returned HTTP 401, missing creds.');
 
 # Successful authenticated call.
 my $token = Auth::get_auth_token('./matching-client-secret.json');
-$response = http(<<"EOF");
+$response = ApiManager::http($NginxPort,<<"EOF");
 GET /shelves/1 HTTP/1.0
 Authorization: Bearer $token
 Host: localhost

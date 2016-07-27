@@ -51,6 +51,8 @@ nginx_suite(
     deps = [
         ":nginx_test",
     ],
+    tags = ["exclusive"],
+    base_port = "8080",
 )
 
 cc_proto_library(

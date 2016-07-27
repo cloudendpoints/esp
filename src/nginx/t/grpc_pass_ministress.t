@@ -39,14 +39,14 @@ use HttpServer;
 ################################################################################
 
 # Port assignments
-my $NginxPort = 8080;
-my $ServiceControlPort = 8081;
-my $GrpcBackendPort = 8082;
-my $GrpcFallbackPort = 8085;
+my $NginxPort = ApiManager::pick_port();
+my $ServiceControlPort = ApiManager::pick_port();
+my $GrpcBackendPort = ApiManager::pick_port();
+my $GrpcFallbackPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(5);
 
-$t->write_file('service.pb.txt', ApiManager::get_grpc_test_service_config . <<"EOF");
+$t->write_file('service.pb.txt', ApiManager::get_grpc_test_service_config($GrpcBackendPort) . <<"EOF");
 control {
   environment: "http://127.0.0.1:${ServiceControlPort}"
 }

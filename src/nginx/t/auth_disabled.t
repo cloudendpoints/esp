@@ -39,10 +39,10 @@ use HttpServer;
 ################################################################################
 
 # Port assignments
-my $NginxPort = 8080;
-my $BackendPort = 8081;
-my $ServiceControlPort = 8082;
-my $DummyPubkeyPort = 8083;
+my $NginxPort = ApiManager::pick_port();
+my $BackendPort = ApiManager::pick_port();
+my $ServiceControlPort = ApiManager::pick_port();
+my $DummyPubkeyPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(7);
 
@@ -109,7 +109,7 @@ $t->run();
 ################################################################################
 
 # A successful call without a token.
-my $response = http_get('/shelves?key=my-api-key');
+my $response = ApiManager::http_get($NginxPort,'/shelves?key=my-api-key');
 
 my ($response_headers, $response_body) = split /\r\n\r\n/, $response, 2;
 like($response_headers, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');
@@ -122,7 +122,7 @@ is($response_body, <<'EOF', 'Shelves returned in the response body.');
 EOF
 
 # Make sure that service-conrol check still works even though auth is disabled.
-my $response = http_get('/shelves');
+my $response = ApiManager::http_get($NginxPort,'/shelves');
 like($response,
   qr/HTTP\/1\.1 401 Unauthorized/, 'Returned HTTP 401, unregistered caller.');
 

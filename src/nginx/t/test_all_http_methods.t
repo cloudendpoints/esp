@@ -41,10 +41,10 @@ use ServiceControl;
 ################################################################################
 
 # Port assignments
-my $NginxPort = 8080;
-my $BackendPort = 8081;
-my $ServiceControlPort = 8082;
-my $MetadataPort = 8083;
+my $NginxPort = ApiManager::pick_port();
+my $BackendPort = ApiManager::pick_port();
+my $ServiceControlPort = ApiManager::pick_port();
+my $MetadataPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(55);
 
@@ -120,7 +120,7 @@ foreach my $method ('GET', 'POST', 'PATCH', 'PUT', 'DELETE') {
 
   $t->run();
 
-  my $response = http(get_request($method));
+  my $response = ApiManager::http($NginxPort,get_request($method));
 
   is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');
   $t->stop();

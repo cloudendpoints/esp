@@ -1,4 +1,0 @@
-service_control_config {
-  check_timeout_ms: 1000
-}
-

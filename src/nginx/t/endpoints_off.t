@@ -39,8 +39,8 @@ use HttpServer;
 ################################################################################
 
 # Port assignments
-my $NginxPort = 8080;
-my $BackendPort = 8081;
+my $NginxPort = ApiManager::pick_port();
+my $BackendPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(7);
 
@@ -69,7 +69,7 @@ $t->run();
 
 ################################################################################
 
-my $response = http_get('/endpoints-off');
+my $response = ApiManager::http_get($NginxPort,'/endpoints-off');
 $t->stop_daemons();
 
 like($response, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');

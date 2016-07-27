@@ -40,9 +40,9 @@ use Auth;
 ################################################################################
 
 # Port assignments
-my $NginxPort = 8080;
-my $BackendPort = 8081;
-my $ServiceControlPort = 8082;
+my $NginxPort = ApiManager::pick_port();
+my $BackendPort = ApiManager::pick_port();
+my $ServiceControlPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(7);
 
@@ -101,7 +101,7 @@ $t->run();
 ################################################################################
 # A valid token but no pkey to validate it.
 my $token = Auth::get_auth_token('./matching-client-secret.json');
-my $response = http(<<"EOF");
+my $response = ApiManager::http($NginxPort,<<"EOF");
 GET /shelves HTTP/1.0
 Host: localhost
 Authorization: Bearer ${token}

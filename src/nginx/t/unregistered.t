@@ -41,16 +41,63 @@ use ServiceControl;
 ################################################################################
 
 # Port assignments
-my $NginxPort = 8080;
-my $BackendPort = 8081;
-my $ServiceControlPort = 8082;
-my $MetadataPort = 8083;
+my $NginxPort = ApiManager::pick_port();
+my $BackendPort = ApiManager::pick_port();
+my $ServiceControlPort = ApiManager::pick_port();
+my $MetadataPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(29);
 
 # Use JSON configuration.
-$t->write_file('service.json',
-               ApiManager::read_test_file('testdata/bookstore_unregistered.json'));
+ApiManager::write_file_expand($t, 'service.json', <<"EOF");
+{
+ "name": "endpoints-test.cloudendpointsapis.com",
+ "http": {
+  "rules": [
+   {
+    "selector": "ListShelves",
+    "get": "/shelves"
+   },
+   {
+    "selector": "GetShelf",
+    "get": "/shelves/{shelf}"
+   },
+   {
+    "selector": "ListBooks",
+    "get": "/shelves/{shelf}/books"
+   },
+   {
+    "selector": "GetBook",
+    "get": "/shelves/{shelf}/books/{book}"
+   }
+  ]
+ },
+ "usage": {
+  "rules": [
+   {
+    "selector": "ListShelves",
+    "allowUnregisteredCalls": true
+   },
+   {
+    "selector": "GetShelf",
+    "allowUnregisteredCalls": true
+   },
+   {
+    "selector": "ListBooks",
+    "allowUnregisteredCalls": false
+   },
+   {
+    "selector": "GetBook",
+    "allowUnregisteredCalls": false
+   }
+  ]
+ },
+ "control": {
+  "environment": "http://127.0.0.1:${ServiceControlPort}"
+ }
+}
+EOF
+
 ApiManager::write_file_expand($t, 'nginx.conf', <<"EOF");
 %%TEST_GLOBALS%%
 daemon off;
@@ -93,13 +140,13 @@ $t->run();
 ################################################################################
 
 # API key, allows unregistered.
-my $response1 = http_get('/shelves?key=this-is-an-api-key-1');
+my $response1 = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key-1');
 # No API Key, allows unregistered.
-my $response2 = http_get('/shelves/2');
+my $response2 = ApiManager::http_get($NginxPort,'/shelves/2');
 # API key, doesn't allow unregistered.
-my $response3 = http_get('/shelves/3/books?key=this-is-an-api-key-3');
+my $response3 = ApiManager::http_get($NginxPort,'/shelves/3/books?key=this-is-an-api-key-3');
 # No API Key, doesn't allow unregistered.
-my $response4 = http_get('/shelves/4/books/4');
+my $response4 = ApiManager::http_get($NginxPort,'/shelves/4/books/4');
 
 is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');
 

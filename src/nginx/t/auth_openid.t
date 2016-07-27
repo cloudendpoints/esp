@@ -177,7 +177,7 @@ is($t->waitforsocket("127.0.0.1:${OpenIdPortBadContent}"), 1, "openid socket (${
 $t->run();
 
 # Positive test case: Successfully completes the request via openID discovery.
-my $response = http(<<"EOF");
+my $response = ApiManager::http($NginxPort,<<"EOF");
 GET /shelves?key=this-is-an-api-key HTTP/1.0
 Host: localhost
 Authorization: Bearer $token
@@ -210,7 +210,7 @@ is($r->{verb}, 'GET', 'Pubkey request was a get');
 is($r->{uri}, '/pubkey', 'Public key was retrieved');
 
 # Negative test case: openID discovery link is invalid.
-$response = http(<<"EOF");
+$response = ApiManager::http($NginxPort,<<"EOF");
 GET /shelves?key=this-is-an-api-key HTTP/1.0
 Host: localhost
 Authorization: Bearer $token_no_openid
@@ -227,7 +227,7 @@ like($response_body,
      'OpenID discovery failed in response body');
 
 # Negative test case: openID discovery doc does not contain "jwks_uri" field.
-$response = http(<<"EOF");
+$response = ApiManager::http($NginxPort,<<"EOF");
 GET /shelves?key=this-is-an-api-key HTTP/1.0
 Host: localhost
 Authorization: Bearer $token_openid_bad_content

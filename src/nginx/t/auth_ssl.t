@@ -127,7 +127,7 @@ sub success_test {
   $t->run();
 
   # Positive test case: Successfully completes the request via openID discovery.
-  my $response = http(<<"EOF");
+  my $response = ApiManager::http($NginxPort,<<"EOF");
 GET /shelves?key=this-is-an-api-key HTTP/1.0
 Host: localhost
 Authorization: Bearer $token
@@ -187,7 +187,7 @@ is($t->waitforsocket("127.0.0.1:${OpenIdPort}"), 1, "openid socket (${OpenIdPort
 $t->run();
 
 # Positive test case: Successfully completes the request via openID discovery.
-my $response = http(<<"EOF");
+my $response = ApiManager::http($NginxPort,<<"EOF");
 GET /shelves?key=this-is-an-api-key HTTP/1.0
 Host: localhost
 Authorization: Bearer $token
@@ -266,7 +266,7 @@ EOF
 
 sub openid {
   my ($t, $port, $file) = @_;
-  my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
+  my $server = HttpServer->new($port, $t->testdir() . '/' . $file, 1)
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
 

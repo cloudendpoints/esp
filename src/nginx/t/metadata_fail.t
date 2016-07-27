@@ -40,10 +40,10 @@ use ServiceControl;
 ################################################################################
 
 # Port assignments
-my $NginxPort = 8080;
-my $BackendPort = 8081;
-my $ServiceControlPort = 8082;
-my $MetadataPort = 8083;
+my $NginxPort = ApiManager::pick_port();
+my $BackendPort = ApiManager::pick_port();
+my $ServiceControlPort = ApiManager::pick_port();
+my $MetadataPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(11);
 
@@ -111,7 +111,7 @@ sub test_metadata_404 {
 
   ################################################################################
 
-  my $shelves1 = http_get('/shelves');
+  my $shelves1 = ApiManager::http_get($NginxPort,'/shelves');
   is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report succeeded');
 
   $t->stop();
@@ -142,7 +142,7 @@ sub test_metadata_not_running {
   is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service controlsocket ready.');
   $t->run();
 
-  my $shelves2 = http_get('/shelves');
+  my $shelves2 = ApiManager::http_get($NginxPort,'/shelves');
   is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report succeeded.');
 
   $t->stop();

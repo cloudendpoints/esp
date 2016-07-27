@@ -39,15 +39,14 @@ use strict;
 use warnings;
 
 sub new {
-    my (undef, $port, $file, $save_body) = @_;
-#    $save_body = 0 unless defined $save_body;
+    my (undef, $port, $file, $ssl) = @_;
 
     my $self = {
         _port => $port,
         _file => $file,
         _http => [],
         _http_cb => {},
-#        _save_body => $save_body,
+        _ssl => $ssl,
     };
 
     bless $self;
@@ -142,6 +141,7 @@ EOF
 sub run {
   my ($self) = @_;
 
+  my $listeners = IO::Select->new();
   my $server = IO::Socket::INET->new(
       Proto => 'tcp',
       LocalHost => '127.0.0.1',
@@ -150,21 +150,22 @@ sub run {
       Reuse => 1
   )
   or die "Can't create test server socket: $!\n";
+  $server->blocking(0);
+  $listeners->add($server);
 
-  my $ssl_server = IO::Socket::INET->new(
-      Proto => 'tcp',
-      LocalHost => '127.0.0.1',
-      LocalPort => $self->{_port} + 443,
-      Listen => 5,
-      Reuse => 1
-  )
-  or die "Can't create test SSL server socket: $!\n";
-
-  foreach($server, $ssl_server) {
-      $_->blocking(0);
+  # Please avoid taking ports that are not allocated
+  if ($self->{_ssl}) {
+    my $ssl_server = IO::Socket::INET->new(
+        Proto => 'tcp',
+        LocalHost => '127.0.0.1',
+        LocalPort => $self->{_port} + 443,
+        Listen => 5,
+        Reuse => 1
+    )
+    or die "Can't create test SSL server socket: $!\n";
+    $ssl_server->blocking(0);
+    $listeners->add($ssl_server);
   }
-
-  my $listeners = IO::Select->new($server, $ssl_server);
 
   local $SIG{PIPE} = 'IGNORE';
 

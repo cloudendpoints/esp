@@ -40,9 +40,9 @@ use ServiceControl;
 ################################################################################
 
 # Port assignments
-my $NginxPort = 8080;
-my $BackendPort = 8081;
-my $ServiceControlPort = 8082;
+my $NginxPort = ApiManager::pick_port();
+my $BackendPort = ApiManager::pick_port();
+my $ServiceControlPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(18);
 
@@ -105,8 +105,8 @@ $t->run();
 
 ################################################################################
 
-my $response1 = http_get('/shelves');
-my $response2 = http_get('/shelves/0');
+my $response1 = ApiManager::http_get($NginxPort,'/shelves');
+my $response2 = ApiManager::http_get($NginxPort,'/shelves/0');
 
 is($t->waitforfile("$t->{_testdir}/${report_done}-1"), 1, 'First report is done.');
 is($t->waitforfile("$t->{_testdir}/${report_done}-2"), 1, 'Second report is done.');
