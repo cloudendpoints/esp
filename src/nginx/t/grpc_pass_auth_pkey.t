@@ -42,7 +42,6 @@ use Auth;
 # Port assignments
 my $ServiceControlPort = ApiManager::pick_port();
 my $Http2NginxPort = ApiManager::pick_port();
-my $HttpBackendPort = ApiManager::pick_port();
 my $GrpcBackendPort = ApiManager::pick_port();
 my $PubkeyPort = ApiManager::pick_port();
 
@@ -94,9 +93,7 @@ http {
         %%TEST_CONFIG%%
         on;
       }
-      grpc_pass {
-        proxy_pass http://127.0.0.1:${HttpBackendPort}/;
-      }
+      grpc_pass;
     }
   }
 }

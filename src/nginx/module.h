@@ -133,7 +133,7 @@ typedef struct {
   std::shared_ptr<ApiManager> esp;
 
   unsigned endpoints_block : 1;  // location has `endpoints` block
-  unsigned grpc_pass_block : 1;  // location has `grpc_pass` block
+  unsigned grpc_pass : 1;        // location has `grpc_pass` directive
 
   // Whether Google Compute Engine metadata server should be used or not.
   ngx_flag_t metadata_server;
@@ -164,10 +164,6 @@ typedef struct {
   // The map of backends to GRPC stubs.  These are constructed
   // on-demand.
   ngx_esp_grpc_stub_map_t grpc_stubs;
-
-  // The GRPC proxy passthrough prefix, used for sending non-API
-  // traffic to nginx's HTTP request handler chain.
-  ngx_str_t grpc_passthrough_prefix;
 
   // The GRPC backend address override.  If this is a non-zero-length
   // string, this is where all GRPC API traffic will be sent,
@@ -247,10 +243,6 @@ static_assert(std::is_standard_layout<ngx_esp_request_ctx_t>::value,
 
 // Get or create the ESP per-request context.
 ngx_esp_request_ctx_t *ngx_http_esp_ensure_module_ctx(ngx_http_request_t *r);
-
-// The currently active request context.
-// TODO: Make this thread-local, just for paranoia.
-extern ngx_esp_request_ctx_t *ngx_esp_current_request_context;
 
 }  // namespace nginx
 }  // namespace api_manager

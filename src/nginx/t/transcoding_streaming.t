@@ -44,7 +44,6 @@ use JSON::PP;
 my $NginxPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $GrpcServerPort = ApiManager::pick_port();
-my $DummyNonGrpcTrafficPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(21);
 
@@ -71,10 +70,7 @@ http {
         %%TEST_CONFIG%%
         on;
       }
-      grpc_pass {
-        proxy_pass http://127.0.0.1:${DummyNonGrpcTrafficPort}/;
-      }
-      grpc_backend_address_override 127.0.0.1:${GrpcServerPort};
+      grpc_pass 127.0.0.1:${GrpcServerPort} override;
     }
   }
 }

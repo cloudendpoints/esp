@@ -122,9 +122,7 @@ http {
         %%TEST_CONFIG%%
         on;
       }
-      grpc_pass {
-        proxy_pass http://127.0.0.1:${HttpBackendPort};
-      }
+      grpc_pass;
     }
   }
 }

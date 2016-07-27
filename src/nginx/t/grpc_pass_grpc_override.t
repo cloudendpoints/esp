@@ -73,10 +73,7 @@ http {
         api service.pb.txt;
         on;
       }
-      grpc_pass {
-        proxy_pass http://127.0.0.1:${HttpBackendPort}/;
-      }
-      grpc_backend_address_override 127.0.0.1:${GrpcBackendPort};
+      grpc_pass 127.0.0.1:${GrpcBackendPort} override;
     }
   }
 }

@@ -39,16 +39,14 @@ use HttpServer;
 ################################################################################
 
 # Port assignments
-my $Http2NginxPort = ApiManager::pick_port();
-my $HttpBackendPort = ApiManager::pick_port();
-my $GrpcBackendPort = ApiManager::pick_port();
-my $GrpcFallbackPort = ApiManager::pick_port();
+my $NginxPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(4);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(5);
 
-$t->write_file('service.pb.txt', ApiManager::get_grpc_test_service_config($GrpcBackendPort));
+# Save service name in the service configuration protocol buffer file.
+$t->write_file('service.pb.txt', ApiManager::get_bookstore_service_config);
 
-$t->write_file_expand('nginx.conf', <<"EOF");
+ApiManager::write_file_expand($t, 'nginx.conf', <<"EOF");
 %%TEST_GLOBALS%%
 daemon off;
 events {
@@ -56,56 +54,49 @@ events {
 }
 http {
   %%TEST_GLOBALS_HTTP%%
+  server_tokens off;
   server {
-    listen 127.0.0.1:${Http2NginxPort} http2;
+    listen 127.0.0.1:${NginxPort};
     server_name localhost;
     location / {
       endpoints {
         api service.pb.txt;
+        %%TEST_CONFIG%%
+        service_control off;
         on;
       }
-      grpc_pass 127.0.0.2:${GrpcFallbackPort}};
+      grpc_pass;
     }
   }
 }
 EOF
 
-$t->run_daemon(\&ApiManager::grpc_test_server, $t, "127.0.0.1:${GrpcBackendPort}");
-is($t->waitforsocket("127.0.0.1:${GrpcBackendPort}"), 1, 'GRPC test server socket ready.');
 $t->run();
-is($t->waitforsocket("127.0.0.1:${Http2NginxPort}"), 1, 'Nginx socket ready.');
+is($t->waitforsocket("127.0.0.1:${NginxPort}"), 1, 'Nginx socket ready.');
 
 ################################################################################
 
-my $test_results = &ApiManager::run_grpc_test($t, <<"EOF");
-server_addr: "127.0.0.1:${Http2NginxPort}"
-direct_addr: "127.0.0.1:${GrpcBackendPort}"
-plans {
-  probe_downstream_message_limit {
-    request {
-      text: "Hello, world!  Plus some extra text to add a little length."
-    }
-    timeout_ms: 1000
-  }
-}
+# GET call
+my $response = ApiManager::http_get($NginxPort, '/test');
+
+my ($response_headers, $response_body) = split /\r\n\r\n/, $response, 2;
+like($response_headers, qr/HTTP\/1\.1 404 Not Found/, 'Returned HTTP 404.');
+like($response_body, qr/No HTTP backend defined for this location/, 'The error message is correct');
+
+# POST call with content-type="application/json"
+$response = ApiManager::http($NginxPort, <<EOF);
+POST /test HTTP/1.0
+Host: 127.0.0.1:${NginxPort}
+Content-Type: application/json
+Content-Length: 20
+
+{ "name" : "value" }
 EOF
+
+($response_headers, $response_body) = split /\r\n\r\n/, $response, 2;
+like($response_headers, qr/HTTP\/1\.1 404 Not Found/, 'Returned HTTP 404.');
+like($response_body, qr/No HTTP backend defined for this location/, 'The error message is correct');
 
 $t->stop_daemons();
 
-my $test_results_expected = <<'EOF';
-results {
-  probe_downstream_message_limit {
-    message_limit: (\d+)
-  }
-}
-EOF
-like($test_results, qr/$test_results_expected/m, 'Client tests completed as expected.');
-
-if ($test_results =~ /$test_results_expected/) {
-  my $message_limit = $1;
-
-  cmp_ok($message_limit, '<', 5000, 'downstream->upstream is throttled');
-
-} else {
-  fail('Able to pull out test results');
-}
+################################################################################

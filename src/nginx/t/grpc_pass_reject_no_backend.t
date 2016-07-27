@@ -34,19 +34,18 @@ BEGIN { use FindBin; chdir($FindBin::Bin); }
 use ApiManager;   # Must be first (sets up import path to the Nginx test module)
 use Test::Nginx;  # Imports Nginx's test module
 use Test::More;   # And the test framework
-use HttpServer;
 
 ################################################################################
 
 # Port assignments
 my $Http2NginxPort = ApiManager::pick_port();
-my $HttpBackendPort = ApiManager::pick_port();
-my $GrpcBackendPort = ApiManager::pick_port();
-my $GrpcFallbackPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(4);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(2);
 
-$t->write_file('service.pb.txt', ApiManager::get_grpc_test_service_config($GrpcBackendPort));
+# This service config doesn't configure backend addresses
+$t->write_file(
+    'service.pb.txt',
+    ApiManager::get_bookstore_service_config_allow_all_http_requests);
 
 $t->write_file_expand('nginx.conf', <<"EOF");
 %%TEST_GLOBALS%%
@@ -62,30 +61,26 @@ http {
     location / {
       endpoints {
         api service.pb.txt;
+        service_control off;
         on;
       }
-      grpc_pass 127.0.0.2:${GrpcFallbackPort}};
+      grpc_pass;
     }
   }
 }
 EOF
 
-$t->run_daemon(\&ApiManager::grpc_test_server, $t, "127.0.0.1:${GrpcBackendPort}");
-is($t->waitforsocket("127.0.0.1:${GrpcBackendPort}"), 1, 'GRPC test server socket ready.');
 $t->run();
 is($t->waitforsocket("127.0.0.1:${Http2NginxPort}"), 1, 'Nginx socket ready.');
 
 ################################################################################
-
 my $test_results = &ApiManager::run_grpc_test($t, <<"EOF");
 server_addr: "127.0.0.1:${Http2NginxPort}"
-direct_addr: "127.0.0.1:${GrpcBackendPort}"
 plans {
-  probe_downstream_message_limit {
+  echo {
     request {
-      text: "Hello, world!  Plus some extra text to add a little length."
+      text: "Hello, world!"
     }
-    timeout_ms: 1000
   }
 }
 EOF
@@ -94,18 +89,14 @@ $t->stop_daemons();
 
 my $test_results_expected = <<'EOF';
 results {
-  probe_downstream_message_limit {
-    message_limit: (\d+)
+  status {
+    code: 5
+    details: "No GRPC backend address specified"
   }
 }
 EOF
-like($test_results, qr/$test_results_expected/m, 'Client tests completed as expected.');
 
-if ($test_results =~ /$test_results_expected/) {
-  my $message_limit = $1;
+is($test_results, $test_results_expected, 'Client tests completed as expected.');
 
-  cmp_ok($message_limit, '<', 5000, 'downstream->upstream is throttled');
+################################################################################
 
-} else {
-  fail('Able to pull out test results');
-}

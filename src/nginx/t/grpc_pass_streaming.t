@@ -81,10 +81,7 @@ http {
         %%TEST_CONFIG%%
         on;
       }
-      grpc_pass {
-        proxy_pass http://127.0.0.1:${ServiceControlPort}/;
-      }
-      grpc_backend_address_fallback 127.0.0.2:${GrpcFallbackPort};
+      grpc_pass 127.0.0.2:${GrpcFallbackPort};
     }
   }
 }

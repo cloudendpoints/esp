@@ -137,8 +137,10 @@ http {
         %%TEST_CONFIG%%
         on;
       }
-      grpc_pass {
-        proxy_pass http://127.0.0.1:${BackendPort}/;
+      grpc_pass;
+
+      location /shelves {
+        proxy_pass http://127.0.0.1:${BackendPort};
       }
     }
   }

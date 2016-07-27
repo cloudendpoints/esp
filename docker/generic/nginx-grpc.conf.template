@@ -33,11 +33,7 @@ http {
         api /etc/nginx/endpoints/service.json;
       }
 
-      grpc_pass {
-        proxy_pass http://www.google.com/;
-      }
-
-      grpc_backend_address_override ${SERVER_ADDRESS};
+      grpc_pass ${SERVER_ADDRESS} override;
     }
   }
 

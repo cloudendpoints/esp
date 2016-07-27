@@ -79,8 +79,6 @@ ngx_esp_request_ctx_s::~ngx_esp_request_ctx_s() {
   }
 }
 
-ngx_esp_request_ctx_t *ngx_esp_current_request_context = nullptr;
-
 namespace {
 
 // Time in seconds to wait for all active connections to close
@@ -161,40 +159,21 @@ ngx_command_t ngx_esp_commands[] = {
     {
         // grpc_pass defines an nginx request handler that proxies
         // GRPC content (Content-Type "application/grpc*") via
-        // libgrpc, and proxies other content using nginx's HTTP proxy
-        // module (or another HTTP content handler -- but usually what
-        // you want is proxy_pass).
+        // libgrpc.
+        // The first parameter (if present) defines a gRPC backend address.
+        // By default this address is used only when there is no backend
+        // configured in service config. If "override" is specified as the
+        // second parameter, it is used always regardless of the backend
+        // configuration in service config.
         //
         // Usage:
         //   location / {
-        //     grpc_pass {
-        //       proxy_pass localhost:8081
-        //       // Other proxy_pass settings
-        //     }
+        //     grpc_pass [<backend_address> [override]];
         //   }
         //
         ngx_string("grpc_pass"),
-        NGX_HTTP_LOC_CONF | NGX_CONF_NOARGS | NGX_CONF_BLOCK,
+        NGX_HTTP_LOC_CONF | NGX_CONF_NOARGS | NGX_CONF_TAKE12,
         ConfigureGrpcBackendHandler, NGX_HTTP_LOC_CONF_OFFSET, 0, nullptr,
-    },
-    {
-        // grpc_backend_address_override sends all GRPC API traffic to
-        // the specified target address, regardless of what the backend
-        // address is set to in the API service configuration.
-        ngx_string("grpc_backend_address_override"),
-        NGX_HTTP_LOC_CONF | NGX_CONF_TAKE1, ngx_conf_set_str_slot,
-        NGX_HTTP_LOC_CONF_OFFSET,
-        offsetof(ngx_esp_loc_conf_t, grpc_backend_address_override), nullptr,
-    },
-    {
-        // grpc_backend_address_fallback sends GRPC API traffic to the
-        // specified target address if grpc_backend_address_override is
-        // not specified and if there is no configured backend address
-        // for the API method in the API service configuration.
-        ngx_string("grpc_backend_address_fallback"),
-        NGX_HTTP_LOC_CONF | NGX_CONF_TAKE1, ngx_conf_set_str_slot,
-        NGX_HTTP_LOC_CONF_OFFSET,
-        offsetof(ngx_esp_loc_conf_t, grpc_backend_address_fallback), nullptr,
     },
     {
         ngx_string("endpoints_status"), NGX_HTTP_LOC_CONF | NGX_CONF_NOARGS,
@@ -351,9 +330,6 @@ char *ngx_esp_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child) {
       ngx_http_conf_get_module_srv_conf(cf, ngx_esp_module));
   conf->http_core_loc_conf = reinterpret_cast<ngx_http_core_loc_conf_t *>(
       ngx_http_conf_get_module_loc_conf(cf, ngx_http_core_module));
-
-  ngx_conf_merge_str_value(conf->grpc_passthrough_prefix,
-                           prev->grpc_passthrough_prefix, nullptr);
 
   ngx_conf_merge_str_value(conf->grpc_backend_address_override,
                            prev->grpc_backend_address_override, nullptr);
@@ -1148,7 +1124,7 @@ ngx_int_t ngx_esp_init_process(ngx_cycle_t *cycle) {
       lc->esp->Init();
       has_esp = true;
     }
-    if (lc->grpc_pass_block && !mc->grpc_queue) {
+    if (lc->grpc_pass && !mc->grpc_queue) {
       mc->grpc_queue = NgxEspGrpcQueue::Instance();
     }
   }
@@ -1207,24 +1183,6 @@ ngx_esp_request_ctx_t *ngx_http_esp_ensure_module_ctx(ngx_http_request_t *r) {
                               new (r->pool) ngx_esp_request_ctx_t(r, lc));
     if (ctx != nullptr) {
       ngx_http_set_ctx(r, ctx, ngx_esp_module);
-      if (ngx_esp_current_request_context) {
-        // Smuggle data from the previously active request context as
-        // needed for the new request context.
-
-        // Redirect the access handler.
-        if (ngx_esp_current_request_context->current_access_handler ==
-            &ngx_http_esp_access_check_done) {
-          ctx->current_access_handler = &ngx_http_esp_redirect_access_handler;
-        } else {
-          ctx->current_access_handler =
-              ngx_esp_current_request_context->current_access_handler;
-        }
-
-        // Smuggle data used in the redirected request and report path.
-        ctx->status = ngx_esp_current_request_context->status;
-        ctx->endpoints_api_userinfo =
-            ngx_esp_current_request_context->endpoints_api_userinfo;
-      }
     }
   }
 
