@@ -35,6 +35,7 @@ extern "C" {
 }
 
 #include "src/nginx/module.h"
+#include "src/nginx/util.h"
 
 namespace google {
 namespace api_manager {
@@ -44,269 +45,27 @@ namespace {
 const ngx_str_t kGrpcStatusHeaderKey = ngx_string("grpc-status");
 const ngx_str_t kGrpcMessageHeaderKey = ngx_string("grpc-message");
 
-// N.B. The following four functions are a direct copy of the
-// corresponding functions from ngx_http_v2_filter_module.c -- since
-// the originals are static, there's no good way to invoke them
-// directly.
-
-ngx_inline void ngx_esp_http_v2_handle_frame(ngx_http_v2_stream_t *stream,
-                                             ngx_http_v2_out_frame_t *frame) {
-  ngx_http_request_t *r;
-
-  r = stream->request;
-
-  r->connection->sent += NGX_HTTP_V2_FRAME_HEADER_SIZE + frame->length;
-
-  if (frame->fin) {
-    stream->out_closed = 1;
+ngx_int_t AddTrailer(ngx_http_request_t *r, const ngx_str_t &key,
+                     const ngx_str_t &value) {
+  ngx_table_elt_t *h = reinterpret_cast<ngx_table_elt_t *>(
+      ngx_list_push(&r->headers_out.trailers));
+  if (h == nullptr) {
+    return NGX_ERROR;
   }
-
-  frame->next = stream->free_frames;
-  stream->free_frames = frame;
-
-  stream->queued--;
-}
-
-ngx_inline void ngx_esp_http_v2_handle_stream(ngx_http_v2_connection_t *h2c,
-                                              ngx_http_v2_stream_t *stream) {
-  ngx_event_t *wev;
-
-  if (stream->handled || stream->blocked || stream->exhausted) {
-    return;
-  }
-
-  wev = stream->request->connection->write;
-
-  if (!wev->delayed) {
-    stream->handled = 1;
-    ngx_queue_insert_tail(&h2c->posted, &stream->queue);
-  }
-}
-
-ngx_int_t ngx_esp_http_v2_headers_frame_handler(
-    ngx_http_v2_connection_t *h2c, ngx_http_v2_out_frame_t *frame) {
-  ngx_chain_t *cl, *ln;
-  ngx_http_v2_stream_t *stream;
-
-  stream = frame->stream;
-  cl = frame->first;
-
-  for (;;) {
-    if (cl->buf->pos != cl->buf->last) {
-      frame->first = cl;
-
-      ngx_log_debug2(NGX_LOG_DEBUG_HTTP, h2c->connection->log, 0,
-                     "http2:%ui HEADERS frame %p was sent partially",
-                     stream->node->id, frame);
-
-      return NGX_AGAIN;
-    }
-
-    ln = cl->next;
-
-    if (cl->buf->tag == (ngx_buf_tag_t)&ngx_http_v2_module) {
-      cl->next = stream->free_frame_headers;
-      stream->free_frame_headers = cl;
-
-    } else {
-      cl->next = stream->free_bufs;
-      stream->free_bufs = cl;
-    }
-
-    if (cl == frame->last) {
-      break;
-    }
-
-    cl = ln;
-  }
-
-  ngx_log_debug2(NGX_LOG_DEBUG_HTTP, h2c->connection->log, 0,
-                 "http2:%ui HEADERS frame %p was sent", stream->node->id,
-                 frame);
-
-  ngx_esp_http_v2_handle_frame(stream, frame);
-
-  ngx_esp_http_v2_handle_stream(h2c, stream);
-
+  h->key = key;
+  h->value = value;
+  h->hash = ngx_hash_key_lc(h->key.data, h->key.len);
   return NGX_OK;
 }
 
-u_char *ngx_esp_http_v2_write_int(u_char *pos, ngx_uint_t prefix,
-                                  ngx_uint_t value) {
-  if (value < prefix) {
-    *pos++ |= value;
-    return pos;
+ngx_int_t SerializeStatusCode(ngx_pool_t *p, const utils::Status &s,
+                              ngx_str_t *out) {
+  out->data = reinterpret_cast<u_char *>(ngx_pcalloc(p, NGX_INT_T_LEN));
+  if (out->data == nullptr) {
+    return NGX_ERROR;
   }
-
-  *pos++ |= prefix;
-  value -= prefix;
-
-  while (value >= 128) {
-    *pos++ = value % 128 + 128;
-    value /= 128;
-  }
-
-  *pos++ = (u_char)value;
-
-  return pos;
-}
-
-ngx_int_t GrpcFinishV2(
-    ngx_http_request_t *r, const utils::Status &status,
-    std::multimap<std::string, std::string> response_trailers) {
-  // This bit is a little hacky.
-  //
-  // The problem is that nginx's HTTP/2 stream implementation does not
-  // (as of this writing) support the notion of trailed headers.  This
-  // is unfortunate because GRPC reports the final API call status as
-  // a trailed header.
-  //
-  // So if the request is HTTP/2, here's what we do: we directly
-  // create an HTTP/2 headers frame (ala
-  // ngx_http_v2_create_headers_frame), and then queue it to
-  // r->stream->connection (ala ngx_http_v2_queue_blocked_frame) --
-  // basically mirroring ngx_http_v2_header_filter.
-  //
-  // (We considered clearing r->header_sent and doing a normal header
-  // send, but that would also send all of the HTTP headers normally
-  // sent by nginx; there's no good way to skip them.)
-  //
-  // See rfc7541 for the header frame format details.  We encode
-  // headers using uncompressed, unindexed values, since we don't want
-  // to have to get into nginx's notion of the HPACK compression
-  // state.
-  //
-  // TODO: Add the GRPC headers to the client's dynamic index.
-  //
-  // For now, according to the RFC section 6.2.2, each header is
-  // represented as:
-  //
-  //      0   1   2   3   4   5   6   7
-  //    +---+---+---+---+---+---+---+---+
-  //    | 0 | 0 | 0 | 0 |       0       |
-  //    +---+---+-----------------------+
-  //    | H |     Name Length (7+)      |
-  //    +---+---------------------------+
-  //    |  Name String (Length octets)  |
-  //    +---+---------------------------+
-  //    | H |     Value Length (7+)     |
-  //    +---+---------------------------+
-  //    | Value String (Length octets)  |
-  //    +-------------------------------+
-
-  // TODO: Include any other trailers supplied by the upstream server.
-
-  size_t length = 1 + /* 0 == header representation type */
-                  2 * NGX_HTTP_V2_INT_OCTETS + /* name len, value len */
-                  kGrpcStatusHeaderKey.len + NGX_INT_T_LEN + 1 /* code+sign */;
-  bool add_status_details = false;
-  size_t status_details_len = 0;
-  if (!status.ok()) {
-    add_status_details = true;
-    status_details_len = status.message().length();
-    if (status_details_len > NGX_HTTP_V2_MAX_FIELD) {
-      status_details_len = NGX_HTTP_V2_MAX_FIELD;
-    }
-    length += 1 + 2 * NGX_HTTP_V2_INT_OCTETS + /* 0, name len, value len */
-              kGrpcMessageHeaderKey.len + status_details_len;
-  }
-
-  // Build a headers frame.
-  ngx_http_v2_out_frame_t *frame = new (r->pool) ngx_http_v2_out_frame_t;
-  frame->handler = ngx_esp_http_v2_headers_frame_handler;
-  frame->stream = r->stream;
-  frame->blocked = 1;
-  frame->fin = 1;
-  ngx_buf_t *b =
-      ngx_create_temp_buf(r->pool, NGX_HTTP_V2_FRAME_HEADER_SIZE + length);
-  if (!b) {
-    // There's very little we can do if we fail to allocate this
-    // buffer; just finalize the request.
-    return NGX_HTTP_INTERNAL_SERVER_ERROR;
-  }
-
-  // Skip the frame prefix; we'll fill it in once we actually know
-  // how big the frame is.  Note that b->start == b->last here, so we
-  // have a pointer to the prefix.
-  b->last += sizeof(uint32_t);
-
-  // Write flags and stream ID.
-  *b->last++ = (NGX_HTTP_V2_END_HEADERS_FLAG | NGX_HTTP_V2_END_STREAM_FLAG);
-  b->last = ngx_http_v2_write_sid(b->last, r->stream->node->id);
-
-  // Write the grpc-status header.
-  *b->last++ = 0x0;
-  *b->last++ = kGrpcStatusHeaderKey.len;
-  b->last =
-      ngx_cpymem(b->last, kGrpcStatusHeaderKey.data, kGrpcStatusHeaderKey.len);
-  u_char *len = b->last++;
-  b->last = ngx_sprintf(b->last, "%i", status.CanonicalCode());
-  *len = b->last - len - 1;
-
-  if (add_status_details) {
-    // Write the grpc-message header.
-    *b->last++ = 0x0;
-    *b->last++ = kGrpcMessageHeaderKey.len;
-    b->last = ngx_cpymem(b->last, kGrpcMessageHeaderKey.data,
-                         kGrpcMessageHeaderKey.len);
-    *b->last = 0x0;
-    b->last = ngx_esp_http_v2_write_int(b->last, ngx_http_v2_prefix(7),
-                                        status_details_len);
-    b->last = ngx_copy(b->last, status.message().c_str(), status_details_len);
-  }
-
-  // Fill in the frame length and header.
-  frame->length = b->last - b->start - NGX_HTTP_V2_FRAME_HEADER_SIZE;
-  ngx_http_v2_write_len_and_type(b->start, frame->length,
-                                 NGX_HTTP_V2_HEADERS_FRAME);
-
-  // This is the last buffer in the chain.
-  b->last_buf = 1;
-
-  ngx_chain_t *cl = ngx_alloc_chain_link(r->pool);
-  if (!cl) {
-    // There's very little we can do if we fail to allocate this
-    // buffer; just finalize the request.  Note that the temporary
-    // buffer was allocated out of the request's pool -- there's no
-    // need to free it.
-    return NGX_HTTP_INTERNAL_SERVER_ERROR;
-  }
-  cl->buf = b;
-  frame->first = cl;
-  frame->last = cl;
-
-  // Queue the headers frame.
-  ngx_http_v2_queue_blocked_frame(r->stream->connection, frame);
-  r->stream->queued++;
-
-  // Send the pending output queue (if it's not already moving).
-  ngx_int_t rc = ngx_http_v2_send_output_queue(r->stream->connection);
-  if (rc != NGX_OK) {
-    return rc;
-  }
-
-  return NGX_DONE;
-}
-
-ngx_int_t GrpcFinishV1(
-    ngx_http_request_t *r, const utils::Status &status,
-    std::multimap<std::string, std::string> response_trailers) {
-  // This bit is a little hacky.
-  //
-  // The problem is that nginx's HTTP/1.1 chunked reply implementation
-  // does not (as of this writing) support the notion of trailed
-  // headers.  This is unfortunate because GRPC reports the final API
-  // call status as a trailed header.
-  //
-  // So if the request is HTTP/1.1, here's what we do: we reach in and
-  // turn off the chunked bit in the request structure (which for some
-  // interesting reason is also the reply structure).  This will cause
-  // ngx_http_chunked_body_filter to ignore our output -- so our
-  // output won't be wrapped in a chunk.  Then, we write the chunk
-  // ourselves: it's a zero-length chunk with trailed headers.
-  //
-  // TODO: Implement and test HTTP 1.1 support.
-  return NGX_DONE;
+  out->len = ngx_sprintf(out->data, "%i", s.CanonicalCode()) - out->data;
+  return NGX_OK;
 }
 
 }  // namespace
@@ -323,11 +82,58 @@ ngx_int_t GrpcFinish(
   ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "GrpcFinish: %s",
                  status_str.c_str());
 
-  if (r->stream) {
-    return GrpcFinishV2(r, status, response_trailers);
-  } else {
-    return GrpcFinishV1(r, status, response_trailers);
+  // Per http://www.grpc.io/docs/guides/wire.html#responses at the end of the
+  // gRPC response, we need to send the following trailers:
+  // Trailers -> Status [Status-Message] *Custom-Metadata
+  // Status -> “grpc-status”
+  // Status-Message -> “grpc-message”
+
+  // Status
+  ngx_str_t code;
+  if (SerializeStatusCode(r->pool, status, &code) != NGX_OK) {
+    ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
+                  "Failed to serialize the gRPC status code.");
+    return NGX_HTTP_INTERNAL_SERVER_ERROR;
   }
+  if (AddTrailer(r, kGrpcStatusHeaderKey, code) != NGX_OK) {
+    ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
+                  "Failed to add the grpc-status trailer.");
+    return NGX_HTTP_INTERNAL_SERVER_ERROR;
+  }
+
+  // Status-Message
+  if (!status.ok()) {
+    ngx_str_t message;
+    if (ngx_str_copy_from_std(r->pool, status.message(), &message) != NGX_OK) {
+      ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
+                    "Failed to convert gRPC status message.");
+      return NGX_HTTP_INTERNAL_SERVER_ERROR;
+    };
+    if (AddTrailer(r, kGrpcMessageHeaderKey, message) != NGX_OK) {
+      ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
+                    "Failed to add the grpc-message trailer.");
+      return NGX_HTTP_INTERNAL_SERVER_ERROR;
+    }
+  }
+
+  // *Custom-Metadata
+  for (const auto &md : response_trailers) {
+    ngx_str_t key, value;
+    if (ngx_str_copy_from_std(r->pool, md.first, &key) != NGX_OK ||
+        ngx_str_copy_from_std(r->pool, md.second, &value) != NGX_OK) {
+      ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
+                    "Failed to convert gRPC custom metadata.");
+      return NGX_HTTP_INTERNAL_SERVER_ERROR;
+    }
+
+    if (AddTrailer(r, key, value) != NGX_OK) {
+      ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
+                    "Failed to add a gRPC custom metadata trailer.");
+      return NGX_HTTP_INTERNAL_SERVER_ERROR;
+    }
+  }
+
+  return ngx_http_send_special(r, NGX_HTTP_LAST);
 }
 
 }  // namespace nginx
