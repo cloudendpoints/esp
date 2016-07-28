@@ -415,30 +415,37 @@ sub compare_http_response_json_body {
   ok(compare_json($actual_body, $expected_body), 'Response matches');
 }
 
-# Initial port is 8080 or $PORT env variable
-sub initial_port {
+# Initial port is 8080 or $TEST_PORT env variable. A test is allowed to use 10
+# subsequent ports.
+sub available_port_range {
+  my %port_range;
   if (!defined $ENV{TEST_PORT}) {
-    return 8080;
+    %port_range = (8080, 8090);
   } else {
-    print "Initial port: " . $ENV{TEST_PORT} . "\n";
-    return $ENV{TEST_PORT};
+    %port_range = ($ENV{TEST_PORT}, $ENV{TEST_PORT} + 10);
   }
+
+  printf("Available port range: [%d, %d)\n", %port_range);
+  return %port_range;
 }
 
-my $port = initial_port() - 1;
+my ($next_port, $max_port) = available_port_range();
 
 # Select an open port
 sub pick_port {
-  $port = $port + 1;
-  print "Pick port: $port\n";
-  my $server = IO::Socket::INET->new(
-      Proto => 'tcp',
-      LocalHost => '127.0.0.1',
-      LocalPort => $port,
-  )
-  or die "Can't create test server socket: $!\n";
-  close $server;
-  return $port;
+  for (my $port = $next_port; $port < $max_port; $port++) {
+    my $server = IO::Socket::INET->new(
+        Proto => 'tcp',
+        LocalHost => '127.0.0.1',
+        LocalPort => $port,
+    )
+    or next;
+    close $server;
+    $next_port = $port + 1;
+    print "Pick port: $port\n";
+    return $port;
+  }
+  die "Could not find an available port for testing\n"
 }
 
 #
