@@ -81,7 +81,7 @@
   "configVersion": 3,
   "context": {},
   "control": {
-    "environment": "endpoints-servicecontrol.sandbox.googleapis.com"
+    "environment": "servicecontrol.googleapis.com"
   },
   "customError": {},
   "documentation": {

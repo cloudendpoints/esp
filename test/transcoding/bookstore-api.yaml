@@ -53,4 +53,4 @@ http:
   - selector: "Bookstore.DeleteBook"
     delete: "/shelves/{shelf}/books/{book}"
 control:
-    environment:  endpoints-servicecontrol.sandbox.googleapis.com
+    environment:  servicecontrol.googleapis.com

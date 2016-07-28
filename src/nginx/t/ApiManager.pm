@@ -256,7 +256,7 @@ sub get_transcoding_test_service_config {
   # Replace the project id
   $service_config =~ s/<YOUR_PROJECT_ID>/endpoints-transcoding-test/;
   # Replace the service control address
-  $service_config =~ s/endpoints-servicecontrol.sandbox.googleapis.com/$service_control_address/;
+  $service_config =~ s/servicecontrol.googleapis.com/$service_control_address/;
   return $service_config;
 }
 

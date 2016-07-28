@@ -413,7 +413,7 @@
   ]
  },
  "control": {
-  "environment": "endpoints-servicecontrol.sandbox.googleapis.com"
+  "environment": "servicecontrol.googleapis.com"
  },
  "logs": [
   {
@@ -1149,7 +1149,7 @@
   ]
  },
  "control": {
-  "environment": "endpoints-servicecontrol.sandbox.googleapis.com"
+  "environment": "servicecontrol.googleapis.com"
  },
  "logs": [
   {

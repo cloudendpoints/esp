@@ -2,7 +2,7 @@
   "producerProjectId": "<YOUR_PROJECT_ID>",
   "name": "<YOUR_PROJECT_ID>.appspot.com",
   "control": {
-    "environment": "endpoints-servicecontrol.sandbox.googleapis.com"
+    "environment": "servicecontrol.googleapis.com"
   },
   "title": "Bookstore API",
   "apis": [{
