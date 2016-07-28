@@ -41,10 +41,10 @@ use ServiceControl;
 ################################################################################
 
 # Port assignments
-my $NginxPort = 8080;
-my $BackendPort = 8081;
-my $ServiceControlPort = 8082;
-my $CloudTracePort = 8083;
+my $NginxPort = ApiManager::pick_port();
+my $BackendPort = ApiManager::pick_port();
+my $ServiceControlPort = ApiManager::pick_port();
+my $CloudTracePort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(10);
 
@@ -110,7 +110,7 @@ $t->run();
 # These requests should both trigger trace, the second one will cause cache
 # to be full and trigger flush.
 my $trace_id_0 = "000a5f706abfdb2b6b257826ca503e63";
-http(<<"EOF");
+ApiManager::http($NginxPort, <<"EOF");
 GET /shelves?key=this-is-an-api-key HTTP/1.0
 Host: localhost
 X-Cloud-Trace-Context: ${trace_id_0};o=1
@@ -118,7 +118,7 @@ X-Cloud-Trace-Context: ${trace_id_0};o=1
 EOF
 
 my $trace_id_1 = "370835b626fd525dfd1b46d34755140d";
-http(<<"EOF");
+ApiManager::http($NginxPort, <<"EOF");
 GET /shelves?key=this-is-an-api-key HTTP/1.0
 Host: localhost
 X-Cloud-Trace-Context: ${trace_id_1};o=1
