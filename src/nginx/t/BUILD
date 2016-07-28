@@ -40,8 +40,8 @@ perl_library(
     ],
 )
 
-# Tests are allocated 10 ports starting from the base_port
-# in each suite consecutively.
+# Tests are allocated 10 ports consecutively in this
+# BUILD file
 
 nginx_suite(
     data = [
@@ -60,7 +60,6 @@ nginx_suite(
     deps = [
         ":perl_library",
     ],
-    base_port = "9000",
 )
 
 nginx_suite(
@@ -75,7 +74,6 @@ nginx_suite(
     deps = [
         ":perl_library",
     ],
-    base_port = "9100",
 )
 
 nginx_suite(
@@ -90,7 +88,6 @@ nginx_suite(
     deps = [
         ":perl_library",
     ],
-    base_port = "9200",
 )
 
 nginx_suite(
@@ -125,7 +122,6 @@ nginx_suite(
     deps = [
         ":perl_library",
     ],
-    base_port = "9300",
 )
 
 nginx_suite(
@@ -145,7 +141,6 @@ nginx_suite(
     deps = [
         ":perl_library",
     ],
-    base_port = "9500",
 )
 
 nginx_suite(
@@ -188,7 +183,6 @@ nginx_suite(
     deps = [
         ":perl_library",
     ],
-    base_port = "11000",
 )
 
 nginx_suite(
@@ -199,7 +193,6 @@ nginx_suite(
     deps = [
         ":perl_library",
     ],
-    base_port = "9900",
 )
 
 nginx_suite(
@@ -217,7 +210,6 @@ nginx_suite(
     deps = [
         ":perl_library",
     ],
-    base_port = "10000",
 )
 
 nginx_suite(
@@ -230,7 +222,6 @@ nginx_suite(
     deps = [
         ":perl_library",
     ],
-    base_port = "10100",
 )
 
 # This test suite contains the server config flavor for the new HTTP
@@ -247,7 +238,6 @@ nginx_suite(
     deps = [
         ":perl_library",
     ],
-    base_port = "10300",
 )
 
 nginx_suite(
@@ -268,5 +258,4 @@ nginx_suite(
     deps = [
         ":perl_library",
     ],
-    base_port = "10400",
 )

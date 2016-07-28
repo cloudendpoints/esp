@@ -28,7 +28,7 @@
 
 load("//:perl.bzl", "perl_test")
 
-def nginx_test(name, nginx, base_port, data=None, env=None, config=None, **kwargs):
+def nginx_test(name, nginx, data=None, env=None, config=None, **kwargs):
   if nginx == None or len(nginx) == 0:
     fail("'nginx' parameter must be a non-empty string (target).")
 
@@ -45,14 +45,19 @@ def nginx_test(name, nginx, base_port, data=None, env=None, config=None, **kwarg
     env["TEST_CONFIG"] = "server_config " + "${TEST_SRCDIR}/" + c.package + "/" + c.name + ";"
     name = name + '_' + c.name.split("/")[-1].split(".")[0]
 
+  # Count existing rules in the BUILD file and assign base port using
+  # Each rule can use 10 ports in its range
+  # Rules generated from config_list get separate ranges
+  port = 9000 + len(native.existing_rules().values()) * 10
+
   l = Label(nginx)
   env["TEST_NGINX_BINARY"] = "${TEST_SRCDIR}/" + l.package + "/" + l.name
-  env["TEST_PORT"] = base_port
+  env["TEST_PORT"] = str(port)
   perl_test(name=name, data=data, env=env, **kwargs)
 
-def nginx_suite(tests, deps, nginx, base_port, size="small", config_list=[], data=None, tags=[],
+def nginx_suite(tests, deps, nginx, size="small", config_list=[], data=None, tags=[],
                 timeout="short", env=None):
-  for (i, test) in enumerate(tests):
+  for test in tests:
     if not config_list:
       nginx_test(
           name = test.split(".")[0],
@@ -65,10 +70,9 @@ def nginx_suite(tests, deps, nginx, base_port, size="small", config_list=[], dat
           config = None,
           tags = tags,
           env = env,
-          base_port = str(int(base_port) + 10*i),
       )
     else:
-      for (j, config) in enumerate(config_list):
+      for config in config_list:
         nginx_test(
             name = test.split(".")[0],
             size = size,
@@ -80,5 +84,4 @@ def nginx_suite(tests, deps, nginx, base_port, size="small", config_list=[], dat
             config = config,
             tags = tags,
             env = env,
-            base_port = str(int(base_port) + 10*i + len(tests)*j*10),
         )
