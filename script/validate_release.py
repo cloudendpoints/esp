@@ -49,11 +49,13 @@ RUN_TESTS = [
     'flex-off-endpoints-off',
     'flex-off-endpoints-on',
     'gce-container-vm',
+    'gce-container-vm-grpc',
     'gce-debian-8',
     'gke-loose-coupling-custom',
     'gke-loose-coupling-http',
     'gke-loose-coupling-https',
     'gke-tight-coupling-custom',
+    'gke-tight-coupling-grpc',
     'gke-tight-coupling-http',
     'gke-tight-coupling-https',
     'jenkins-perf-test-vm-esp',
@@ -61,6 +63,7 @@ RUN_TESTS = [
     'long-run-test_flex-off-endpoints-on',
     'long-run-test_gce-container-vm',
     'long-run-test_gce-debian-8',
+    'long-run-test_gke-tight-coupling-grpc',
     'long-run-test_gke-tight-coupling-https',
 ]
 
