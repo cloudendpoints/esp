@@ -53,7 +53,7 @@ echo 'Verifying that WRK is installed'
 [[ -f /usr/local/bin/wrk ]] || error_exit 'wrk is not installed properly'
 
 echo 'Verifying that h2load is installed'
-run ${ESP_ROOT}/nghttp2/src/h2load --version || error_exit 'h2load is not installed properly'
+run /nghttp2/src/h2load --version || error_exit 'h2load is not installed properly'
 
 echo 'Verifying that the user is jenkins'
 THIS_USER="$(whoami)"
