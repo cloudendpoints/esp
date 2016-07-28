@@ -52,7 +52,7 @@ def nginx_test(name, nginx, data=None, env=None, config=None, **kwargs):
 
   l = Label(nginx)
   env["TEST_NGINX_BINARY"] = "${TEST_SRCDIR}/" + l.package + "/" + l.name
-  env["TEST_PORT"] = str(port)
+  env["TEST_PORT"] = "${TEST_PORT:-%s}" % port
   perl_test(name=name, data=data, env=env, **kwargs)
 
 def nginx_suite(tests, deps, nginx, size="small", config_list=[], data=None, tags=[],
