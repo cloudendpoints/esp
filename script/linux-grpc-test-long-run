@@ -90,6 +90,20 @@ function generate_run_config() {
   echo random_payload_size="${RANDOM_PAYLOAD_SIZE}"
 }
 
+# Issue a request to allow Endpoints-Runtime to fetch metadata.
+# If sending N requests concurrently, N-1 requests will fail while the
+# first request is fetching the metadata.
+cat <<EOF|"${ROOT}/bazel-bin/test/grpc/grpc-test-client"
+server_addr: "${HOST}"
+plans {
+  echo {
+    request {
+      text: "Hello, world!"
+    }
+  }
+}
+EOF
+
 END_TIME=$(date +"%s")
 END_TIME=$((END_TIME + DURATION_IN_HOUR * 60 * 60))
 RUN_COUNT=0
