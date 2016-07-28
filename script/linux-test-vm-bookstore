@@ -282,7 +282,7 @@ JSON_FILE="${LOG_DIRECTORY}/${TEST_ID}.json"
     && RESULT=1
 
   exit ${RESULT}
-) | tee  "${LOG_FILE}"
+) 2>&1 | tee  "${LOG_FILE}"
 
 RESULT=${PIPESTATUS[0]}
 

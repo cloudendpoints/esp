@@ -246,7 +246,7 @@ function long_running_test() {
         -h "${host}" \
         -l "${duration_in_hour}" \
         -a "${api_key}" \
-        -s "${esp_service}" | tee "${log_file}"
+        -s "${esp_service}" 2>&1 | tee "${log_file}"
         status=${PIPESTATUS[0]}
     fi
   else
@@ -260,7 +260,7 @@ function long_running_test() {
         -h "${host}" \
         -l "${duration_in_hour}" \
         -a "${api_key}" \
-        -s "${esp_service}" | tee "${log_file}"
+        -s "${esp_service}" 2>&1 | tee "${log_file}"
         status=${PIPESTATUS[0]}
     fi
   fi
