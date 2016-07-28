@@ -59,7 +59,7 @@ class NgxEspGrpcServerCall : public grpc::ServerCall {
   virtual void AddInitialMetadata(std::string key, std::string value);
   virtual void SendInitialMetadata(std::function<void(bool)> continuation);
   virtual void Read(::grpc::ByteBuffer* msg,
-                    std::function<void(bool)> continuation);
+                    std::function<void(bool, utils::Status)> continuation);
   virtual void Write(const ::grpc::ByteBuffer& msg,
                      std::function<void(bool)> continuation);
   virtual void RecordBackendTime(int64_t backend_time);
@@ -96,7 +96,7 @@ class NgxEspGrpcServerCall : public grpc::ServerCall {
   static void OnDownstreamReadable(ngx_http_request_t* r);
   static void OnDownstreamWriteable(ngx_http_request_t* r);
 
-  void CompletePendingRead(bool ok);
+  void CompletePendingRead(bool proceed, utils::Status status);
 
   void RunPendingRead();
 
@@ -112,7 +112,7 @@ class NgxEspGrpcServerCall : public grpc::ServerCall {
   bool add_header_failed_;
   bool reading_;
   std::function<void(bool)> write_continuation_;
-  std::function<void(bool)> read_continuation_;
+  std::function<void(bool, utils::Status)> read_continuation_;
   ::grpc::ByteBuffer* read_msg_;
   ::std::vector<gpr_slice> downstream_slices_;
 };

@@ -284,9 +284,10 @@ class EchoStream {
         if (!es->status_.ok()) {
           result.mutable_status()->set_code(es->status_.error_code());
           result.mutable_status()->set_details(es->status_.error_message());
-        } else {
-          result.mutable_echo_stream()->set_count(es->read_count_);
         }
+
+        result.mutable_echo_stream()->set_count(es->read_count_);
+
         ok &= es->status_.error_code() == es->status_expected_.error_code();
         ok &= (es->status_.error_message() ==
                es->status_expected_.error_message());

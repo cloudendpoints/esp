@@ -35,24 +35,36 @@ use ApiManager;   # Must be first (sets up import path to the Nginx test module)
 use Test::Nginx;  # Imports Nginx's test module
 use Test::More;   # And the test framework
 use HttpServer;
+use ServiceControl;
 
 ################################################################################
 
 # Port assignments
-my $NginxPort = ApiManager::pick_port();
-my $BackendPort = ApiManager::pick_port();
+my $Http2NginxPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
+my $GrpcBackendPort = ApiManager::pick_port();
+my $GrpcFallbackPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(13);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(8);
 
-# Save service name in the service configuration protocol buffer file.
-
-$t->write_file('service.pb.txt', ApiManager::get_bookstore_service_config . <<"EOF");
+$t->write_file('service.pb.txt',
+        ApiManager::get_grpc_test_service_config($GrpcBackendPort) .
+        ApiManager::read_test_file('testdata/logs_metrics.pb.txt') . <<"EOF");
 control {
   environment: "http://127.0.0.1:${ServiceControlPort}"
 }
+system_parameters {
+  rules {
+    selector: "test.grpc.Test.EchoStream"
+    parameters {
+      name: "api_key"
+      http_header: "x-api-key"
+    }
+  }
+}
 EOF
 
+# Reduce client_max_body_size
 ApiManager::write_file_expand($t, 'nginx.conf', <<"EOF");
 %%TEST_GLOBALS%%
 daemon off;
@@ -61,100 +73,102 @@ events {
 }
 http {
   %%TEST_GLOBALS_HTTP%%
-  server_tokens off;
   server {
-    listen 127.0.0.1:${NginxPort};
+    listen 127.0.0.1:${Http2NginxPort} http2;
     server_name localhost;
+    client_max_body_size 512;
     location / {
       endpoints {
         api service.pb.txt;
         %%TEST_CONFIG%%
         on;
       }
-      grpc_pass {
-        proxy_pass http://127.0.0.1:${BackendPort}/;
-      }
+      grpc_pass 127.0.0.2:${GrpcFallbackPort};
     }
   }
 }
 EOF
 
-$t->run_daemon(\&bookstore, $t, $BackendPort, 'bookstore.log');
-$t->run_daemon(\&service_control, $t, $ServiceControlPort, 'servicecontrol.log');
-is($t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'Bookstore socket ready.');
+my $report_done = 'report_done';
+
+$t->run_daemon(\&service_control, $t, $ServiceControlPort, 'servicecontrol.log', $report_done);
+$t->run_daemon(\&ApiManager::grpc_test_server, $t, "127.0.0.1:${GrpcBackendPort}");
 is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control socket ready.');
+is($t->waitforsocket("127.0.0.1:${GrpcBackendPort}"), 1, 'GRPC test server socket ready.');
 $t->run();
+is($t->waitforsocket("127.0.0.1:${Http2NginxPort}"), 1, 'Nginx socket ready.');
 
 ################################################################################
 
-my $response = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key');
+# The plan generates streaming request larger than client_max_body_size
+my $test_results = &ApiManager::run_grpc_test($t, <<"EOF");
+server_addr: "127.0.0.1:${Http2NginxPort}"
+plans {
+  echo_stream {
+    call_config {
+      api_key: "this-is-an-api-key"
+    }
+    request {
+      text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut laoreet vestibulum metus. Phasellus vehicula vitae nibh vel hendrerit. Phasellus dolor risus, ullamcorper in sapien eget, blandit cras amet."
+    }
+    count: 10
+  }
+}
+EOF
 
+is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');
 $t->stop_daemons();
 
-my ($response_headers, $response_body) = split /\r\n\r\n/, $response, 2;
-
-like($response_headers, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');
-is($response_body, <<'EOF', 'Shelves returned in the response body.');
-{ "shelves": [
-    { "name": "shelves/1", "theme": "Fiction" },
-    { "name": "shelves/2", "theme": "Fantasy" }
-  ]
+my $test_results_expected = <<'EOF';
+results {
+  status {
+    code: 9
+    details: "PAYLOAD_TOO_LARGE"
+  }
+  echo_stream {
+    count: 2
+  }
 }
 EOF
 
-my @requests = ApiManager::read_http_stream($t, 'bookstore.log');
-is(scalar @requests, 1, 'Backend received one request.');
+is($test_results, $test_results_expected, 'Client tests completed as expected.');
 
-my $r = shift @requests;
-is($r->{verb}, 'GET', 'Backend request was a get');
-is($r->{uri}, '/shelves?key=this-is-an-api-key', 'Backend uri was /shelves');
-is($r->{headers}->{host}, "127.0.0.1:${BackendPort}", 'Host header was set.');
+my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
+is(scalar @servicecontrol_requests, 2, 'Service control was called twice');
 
-@requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
-is(scalar @requests, 1, 'Service control received one request.');
+# :check
+my $r = shift @servicecontrol_requests;
+like($r->{uri}, qr/:check$/, 'First call was a :check');
 
-$r = shift @requests;
-is($r->{verb}, 'POST', 'Service control received a post');
-is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:check',
-   'Service control uri was :check');
-is($r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}", 'Host header was set.');
-is($r->{headers}->{'content-type'}, 'application/x-protobuf', 'Content-Type is protocol buffer.');
-
-################################################################################
-
-sub bookstore {
-  my ($t, $port, $file) = @_;
-  my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
-    or die "Can't create test server socket: $!\n";
-  local $SIG{PIPE} = 'IGNORE';
-
-  $server->on('GET', '/shelves?key=this-is-an-api-key', <<'EOF');
-HTTP/1.1 200 OK
-Connection: close
-
-{ "shelves": [
-    { "name": "shelves/1", "theme": "Fiction" },
-    { "name": "shelves/2", "theme": "Fantasy" }
-  ]
-}
-EOF
-
-  $server->run();
-}
+# :report
+$r = shift @servicecontrol_requests;
+like($r->{uri}, qr/:report$/, 'Second call was a :report');
 
 ################################################################################
 
 sub service_control {
-  my ($t, $port, $file) = @_;
+  my ($t, $port, $file, $done) = @_;
   my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
     or die "Can't create test server socket: $!\n";
-  local $SIG{PIPE} = 'IGNORE';
 
-  $server->on('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:check', <<'EOF');
+  $server->on_sub('POST', '/v1/services/endpoints-grpc-test.cloudendpointsapis.com:check', sub {
+    my ($headers, $body, $client) = @_;
+    print $client <<'EOF';
 HTTP/1.1 200 OK
 Connection: close
 
 EOF
+  });
+
+  $server->on_sub('POST', '/v1/services/endpoints-grpc-test.cloudendpointsapis.com:report', sub {
+    my ($headers, $body, $client) = @_;
+    print $client <<'EOF';
+HTTP/1.1 200 OK
+Connection: close
+
+EOF
+    $t->write_file($done, ':report done');
+  });
 
   $server->run();
 }

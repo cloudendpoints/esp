@@ -180,16 +180,17 @@ void ProxyFlow::StartDownstreamReadMessage(std::shared_ptr<ProxyFlow> flow) {
     }
   }
   flow->server_call_->Read(&flow->downstream_to_upstream_buffer_,
-                           [flow](bool ok) {
-                             if (!ok) {
-                               StartUpstreamWritesDone(flow);
+                           [flow](bool proceed, utils::Status status) {
+                             if (!proceed) {
+                               StartUpstreamWritesDone(flow, status);
                                return;
                              }
                              StartUpstreamWriteMessage(flow);
                            });
 }
 
-void ProxyFlow::StartUpstreamWritesDone(std::shared_ptr<ProxyFlow> flow) {
+void ProxyFlow::StartUpstreamWritesDone(std::shared_ptr<ProxyFlow> flow,
+                                        utils::Status status) {
   {
     std::lock_guard<std::mutex> lock(flow->mu_);
     if (flow->sent_upstream_writes_done_) {
@@ -198,13 +199,19 @@ void ProxyFlow::StartUpstreamWritesDone(std::shared_ptr<ProxyFlow> flow) {
     flow->sent_upstream_writes_done_ = true;
   }
   flow->upstream_reader_writer_->WritesDone(
-      flow->async_grpc_queue_->MakeTag([flow](bool ok) {
+      flow->async_grpc_queue_->MakeTag([flow, status](bool ok) {
         if (!ok) {
           StartDownstreamFinish(
               flow, Status(UNKNOWN,
                            std::string(
                                "failed to tell upstream the stream is done")));
+          return;
         }
+        if (!status.ok()) {
+          StartDownstreamFinish(flow, status);
+          return;
+        }
+
       }));
 }
 

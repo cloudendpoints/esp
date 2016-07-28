@@ -260,10 +260,11 @@ void NgxEspGrpcServerCall::OnDownstreamReadable(ngx_http_request_t *r) {
   server_call->RunPendingRead();
 }
 
-void NgxEspGrpcServerCall::Read(::grpc::ByteBuffer *msg,
-                                std::function<void(bool)> continuation) {
+void NgxEspGrpcServerCall::Read(
+    ::grpc::ByteBuffer *msg,
+    std::function<void(bool, utils::Status)> continuation) {
   if (!cln_.data) {
-    continuation(false);
+    continuation(false, utils::Status::OK);
     return;
   }
 
@@ -287,14 +288,15 @@ void NgxEspGrpcServerCall::Read(::grpc::ByteBuffer *msg,
   RunPendingRead();
 }
 
-void NgxEspGrpcServerCall::CompletePendingRead(bool ok) {
+void NgxEspGrpcServerCall::CompletePendingRead(bool proceed,
+                                               utils::Status status) {
   ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r_->connection->log, 0,
                  "NgxEspGrpcServerCall::CompletePendingRead: %s",
-                 ok ? "OK" : "NOT ok");
-  std::function<void(bool)> continuation;
+                 proceed ? "OK" : "NOT ok");
+  std::function<void(bool, utils::Status)> continuation;
   std::swap(continuation, read_continuation_);
   read_msg_ = nullptr;
-  continuation(ok);
+  continuation(proceed, status);
   ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r_->connection->log, 0,
                  "NgxEspGrpcServerCall::CompletePendingRead: complete");
 }
@@ -330,7 +332,7 @@ void NgxEspGrpcServerCall::RunPendingRead() {
       ngx_log_debug0(
           NGX_LOG_DEBUG_HTTP, r_->connection->log, 0,
           "NgxEspGrpcServerCall::RunPendingRead: Stream is half-closed");
-      CompletePendingRead(false);
+      CompletePendingRead(false, utils::Status::OK);
       continue;
     }
 
@@ -362,8 +364,13 @@ void NgxEspGrpcServerCall::RunPendingRead() {
         "NgxEspGrpcServerCall::RunPendingRead: Reading unbuffered body");
     ngx_int_t rc = ngx_http_read_unbuffered_request_body(r_);
     if (rc != NGX_AGAIN && rc != NGX_OK) {
-      ngx_http_finalize_request(r_, rc);
-      break;
+      ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r_->connection->log, 0,
+                     "NgxEspGrpcServerCall::RunPendingRead: rc = %d", rc);
+      // Reading (downstream) request body failed; finish writing to the
+      // upstream and exit with an error status
+      CompletePendingRead(false,
+                          utils::Status(rc, utils::Status::CodeToString(rc)));
+      continue;
     }
     try_read_unbuffered_request_body = false;
     for (ngx_chain_t *cl = r_->request_body->bufs; cl; cl = cl->next) {
@@ -489,7 +496,7 @@ bool NgxEspGrpcServerCall::TryReadDownstreamMessage() {
   downstream_slices_.erase(downstream_slices_.begin(), it);
 
   // Complete the pending Read operation.
-  CompletePendingRead(true);
+  CompletePendingRead(true, utils::Status::OK);
 
   // Indicate to our caller that we were able to complete a message.
   return true;
@@ -558,7 +565,7 @@ void NgxEspGrpcServerCall::Cleanup(void *server_call_ptr) {
   }
   auto server_call = reinterpret_cast<NgxEspGrpcServerCall *>(server_call_ptr);
   if (server_call->read_continuation_) {
-    server_call->CompletePendingRead(false);
+    server_call->CompletePendingRead(false, utils::Status::OK);
   }
   server_call->cln_.data = nullptr;
 }
