@@ -48,6 +48,7 @@ import sys
 import time
 
 from string import Template
+from collections import Counter
 
 FLAGS = flags.FLAGS
 
