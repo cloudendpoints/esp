@@ -137,8 +137,6 @@ ngx_int_t ngx_http_esp_access_wrapper(ngx_http_request_t *r);
 Status ngx_http_esp_access_handler(ngx_http_request_t *r);
 Status ngx_http_esp_access_check_done(ngx_http_request_t *r,
                                       ngx_esp_request_ctx_t *ctx);
-Status ngx_http_esp_redirect_access_handler(ngx_http_request_t *r,
-                                            ngx_esp_request_ctx_t *ctx);
 
 // The ESP log handler.
 ngx_int_t ngx_http_esp_log_handler(ngx_http_request_t *r);
@@ -677,15 +675,6 @@ Status ngx_http_esp_access_check_done(ngx_http_request_t *r,
                                       ngx_esp_request_ctx_t *ctx) {
   ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                  "Service control check status: %d, error: \"%s\"",
-                 ctx->status.code(), ctx->status.message().c_str());
-  return ctx->status;
-}
-
-Status ngx_http_esp_redirect_access_handler(ngx_http_request_t *r,
-                                            ngx_esp_request_ctx_t *ctx) {
-  ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                 "skipping service control check on redirected request; "
-                 "previous check status was: %d, error: \"%s\"",
                  ctx->status.code(), ctx->status.message().c_str());
   return ctx->status;
 }
