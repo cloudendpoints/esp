@@ -37,8 +37,8 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . ${DIR}/all-utilities || { echo "Cannot load Bash utilities" ; exit 1 ; }
 
 export DEBIAN_FRONTEND=noninteractive
-# Release 0.3.0 (2016-06-10)
-BAZEL_VERSION='e671d2950fb56c499db2c99a3d6dad2d291ed873'
+# Release 0.3.1 (2016-07-29)
+BAZEL_VERSION='1f49b6befa57e5cea819d5010785a90fc5bd0db6'
 BAZEL_DIRECTORY="${HOME}/bazel"
 CLANG_VERSION='3.8.0'
 CLANG_DIRECTORY="${HOME}/clang"
