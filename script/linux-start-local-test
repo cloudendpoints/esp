@@ -110,8 +110,10 @@ cp -f "${NGINX_BAZEL_BIN}" "${NGINX}" \
   || error_exit 'Error copying nginx-esp, aborting.'
 
 echo 'Creating service.json'
-sed "s|\${PROJECT}|esp-load-test|g" ${ROOT}/test/echo/service.json.temp \
-  > ${ROOT}/test/echo/gce-vm/service.json
+sed "s|\${MY_PROJECT_ID}|esp-load-test|g" ${ROOT}/test/echo/swagger.json \
+  > ${ROOT}/test/echo/gce-vm/swagger.json
+gcloud alpha service-management convert-config \
+  ${ROOT}/test/echo/gce-vm/swagger.json  ${ROOT}/test/echo/gce-vm/service.json
 
 echo 'Starting Endpoints Runtime.'
 NGINX_ARGS=(-p "${PREFIX}" -c "${NGINX_CONFIG}" -g "pid ${PREFIX}/.nginx.pid;")
