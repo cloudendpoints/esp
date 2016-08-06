@@ -1,0 +1,111 @@
+# Copyright (C) Endpoints Server Proxy Authors
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .K8sService }}
+spec:
+  ports:
+  - port: {{ .ESPPort }}
+    protocol: TCP
+{{ if .ESPSsl }}
+    name: https
+{{ else }}
+    name: http
+{{ end }}
+  - port: {{ .ESPStatusPort }}
+    protocol: TCP
+    name: status
+  - port: {{ .BackendPort }}
+    protocol: TCP
+    name: backend
+  selector:
+    app: esp-bookstore
+  type: {{ .K8sType }}
+---
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: esp-bookstore
+spec:
+  replicas: 1
+  selector:
+    app: esp-bookstore
+  template:
+    metadata:
+      labels:
+        app: esp-bookstore
+    spec:
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: nginx-config
+      - name: service-config
+        configMap:
+          name: service-config
+{{if ne .ServiceToken "" }}
+      - name: service-token
+        secret:
+          secretName: service-token
+{{ end }}
+{{if .ESPSsl }}
+      - name: nginx-ssl
+        secret:
+          secretName: nginx-ssl
+{{ end }}
+      containers:
+      - name: esp
+        image: {{ .ESPImage }}
+        command: ["/usr/sbin/nginx"]
+        args: [
+          "-p", "/usr",
+          "-c", "/etc/nginx/custom/{{ .NginxFile | .Basename }}",
+        ]
+        ports:
+          - containerPort: {{ .ESPPort }}
+          - containerPort: {{ .ESPStatusPort }}
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /etc/nginx/custom
+          name: nginx-config
+          readOnly: true
+        - mountPath: /etc/nginx/endpoints
+          name: service-config
+          readOnly: true
+{{ if ne .ServiceToken "" }}
+        - mountPath: /etc/nginx/token
+          name: service-token
+          readOnly: true
+{{ end }}
+{{ if .ESPSsl }}
+        - mountPath: /etc/nginx/ssl
+          name: nginx-ssl
+          readOnly: true
+{{ end }}
+      - name: bookstore
+        image: {{ .BackendImage }}
+        ports:
+          - containerPort: {{ .BackendPort }}
