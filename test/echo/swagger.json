@@ -5,7 +5,7 @@
     "title": "Echo",
     "version": "1.0.0"
   },
-  "host": "${MY_PROJECT_ID}.appspot.com",
+  "host": "echo-dot-${MY_PROJECT_ID}.appspot.com",
   "basePath": "/",
   "consumes": [
     "application/json"
@@ -95,7 +95,7 @@
           {
             "test_jwk":  {
               "audiences": [
-                "echo-${MY_PROJECT_ID}.cloudendpointsapis.com"
+                "echo-${MY_PROJECT_ID}.appspot.com"
               ]
             }
           }
@@ -116,7 +116,7 @@
           {
             "test_jwk":  {
               "audiences":[
-                "echo-${MY_PROJECT_ID}.cloudendpointsapis.com"
+                "echo-${MY_PROJECT_ID}.appspot.com"
               ]
             }
           }
