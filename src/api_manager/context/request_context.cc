@@ -42,9 +42,7 @@ namespace {
 const char kCloudTraceContextHeader[] = "X-Cloud-Trace-Context";
 
 // Log message prefix for a success method.
-const char kSuccessMessage[] = "Method: ";
-// Log message prefix for a failed method.
-const char kFailedMessage[] = "Failed to call method: ";
+const char kMessage[] = "Method: ";
 // Log message prefix for an ignored method.
 const char kIgnoredMessage[] =
     "Endpoints management skipped for an unrecognized HTTP call: ";
@@ -203,12 +201,7 @@ void RequestContext::FillLogMessage(service_control::ReportRequestInfo *info) {
   if (method()) {
     const std::string &method_name = method()->name();
     info->api_method = method_name;
-
-    if (info->response_code >= 400) {
-      info->log_message = std::string(kFailedMessage) + method_name;
-    } else {
-      info->log_message = std::string(kSuccessMessage) + method_name;
-    }
+    info->log_message = std::string(kMessage) + method_name;
   } else {
     std::string http_verb = info->method;
     if (http_verb.empty()) {
