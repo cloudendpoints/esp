@@ -27,17 +27,48 @@
 ################################################################################
 #
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-. ${ROOT}/script/all-utilities || { echo "Cannot load utilities"; exit 1; }
-. ${ROOT}/script/presubmits || { echo "Cannot load presubmits"; exit 1; }
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+. ${ROOT}/script/jenkins-utilities || { echo "Cannot load jenkins-utilities"; exit 1; }
 
-SCENARIO="$1"
+BUILD_URL=''
+CHANGE_ID=''
+GIT_COMMIT=''
+REPO_URL=''
+STATUS='Failed'
+VERIFIED='-1'
 
-case $SCENARIO in
-  build-and-test) build_and_test || error_exit "Build and Tests failed";;
-  asan) asan || error_exit "ASAN tests failed";;
-  tsan) tsan || error_exit "TSAN tests failed";;
-  coverage) coverage || error_exit "Coverage failed";;
-  docker-tests) docker_tests || error_exit "Docker tests failed";;
-  *) error_exit "Usage: travis-run build-and-test|asan|tsan|coverage|docker-tests";;
-esac
+while getopts :b:c:r:s:v arg; do
+  case ${arg} in
+    b) BUILD_URL="${OPTARG}";;
+    c) CHANGE_ID="${OPTARG}";;
+    r) REPO_URL="${OPTARG}"
+    s) GIT_COMMIT="${OPTARG}";;
+    v)
+      VERIFIED='+1'
+      STATUS='Successful';;
+    *) echo "Invalid option: -${OPTARG}";;
+  esac
+done
+
+[[ -n "${BUILD_URL}" ]] || error_exit 'BUILD_URL needs to be set with b'
+[[ -n "${CHANGE_ID}" ]] || error_exit 'CHANGE_ID needs to be set with -c.'
+[[ -n "${GIT_COMMIT}" ]] || error_exit 'GIT_COMMIT needs to be set with -s.'
+[[ -n "${REPO_URL}" ]] || error_exit 'REPO_URL needs to be set with -r.'
+
+REVIEW_ENDPOINT="$REPO_URL/a/changes/$CHANGE_ID/revisions/$GIT_COMMIT/review/"
+
+MESSAGE="${STATUS} Presubmits. More info at ${BUILD_URL}"
+
+curl -b ~/.gitcookies \
+  -X POST \
+  -H "Content-Type: application/json" \
+  --url $REVIEW_ENDPOINT \
+  -d @- <<EOF
+{
+  "message": "$MESSAGE",
+  "labels": {
+    "Verified": $VERIFIED
+  }
+}
+EOF
+

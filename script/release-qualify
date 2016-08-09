@@ -129,13 +129,9 @@ function count_stress_failures() {
 function check_robot_presubmit() {
   local sha=${1}
 
-  [[ -f "${LOGS}/${sha}/presubmit.json" ]] \
-    || error_exit "Cannot find presubmit results ${LOGS}/${sha}/presubmit.json"
   [[ -f "${LOGS}/${sha}/coverage.json" ]] \
     || error_exit "Cannot find code coverage results ${LOGS}/${sha}/coverage.json"
 
-  check_result "${LOGS}/${sha}/presubmit.json" "${sha}" \
-    || error_exit "Presubmit run failed - Release is not qualified."
   check_result "${LOGS}/${sha}/coverage.json" "${sha}" \
     || error_exit "Code coverage run failed - Release is not qualified."
 }

@@ -27,17 +27,60 @@
 ################################################################################
 #
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-. ${ROOT}/script/all-utilities || { echo "Cannot load utilities"; exit 1; }
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+. ${ROOT}/script/jenkins-utilities || { echo "Cannot load jenkins-utilities"; exit 1; }
 . ${ROOT}/script/presubmits || { echo "Cannot load presubmits"; exit 1; }
 
-SCENARIO="$1"
+LOG_DIR=''
+RESULT=1
+RUN_ID=''
+SCENARIO=''
+
+# Logs command output to a file and return exit code
+function log_output() {
+  "${@}"  2>&1 | tee "${LOG_FILE}"
+  return ${PIPESTATUS[0]}
+}
+
+
+while getopts :b:d:r:s: arg; do
+  case ${arg} in
+    b) BUCKET="${OPTARG}";;
+    d) LOG_DIR="${OPTARG}";;
+    r) RUN_ID="${OPTARG}";;
+    s) SCENARIO="${OPTARG}";;
+    *) echo "Invalid option: -${OPTARG}";;
+  esac
+done
+
+[[ -z "${RUN_ID}" ]] && RUN_ID="${SCENARIO}-$(date +"%Y%m%d%H%M%S")"
+[[ -z "${LOG_DIR}" ]] && LOG_DIR="$(mktemp -d /tmp/presubmits.XXXXX)"
+
+LOG_FILE="${LOG_DIR}/${SCENARIO}.log"
+JSON_FILE="${LOG_DIR}/${SCENARIO}.json"
 
 case $SCENARIO in
-  build-and-test) build_and_test || error_exit "Build and Tests failed";;
-  asan) asan || error_exit "ASAN tests failed";;
-  tsan) tsan || error_exit "TSAN tests failed";;
-  coverage) coverage || error_exit "Coverage failed";;
-  docker-tests) docker_tests || error_exit "Docker tests failed";;
-  *) error_exit "Usage: travis-run build-and-test|asan|tsan|coverage|docker-tests";;
+  asan) log_output asan;;
+  build-and-test) log_output build_and_test;;
+  check-files) log_output check_files;;
+  coverage) log_output coverage;;
+  docker-tests) log_output docker_tests;;
+  release) log_output release;;
+  service-control) log_output test_service_control;;
+  tsan) log_output tsan;;
+  *) error_exit "Usage: run-presubmit -s build-and-test|asan|tsan|coverage|docker-tests";;
 esac
+RESULT=$?
+
+if [[ -n "${BUCKET}" ]] ; then
+  REMOTE_LOG_DIR="${BUCKET}/${RUN_ID}"
+  create_status_file \
+    -f "${JSON_FILE}" \
+    -s ${RESULT} \
+    -t "${SCENARIO}" \
+    -r "${RUN_ID}" \
+    || error_exit "Could not create ${JSON_FILE}."
+  echo "Uploading logs to ${BUCKET}."
+  upload_logs "${REMOTE_LOG_DIR}" "${LOG_DIR}"
+fi
+exit ${RESULT}

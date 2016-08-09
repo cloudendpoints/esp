@@ -46,6 +46,7 @@ E2E_STAGE = 'E2E'
 // Set that build parameter to the stage that you want to start.
 CLEANUP_STAGE = '_CLEANUP'
 PERFORMANCE_STAGE = '_PERFORMANCE'
+PRESUBMIT = '_PRESUBMIT'
 SLAVE_UPDATE_STAGE = '_SLAVE_UPDATE'
 
 SUPPORTED_STAGES = [
@@ -53,7 +54,8 @@ SUPPORTED_STAGES = [
     E2E_STAGE,
     CLEANUP_STAGE,
     PERFORMANCE_STAGE,
-    SLAVE_UPDATE_STAGE
+    PRESUBMIT,
+    SLAVE_UPDATE_STAGE,
 ]
 
 // Supported VM Images
@@ -101,6 +103,10 @@ node('master') {
       ws {
         buildNewDockerSlave(nodeLabel)
       }
+    }
+    if (runStage(PRESUBMIT)) {
+      stage 'Presubmit Tests'
+      presubmit(nodeLabel)
     }
     if (runStage(PERFORMANCE_STAGE)) {
       stage 'Build Artifacts'
@@ -177,6 +183,44 @@ def buildArtifacts(nodeLabel, buildBookstore = true, buildGrpcTest = true) {
   }
   parallel branches
 }
+
+def presubmit(nodeLabel) {
+  def branches = [
+      'asan': {
+        node(nodeLabel) {
+          presubmitTests('asan')
+        }
+      },
+      'build-and-test': {
+        node(nodeLabel) {
+          presubmitTests('build-and-test')
+        }
+      },
+      'validation': {
+        node(nodeLabel) {
+          presubmitTests('check-files')
+          presubmitTests('service-control')
+        }
+      },
+      'docker-tests': {
+        node(nodeLabel) {
+          presubmitTests('docker-tests')
+        }
+      },
+      'release': {
+        node(nodeLabel) {
+          presubmitTests('release')
+        }
+      },
+      'tsan': {
+        node(nodeLabel) {
+          presubmitTests('tsan')
+        }
+      },
+  ]
+  parallel branches
+}
+
 
 def performance(nodeLabel) {
   def branches = [
@@ -420,6 +464,18 @@ def testCleanup(daysOld, project, flags) {
   sh "script/jenkins-tests-cleanup.sh -d ${daysOld} -p ${project} -f ${flags}"
 }
 
+def updateGerrit(verified) {
+  setGCloud()
+  checkoutSourceCode()
+  def verifiedFlag = verified ? '-v' : ''
+  sh "script/update-presubmit " +
+      "-b ${BUILD_URL}" +
+      "-c ${CHANGE_ID} " +
+      "-r ${REPO_URL} " +
+      "-s ${GIT_SHA} " +
+      "${verifiedFlag}"
+}
+
 def buildNewDockerSlave(nodeLabel) {
   setGCloud()
   checkoutSourceCode()
@@ -586,6 +642,17 @@ def e2eFlex(endpoints, flex) {
       "-l ${durationHour} " +
       "-b ${logBucket} " +
       "${skipCleanup}"
+}
+
+def presubmitTests(scenario) {
+  setGCloud()
+  checkoutSourceCode()
+  def logBucket = "gs://${BUCKET}/${GIT_SHA}/logs"
+  def uniqueId = getUniqueID(scenario, true)
+  sh "script/run-presubmit " +
+      "-b ${logBucket} " +
+      "-s ${scenario} " +
+      "-r ${uniqueId}"
 }
 
 /*
@@ -787,6 +854,7 @@ def stashSourceCode() {
   // Setting source code related global variable once so it can be reused.
   GIT_SHA = getRevision()
   ESP_RUNTIME_VERSION = getEndpointsRuntimeVersion()
+  CHANGE_ID = getChangeId()
   echo 'Stashing source code'
   fastStash('src-code', '.')
 }
@@ -834,6 +902,12 @@ def getRevision() {
   // Code needs to be checked out for this.
   sh 'git rev-parse --verify HEAD > GIT_COMMIT'
   return readFile('GIT_COMMIT').trim()
+}
+
+def getChangeId() {
+  // Code needs to be checked out for this.
+  sh "git log --format=%B -n 1 HEAD | awk '/^Change-Id: / {print \$2}' > CHANGE_ID"
+  return readFile('CHANGE_ID').trim()
 }
 
 def setArtifactsLink() {

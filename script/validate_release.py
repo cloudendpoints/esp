@@ -46,6 +46,13 @@ TEST_ID = 'testId'
 
 # List of test that are expected to have run successfully at least once.
 RUN_TESTS = [
+    'asan',
+    'check-files',
+    'docker-tests',
+    'perl-tests',
+    'release',
+    'service-control',
+    'tsan',
     'flex-off-endpoints-off',
     'flex-off-endpoints-on',
     'gce-container-vm',
