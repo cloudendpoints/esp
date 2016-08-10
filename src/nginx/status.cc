@@ -273,9 +273,11 @@ ngx_int_t ngx_esp_init_process_stats(ngx_cycle_t *cycle) {
   ngx_esp_loc_conf_t **endpoints =
       reinterpret_cast<ngx_esp_loc_conf_t **>(mc->endpoints.elts);
   process_stat->num_esp = 0;
+  int log_disabled_esp = 0;
   for (ngx_uint_t i = 0, napis = mc->endpoints.nelts; i < napis; i++) {
     ngx_esp_loc_conf_t *lc = endpoints[i];
     if (lc->esp) {
+      if (lc->esp->get_logging_status_disabled()) ++log_disabled_esp;
       const std::string &service_name = lc->esp->service_name();
       // only fill buf 1 byte smaller than buffer size, always put '\0' in the
       // last byte.
@@ -323,7 +325,8 @@ ngx_int_t ngx_esp_init_process_stats(ngx_cycle_t *cycle) {
   mc->stats_timer.reset(
       new NgxEspTimer(kRefreshInterval, timer_func, cycle->log));
 
-  if (process_stat->num_esp > 0) {
+  // Do not log when all of esp instances disable logging.
+  if (process_stat->num_esp > 0 && log_disabled_esp < process_stat->num_esp) {
     mc->log_stats_timer.reset(
         new NgxEspTimer(kLogStatusInterval, log_func, cycle->log));
   }

@@ -137,5 +137,6 @@ message ApiAuthenticationConfig {
 }
 
 message Experimental {
-  // Experimental flags go here
+  // Disable log ESP status in nginx error log.
+  bool disable_log_status = 1;
 }

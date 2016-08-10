@@ -83,6 +83,7 @@ api_authentication_config {
 }
 
 experimental {
+  disable_log_status: false
 }
 )";
 
@@ -127,6 +128,9 @@ TEST(ServerConfigProto, ServerConfigFromString) {
 
   // Check api_authentication_config
   EXPECT_EQ(true, server_config.api_authentication_config().force_disable());
+
+  // Check disable_log_status
+  EXPECT_EQ(false, server_config.experimental().disable_log_status());
 }
 
 TEST(ServerConfigProto, ValidateSampleServerConfig) {
@@ -146,6 +150,9 @@ TEST(ServerConfigProto, ValidateSampleServerConfig) {
 
   ServerConfig server_config;
   EXPECT_TRUE(TextFormat::ParseFromString(ss.str(), &server_config));
+
+  // Check disable_log_status
+  EXPECT_EQ(true, server_config.experimental().disable_log_status());
 }
 
 TEST(ServerConfigProto, ServerConfigSetManually) {

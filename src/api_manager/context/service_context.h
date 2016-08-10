@@ -100,6 +100,15 @@ class ServiceContext {
     return &transcoder_factory_;
   }
 
+  bool DisableLogStatus() {
+    if (config_->server_config() &&
+        config_->server_config()->has_experimental()) {
+      const auto &experimental = config_->server_config()->experimental();
+      return experimental.disable_log_status();
+    }
+    return false;
+  }
+
  private:
   std::unique_ptr<service_control::Interface> CreateInterface();
 

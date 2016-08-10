@@ -72,6 +72,10 @@ class ApiManager {
   // called.
   virtual utils::Status Close() = 0;
 
+  // server_config has an option to disable logging to nginx error.log.
+  // This function checks server_config for that flag.
+  virtual bool get_logging_status_disabled() = 0;
+
   // Creates a RequestHandler to handle check and report for each request.
   // Its usage:
   //  1) Creates a RequestHandler object for each request,

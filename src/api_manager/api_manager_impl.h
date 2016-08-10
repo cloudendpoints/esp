@@ -90,6 +90,10 @@ class ApiManagerImpl : public ApiManager {
     }
   }
 
+  virtual bool get_logging_status_disabled() {
+    return service_context_->DisableLogStatus();
+  };
+
  private:
   service_control::Interface *service_control() const {
     return service_context_->service_control();

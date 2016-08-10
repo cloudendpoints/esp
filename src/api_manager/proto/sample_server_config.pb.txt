@@ -33,4 +33,5 @@ api_authentication_config {
 }
 
 experimental {
+  disable_log_status: true
 }
