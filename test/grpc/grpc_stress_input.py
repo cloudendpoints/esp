@@ -65,6 +65,8 @@ flags.DEFINE_integer('request_count', 10000,
 
 flags.DEFINE_integer('concurrent', 10, 'The concurrent requests to send')
 
+flags.DEFINE_float('allowed_failure_rate', 0.001, 'Allowed failure rate.')
+
 flags.DEFINE_integer('requests_per_stream', 100,
                      'The number of requests for each stream')
 
@@ -152,6 +154,7 @@ if __name__ == "__main__":
             'parallel': {
               'test_count': FLAGS.request_count,
               'parallel_limit': FLAGS.concurrent,
+              'allowed_failure_rate': FLAGS.allowed_failure_rate,
               'subtests': [
                 SubtestEcho(),
                 SubtestEchoStream(),

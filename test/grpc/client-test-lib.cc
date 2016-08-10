@@ -463,8 +463,8 @@ class Parallel {
         f.second.Fill(stats->add_failures());
       }
     }
-    if (total_succeeded_count != desc_.test_count() ||
-        total_failed_count != 0) {
+    if (total_failed_count >
+        static_cast<int>(desc_.test_count() * desc_.allowed_failure_rate())) {
       result_.mutable_status()->set_code(::grpc::UNKNOWN);
       result_.mutable_status()->set_details("Parallel test failed.");
     }

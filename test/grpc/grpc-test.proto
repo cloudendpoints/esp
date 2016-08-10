@@ -128,6 +128,9 @@ message ParallelTest {
 
   // The number of tests to run.
   int32 test_count = 3;
+
+  // The test is marked as failed if failed_number is over this rate.
+  float allowed_failure_rate = 4;
 }
 
 message ParallelSubtest {
