@@ -29,54 +29,70 @@ package main
 import (
 	".."
 	"flag"
+	"log"
+	"os/exec"
+	"regexp"
+	"strings"
 )
+
+// Root of the repository
+const root = "../../../.."
 
 func main() {
 	d := deploy.Deployment{
-		NginxFile:   "nginx.conf",
-		SSLKey:      "nginx.key",
-		SSLCert:     "nginx.crt",
-		ServiceFile: "service.json",
-		K8sYamlFile: "bookstore.yaml",
-		K8sService:  "esp-bookstore",
+		ESP: deploy.Service{
+			Name:   "esp",
+			Status: "/endpoints_status",
+		},
+		Backend: deploy.Service{
+			Name:   "backend",
+			Status: "/shelves",
+		},
+		NginxFile: "nginx.conf",
+		SSLKey:    "nginx.key",
+		SSLCert:   "nginx.crt",
 	}
 
 	// Backend
-	flag.StringVar(&d.BackendImage, "backend",
-		"gcr.io/endpoints-jenkins/bookstore:515b384a27b13138141756f78eea8536ecda9b12",
+	flag.StringVar(&d.Backend.Image, "backend",
+		"gcr.io/endpoints-jenkins/bookstore:fdec9b855c0b368a78c086bee4b77247f9e2d55e",
 		"Docker image for the backend")
-	flag.StringVar(&d.BackendPort, "backendPort", "8081", "Backend port")
+	flag.IntVar(&d.Backend.Port, "backendPort", 8081, "Backend port")
 
 	// ESP
-	flag.StringVar(&d.ESPImage, "esp",
-		"gcr.io/endpoints-jenkins/endpoints-runtime:debian-git-515b384a27b13138141756f78eea8536ecda9b12",
+	flag.StringVar(&d.ESP.Image, "esp",
+		"gcr.io/endpoints-jenkins/esp-autoconf",
 		"Docker image for ESP")
-	flag.StringVar(&d.ESPPort, "p", "8080", "ESP port")
-	flag.StringVar(&d.ESPStatusPort, "statusPort", "8090", "ESP status port")
+	flag.IntVar(&d.ESP.Port, "port", 8080, "ESP port")
+	flag.IntVar(&d.ESP.StatusPort, "status", 8090, "ESP status port")
 	flag.BoolVar(&d.ESPSsl, "ssl", false, "Enable SSL for ESP port")
 
 	// Service
-	flag.StringVar(&d.ServiceName, "api", "testing-dot-endpoints-jenkins.appspot.com", "Service name")
-	flag.StringVar(&d.ServiceVersion, "apiVersion", "2016-07-19r1244", "Service version")
+	flag.StringVar(&d.ServiceName, "service", "testing-dot-endpoints-jenkins.appspot.com", "Service name")
+	flag.StringVar(&d.ServiceVersion, "version", "2016-07-19r1244", "Service version")
+
 	flag.StringVar(&d.ServiceAPIKey, "k", "", "Service API key")
-	flag.StringVar(&d.ServiceToken, "s", "", "Service account token file (empty to enable metadata fetching)")
+	flag.StringVar(&d.ServiceToken, "s", "", "Service account token file")
 
 	// Kubernetes
-	flag.StringVar(&d.K8sType, "t", "NodePort", `Kubernetes node type (LoadBalancer, NodePort).
-	Use LoadBalancer to obtain external IP. Use NodePort for minikube deployment.`)
-	flag.StringVar(&d.K8sNamespace, "n", "test", "Kubernetes namespace")
+	flag.StringVar(&d.K8sNamespace, "namespace", "test", "Kubernetes namespace")
+	flag.IntVar(&d.K8sPort, "p", 9000, "kubectl proxy port")
+	flag.StringVar(&d.Minikube, "ip", "", "Use NodePort with the given host IP (minikube specific)")
 
 	// Phase
+	var all bool
+	flag.BoolVar(&all, "all", false, "Run all deployment steps")
 	flag.BoolVar(&d.RunDeploy, "up", false, "Deploy to cluster")
 	flag.BoolVar(&d.RunTest, "test", false, "Test on cluster")
 	flag.BoolVar(&d.RunTearDown, "down", false, "Tear down the cluster")
-	var all bool
-	flag.BoolVar(&all, "all", false, "Run all deployment steps")
 
 	flag.Usage = func() {
 		flag.PrintDefaults()
 	}
 	flag.Parse()
+
+	// Use same status port for backend as actual port
+	d.Backend.StatusPort = d.Backend.Port
 
 	if all {
 		d.RunDeploy = true
@@ -84,7 +100,49 @@ func main() {
 		d.RunTearDown = true
 	}
 
-	d.Run(func(d *deploy.Deployment) {
-		deploy.HTTPGet(d.ESPUrl() + "/shelves?key=" + d.ServiceAPIKey)
+	testToken := GetAuthToken(root+"/client/custom/esp-test-client-secret-jwk.json", d.ServiceName)
+
+	d.Run(func(url string) {
+
+		// Run test
+		out, err := Run(root+"/test/client/esp_bookstore_test.py",
+			"--verbose=true",
+			"--host="+url,
+			"--api_key="+d.ServiceAPIKey,
+			"--auth_token="+testToken,
+			"--allow_unverified_cert=true")
+		log.Println(out)
+
+		if err != nil {
+			log.Println("Test failed: ", err)
+		}
 	})
+}
+
+func GetAuthToken(token, audience string) string {
+	// Make an auth token
+	out, err := Run(root+"/bazel-bin/src/tools/auth_token_gen",
+		token, audience)
+	if err != nil {
+		log.Fatalln("Cannot generate auth token")
+	}
+
+	outputStr := string(out)
+	re := regexp.MustCompile("Auth token:?")
+	loc := re.FindStringIndex(outputStr)
+	jwt := outputStr[loc[1]+1 : len(outputStr)-1]
+
+	return jwt
+}
+
+// Execute command and return the error code, merged output from stderr and stdout
+func Run(name string, args ...string) (s string, err error) {
+	log.Println(">", name, strings.Join(args, " "))
+	c := exec.Command(name, args...)
+	bytes, err := c.Output()
+	if err != nil {
+		log.Println(err)
+	}
+	s = string(bytes)
+	return
 }
