@@ -35,7 +35,7 @@
 ./var/
 ./var/cache/
 ./var/cache/nginx/
-./var/cache/nginx/.dummy
+./var/cache/nginx/.empty
 ./var/log/
 ./var/log/nginx/
-./var/log/nginx/.dummy
+./var/log/nginx/.empty

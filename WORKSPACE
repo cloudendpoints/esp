@@ -28,7 +28,10 @@
 
 load("//third_party/nginx:build.bzl", "nginx_repositories")
 
-nginx_repositories(bind = True)
+nginx_repositories(
+    bind = True,
+    nginx = "@//third_party/nginx",
+)
 
 # Required by gRPC.
 bind(
@@ -141,23 +144,6 @@ bind(
 bind(
     name = "googletest_prod",
     actual = "@googletest_git//:googletest_prod",
-)
-
-new_git_repository(
-    name = "nginx_pkgoss_git",
-    build_file = "third_party/BUILD.nginx-pkgoss",
-    commit = "c5b295b180da34576d86f5371662c1a744f4cd2e",  # 2016-02-24
-    remote = "https://nginx.googlesource.com/nginx-pkgoss",
-)
-
-bind(
-    name = "nginx_config_includes",
-    actual = "//third_party/nginx:config_includes",
-)
-
-bind(
-    name = "nginx_html_files",
-    actual = "//third_party/nginx:html_files",
 )
 
 git_repository(

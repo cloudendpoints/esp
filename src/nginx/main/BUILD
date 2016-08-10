@@ -204,10 +204,10 @@ pkg_tar(
     deps = [
         # The first occurrence of the duplicate file will be picked. In other
         # words, /etc/nginx/nginx.conf from ":nginx-conf-override" will
-        # override that from "@nginx_pkgoss_git//:debian_overlay".
+        # override that from "@nginx_pkgoss//:debian_overlay".
         ":nginx-conf-override",
         ":nginx-initd-override",
-        "@nginx_pkgoss_git//:debian_overlay",
+        "@nginx_pkgoss//:debian_overlay",
         ":esp-bin",
         ":esp-copyright",
         ":trusted-ca-certificates",
@@ -231,10 +231,10 @@ pkg_deb(
     homepage = "g.co/endpoints",
     maintainer = "Google Cloud Endpoints Runtime",
     package = "endpoints-runtime",
-    postinst = "@nginx_pkgoss_git//:debian_postinst",
-    postrm = "@nginx_pkgoss_git//:debian_postrm",
-    preinst = "@nginx_pkgoss_git//:debian_preinst",
-    prerm = "@nginx_pkgoss_git//:debian_prerm",
+    postinst = "@nginx_pkgoss//:debian_postinst",
+    postrm = "@nginx_pkgoss//:debian_postrm",
+    preinst = "@nginx_pkgoss//:debian_preinst",
+    prerm = "@nginx_pkgoss//:debian_prerm",
     priority = "extra",
     section = "httpd",
     version_file = "//include:version",
