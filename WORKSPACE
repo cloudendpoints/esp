@@ -171,3 +171,19 @@ bind(
     actual = "@gflags_git//:gflags",
 )
 
+git_repository(
+    name = "io_bazel_rules_go",
+    remote = "https://github.com/bazelbuild/rules_go.git",
+    tag = "0.0.4",
+)
+load("@io_bazel_rules_go//go:def.bzl", "go_repositories")
+
+new_git_repository(
+    name = "github_com_golang_protobuf",
+    remote = "https://github.com/golang/protobuf.git",
+    commit = "c3cefd437628a0b7d31b34fe44b3a7a540e98527",
+    build_file = "third_party/BUILD.golang_protobuf",
+)
+
+go_repositories()
+

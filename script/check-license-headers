@@ -55,6 +55,8 @@ for file in $(git ls-files)
 do
   base="$(echo ${file} |awk -F / '{print $1}')"
   [[ "${base}" == "google" || "${base}" == "third_party" ]] && continue
+  base3="$(echo ${file} |awk -F / '{print $1 "/" $2 "/" $3}')"
+  [[ "${base3}" == "test/src/google" ]] && continue
   [[ "$(basename ${file})" == "check-license-headers" ]] && continue
   if is_source_code_file "${file}"; then
     total_copyright_count="$(grep 'Copyright (C)' ${file} | wc -l)"

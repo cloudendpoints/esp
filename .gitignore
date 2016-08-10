@@ -1,6 +1,9 @@
 .*.swp
+*.iml
 .idea/
 .project
 .cproject
 
 /bazel-*
+
+test/src/github.com
