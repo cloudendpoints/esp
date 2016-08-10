@@ -130,4 +130,7 @@ stderr_logfile=/var/log/bookstore.err.log
 stdout_logfile=/var/log/bookstore.out.log
 EOF
 
-run service supervisor restart
+# service supervisor restart fails 50% of the time.
+run /etc/init.d/supervisor force-stop
+run /etc/init.d/supervisor stop
+run /etc/init.d/supervisor start
