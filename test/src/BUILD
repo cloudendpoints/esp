@@ -173,7 +173,15 @@ go_library(
         "utils/auth_token_gen.go",
         "utils/nginx_config.go",
         "utils/service_config.go",
+        "utils/service_control.go",
+        "utils/status.go",
         "utils/test_env_path.go",
+    ],
+    deps = [
+        "@github_com_golang_protobuf//:proto",
+        "@github_com_golang_protobuf//:ptypes/struct",
+        ":vendor/google/api/servicecontrol/v1",
+        ":vendor/google/logging/type",
     ],
     go_prefix = "//test/src:go_prefix",
 )

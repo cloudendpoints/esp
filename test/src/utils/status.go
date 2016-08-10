@@ -26,54 +26,42 @@
 //
 package utils
 
-import (
-	"io/ioutil"
-	"os"
-	"errors"
-	"log"
-	"strings"
+const (
+  OK = 0
+  CANCELLED = 1
+  UNKNOWN = 2
+  INVALID_ARGUMENT = 3
+  DEADLINE_EXCEEDED = 4
+  NOT_FOUND = 5
+  ALREADY_EXISTS = 6
+  PERMISSION_DENIED = 7
+  UNAUTHENTICATED = 16
+  RESOURCE_EXHAUSTED = 8
+  FAILED_PRECONDITION = 9
+  ABORTED = 10
+  OUT_OF_RANGE = 11
+  UNIMPLEMENTED = 12
+  INTERNAL = 13
+  UNAVAILABLE = 14
+  DATA_LOSS = 15
 )
 
-func GetTestBinRootPath() (string, error) {
+func HttpResponseCodeToStatusCode(code int) int {
 	switch {
-	// custom path
-	case os.Getenv("TEST_BIN_ROOT") != "":
-		return os.Getenv("TEST_BIN_ROOT"), nil
-	// running under bazel
-	case os.Getenv("TEST_SRCDIR") != "":
-		return os.Getenv("TEST_SRCDIR") + "/__main__", nil
-	// running with native go
-	case os.Getenv("GOPATH") != "":
-		return os.Getenv("GOPATH") + "/../bazel-bin", nil
+	case code == 400: return INVALID_ARGUMENT
+	case code == 401: return UNAUTHENTICATED
+	case code == 403: return PERMISSION_DENIED
+	case code == 404: return NOT_FOUND
+	case code == 409: return ABORTED
+	case code == 416: return OUT_OF_RANGE
+	case code == 429: return RESOURCE_EXHAUSTED
+	case code == 499: return CANCELLED
+	case code == 501: return UNIMPLEMENTED
+	case code == 503: return UNAVAILABLE
+	case code == 504: return DEADLINE_EXCEEDED
+	case code >= 200 && code < 300: return OK
+	case code >= 400 && code < 500: return FAILED_PRECONDITION
+	case code >= 500 && code < 600: return INTERNAL
 	}
-	log.Printf("ERROR: One of TEST_BIN_ROOT, TEST_SRCDIR, GO_PATH has to be set.")
-	return "", errors.New("One of TEST_BIN_ROOT, TEST_SRCDIR, GO_PATH has to be set.")
-}
-
-func GetTestDataRootPath() (string, error) {
-	switch {
-	// custom path
-	case os.Getenv("TEST_DATA_ROOT") != "":
-		return os.Getenv("TEST_DATA_ROOT"), nil
-	// running under bazel
-	case os.Getenv("TEST_SRCDIR") != "":
-		return os.Getenv("TEST_SRCDIR") + "/__main__", nil
-	// running with native go
-	case os.Getenv("GOPATH") != "":
-		return os.Getenv("GOPATH") + "/..", nil
-	}
-	log.Printf("ERROR: One of TEST_BIN_ROOT, TEST_SRCDIR, GO_PATH has to be set.")
-	return "", errors.New("One of TEST_BIN_ROOT, TEST_SRCDIR, GO_PATH has to be set.")
-}
-
-func GetVersion() (string, error) {
-	path, err := GetTestDataRootPath()
-	if err != nil {
-		return "", err
-	}
-	ver, err := ioutil.ReadFile(path + "/include/version")
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(string(ver)), nil
+	return UNKNOWN
 }
