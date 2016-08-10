@@ -27,7 +27,7 @@
 
 licenses(["notice"])
 
-exports_files(["LICENSE"])
+exports_files(["LICENSE.txt"])
 
 cc_library(
     name = "nanopb",

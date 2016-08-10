@@ -125,7 +125,7 @@ function test_data_file() {
   local copyright="${dir}/data/usr/share/doc/nginx-google/copyright"
   [[ -f "${copyright}" ]] || return 6
 
-  diff "${copyright}" "${ROOT}/LICENSE" \
+  diff "${copyright}" "${ROOT}/src/nginx/main/testdata/copyright-expected" \
     || return 7
 
   return 0

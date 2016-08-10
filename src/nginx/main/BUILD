@@ -138,11 +138,42 @@ genrule(
     name = "rename-copyright",
     srcs = [
         "//:LICENSE",
+        "//third_party/nginx:LICENSE",
+        "//third_party/service-control-client-cxx:LICENSE",
+        "@boringssl//:LICENSE",
+        "@grpc_git//:LICENSE",
+        "@nanopb_git//:LICENSE.txt",
+        "@nginx_pcre//:LICENCE",
+        "@nginx_zlib//:README",
+        "@protobuf_git//:LICENSE",
     ],
     outs = [
         "copyright",
     ],
-    cmd = "cp $(<) $(@)",
+    cmd = "cat $(location //:LICENSE) > $(@);" +
+          "echo \"\n\" >> $(@);" +
+          "echo \"This NGINX binary is statically linked against:\" >> $(@);" +
+          "echo \"BoringSSL, gRPC, Nanopb, PCRE, Protocol Buffers," +
+          " Service Control Client & zlib.\" >> $(@);" +
+          "echo \"\n\nBoringSSL license:\n==================\n\" >> $(@);" +
+          "cat $(location @boringssl//:LICENSE) >> $(@);" +
+          "echo \"\n\ngRPC license:\n=============\n\" >> $(@);" +
+          "cat $(location @grpc_git//:LICENSE) >> $(@);" +
+          "echo \"\n\nNanopb license:\n===============\n\" >> $(@);" +
+          "cat $(location @nanopb_git//:LICENSE.txt) >> $(@);" +
+          "echo \"\n\nNGINX license:\n==============\n\" >> $(@);" +
+          "cat $(location //third_party/nginx:LICENSE) >> $(@);" +
+          "echo \"\n\nPCRE license:\n=============\n\" >> $(@);" +
+          "cat $(location @nginx_pcre//:LICENCE) >> $(@);" +
+          "echo \"\n\nProtocol Buffers license:\" >> $(@);" +
+          "echo \"=========================\n\" >> $(@);" +
+          "cat $(location @protobuf_git//:LICENSE) >> $(@);" +
+          "echo \"\n\nService Control Client license:\" >> $(@);" +
+          "echo \"===============================\n\" >> $(@);" +
+          "cat $(location //third_party/service-control-client-cxx:LICENSE)" +
+          " >> $(@);" +
+          "echo \"\n\nzlib license:\n=============\n\" >> $(@);" +
+          "cat $(location @nginx_zlib//:README) | grep -A99 Copyright >> $(@)",
 )
 
 pkg_tar(
@@ -247,9 +278,9 @@ sh_test(
     ],
     data = [
         "testdata/control-expected",
+        "testdata/copyright-expected",
         "testdata/data-expected",
         "testdata/deb-expected",
         ":endpoints-server-proxy.deb",
-        "//:LICENSE",
     ],
 )

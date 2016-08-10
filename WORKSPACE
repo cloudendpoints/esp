@@ -76,10 +76,11 @@ bind(
     actual = "@grpc_git//:grpc++_reflection",
 )
 
-git_repository(
+new_git_repository(
     name = "protobuf_git",
     commit = "56855f6f002eeee8cf03021eaf2ece2adff2a297", # 3.0.0-beta-4
     remote = "https://github.com/google/protobuf.git",
+    build_file = "third_party/BUILD.protobuf",
 )
 
 bind(
