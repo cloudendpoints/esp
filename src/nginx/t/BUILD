@@ -279,3 +279,7 @@ nginx_suite(
         ":perl_library",
     ],
 )
+
+# Used by Go tests
+exports_files(["matching-client-secret.json"])
+
