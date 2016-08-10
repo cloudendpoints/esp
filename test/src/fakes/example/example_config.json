@@ -1,0 +1,19 @@
+{
+  "ConfigId" : "",
+  "Responses" : [
+    {
+      "Request" : { "Url": "/some/url", "Verb": "POST"},
+      "Response" : { "StatusCode": 200, "Body" : "Body response" }
+    },
+
+    {
+      "Request" : { "Url": "/another/url", "Verb": "GET"},
+      "Response" : { "StatusCode": 401, "Body" : "Not authorized" }
+    },
+
+    {
+      "Request" : { "Url": "/something:check", "Verb": "POST", "RequestId" : "Test_Referrer_1" },
+      "Response" : { "StatusCode": 200, "Body" : "Body response" }
+    }
+  ]
+}
