@@ -67,7 +67,7 @@ type Monitoring struct {
 func (m *Monitoring) Reset()                    { *m = Monitoring{} }
 func (m *Monitoring) String() string            { return proto.CompactTextString(m) }
 func (*Monitoring) ProtoMessage()               {}
-func (*Monitoring) Descriptor() ([]byte, []int) { return fileDescriptor15, []int{0} }
+func (*Monitoring) Descriptor() ([]byte, []int) { return fileDescriptor14, []int{0} }
 
 func (m *Monitoring) GetProducerDestinations() []*Monitoring_MonitoringDestination {
 	if m != nil {
@@ -98,7 +98,7 @@ func (m *Monitoring_MonitoringDestination) Reset()         { *m = Monitoring_Mon
 func (m *Monitoring_MonitoringDestination) String() string { return proto.CompactTextString(m) }
 func (*Monitoring_MonitoringDestination) ProtoMessage()    {}
 func (*Monitoring_MonitoringDestination) Descriptor() ([]byte, []int) {
-	return fileDescriptor15, []int{0, 0}
+	return fileDescriptor14, []int{0, 0}
 }
 
 func init() {
@@ -106,9 +106,9 @@ func init() {
 	proto.RegisterType((*Monitoring_MonitoringDestination)(nil), "google.api.Monitoring.MonitoringDestination")
 }
 
-func init() { proto.RegisterFile("google/api/monitoring.proto", fileDescriptor15) }
+func init() { proto.RegisterFile("google/api/monitoring.proto", fileDescriptor14) }
 
-var fileDescriptor15 = []byte{
+var fileDescriptor14 = []byte{
 	// 226 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x9c, 0x90, 0x4f, 0x4a, 0xc4, 0x30,
 	0x14, 0xc6, 0xc9, 0x08, 0xca, 0x3c, 0x41, 0x31, 0x38, 0x50, 0x46, 0x17, 0x83, 0x6e, 0x66, 0xa1,

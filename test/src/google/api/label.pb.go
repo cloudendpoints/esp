@@ -39,9 +39,7 @@ var LabelDescriptor_ValueType_value = map[string]int32{
 func (x LabelDescriptor_ValueType) String() string {
 	return proto.EnumName(LabelDescriptor_ValueType_name, int32(x))
 }
-func (LabelDescriptor_ValueType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor10, []int{0, 0}
-}
+func (LabelDescriptor_ValueType) EnumDescriptor() ([]byte, []int) { return fileDescriptor9, []int{0, 0} }
 
 // A description of a label.
 type LabelDescriptor struct {
@@ -56,16 +54,16 @@ type LabelDescriptor struct {
 func (m *LabelDescriptor) Reset()                    { *m = LabelDescriptor{} }
 func (m *LabelDescriptor) String() string            { return proto.CompactTextString(m) }
 func (*LabelDescriptor) ProtoMessage()               {}
-func (*LabelDescriptor) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{0} }
+func (*LabelDescriptor) Descriptor() ([]byte, []int) { return fileDescriptor9, []int{0} }
 
 func init() {
 	proto.RegisterType((*LabelDescriptor)(nil), "google.api.LabelDescriptor")
 	proto.RegisterEnum("google.api.LabelDescriptor_ValueType", LabelDescriptor_ValueType_name, LabelDescriptor_ValueType_value)
 }
 
-func init() { proto.RegisterFile("google/api/label.proto", fileDescriptor10) }
+func init() { proto.RegisterFile("google/api/label.proto", fileDescriptor9) }
 
-var fileDescriptor10 = []byte{
+var fileDescriptor9 = []byte{
 	// 210 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0x12, 0x4b, 0xcf, 0xcf, 0x4f,
 	0xcf, 0x49, 0xd5, 0x4f, 0x2c, 0xc8, 0xd4, 0xcf, 0x49, 0x4c, 0x4a, 0xcd, 0xd1, 0x2b, 0x28, 0xca,

@@ -66,7 +66,7 @@ var Usage_ServiceAccess_value = map[string]int32{
 func (x Usage_ServiceAccess) String() string {
 	return proto.EnumName(Usage_ServiceAccess_name, int32(x))
 }
-func (Usage_ServiceAccess) EnumDescriptor() ([]byte, []int) { return fileDescriptor18, []int{0, 0} }
+func (Usage_ServiceAccess) EnumDescriptor() ([]byte, []int) { return fileDescriptor17, []int{0, 0} }
 
 // Configuration controlling usage of a service.
 type Usage struct {
@@ -101,7 +101,7 @@ type Usage struct {
 func (m *Usage) Reset()                    { *m = Usage{} }
 func (m *Usage) String() string            { return proto.CompactTextString(m) }
 func (*Usage) ProtoMessage()               {}
-func (*Usage) Descriptor() ([]byte, []int) { return fileDescriptor18, []int{0} }
+func (*Usage) Descriptor() ([]byte, []int) { return fileDescriptor17, []int{0} }
 
 func (m *Usage) GetRules() []*UsageRule {
 	if m != nil {
@@ -148,7 +148,7 @@ type UsageRule struct {
 func (m *UsageRule) Reset()                    { *m = UsageRule{} }
 func (m *UsageRule) String() string            { return proto.CompactTextString(m) }
 func (*UsageRule) ProtoMessage()               {}
-func (*UsageRule) Descriptor() ([]byte, []int) { return fileDescriptor18, []int{1} }
+func (*UsageRule) Descriptor() ([]byte, []int) { return fileDescriptor17, []int{1} }
 
 func init() {
 	proto.RegisterType((*Usage)(nil), "google.api.Usage")
@@ -156,9 +156,9 @@ func init() {
 	proto.RegisterEnum("google.api.Usage_ServiceAccess", Usage_ServiceAccess_name, Usage_ServiceAccess_value)
 }
 
-func init() { proto.RegisterFile("google/api/usage.proto", fileDescriptor18) }
+func init() { proto.RegisterFile("google/api/usage.proto", fileDescriptor17) }
 
-var fileDescriptor18 = []byte{
+var fileDescriptor17 = []byte{
 	// 348 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x64, 0x92, 0xc1, 0x4f, 0xe2, 0x40,
 	0x14, 0xc6, 0xb7, 0x74, 0x21, 0xf0, 0x76, 0xe9, 0xb2, 0x63, 0x24, 0x8d, 0x07, 0x6d, 0x7a, 0xaa,

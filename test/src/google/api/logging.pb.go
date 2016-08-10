@@ -61,7 +61,7 @@ type Logging struct {
 func (m *Logging) Reset()                    { *m = Logging{} }
 func (m *Logging) String() string            { return proto.CompactTextString(m) }
 func (*Logging) ProtoMessage()               {}
-func (*Logging) Descriptor() ([]byte, []int) { return fileDescriptor11, []int{0} }
+func (*Logging) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{0} }
 
 func (m *Logging) GetProducerDestinations() []*Logging_LoggingDestination {
 	if m != nil {
@@ -91,16 +91,16 @@ type Logging_LoggingDestination struct {
 func (m *Logging_LoggingDestination) Reset()                    { *m = Logging_LoggingDestination{} }
 func (m *Logging_LoggingDestination) String() string            { return proto.CompactTextString(m) }
 func (*Logging_LoggingDestination) ProtoMessage()               {}
-func (*Logging_LoggingDestination) Descriptor() ([]byte, []int) { return fileDescriptor11, []int{0, 0} }
+func (*Logging_LoggingDestination) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{0, 0} }
 
 func init() {
 	proto.RegisterType((*Logging)(nil), "google.api.Logging")
 	proto.RegisterType((*Logging_LoggingDestination)(nil), "google.api.Logging.LoggingDestination")
 }
 
-func init() { proto.RegisterFile("google/api/logging.proto", fileDescriptor11) }
+func init() { proto.RegisterFile("google/api/logging.proto", fileDescriptor10) }
 
-var fileDescriptor11 = []byte{
+var fileDescriptor10 = []byte{
 	// 226 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x94, 0x90, 0xb1, 0x4a, 0xc5, 0x30,
 	0x14, 0x86, 0xe9, 0xbd, 0xa2, 0xdc, 0xa3, 0x08, 0x06, 0x85, 0x52, 0x1c, 0x8a, 0x83, 0x74, 0x31,

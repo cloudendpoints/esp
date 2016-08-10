@@ -48,7 +48,7 @@ type MonitoredResourceDescriptor struct {
 func (m *MonitoredResourceDescriptor) Reset()                    { *m = MonitoredResourceDescriptor{} }
 func (m *MonitoredResourceDescriptor) String() string            { return proto.CompactTextString(m) }
 func (*MonitoredResourceDescriptor) ProtoMessage()               {}
-func (*MonitoredResourceDescriptor) Descriptor() ([]byte, []int) { return fileDescriptor14, []int{0} }
+func (*MonitoredResourceDescriptor) Descriptor() ([]byte, []int) { return fileDescriptor13, []int{0} }
 
 func (m *MonitoredResourceDescriptor) GetLabels() []*LabelDescriptor {
 	if m != nil {
@@ -84,7 +84,7 @@ type MonitoredResource struct {
 func (m *MonitoredResource) Reset()                    { *m = MonitoredResource{} }
 func (m *MonitoredResource) String() string            { return proto.CompactTextString(m) }
 func (*MonitoredResource) ProtoMessage()               {}
-func (*MonitoredResource) Descriptor() ([]byte, []int) { return fileDescriptor14, []int{1} }
+func (*MonitoredResource) Descriptor() ([]byte, []int) { return fileDescriptor13, []int{1} }
 
 func (m *MonitoredResource) GetLabels() map[string]string {
 	if m != nil {
@@ -98,9 +98,9 @@ func init() {
 	proto.RegisterType((*MonitoredResource)(nil), "google.api.MonitoredResource")
 }
 
-func init() { proto.RegisterFile("google/api/monitored_resource.proto", fileDescriptor14) }
+func init() { proto.RegisterFile("google/api/monitored_resource.proto", fileDescriptor13) }
 
-var fileDescriptor14 = []byte{
+var fileDescriptor13 = []byte{
 	// 281 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x6c, 0x51, 0x4d, 0x4b, 0xc3, 0x40,
 	0x10, 0x65, 0x93, 0xb6, 0xe0, 0x44, 0x44, 0x17, 0x29, 0xa1, 0xbd, 0xc4, 0x7a, 0xa9, 0x1e, 0x52,

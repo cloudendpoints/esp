@@ -42,7 +42,7 @@ type LogDescriptor struct {
 func (m *LogDescriptor) Reset()                    { *m = LogDescriptor{} }
 func (m *LogDescriptor) String() string            { return proto.CompactTextString(m) }
 func (*LogDescriptor) ProtoMessage()               {}
-func (*LogDescriptor) Descriptor() ([]byte, []int) { return fileDescriptor12, []int{0} }
+func (*LogDescriptor) Descriptor() ([]byte, []int) { return fileDescriptor11, []int{0} }
 
 func (m *LogDescriptor) GetLabels() []*LabelDescriptor {
 	if m != nil {
@@ -55,9 +55,9 @@ func init() {
 	proto.RegisterType((*LogDescriptor)(nil), "google.api.LogDescriptor")
 }
 
-func init() { proto.RegisterFile("google/api/log.proto", fileDescriptor12) }
+func init() { proto.RegisterFile("google/api/log.proto", fileDescriptor11) }
 
-var fileDescriptor12 = []byte{
+var fileDescriptor11 = []byte{
 	// 190 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0x12, 0x49, 0xcf, 0xcf, 0x4f,
 	0xcf, 0x49, 0xd5, 0x4f, 0x2c, 0xc8, 0xd4, 0xcf, 0xc9, 0x4f, 0xd7, 0x2b, 0x28, 0xca, 0x2f, 0xc9,

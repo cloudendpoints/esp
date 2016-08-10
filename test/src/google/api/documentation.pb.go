@@ -99,7 +99,7 @@ type Documentation struct {
 func (m *Documentation) Reset()                    { *m = Documentation{} }
 func (m *Documentation) String() string            { return proto.CompactTextString(m) }
 func (*Documentation) ProtoMessage()               {}
-func (*Documentation) Descriptor() ([]byte, []int) { return fileDescriptor8, []int{0} }
+func (*Documentation) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{0} }
 
 func (m *Documentation) GetPages() []*Page {
 	if m != nil {
@@ -134,7 +134,7 @@ type DocumentationRule struct {
 func (m *DocumentationRule) Reset()                    { *m = DocumentationRule{} }
 func (m *DocumentationRule) String() string            { return proto.CompactTextString(m) }
 func (*DocumentationRule) ProtoMessage()               {}
-func (*DocumentationRule) Descriptor() ([]byte, []int) { return fileDescriptor8, []int{1} }
+func (*DocumentationRule) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{1} }
 
 // Represents a documentation page. A page can contain subpages to represent
 // nested documentation set structure.
@@ -165,7 +165,7 @@ type Page struct {
 func (m *Page) Reset()                    { *m = Page{} }
 func (m *Page) String() string            { return proto.CompactTextString(m) }
 func (*Page) ProtoMessage()               {}
-func (*Page) Descriptor() ([]byte, []int) { return fileDescriptor8, []int{2} }
+func (*Page) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{2} }
 
 func (m *Page) GetSubpages() []*Page {
 	if m != nil {
@@ -180,9 +180,9 @@ func init() {
 	proto.RegisterType((*Page)(nil), "google.api.Page")
 }
 
-func init() { proto.RegisterFile("google/api/documentation.proto", fileDescriptor8) }
+func init() { proto.RegisterFile("google/api/documentation.proto", fileDescriptor7) }
 
-var fileDescriptor8 = []byte{
+var fileDescriptor7 = []byte{
 	// 308 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x74, 0x92, 0xdf, 0x4a, 0xf3, 0x40,
 	0x10, 0xc5, 0xc9, 0x97, 0xf6, 0xb3, 0x4e, 0x51, 0x74, 0x90, 0x1a, 0x04, 0xa5, 0xf4, 0xa2, 0xf4,

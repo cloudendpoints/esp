@@ -24,7 +24,7 @@ type Http struct {
 func (m *Http) Reset()                    { *m = Http{} }
 func (m *Http) String() string            { return proto.CompactTextString(m) }
 func (*Http) ProtoMessage()               {}
-func (*Http) Descriptor() ([]byte, []int) { return fileDescriptor9, []int{0} }
+func (*Http) Descriptor() ([]byte, []int) { return fileDescriptor8, []int{0} }
 
 func (m *Http) GetRules() []*HttpRule {
 	if m != nil {
@@ -264,7 +264,7 @@ type HttpRule struct {
 func (m *HttpRule) Reset()                    { *m = HttpRule{} }
 func (m *HttpRule) String() string            { return proto.CompactTextString(m) }
 func (*HttpRule) ProtoMessage()               {}
-func (*HttpRule) Descriptor() ([]byte, []int) { return fileDescriptor9, []int{1} }
+func (*HttpRule) Descriptor() ([]byte, []int) { return fileDescriptor8, []int{1} }
 
 type isHttpRule_Pattern interface {
 	isHttpRule_Pattern()
@@ -493,7 +493,7 @@ type CustomHttpPattern struct {
 func (m *CustomHttpPattern) Reset()                    { *m = CustomHttpPattern{} }
 func (m *CustomHttpPattern) String() string            { return proto.CompactTextString(m) }
 func (*CustomHttpPattern) ProtoMessage()               {}
-func (*CustomHttpPattern) Descriptor() ([]byte, []int) { return fileDescriptor9, []int{2} }
+func (*CustomHttpPattern) Descriptor() ([]byte, []int) { return fileDescriptor8, []int{2} }
 
 func init() {
 	proto.RegisterType((*Http)(nil), "google.api.Http")
@@ -501,9 +501,9 @@ func init() {
 	proto.RegisterType((*CustomHttpPattern)(nil), "google.api.CustomHttpPattern")
 }
 
-func init() { proto.RegisterFile("google/api/http.proto", fileDescriptor9) }
+func init() { proto.RegisterFile("google/api/http.proto", fileDescriptor8) }
 
-var fileDescriptor9 = []byte{
+var fileDescriptor8 = []byte{
 	// 313 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x7c, 0x91, 0xcd, 0x4a, 0xf3, 0x40,
 	0x14, 0x86, 0xbf, 0x69, 0xd3, 0xb4, 0x3d, 0x85, 0x0f, 0x3c, 0x56, 0x19, 0x04, 0x21, 0x74, 0x55,

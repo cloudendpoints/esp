@@ -13,7 +13,6 @@ It is generated from these files:
 	google/api/consumer.proto
 	google/api/context.proto
 	google/api/control.proto
-	google/api/distribution.proto
 	google/api/documentation.proto
 	google/api/http.proto
 	google/api/label.proto
@@ -41,7 +40,6 @@ It has these top-level messages:
 	Context
 	ContextRule
 	Control
-	Distribution
 	Documentation
 	DocumentationRule
 	Page

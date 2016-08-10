@@ -45,7 +45,7 @@ func (x MetricDescriptor_MetricKind) String() string {
 	return proto.EnumName(MetricDescriptor_MetricKind_name, int32(x))
 }
 func (MetricDescriptor_MetricKind) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor13, []int{0, 0}
+	return fileDescriptor12, []int{0, 0}
 }
 
 // The value type of a metric.
@@ -93,7 +93,7 @@ func (x MetricDescriptor_ValueType) String() string {
 	return proto.EnumName(MetricDescriptor_ValueType_name, int32(x))
 }
 func (MetricDescriptor_ValueType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor13, []int{0, 1}
+	return fileDescriptor12, []int{0, 1}
 }
 
 // Defines a metric type and its schema.
@@ -202,7 +202,7 @@ type MetricDescriptor struct {
 func (m *MetricDescriptor) Reset()                    { *m = MetricDescriptor{} }
 func (m *MetricDescriptor) String() string            { return proto.CompactTextString(m) }
 func (*MetricDescriptor) ProtoMessage()               {}
-func (*MetricDescriptor) Descriptor() ([]byte, []int) { return fileDescriptor13, []int{0} }
+func (*MetricDescriptor) Descriptor() ([]byte, []int) { return fileDescriptor12, []int{0} }
 
 func (m *MetricDescriptor) GetLabels() []*LabelDescriptor {
 	if m != nil {
@@ -226,7 +226,7 @@ type Metric struct {
 func (m *Metric) Reset()                    { *m = Metric{} }
 func (m *Metric) String() string            { return proto.CompactTextString(m) }
 func (*Metric) ProtoMessage()               {}
-func (*Metric) Descriptor() ([]byte, []int) { return fileDescriptor13, []int{1} }
+func (*Metric) Descriptor() ([]byte, []int) { return fileDescriptor12, []int{1} }
 
 func (m *Metric) GetLabels() map[string]string {
 	if m != nil {
@@ -242,9 +242,9 @@ func init() {
 	proto.RegisterEnum("google.api.MetricDescriptor_ValueType", MetricDescriptor_ValueType_name, MetricDescriptor_ValueType_value)
 }
 
-func init() { proto.RegisterFile("google/api/metric.proto", fileDescriptor13) }
+func init() { proto.RegisterFile("google/api/metric.proto", fileDescriptor12) }
 
-var fileDescriptor13 = []byte{
+var fileDescriptor12 = []byte{
 	// 469 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x7c, 0x52, 0x4d, 0x6b, 0xdb, 0x40,
 	0x10, 0xad, 0x3e, 0xac, 0xc6, 0xa3, 0x60, 0x96, 0xa5, 0x24, 0xc2, 0x81, 0xd6, 0xf5, 0xa1, 0xf5,

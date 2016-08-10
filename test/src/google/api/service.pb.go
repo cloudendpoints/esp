@@ -8,9 +8,9 @@ import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
 import _ "github.com/golang/protobuf/ptypes/any"
-import google_protobuf5 "google/protobuf"
 import google_protobuf4 "google/protobuf"
-import google_protobuf6 "github.com/golang/protobuf/ptypes/wrappers"
+import google_protobuf3 "google/protobuf"
+import google_protobuf5 "github.com/golang/protobuf/ptypes/wrappers"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -39,7 +39,7 @@ type Service struct {
 	// influence interpretation of the configuration, for example, to
 	// determine defaults. This is documented together with applicable
 	// options. The current default for the config version itself is `3`.
-	ConfigVersion *google_protobuf6.UInt32Value `protobuf:"bytes,20,opt,name=config_version,json=configVersion" json:"config_version,omitempty"`
+	ConfigVersion *google_protobuf5.UInt32Value `protobuf:"bytes,20,opt,name=config_version,json=configVersion" json:"config_version,omitempty"`
 	// The DNS address at which this service is available,
 	// e.g. `calendar.googleapis.com`.
 	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
@@ -58,7 +58,7 @@ type Service struct {
 	// author, as the remaining fields will be derived from the IDL during the
 	// normalization process. It is an error to specify an API interface here
 	// which cannot be resolved against the associated IDL files.
-	Apis []*google_protobuf5.Api `protobuf:"bytes,3,rep,name=apis" json:"apis,omitempty"`
+	Apis []*google_protobuf4.Api `protobuf:"bytes,3,rep,name=apis" json:"apis,omitempty"`
 	// A list of all proto message types included in this API service.
 	// Types referenced directly or indirectly by the `apis` are
 	// automatically included.  Messages which are not referenced but
@@ -67,7 +67,7 @@ type Service struct {
 	//
 	//     types:
 	//     - name: google.protobuf.Int32
-	Types []*google_protobuf4.Type `protobuf:"bytes,4,rep,name=types" json:"types,omitempty"`
+	Types []*google_protobuf3.Type `protobuf:"bytes,4,rep,name=types" json:"types,omitempty"`
 	// A list of all enum types included in this API service.  Enums
 	// referenced directly or indirectly by the `apis` are automatically
 	// included.  Enums which are not referenced but shall be included
@@ -75,7 +75,7 @@ type Service struct {
 	//
 	//     enums:
 	//     - name: google.someapi.v1.SomeEnum
-	Enums []*google_protobuf4.Enum `protobuf:"bytes,5,rep,name=enums" json:"enums,omitempty"`
+	Enums []*google_protobuf3.Enum `protobuf:"bytes,5,rep,name=enums" json:"enums,omitempty"`
 	// Additional API documentation.
 	Documentation *Documentation `protobuf:"bytes,6,opt,name=documentation" json:"documentation,omitempty"`
 	// API backend configuration.
@@ -113,30 +113,30 @@ type Service struct {
 func (m *Service) Reset()                    { *m = Service{} }
 func (m *Service) String() string            { return proto.CompactTextString(m) }
 func (*Service) ProtoMessage()               {}
-func (*Service) Descriptor() ([]byte, []int) { return fileDescriptor16, []int{0} }
+func (*Service) Descriptor() ([]byte, []int) { return fileDescriptor15, []int{0} }
 
-func (m *Service) GetConfigVersion() *google_protobuf6.UInt32Value {
+func (m *Service) GetConfigVersion() *google_protobuf5.UInt32Value {
 	if m != nil {
 		return m.ConfigVersion
 	}
 	return nil
 }
 
-func (m *Service) GetApis() []*google_protobuf5.Api {
+func (m *Service) GetApis() []*google_protobuf4.Api {
 	if m != nil {
 		return m.Apis
 	}
 	return nil
 }
 
-func (m *Service) GetTypes() []*google_protobuf4.Type {
+func (m *Service) GetTypes() []*google_protobuf3.Type {
 	if m != nil {
 		return m.Types
 	}
 	return nil
 }
 
-func (m *Service) GetEnums() []*google_protobuf4.Enum {
+func (m *Service) GetEnums() []*google_protobuf3.Enum {
 	if m != nil {
 		return m.Enums
 	}
@@ -252,9 +252,9 @@ func init() {
 	proto.RegisterType((*Service)(nil), "google.api.Service")
 }
 
-func init() { proto.RegisterFile("google/api/service.proto", fileDescriptor16) }
+func init() { proto.RegisterFile("google/api/service.proto", fileDescriptor15) }
 
-var fileDescriptor16 = []byte{
+var fileDescriptor15 = []byte{
 	// 720 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x74, 0x94, 0x6f, 0x4f, 0x1b, 0x39,
 	0x10, 0xc6, 0x15, 0x48, 0xe0, 0x30, 0x7f, 0x8e, 0x98, 0x00, 0x26, 0x84, 0x53, 0xb8, 0x3b, 0x89,
