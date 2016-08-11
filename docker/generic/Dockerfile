@@ -15,9 +15,13 @@ RUN apt-get update && \
     apt-get -y -q upgrade && \
     apt-get install -y -q --no-install-recommends \
       apt-utils adduser cron curl logrotate python wget \
+      python-pip python-oauth2client python-mako python-urllib3 \
       libc6 libgcc1 libstdc++6 libuuid1 && \
     apt-get clean && rm /var/lib/apt/lists/*_* && \
     dpkg -i /endpoints-runtime.deb && rm /endpoints-runtime.deb
+
+# Upgrade oauth2client to a version that supports service accounts
+RUN pip install --upgrade oauth2client
 
 # Add the custom Endpoints nginx configuration templates.
 ADD nginx.conf.template /etc/nginx/nginx.conf.template

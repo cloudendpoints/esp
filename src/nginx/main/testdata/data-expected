@@ -13,6 +13,7 @@
 ./etc/nginx/koi-utf
 ./etc/nginx/koi-win
 ./etc/nginx/mime.types
+./etc/nginx/nginx-auto.conf.template
 ./etc/nginx/nginx.conf
 ./etc/nginx/scgi_params
 ./etc/nginx/trusted-ca-certificates.crt
@@ -24,6 +25,7 @@
 ./usr/sbin/fetch_service_config.sh
 ./usr/sbin/nginx
 ./usr/sbin/nginx-debug
+./usr/sbin/start_esp.py
 ./usr/share/
 ./usr/share/doc/
 ./usr/share/doc/nginx-google/

@@ -183,6 +183,7 @@ pkg_tar(
         ":fetch_service_config.sh",
         ":nginx",
         ":nginx-debug",
+        ":start_esp.py",
     ],
     mode = "0755",
     package_dir = "/usr/sbin",
@@ -219,6 +220,16 @@ pkg_tar(
 )
 
 pkg_tar(
+    name = "nginx-conf-template",
+    files = [
+        "//src/nginx/main:nginx-auto.conf.template"
+    ],
+    mode = "0644",
+    package_dir = "/etc/nginx",
+    strip_prefix = ".",
+)
+
+pkg_tar(
     name = "trusted-ca-certificates",
     files = [
         "//src/nginx/main:trusted-ca-certificates.crt",
@@ -237,6 +248,7 @@ pkg_tar(
         # words, /etc/nginx/nginx.conf from ":nginx-conf-override" will
         # override that from "@nginx_pkgoss//:debian_overlay".
         ":nginx-conf-override",
+        ":nginx-conf-template",
         ":nginx-initd-override",
         "@nginx_pkgoss//:debian_overlay",
         ":esp-bin",
