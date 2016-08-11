@@ -52,3 +52,16 @@ cc_test(
         "//third_party:cloud_trace",
     ],
 )
+
+cc_test(
+    name = "sampler_test",
+    size = "small",
+    srcs = [
+        "sampler_test.cc",
+    ],
+    linkstatic = 1,
+    deps = [
+        ":cloud_trace",
+        "//external:googletest_main",
+    ],
+)

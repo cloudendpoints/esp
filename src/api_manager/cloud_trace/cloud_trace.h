@@ -40,17 +40,37 @@ namespace google {
 namespace api_manager {
 namespace cloud_trace {
 
+// A helper class to determine if trace should be enabled for a request.
+// A Sampler instance is put into the Aggregator class.
+// Trace is triggered if the time interval between the request time and the
+// previous trace enabled request is bigger than a threshold.
+// The threshold is calculated from the qps.
+class Sampler {
+ public:
+  Sampler(double qps);
+
+  // Returns whether trace should be turned on for this request.
+  bool On();
+
+  // Refresh the previous timestamp to the current time.
+  void Refresh();
+
+ private:
+  bool is_disabled_;
+  std::chrono::time_point<std::chrono::system_clock> previous_;
+  double duration_;
+};
+
+// TODO: The Aggregator class is not thread safe.
 // TODO: simplify class naming in this file.
 // Stores cloud trace configurations shared within the job. There should be
 // only one such instance. The instance is put in service_context.
 class Aggregator final {
-  friend class CloudTraceTest;
-
  public:
   Aggregator(auth::ServiceAccountToken *sa_token,
              const std::string &cloud_trace_address,
              int aggregate_time_millisec, int cache_max_size,
-             ApiManagerEnvInterface *env);
+             double minimum_qps, ApiManagerEnvInterface *env);
 
   ~Aggregator();
 
@@ -67,6 +87,9 @@ class Aggregator final {
 
   // Sets the producer project id
   void SetProjectId(const std::string &project_id) { project_id_ = project_id; }
+
+  // Get the sampler.
+  Sampler &sampler() { return sampler_; }
 
  private:
   // ServiceAccountToken object to get auth tokens for Cloud Trace API.
@@ -92,6 +115,9 @@ class Aggregator final {
 
   // Timer to trigger flush trace.
   std::unique_ptr<google::api_manager::PeriodicTimer> timer_;
+
+  // Sampler object to help determine if trace should be enabled for a request.
+  Sampler sampler_;
 };
 
 // Stores traces and metadata for one request. The instance of this class is
@@ -145,8 +171,6 @@ class CloudTrace final {
 //                                                         "MyFunc"));
 //
 class CloudTraceSpan {
-  friend class TraceStream;
-
  public:
   // Initializes a trace span whose parent is the api manager root.
   CloudTraceSpan(CloudTrace *cloud_trace, const std::string &span_name);
@@ -161,6 +185,7 @@ class CloudTraceSpan {
   }
 
  private:
+  friend class TraceStream;
   void Write(const std::string &msg);
   void InitWithParentSpanId(const std::string &span_name,
                             protobuf::uint64 parent_span_id);
@@ -173,7 +198,8 @@ class CloudTraceSpan {
 // be produced for the request. If so, creates an initialized CloudTrace object.
 // Otherwise return nullptr.
 // For trace_context, pass the value of "X-Cloud-Trace-Context" HTTP header.
-CloudTrace *CreateCloudTrace(const std::string &trace_context);
+CloudTrace *CreateCloudTrace(const std::string &trace_context,
+                             Sampler *sampler = nullptr);
 
 // Creates trace span if trace is enabled.
 // Returns nullptr when cloud_trace is nullptr.

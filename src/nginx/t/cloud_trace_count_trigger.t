@@ -66,6 +66,9 @@ cloud_tracing_config {
     time_millisec: 1000000
     cache_max_size: 1
   }
+  samling_config {
+    minimum_qps: 0
+  }
 }
 EOF
 

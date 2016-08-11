@@ -44,6 +44,9 @@ const int kDefaultAggregateTimeMillisec = 1000;
 // Default maximum amount of traces to aggregate. The amount should ensure
 // the http request payload with the aggregated traces not reaching MB in size.
 const int kDefaultTraceCacheMaxSize = 100;
+
+// Default trace sample rate, in QPS.
+const double kDefaultTraceSampleQps = 0.1;
 }
 
 ServiceContext::ServiceContext(std::unique_ptr<ApiManagerEnvInterface> env,
@@ -99,6 +102,7 @@ ServiceContext::CreateCloudTraceAggregator() {
   std::string url = kCloudTraceUrl;
   int aggregate_time_millisec = kDefaultAggregateTimeMillisec;
   int cache_max_size = kDefaultTraceCacheMaxSize;
+  double minimum_qps = kDefaultTraceSampleQps;
   if (config_->server_config() &&
       config_->server_config()->has_cloud_tracing_config()) {
     // If url_override is set in server config, use it to query Cloud Trace.
@@ -114,11 +118,16 @@ ServiceContext::CreateCloudTraceAggregator() {
           tracing_config.aggregation_config().time_millisec();
       cache_max_size = tracing_config.aggregation_config().cache_max_size();
     }
+
+    // If sampling config is set, take the values from it.
+    if (tracing_config.has_samling_config()) {
+      minimum_qps = tracing_config.samling_config().minimum_qps();
+    }
   }
 
   return std::unique_ptr<cloud_trace::Aggregator>(new cloud_trace::Aggregator(
       &service_account_token_, url, aggregate_time_millisec, cache_max_size,
-      env_.get()));
+      minimum_qps, env_.get()));
 }
 
 }  // namespace context

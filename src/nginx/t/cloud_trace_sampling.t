@@ -35,6 +35,7 @@ use ApiManager;   # Must be first (sets up import path to the Nginx test module)
 use JSON::PP;
 use Test::Nginx;  # Imports Nginx's test module
 use Test::More;   # And the test framework
+use Time::HiRes;
 use HttpServer;
 use ServiceControl;
 
@@ -46,7 +47,7 @@ my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $CloudTracePort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(5);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(15);
 
 # Save service name in the service configuration protocol buffer file.
 my $config = ApiManager::get_bookstore_service_config_allow_unregistered .
@@ -58,16 +59,18 @@ control {
 EOF
 $t->write_file('service.pb.txt', $config);
 
-# Set cache size to 0 so that each trace request should trigger flush.
+# Set a very large timer timeout to to ensure this test won't be flaky.
+# Set the cache_max_size to 0 to disable trace request aggregation.
+# Uses the default sampling qps.
 $t->write_file('server_config.pb.txt', <<"EOF");
 cloud_tracing_config {
   url_override: "http://127.0.0.1:${CloudTracePort}"
   aggregation_config {
-    time_millisec: 300
+    time_millisec: 100000
     cache_max_size: 0
   }
   samling_config {
-    minimum_qps: 0
+    minimum_qps: 1
   }
 }
 EOF
@@ -96,11 +99,12 @@ http {
 }
 EOF
 
-my $report_done = 'report_done';
+my $trace_done = 'trace_done';
+my $bookstore_done = 'bookstore_done';
 
-$t->run_daemon(\&bookstore, $t, $BackendPort, 'bookstore.log');
-$t->run_daemon(\&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log', $report_done);
-$t->run_daemon(\&cloudtrace, $t, $CloudTracePort, 'cloudtrace.log');
+$t->run_daemon(\&bookstore, $t, $BackendPort, 'bookstore.log', $bookstore_done);
+$t->run_daemon(\&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log');
+$t->run_daemon(\&cloudtrace, $t, $CloudTracePort, 'cloudtrace.log', $trace_done);
 
 is($t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'Bookstore socket ready.');
 is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control socket ready.');
@@ -110,31 +114,49 @@ $t->run();
 
 ################################################################################
 
-# These requests should not trigger trace.
-ApiManager::http($NginxPort,<<'EOF');
+# The first request of these two will have trace sampled, the following one won't.
+for (my $i = 0; $i < 2; $i++) {
+  ApiManager::http( $NginxPort, <<"EOF" );
+GET /shelves?key=this-is-an-api-key HTTP/1.0
+Host: localhost
+
+EOF
+}
+# Sleep for 1.1 seconds, then make a request. Trace should be enabled for this request.
+Time::HiRes::sleep(1.1);
+ApiManager::http( $NginxPort, <<"EOF" );
 GET /shelves?key=this-is-an-api-key HTTP/1.0
 Host: localhost
 
 EOF
 
-ApiManager::http($NginxPort,<<'EOF');
-GET /shelves?key=this-is-an-api-key HTTP/1.0
-Host: localhost
-X-Cloud-Trace-Context: 370835b626fd525dfd1b46d34755140d;o=0
+is($t->waitforfile("$t->{_testdir}/${trace_done}"), 1, 'Trace body file ready.');
+is($t->waitforfile("$t->{_testdir}/${bookstore_done}"), 1, 'Bookstore done file ready.');
 
-EOF
-
-is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');
+my @bookstore_requests = ApiManager::read_http_stream($t, 'bookstore.log');
+is(scalar @bookstore_requests, 3, 'Bookstore received 3 requests.');
 
 my @requests = ApiManager::read_http_stream($t, 'cloudtrace.log');
 
-# Verify there is no trace request sent.
-is(scalar @requests, 0, 'Cloud Trace received no request.');
+# Verify there are two trace requests received.
+is(scalar @requests, 2, 'Cloud Trace received 2 requests.');
+for (my $i = 0; $i < 2; $i++) {
+  my $trace_request = shift @requests;
+  is( $trace_request->{verb}, 'PATCH', 'Cloud Trace: request is PATCH.' );
+  is( $trace_request->{uri}, '/v1/projects/api-manager-project/traces',
+      'Trace request was called with correct project id in url.' );
+  my $json_obj = decode_json( $trace_request->{body} );
+  my $traces = $json_obj->{traces};
+  is( scalar @$traces, 1, 'Trace request contains 1 trace.' );
+  like( $json_obj->{traces}->[0]->{traceId}, qr/[0-9a-fA-F]{32}/,
+      'Trace ID is valid.' );
+}
+
 
 ################################################################################
 
 sub servicecontrol {
-  my ($t, $port, $file, $done) = @_;
+  my ($t, $port, $file) = @_;
   my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
@@ -155,7 +177,6 @@ HTTP/1.1 200 OK
 Connection: close
 
 EOF
-    $t->write_file($done, ':report done');
   });
 
   $server->run();
@@ -164,9 +185,10 @@ EOF
 ################################################################################
 
 sub bookstore {
-  my ($t, $port, $file) = @_;
+  my ($t, $port, $file, $done) = @_;
   my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
     or die "Can't create test server socket: $!\n";
+  my $request_count = 0;
   local $SIG{PIPE} = 'IGNORE';
 
   $server->on_sub('GET', '/shelves', sub {
@@ -177,6 +199,10 @@ Connection: close
 
 Shelves data.
 EOF
+    $request_count++;
+    if ($request_count == 3) {
+      $t->write_file( $done, ':bookstore done' );
+    }
   });
 
   $server->run();
@@ -185,9 +211,10 @@ EOF
 ################################################################################
 
 sub cloudtrace {
-  my ($t, $port, $file) = @_;
+  my ($t, $port, $file, $done) = @_;
   my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
       or die "Can't create test server socket: $!\n";
+  my $request_count = 0;
   local $SIG{PIPE} = 'IGNORE';
 
   $server->on_sub('PATCH', '/v1/projects/api-manager-project/traces', sub {
@@ -198,6 +225,10 @@ Connection: close
 
 {}
 EOF
+    $request_count++;
+    if ($request_count == 2) {
+      $t->write_file( $done, ':trace done' );
+    }
   });
 
   $server->run();

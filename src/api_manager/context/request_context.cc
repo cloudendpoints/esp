@@ -108,7 +108,9 @@ RequestContext::RequestContext(std::shared_ptr<ServiceContext> service_context,
     std::string trace_context_header;
     request_->FindHeader(kCloudTraceContextHeader, &trace_context_header);
 
-    cloud_trace_.reset(cloud_trace::CreateCloudTrace(trace_context_header));
+    cloud_trace_.reset(cloud_trace::CreateCloudTrace(
+        trace_context_header,
+        &service_context_->cloud_trace_aggregator()->sampler()));
   }
 }
 

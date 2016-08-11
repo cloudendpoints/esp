@@ -55,12 +55,21 @@ const char kApiManagerRoot[] = "API_MANAGER_ROOT";
 const char kCloudTraceAgentKey[] = "trace.cloud.google.com/agent";
 // Cloud Trace agent label value
 const char kServiceAgent[] = "esp/" API_MANAGER_VERSION_STRING;
+// Default trace options
+const char kDefaultTraceOptions[] = "o=1";
 
 // Generate a random unsigned 64-bit integer.
 uint64_t RandomUInt64();
 
+// Get a random string of 128 bit hex number
+std::string RandomUInt128HexString();
+
 // Get the timestamp for now.
 void GetNow(Timestamp *ts);
+
+// Get a new Trace object stored in the trace parameter. The new object has
+// the given trace id and contains a root span with default settings.
+void GetNewTrace(std::string trace_id_str, Trace **trace);
 
 // Parse the trace context header.
 // Assigns Trace object to the trace pointer if context is parsed correctly and
@@ -78,16 +87,47 @@ void GetTraceFromContextHeader(const std::string &trace_context, Trace **trace,
                                std::string *options);
 }  // namespace
 
+Sampler::Sampler(double qps) {
+  if (qps == 0.0) {
+    is_disabled_ = true;
+  } else {
+    duration_ = 1.0 / qps;
+    is_disabled_ = false;
+  }
+}
+
+bool Sampler::On() {
+  if (is_disabled_) {
+    return false;
+  }
+  auto now = std::chrono::system_clock::now();
+  std::chrono::duration<double> diff = now - previous_;
+  if (diff.count() > duration_) {
+    previous_ = now;
+    return true;
+  } else {
+    return false;
+  }
+};
+
+void Sampler::Refresh() {
+  if (is_disabled_) {
+    return;
+  }
+  previous_ = std::chrono::system_clock::now();
+}
+
 Aggregator::Aggregator(auth::ServiceAccountToken *sa_token,
                        const std::string &cloud_trace_address,
                        int aggregate_time_millisec, int cache_max_size,
-                       ApiManagerEnvInterface *env)
+                       double minimum_qps, ApiManagerEnvInterface *env)
     : sa_token_(sa_token),
       cloud_trace_address_(cloud_trace_address),
       aggregate_time_millisec_(aggregate_time_millisec),
       cache_max_size_(cache_max_size),
       traces_(new Traces),
-      env_(env) {
+      env_(env),
+      sampler_(minimum_qps) {
   sa_token_->SetAudience(auth::ServiceAccountToken::JWT_TOKEN_FOR_CLOUD_TRACING,
                          cloud_trace_address_ + kCloudTraceService);
 }
@@ -220,12 +260,22 @@ void CloudTraceSpan::Write(const std::string &msg) {
   messages.push_back(msg);
 }
 
-CloudTrace *CreateCloudTrace(const std::string &trace_context) {
+CloudTrace *CreateCloudTrace(const std::string &trace_context,
+                             Sampler *sampler) {
   Trace *trace = nullptr;
   std::string options;
   GetTraceFromContextHeader(trace_context, &trace, &options);
   if (trace) {
+    // When trace is triggered by the context header, refresh the previous
+    // timestamp in sampler.
+    if (sampler) {
+      sampler->Refresh();
+    }
     return new CloudTrace(trace, options);
+  } else if (sampler && sampler->On()) {
+    // Trace is turned on by sampler.
+    GetNewTrace(RandomUInt128HexString(), &trace);
+    return new CloudTrace(trace, kDefaultTraceOptions);
   } else {
     return nullptr;
   }
@@ -261,6 +311,17 @@ uint64_t RandomUInt64() {
   return distribution(generator);
 }
 
+std::string RandomUInt128HexString() {
+  std::stringstream stream;
+
+  stream << std::setfill('0') << std::setw(sizeof(uint64_t) * 2) << std::hex
+         << RandomUInt64();
+  stream << std::setfill('0') << std::setw(sizeof(uint64_t) * 2) << std::hex
+         << RandomUInt64();
+
+  return stream.str();
+}
+
 void GetNow(Timestamp *ts) {
   long long nanos =
       std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -268,6 +329,18 @@ void GetNow(Timestamp *ts) {
           .count();
   ts->set_seconds(nanos / 1000000000);
   ts->set_nanos(nanos % 1000000000);
+}
+
+void GetNewTrace(std::string trace_id_str, Trace **trace) {
+  *trace = new Trace;
+  (*trace)->set_trace_id(trace_id_str);
+  TraceSpan *root_span = (*trace)->add_spans();
+  root_span->set_kind(TraceSpan_SpanKind::TraceSpan_SpanKind_RPC_SERVER);
+  root_span->set_span_id(RandomUInt64());
+  root_span->set_name(kApiManagerRoot);
+  // Agent label is defined as "<agent>/<version>".
+  root_span->mutable_labels()->insert({kCloudTraceAgentKey, kServiceAgent});
+  GetNow(root_span->mutable_start_time());
 }
 
 void GetTraceFromContextHeader(const std::string &trace_context, Trace **trace,
@@ -337,15 +410,8 @@ void GetTraceFromContextHeader(const std::string &trace_context, Trace **trace,
   }
 
   // At this point, trace is enabled and trace id is successfully parsed.
-  *trace = new Trace;
-  (*trace)->set_trace_id(trace_id_str);
-  TraceSpan *root_span = (*trace)->add_spans();
-  root_span->set_kind(TraceSpan_SpanKind::TraceSpan_SpanKind_RPC_SERVER);
-  root_span->set_span_id(RandomUInt64());
-  root_span->set_name(kApiManagerRoot);
-  // Agent label is defined as "<agent>/<version>".
-  root_span->mutable_labels()->insert({kCloudTraceAgentKey, kServiceAgent});
-  GetNow(root_span->mutable_start_time());
+  GetNewTrace(trace_id_str, trace);
+  TraceSpan *root_span = (*trace)->mutable_spans(0);
   // Set parent of root span to the given one if provided.
   if (span_id != 0) {
     root_span->set_parent_span_id(span_id);

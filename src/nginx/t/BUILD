@@ -222,6 +222,7 @@ nginx_suite(
         "cloud_trace_count_trigger.t",
         "cloud_trace_disabled.t",
         "cloud_trace_force_disabled.t",
+        "cloud_trace_sampling.t",
         "endpoints_off.t",
         "no_check.t",
         "no_http.t",

@@ -119,6 +119,9 @@ message CloudTracingConfig {
 
   // Config for trace aggregation.
   CloudTracingAggregationConfig aggregation_config = 3;
+
+  // Config for trace sampling.
+  CloudTracingSamplingConfig samling_config = 4;
 }
 
 message CloudTracingAggregationConfig {
@@ -127,6 +130,12 @@ message CloudTracingAggregationConfig {
 
   // The maximum number of traces that can be cached.
   int32 cache_max_size = 2;
+}
+
+message CloudTracingSamplingConfig {
+  // ApiManager enables cloud trace with this minimum rate even all their
+  // incoming requests don't have cloud trace enabled. Default value is 0.1.
+  double minimum_qps = 1;
 }
 
 // Server config for API Authentication
