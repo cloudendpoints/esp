@@ -1,0 +1,657 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "A simple Google Cloud Endpoints Bookstore API example.",
+    "title": "Bookstore",
+    "version": "1.0.0"
+  },
+  "host": "{{.Name}}",
+  "basePath": "/",
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "schemes": [
+    "https"
+  ],
+  "paths": {
+    "/echo": {
+      "delete": {
+        "description": "Echo Delete Message",
+        "operationId": "echoDeleteMessage",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "204": {
+            "description": "delete message response"
+          }
+        }
+      },
+      "get": {
+        "description": "Echo Get Message",
+        "operationId": "echoGetMessage",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "get message response"
+          }
+        }
+      },
+      "patch": {
+        "description": "Echo Patch Message",
+        "operationId": "echoPatchMessage",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "patch message response"
+          }
+        }
+      },
+      "post": {
+        "description": "Echo Post Message",
+        "operationId": "echoPostMessage",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "post message response"
+          }
+        }
+      },
+      "put": {
+        "description": "Echo Put Message",
+        "operationId": "echoPutMessage",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "put message response"
+          }
+        }
+      }
+    },
+    "/echo/auth": {
+      "get": {
+        "description": "Echo Get Message Authed",
+        "operationId": "echoGetMessageAuthed",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "get message response"
+          }
+        },
+        "x-security": [
+          {
+            "test_jwk":  {
+              "audiences":[]
+            }
+          },
+          {
+            "test_x509": {
+              "audiences":[]
+            }
+          },
+          {
+            "test_symmetric": {
+              "audiences": [
+                "test.echo.audience"
+              ]
+            }
+          }
+        ]
+      },
+      "post": {
+        "description": "Echo Post Message Authed",
+        "operationId": "echoPostMessageAuthed",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "post message response"
+          }
+        },
+        "x-security": [
+          {
+            "test_jwk":  {
+              "audiences":[]
+            }
+          },
+          {
+            "test_x509": {
+              "audiences":[]
+            }
+          },
+          {
+            "test_symmetric": {
+              "audiences": [
+                "test.echo.audience"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "/shelves": {
+      "get": {
+        "description": "Returns all shelves in the bookstore.",
+        "operationId": "listShelves",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "List of shelves in the bookstore.",
+            "schema": {
+              "$ref": "#/definitions/listShelvesResponse"
+            }
+          }
+        },
+        "security": []
+      },
+      "post": {
+        "description": "Creates a new shelf in the bookstore.",
+        "operationId": "createShelf",
+        "parameters": [
+          {
+            "description": "A shelf resource to create.",
+            "in": "body",
+            "name": "shelf",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/shelf"
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "A newly created shelf resource.",
+            "schema": {
+              "$ref": "#/definitions/shelf"
+            }
+          }
+        },
+        "x-security": [
+          {
+            "google_id_token": {
+              "audiences": [
+                "848149964201.apps.googleusercontent.com",
+                "841077041629.apps.googleusercontent.com",
+                "488010225785-g97tab3t7jdj51fr8vbqvmh4bfic3g5k.apps.googleusercontent.com",
+                "488010225785-qvp4qbiak296t4afcej35dh4maoufmhc.apps.googleusercontent.com"
+              ]
+            }
+          },
+          {
+            "google_identity_toolkit": {
+              "audiences": []
+            }
+          },
+          {
+            "auth0_symmetric": {
+              "audiences": [
+                "sI0N2qOcfYoizZtstfnkEbsUWt6bluT0"
+              ]
+            }
+          },
+          {
+            "auth0_jwk": {
+              "audiences": [
+                "Uuts8fJWf1yieO9Ocv0Uk6LBqsUTePQq"
+              ]
+            }
+          },
+          {
+            "test_jwk": {
+              "audiences": []
+            }
+          },
+          {
+            "test_x509": {
+              "audiences": []
+            }
+          },
+          {
+            "test_symmetric": {
+              "audiences": [
+                "test.esp.audience"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "/shelves/{shelf}": {
+      "get": {
+        "description": "Get a single shelf resource with the given name.",
+        "operationId": "getShelf",
+        "parameters": [
+          {
+            "description": "Name of the shelf to get.",
+            "format": "int64",
+            "in": "path",
+            "name": "shelf",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "A shelf resource.",
+            "schema": {
+              "$ref": "#/definitions/shelf"
+            }
+          }
+        },
+        "security": [],
+        "x-security": [
+          {
+            "google_id_token": {
+              "audiences": [
+                "848149964201.apps.googleusercontent.com",
+                "841077041629.apps.googleusercontent.com",
+                "488010225785-g97tab3t7jdj51fr8vbqvmh4bfic3g5k.apps.googleusercontent.com",
+                "488010225785-qvp4qbiak296t4afcej35dh4maoufmhc.apps.googleusercontent.com"
+              ]
+            }
+          },
+          {
+            "google_identity_toolkit": {
+              "audiences": [
+                "esp-test-client"
+              ]
+            }
+          },
+          {
+            "auth0_symmetric": {
+              "audiences": [
+                "sI0N2qOcfYoizZtstfnkEbsUWt6bluT0"
+              ]
+            }
+          },
+          {
+            "auth0_jwk": {
+              "audiences": [
+                "Uuts8fJWf1yieO9Ocv0Uk6LBqsUTePQq"
+              ]
+            }
+          },
+          {
+            "test_jwk": {
+              "audiences": []
+            }
+          },
+          {
+            "test_x509": {
+              "audiences": []
+            }
+          },
+          {
+            "test_symmetric": {
+              "audiences": [
+                "test.esp.audience"
+              ]
+            }
+          }
+        ]
+      },
+      "delete": {
+        "description": "Deletes a single shelf with the given name.",
+        "operationId": "deleteShelf",
+        "parameters": [
+          {
+            "description": "Name of the shelf to delete.",
+            "format": "int64",
+            "in": "path",
+            "name": "shelf",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "An empty response body."
+          }
+        }
+      }
+    },
+    "/shelves/{shelf}/books": {
+      "get": {
+        "description": "Returns all books in a shelf with the given name.",
+        "operationId": "listBooks",
+        "parameters": [
+          {
+            "description": "Name of the shelf whose books should be returned.",
+            "format": "int64",
+            "in": "path",
+            "name": "shelf",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "List of books on the specified shelf.",
+            "schema": {
+              "$ref": "#/definitions/listBooksResponse"
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Creates a new book on the shelf.",
+        "operationId": "createBook",
+        "parameters": [
+          {
+            "description": "Name of the shelf where the book should be created.",
+            "format": "int64",
+            "in": "path",
+            "name": "shelf",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "description": "Book to create.",
+            "in": "body",
+            "name": "book",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/book"
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "A newly crated book resource.",
+            "schema": {
+              "$ref": "#/definitions/book"
+            }
+          }
+        }
+      }
+    },
+    "/shelves/{shelf}/books/{book}": {
+      "get": {
+        "description": "Get a single book with a given name from a shelf.",
+        "operationId": "getBook",
+        "parameters": [
+          {
+            "description": "Name of the shelf from which to get the book.",
+            "format": "int64",
+            "in": "path",
+            "name": "shelf",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "description": "Name of the book to get from the shelf.",
+            "format": "int64",
+            "in": "path",
+            "name": "book",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "A book resource.",
+            "schema": {
+              "$ref": "#/definitions/book"
+            }
+          }
+        },
+        "x-security": [
+          {
+            "google_id_token": {
+              "audiences": [
+                "848149964201.apps.googleusercontent.com",
+                "841077041629.apps.googleusercontent.com",
+                "488010225785-g97tab3t7jdj51fr8vbqvmh4bfic3g5k.apps.googleusercontent.com",
+                "488010225785-qvp4qbiak296t4afcej35dh4maoufmhc.apps.googleusercontent.com"
+              ]
+            }
+          },
+          {
+            "google_identity_toolkit": {
+              "audiences": [
+                "esp-test-client"
+              ]
+            }
+          },
+          {
+            "auth0_symmetric": {
+              "audiences": [
+                "sI0N2qOcfYoizZtstfnkEbsUWt6bluT0"
+              ]
+            }
+          },
+          {
+            "auth0_jwk": {
+              "audiences": [
+                "Uuts8fJWf1yieO9Ocv0Uk6LBqsUTePQq"
+              ]
+            }
+          },
+          {
+            "test_jwk": {
+              "audiences": []
+            }
+          },
+          {
+            "test_x509": {
+              "audiences": []
+            }
+          },
+          {
+            "test_symmetric": {
+              "audiences": [
+                "test.esp.audience"
+              ]
+            }
+          }
+        ]
+      },
+      "delete": {
+        "description": "Delete a single book with a given name from a shelf.",
+        "operationId": "deleteBook",
+        "parameters": [
+          {
+            "description": "Name of the shelf from which to delete the book.",
+            "format": "int64",
+            "in": "path",
+            "name": "shelf",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "description": "Name of the book to delete from the shelf.",
+            "format": "int64",
+            "in": "path",
+            "name": "book",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "An empty response body."
+          }
+        }
+      }
+    },
+    "/version": {
+      "get": {
+        "description": "Returns a version of the application.",
+        "operationId": "getVersion",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Version of the application.",
+            "schema": {
+              "$ref": "#/definitions/version"
+            }
+          }
+        },
+        "security": []
+      }
+    }
+  },
+  "definitions": {
+    "book": {
+      "properties": {
+        "author": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "author",
+        "title"
+      ]
+    },
+    "listBooksResponse": {
+      "properties": {
+        "books": {
+          "items": {
+            "$ref": "#/definitions/book"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "books"
+      ],
+      "type": "object"
+    },
+    "listShelvesResponse": {
+      "properties": {
+        "shelves": {
+          "items": {
+            "$ref": "#/definitions/shelf"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "shelf": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "theme": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "theme"
+      ]
+    },
+    "version": {
+      "properties": {
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "version"
+      ]
+    }
+  },
+  "security": [
+    {
+      "api_key": []
+    }
+  ],
+  "securityDefinitions": {
+    "api_key": {
+      "in": "query",
+      "name": "key",
+      "type": "apiKey"
+    },
+    "auth0_jwk": {
+      "authorizationUrl": "https://esp-jwk.auth0.com/authorize",
+      "flow": "implicit",
+      "type": "oauth2",
+      "x-issuer": "https://esp-jwk.auth0.com/",
+      "x-jwks_uri": "https://esp-jwk.auth0.com/.well-known/jwks.json"
+    },
+    "auth0_symmetric": {
+      "authorizationUrl": "https://esp-symmetric.auth0.com/authorize",
+      "flow": "implicit",
+      "type": "oauth2",
+      "x-issuer": "https://esp-symmetric.auth0.com/",
+      "x-jwks_uri": "http://169.254.169.254/computeMetadata/v1/project/attributes/auth-key-https_esp-symmetric_auth0_com"
+    },
+    "google_id_token": {
+      "authorizationUrl": "",
+      "flow": "implicit",
+      "type": "oauth2",
+      "x-issuer": "https://accounts.google.com",
+      "x-jwks_uri": "https://www.googleapis.com/oauth2/v1/certs"
+    },
+    "google_identity_toolkit": {
+      "authorizationUrl": "",
+      "flow": "implicit",
+      "type": "oauth2",
+      "x-issuer": "https://securetoken.google.com",
+      "x-jwks_uri": "https://www.googleapis.com/service_accounts/v1/metadata/x509/securetoken@system.gserviceaccount.com"
+    },
+    "test_jwk": {
+      "authorizationUrl": "",
+      "flow": "implicit",
+      "type": "oauth2",
+      "x-issuer": "loadtest@esp-test-client.iam.gserviceaccount.com",
+      "x-jwks_uri": "https://www.googleapis.com/service_accounts/v1/jwk/loadtest@esp-test-client.iam.gserviceaccount.com"
+    },
+    "test_symmetric": {
+      "authorizationUrl": "",
+      "flow": "implicit",
+      "type": "oauth2",
+      "x-issuer": "https://test.esp.client",
+      "x-jwks_uri": "http://169.254.169.254/computeMetadata/v1/project/attributes/auth-key-test_esp_client"
+    },
+    "test_x509": {
+      "authorizationUrl": "",
+      "flow": "implicit",
+      "type": "oauth2",
+      "x-issuer": "23028304136-fbju1j1cdfpc5q9q6s23gm56trn0c9ti@developer.gserviceaccount.com",
+      "x-jwks_uri": "https://www.googleapis.com/service_accounts/v1/metadata/x509/23028304136-fbju1j1cdfpc5q9q6s23gm56trn0c9ti@developer.gserviceaccount.com"
+    }
+  }
+}
