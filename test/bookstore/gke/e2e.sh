@@ -48,7 +48,7 @@ function service_ready() {
   local namespace="${1}"
   local service="${2}"
   local endpoint=''
-  retry service_endpoint "${namespace}" "${service}"
+  retry -n 20 service_endpoint "${namespace}" "${service}"
   [[ "${?}" -eq 0 ]] || error_exit "Service ${service} is not ready"
 }
 
