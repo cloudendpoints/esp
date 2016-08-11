@@ -178,15 +178,9 @@ function check_deployed_version() {
   fi
 }
 
-if [[ "${ENABLE_FLEX}" == "true" ]]; then
-  # Flex apps take up to 30 mins to come up
-  retry -n 30 -s 60 -t 60 \
-      check_deployed_version \
-    || error_exit "Timeout: could not match the version from ${HOST} with ${APP_VERSION}"
-else
-    check_deployed_version \
-      || error_exit "Could not get the version from ${HOST}"
-fi
+# appengine deploy may take a while to come up
+retry -n 30 -s 60 -t 60 check_deployed_version \
+  || error_exit "Timeout: could not match the version from ${HOST} with ${APP_VERSION}"
 
 POST_FILE="${ROOT}/test/data/35k.json"
 
