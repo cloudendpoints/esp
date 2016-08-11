@@ -13,6 +13,7 @@ http {
   include /etc/nginx/mime.types;
   server_tokens off;
   client_max_body_size 32m;
+  client_body_buffer_size 128k;
 
   upstream app_server {
     server ${SERVER_ADDRESS};
