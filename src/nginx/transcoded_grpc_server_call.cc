@@ -53,7 +53,7 @@ NgxEspTranscodedGrpcServerCall::NgxEspTranscodedGrpcServerCall(
     std::unique_ptr<NgxRequestZeroCopyInputStream> nginx_request_stream,
     std::unique_ptr<grpc::GrpcZeroCopyInputStream> grpc_response_stream,
     std::unique_ptr<transcoding::Transcoder> transcoder)
-    : NgxEspGrpcServerCall(r),
+    : NgxEspGrpcServerCall(r, true),
       nginx_request_stream_(std::move(nginx_request_stream)),
       grpc_response_stream_(std::move(grpc_response_stream)),
       transcoder_(std::move(transcoder)) {}
@@ -113,6 +113,15 @@ void NgxEspTranscodedGrpcServerCall::Finish(
   if (!status.ok()) {
     HandleError(status);
     return;
+  }
+
+  // Make sure the headers have been sent
+  if (!r_->header_sent) {
+    auto status = WriteDownstreamHeaders();
+    if (!status.ok()) {
+      HandleError(status);
+      return;
+    }
   }
 
   // Finish the Transcoder input response stream and read the translated

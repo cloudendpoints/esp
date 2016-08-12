@@ -273,6 +273,7 @@ nginx_suite(
     nginx = "//src/nginx/main:nginx-esp",
     tests = [
         "transcoding.t",
+        "transcoding_errors.t",
         "transcoding_streaming.t",
     ],
     deps = [

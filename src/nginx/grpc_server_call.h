@@ -49,10 +49,19 @@ class NgxEspGrpcServerCall : public grpc::ServerCall {
  public:
   // Construct an NgxEspGrpcServerCall.
   //
+  // delay_downstream_headers - if true, sending of the headers to the client
+  //                            will be delayed until the first response message
+  //                            from the backend arrives or until the end of the
+  //                            request.
+  //                            Note: this is needed for transcoding case, to
+  //                            give the backend a chance to send back an error,
+  //                            s.t. ESP can send the error via the HTTP status
+  //                            code.
+  //
   // Note: as part of the construction sequence, a cleanup handler
   // will be registered on the request, so that if the request is
   // finalized/terminated the NgxEspGrpcServerCall will stop using it.
-  NgxEspGrpcServerCall(ngx_http_request_t* r);
+  NgxEspGrpcServerCall(ngx_http_request_t* r, bool delay_downstream_headers);
   virtual ~NgxEspGrpcServerCall();
 
   // ServerCall methods.
@@ -86,6 +95,10 @@ class NgxEspGrpcServerCall : public grpc::ServerCall {
   // body.
   utils::Status ProcessPrereadRequestBody();
 
+  // Sends the headers to the client. Returns Status::OK if successful,
+  // otherwise returns the error status.
+  utils::Status WriteDownstreamHeaders();
+
   // The request
   ngx_http_request_t* r_;
 
@@ -115,6 +128,9 @@ class NgxEspGrpcServerCall : public grpc::ServerCall {
   std::function<void(bool, utils::Status)> read_continuation_;
   ::grpc::ByteBuffer* read_msg_;
   ::std::vector<gpr_slice> downstream_slices_;
+
+  // If true, sending of the headers will be delayed.
+  bool delay_downstream_headers_;
 };
 
 }  // namespace nginx

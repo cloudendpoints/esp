@@ -80,7 +80,7 @@ struct GrpcDeleter {
 
 NgxEspGrpcPassThroughServerCall::NgxEspGrpcPassThroughServerCall(
     ngx_http_request_t *r)
-    : NgxEspGrpcServerCall(r) {}
+    : NgxEspGrpcServerCall(r, false) {}
 
 utils::Status NgxEspGrpcPassThroughServerCall::Create(
     ngx_http_request_t *r,
@@ -109,17 +109,13 @@ void NgxEspGrpcPassThroughServerCall::Finish(
     return;
   }
 
+  // Make sure the headers have been sent
   if (!r_->header_sent) {
-    SendInitialMetadata([&](bool ok) {
-      if (ok) {
-        ngx_http_finalize_request(r_,
-                                  GrpcFinish(r_, status, response_trailers));
-      } else {
-        // TODO: more details of the error
-        ngx_http_finalize_request(r_, NGX_ERROR);
-      }
-    });
-    return;
+    auto status = WriteDownstreamHeaders();
+    if (!status.ok()) {
+      ngx_http_finalize_request(r_, GrpcFinish(r_, status, response_trailers));
+      return;
+    }
   }
 
   ngx_http_finalize_request(r_, GrpcFinish(r_, status, response_trailers));

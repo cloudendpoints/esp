@@ -57,20 +57,20 @@ class NgxEspGrpcPassThroughServerCall : public NgxEspGrpcServerCall {
       ngx_http_request_t* r,
       std::shared_ptr<NgxEspGrpcPassThroughServerCall>* out);
 
+ private:
   // ServerCall::Finish() implementation
   virtual void Finish(
       const utils::Status& status,
       std::multimap<std::string, std::string> response_trailers);
 
- private:
   // NgxEspGrpcServerCall implementation
-
-  // Constructor
-  NgxEspGrpcPassThroughServerCall(ngx_http_request_t* r);
   virtual bool ConvertRequestBody(std::vector<gpr_slice>* out);
   virtual bool ConvertResponseMessage(const ::grpc::ByteBuffer& msg,
                                       ngx_chain_t* out);
   virtual const ngx_str_t& response_content_type() const;
+
+  // Constructor
+  NgxEspGrpcPassThroughServerCall(ngx_http_request_t* r);
 };
 
 }  // namespace nginx

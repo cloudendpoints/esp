@@ -75,8 +75,13 @@ void TrimFront(std::vector<gpr_slice> *slices, size_t count) {
 
 }  // namespace
 
-NgxEspGrpcServerCall::NgxEspGrpcServerCall(ngx_http_request_t *r)
-    : r_(r), add_header_failed_(false), reading_(false), read_msg_(nullptr) {
+NgxEspGrpcServerCall::NgxEspGrpcServerCall(ngx_http_request_t *r,
+                                           bool delay_downstream_headers)
+    : r_(r),
+      add_header_failed_(false),
+      reading_(false),
+      read_msg_(nullptr),
+      delay_downstream_headers_(delay_downstream_headers) {
   // Add the cleanup handler.  This unlinks the NgxEspGrpcServerCall
   // from the request when the underlying nginx request is terminated,
   // since the NgxEspGrpcServerCall may outlive the request.
@@ -174,19 +179,35 @@ void NgxEspGrpcServerCall::SendInitialMetadata(
     return;
   }
 
+  if (delay_downstream_headers_) {
+    // Do nothing for now.  If delay_downstream_headers_ is true, we delay
+    // sending the headers to the client until the first response message or the
+    // end of the request.
+    //
+    // This helps to propagate the errors reported by the backend using the HTTP
+    // status code in the transcoding case. If the backend returns an error
+    // status before the first message, we will be able to send it to the client
+    // as an HTTP status code.
+    continuation(true);
+    return;
+  }
+
+  auto status = WriteDownstreamHeaders();
+  continuation(status.ok());
+}
+
+utils::Status NgxEspGrpcServerCall::WriteDownstreamHeaders() {
   r_->headers_out.status = NGX_HTTP_OK;
   r_->headers_out.content_type = response_content_type();
   ngx_int_t rc = ngx_http_send_header(r_);
   ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r_->connection->log, 0,
-                 "NgxEspGrpcServerCall::SendInitialMetadata: "
+                 "NgxEspGrpcServerCall::WriteDownstreamHeaders: "
                  "ngx_http_send_header: %i",
                  rc);
-
   if (rc == NGX_ERROR || rc > NGX_OK) {
-    continuation(false);
-  } else {
-    continuation(true);
+    return utils::Status(rc, std::string());
   }
+  return utils::Status::OK;
 }
 
 void NgxEspGrpcServerCall::OnDownstreamWriteable(ngx_http_request_t *r) {
@@ -507,6 +528,17 @@ void NgxEspGrpcServerCall::Write(const ::grpc::ByteBuffer &msg,
   if (!cln_.data) {
     continuation(false);
     return;
+  }
+
+  // Make sure the headers have been sent
+  if (!r_->header_sent) {
+    auto status = WriteDownstreamHeaders();
+    if (!status.ok()) {
+      ngx_log_error(NGX_LOG_DEBUG, r_->connection->log, 0,
+                    "Faield to send the headers");
+      continuation(false);
+      return;
+    }
   }
 
   ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r_->connection->log, 0,

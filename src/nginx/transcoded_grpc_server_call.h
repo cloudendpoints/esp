@@ -61,12 +61,12 @@ class NgxEspTranscodedGrpcServerCall : public NgxEspGrpcServerCall {
       ngx_http_request_t* r,
       std::shared_ptr<NgxEspTranscodedGrpcServerCall>* out);
 
+ private:
   // ServerCall::Finish() implementation
   virtual void Finish(
       const utils::Status& status,
       std::multimap<std::string, std::string> response_trailers);
 
- private:
   // NgxEspGrpcServerCall implementation
   virtual bool ConvertRequestBody(std::vector<gpr_slice>* out);
   virtual bool ConvertResponseMessage(const ::grpc::ByteBuffer& msg,
