@@ -51,8 +51,8 @@ cc_library(
         ],
     }),
     deps = [
-        "//external:protobuf",
         "//external:cc_wkt_protos",
+        "//external:protobuf",
         "//include:headers_only",
         "//third_party/config:servicecontrol",  # for google/rpc/status.proto
     ],

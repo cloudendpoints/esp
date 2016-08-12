@@ -31,12 +31,12 @@ cc_proto_library(
     srcs = [
         "proto/status.proto",
     ],
-    deps = [
-        "//src/api_manager:status_proto",
-        "//external:cc_wkt_protos",
-    ],
-    protoc = "//external:protoc",
     default_runtime = "//external:protobuf",
+    protoc = "//external:protoc",
+    deps = [
+        "//external:cc_wkt_protos",
+        "//src/api_manager:status_proto",
+    ],
 )
 
 cc_library(

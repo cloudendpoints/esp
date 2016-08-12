@@ -219,11 +219,11 @@ cc_proto_library(
     name = "bookstore_test_proto",
     testonly = 1,
     srcs = ["bookstore.proto"],
+    default_runtime = "//external:protobuf",
+    protoc = "//external:protoc",
     deps = [
         "//external:cc_wkt_protos",
     ],
-    protoc = "//external:protoc",
-    default_runtime = "//external:protobuf",
 )
 
 cc_library(

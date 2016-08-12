@@ -24,13 +24,16 @@
 #
 ################################################################################
 #
-load("@io_bazel_rules_go//go:def.bzl", "go_prefix")
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
-load("@io_bazel_rules_go//go:def.bzl", "go_binary")
-load("@io_bazel_rules_go//go:def.bzl", "go_test")
+load(
+    "@io_bazel_rules_go//go:def.bzl",
+    "go_prefix",
+    "go_library",
+    "go_binary",
+    "go_test",
+)
 
 # Define an import prefix
-go_prefix("github.com/cloudendpoints/esp")
+go_prefix("github.com/cloudendpoints/esp/test")
 
 # NOTE: Below we use a special "vendor/" keyword in target names to specify
 # custom import paths for go libraries. Otherwise, go_library() rule
@@ -48,11 +51,11 @@ go_library(
     srcs = glob(
         ["google/protobuf/*.pb.go"],
     ),
+    go_prefix = "//test/src:go_prefix",
     deps = [
         "@github_com_golang_protobuf//:proto",
         "@github_com_golang_protobuf//:ptypes/any",
     ],
-    go_prefix = "//test/src:go_prefix",
 )
 
 go_library(
@@ -60,14 +63,14 @@ go_library(
     srcs = glob(
         ["google/api/*.pb.go"],
     ),
+    go_prefix = "//test/src:go_prefix",
     deps = [
+        ":vendor/google/protobuf",
         "@github_com_golang_protobuf//:proto",
         "@github_com_golang_protobuf//:ptypes/any",
         "@github_com_golang_protobuf//:ptypes/timestamp",
         "@github_com_golang_protobuf//:ptypes/wrappers",
-        ":vendor/google/protobuf",
     ],
-    go_prefix = "//test/src:go_prefix",
 )
 
 go_library(
@@ -75,13 +78,13 @@ go_library(
     srcs = glob(
         ["google/rpc/*.pb.go"],
     ),
+    go_prefix = "//test/src:go_prefix",
     deps = [
+        ":vendor/google/protobuf",
         "@github_com_golang_protobuf//:proto",
         "@github_com_golang_protobuf//:ptypes/any",
         "@github_com_golang_protobuf//:ptypes/duration",
-        ":vendor/google/protobuf",
     ],
-    go_prefix = "//test/src:go_prefix",
 )
 
 go_library(
@@ -89,11 +92,11 @@ go_library(
     srcs = glob(
         ["google/type/*.pb.go"],
     ),
-    deps = [
-        "@github_com_golang_protobuf//:proto",
-        ":vendor/google/protobuf",
-    ],
     go_prefix = "//test/src:go_prefix",
+    deps = [
+        ":vendor/google/protobuf",
+        "@github_com_golang_protobuf//:proto",
+    ],
 )
 
 go_library(
@@ -101,10 +104,10 @@ go_library(
     srcs = glob(
         ["google/logging/type/*.pb.go"],
     ),
+    go_prefix = "//test/src:go_prefix",
     deps = [
         "@github_com_golang_protobuf//:proto",
     ],
-    go_prefix = "//test/src:go_prefix",
 )
 
 go_library(
@@ -112,22 +115,22 @@ go_library(
     srcs = glob(
         ["google/api/servicecontrol/v1/*.pb.go"],
     ),
+    go_prefix = "//test/src:go_prefix",
+    visibility = [
+        "//visibility:public",
+    ],
     deps = [
-        "@github_com_golang_protobuf//:proto",
-        "@github_com_golang_protobuf//:jsonpb",
-        "@github_com_golang_protobuf//:ptypes/any",
-        "@github_com_golang_protobuf//:ptypes/struct",
-        "@github_com_golang_protobuf//:ptypes/timestamp",
         ":vendor/google/api",
         ":vendor/google/logging/type",
         ":vendor/google/protobuf",
         ":vendor/google/rpc",
         ":vendor/google/type",
+        "@github_com_golang_protobuf//:jsonpb",
+        "@github_com_golang_protobuf//:proto",
+        "@github_com_golang_protobuf//:ptypes/any",
+        "@github_com_golang_protobuf//:ptypes/struct",
+        "@github_com_golang_protobuf//:ptypes/timestamp",
     ],
-    visibility = [
-        "//visibility:public",
-    ],
-    go_prefix = "//test/src:go_prefix",
 )
 
 go_library(
@@ -138,22 +141,22 @@ go_library(
         "fakes/request_data.go",
         "fakes/request_parser.go",
     ],
-    deps = [
-        "@github_com_golang_protobuf//:proto",
-        "//test/src:vendor/google/api/servicecontrol/v1",
-    ],
     go_prefix = "//test/src:go_prefix",
+    deps = [
+        "//test/src:vendor/google/api/servicecontrol/v1",
+        "@github_com_golang_protobuf//:proto",
+    ],
 )
 
 go_binary(
     name = "fakes_server",
     srcs = [
-        "fakes/server/main.go"
+        "fakes/server/main.go",
     ],
+    go_prefix = "//test/src:go_prefix",
     deps = [
         ":vendor/fakes",
     ],
-    go_prefix = "//test/src:go_prefix",
 )
 
 go_library(
@@ -178,18 +181,13 @@ go_library(
 go_test(
     name = "t_test",
     srcs = [
-        "t/t_test.go",
-        "t/setup.go",
         "t/backend.go",
         "t/esp.go",
         "t/metadata_server.go",
         "t/pk_server.go",
         "t/service_control.go",
-    ],
-    deps = [
-        ":vendor/deploy/deploy-local",
-        ":vendor/fakes",
-        ":vendor/utils",
+        "t/setup.go",
+        "t/t_test.go",
     ],
     data = [
         ":fakes_server",
@@ -198,4 +196,9 @@ go_test(
         "//src/tools:auth_token_gen",
     ],
     go_prefix = "//test/src:go_prefix",
+    deps = [
+        ":vendor/deploy/deploy-local",
+        ":vendor/fakes",
+        ":vendor/utils",
+    ],
 )

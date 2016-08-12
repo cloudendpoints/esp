@@ -44,10 +44,10 @@ cc_library(
         ],
     }),
     deps = [
+        "//external:cc_wkt_protos",
         "//external:googletest_prod",
         "//external:grpc++",
         "//external:protobuf",
-        "//external:cc_wkt_protos",
         "//src/api_manager:impl_headers",
         "//src/api_manager:method_call_info",
         "//src/api_manager:server_config_proto",

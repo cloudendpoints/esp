@@ -33,12 +33,12 @@ load("@protobuf_git//:protobuf.bzl", "cc_proto_library")
 cc_proto_library(
     name = "bookstore",
     srcs = ["bookstore.proto"],
+    default_runtime = "//external:protobuf",
+    protoc = "//external:protoc",
     use_grpc_plugin = True,
     deps = [
-       "//external:cc_wkt_protos",
+        "//external:cc_wkt_protos",
     ],
-    protoc = "//external:protoc",
-    default_runtime = "//external:protobuf",
 )
 
 cc_binary(

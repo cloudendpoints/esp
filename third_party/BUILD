@@ -44,6 +44,7 @@ perl_library(
 
 nginx_suite(
     nginx = "//src/nginx/main:nginx-esp",
+    tags = ["exclusive"],
     tests = glob(
         ["nginx-tests/*.t"],
         exclude = ["nginx-tests/ssl_sni_reneg.t"],
@@ -51,7 +52,6 @@ nginx_suite(
     deps = [
         ":nginx_test",
     ],
-    tags = ["exclusive"],
 )
 
 cc_proto_library(
@@ -77,12 +77,12 @@ cc_proto_library(
         "googleapis/google/api/usage.proto",
     ],
     include = "googleapis",
+    default_runtime = "//external:protobuf",
+    protoc = "//external:protoc",
     visibility = ["//visibility:public"],
     deps = [
         "//external:cc_wkt_protos",
     ],
-    protoc = "//external:protoc",
-    default_runtime = "//external:protobuf",
 )
 
 cc_proto_library(
@@ -91,11 +91,11 @@ cc_proto_library(
         "googleapis/google/devtools/cloudtrace/v1/trace.proto",
     ],
     include = "googleapis",
+    default_runtime = "//external:protobuf",
+    protoc = "//external:protoc",
     visibility = ["//visibility:public"],
     deps = [
         ":service_config",
         "//external:cc_wkt_protos",
     ],
-    protoc = "//external:protoc",
-    default_runtime = "//external:protobuf",
 )

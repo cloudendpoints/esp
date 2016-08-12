@@ -19,10 +19,10 @@ cc_proto_library(
         "google/type/money.proto",
     ],
     include = ".",
+    default_runtime = "//external:protobuf",
+    protoc = "//external:protoc",
     visibility = ["//visibility:public"],
     deps = [
         "//third_party:service_config",
     ],
-    protoc = "//external:protoc",
-    default_runtime = "//external:protobuf",
 )

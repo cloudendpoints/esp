@@ -234,11 +234,11 @@ nginx_suite(
 
 nginx_suite(
     nginx = "//src/nginx/main:nginx-esp",
+    tags = ["exclusive"],
     tests = [
         "auth_openid.t",
         "auth_ssl.t",
     ],
-    tags = ["exclusive"],
     deps = [
         ":perl_library",
     ],
@@ -282,4 +282,3 @@ nginx_suite(
 
 # Used by Go tests
 exports_files(["matching-client-secret.json"])
-
