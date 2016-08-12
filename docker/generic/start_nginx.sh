@@ -138,7 +138,4 @@ fi
 /usr/sbin/fetch_service_config.sh \
   -s "${SERVICE_NAME}" -v "${SERVICE_VERSION}" || exit $?
 
-# Increase ephemeral port range
-sysctl -w net.ipv4.ip_local_port_range="1024 65535"
-
 /usr/sbin/nginx -p /usr -c "${NGINX_CONF_PATH}"

@@ -66,24 +66,23 @@ TEST_SUITES = {
                 ],
         'simple': [
                 (esp_wrk_runner, 0, 1, 1, 15),
-                (esp_wrk_runner, 0, 5, 1, 15),
-                (esp_wrk_runner, 0, 10, 1, 15),
-                (esp_wrk_runner, 0, 15, 1, 15)
+                (esp_wrk_runner, 0, 2, 1, 15),
+                (esp_wrk_runner, 0, 4, 1, 15),
+                (esp_wrk_runner, 0, 8, 1, 15)
                 ],
         'stress': [
-                (esp_wrk_runner, 0, 50, 1, 60),
-                (esp_wrk_runner, 0, 100, 1, 60),
-                (esp_wrk_runner, 0, 100, 2, 60),
-                (esp_wrk_runner, 0, 200, 1, 60),
+                (esp_wrk_runner, 0, 5, 1, 60),
+                (esp_wrk_runner, 0, 10, 1, 60),
+                (esp_wrk_runner, 0, 10, 2, 60),
+                (esp_wrk_runner, 0, 20, 1, 60),
                 ],
         '2m_stress': [
                 (esp_wrk_runner, 0, 1, 1, 120),
                 (esp_wrk_runner, 0, 5, 1, 120),
                 (esp_wrk_runner, 0, 10, 1, 120),
-                (esp_wrk_runner, 0, 50, 1, 120),
-                (esp_wrk_runner, 0, 50, 5, 120),
-                (esp_wrk_runner, 0, 100, 1, 120),
-                (esp_wrk_runner, 0, 100, 5, 120),
+                (esp_wrk_runner, 0, 10, 5, 120),
+                (esp_wrk_runner, 0, 20, 1, 120),
+                (esp_wrk_runner, 0, 20, 5, 120),
                 ],
         'http2': [
                 (esp_h2load_runner, 1000, 1, 1, 0)
