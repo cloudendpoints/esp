@@ -67,9 +67,14 @@ server.on('request', function(req, res) {
   req.resume();
 });
 
+var totalConnection = 0;
+
+server.on('connection', function(socket) {
+  totalConnection += 1;
+});
 
 setInterval(function() {
-  console.log("Requests received:", totalReceived, " Data: ", totalData);
+  console.log("Requests received:", totalReceived, " Data: ", totalData, " Connection: ", totalConnection);
 }, 1000);
 
 var port = process.env.PORT || 8080;
