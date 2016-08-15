@@ -49,7 +49,6 @@ RUN_TESTS = [
     'asan',
     'check-files',
     'docker-tests',
-    'perl-tests',
     'release',
     'service-control',
     'tsan',
