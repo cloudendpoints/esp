@@ -98,13 +98,16 @@ function install_debian_8() {
   curl --silent https://packages.cloud.google.com/apt/doc/apt-key.gpg \
     | apt-key add -
   run retry install_pkg_debian8
-  if [[ -z "${DIRECT_REPO}" ]]; then
+  if [[ -z "${DIRECT_REPO}" && -n "${TESTING_REMOTE_DEB}" ]]; then
     # Installing the testing debian package with dpkg
     TESTING_LOCAL_DEB="enpoints-runtime.deb"
     run gsutil cp "${TESTING_REMOTE_DEB}" "${TESTING_LOCAL_DEB}"
     run dpkg -i "${TESTING_LOCAL_DEB}"
   fi
-  check_esp_version_debian_8
+  if [[ -n "${TESTING_REMOTE_DEB}" || -n "${DIRECT_REPO}" ]]; then
+    # Cannot check version with official repo.
+    check_esp_version_debian_8
+  fi
 }
 
 case "${VM_IMAGE}" in

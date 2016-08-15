@@ -105,8 +105,7 @@ function delete_service() {
   local esp_service="${1}"
   if ! [[ "${esp_service}" =~ "${DEFAULT_ESP_SERVICE}" ]]; then
     gcloud alpha service-management disable \
-      --consumer-project="${PROJECT_ID}" \
-      --service="${DEFAULT_ESP_SERVICE}"
+      "${esp_service}" --project="${PROJECT_ID}"
     gcloud alpha service-management delete "${esp_service}" -q
   fi
 }
@@ -160,24 +159,20 @@ function create_service() {
   local operation=''
   local version=''
 
-  if [[ "${esp_service}" =~ "${DEFAULT_ESP_SERVICE}" ]]; then
-    retry -n 5 set_esp_service_version "${esp_service}" \
-      || error_exit 'Could not fetch the service version.'
-    echo "ESP service version: ${ESP_SERVICE_VERSION}"
-    return
-  else
+  retry -n 2 set_esp_service_version "${esp_service}"
+  if [[ ${?} -ne 0 ]]; then
     echo 'Deploying service'
     retry -n 3 run gcloud alpha service-management deploy "${swagger_json}"
 
     retry -n 5 set_esp_service_version "${esp_service}" \
       || error_exit 'Could not fetch the service version.'
-    echo "ESP service version: ${ESP_SERVICE_VERSION}"
 
     echo 'Activating service'
     retry -n 3 run gcloud alpha service-management enable \
-      --consumer-project="${PROJECT_ID}" \
-      --service="${esp_service}"
+      "${esp_service}" --project="${PROJECT_ID}" \
+      || error_exit 'Could not activate the service.'
   fi
+  echo "ESP service version: ${ESP_SERVICE_VERSION}"
 }
 
 # Check for host http return code.

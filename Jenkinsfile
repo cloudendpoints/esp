@@ -308,8 +308,9 @@ def e2eTest(nodeLabel) {
     branches = filterBranches(branches, RELEASE_QUALIFICATION_BRANCHES.join('|'))
   }
 
-  withEnv(
-      ["CLOUDSDK_API_ENDPOINT_OVERRIDES_SERVICEMANAGEMENT=${getServiceManagementUrl()}"]) {
+  withEnv([
+      "CLOUDSDK_API_ENDPOINT_OVERRIDES_SERVICEMANAGEMENT=${getServiceManagementUrl()}",
+      "CLOUDSDK_COMPONENT_MANAGER_SNAPSHOT_URL=${getGcloudUrl()}"]) {
     parallel branches
   }
 }
@@ -329,23 +330,29 @@ def espGenericDockerImage(suffix = '') {
   return "gcr.io/${PROJECT_ID}/endpoints-runtime${suffix}:debian-git-${GIT_SHA}"
 }
 
-def espDockerImage() {
+def espDockerImage(suffix = '') {
   if (isRelease()) {
-    return "b.gcr.io/endpoints/endpoints-runtime:${ESP_RUNTIME_VERSION}"
+    if (getUseLatestRelease()) {
+      return "b.gcr.io/endpoints/endpoints-runtime${suffix}:latest"
+    }
+    return "b.gcr.io/endpoints/endpoints-runtime${suffix}:${ESP_RUNTIME_VERSION}"
   }
-  return espGenericDockerImage()
+  return espGenericDockerImage(suffix)
 }
 
 def espGrpcDockerImage() {
-  return espGenericDockerImage('-grpc')
+  return espDockerImage('-grpc')
 }
 
 def espFlexDockerImage() {
+  if (isRelease()) {
+    return 'does_not_exist'
+  }
   return espGenericDockerImage('-flex')
 }
 
 def isRelease() {
-  return getDebianPackageRepo() != ''
+  return getDebianPackageRepo() != '' || getUseLatestRelease()
 }
 
 def isReleaseQualification() {
@@ -368,6 +375,9 @@ def gRpcTestServerImage() {
 }
 
 def espDebianPackage() {
+  if (getUseLatestRelease()) {
+    return ''
+  }
   def suffix = ''
   if (getServiceManagementUrl() != '') {
     suffix = "${suffix}-staging"
@@ -393,7 +403,7 @@ def buildPackages() {
     serverConfigFlag = "-c ${serverConfig}"
   }
   if (isRelease()) {
-    // Docker and debian package are built from Robot.
+    // Release Docker and debian package should already be built.
     sh "docker pull ${espImgGeneric} || { echo 'Cannot find ${espImgGeneric}'; exit 1; }"
   } else {
     def espDebianPackage = espDebianPackage()
@@ -549,9 +559,9 @@ def e2eGCE(vmImage) {
   echo 'Running GCE test'
   sh "test/bookstore/gce/e2e.sh " +
       commonOptions +
-      "-d ${espDebianPkg} " +
       "-V ${ESP_RUNTIME_VERSION} " +
       "-v ${vmImage} " +
+      "-d \"${espDebianPkg}\" " +
       "-r \"${debianPackageRepo}\""
 }
 
@@ -628,11 +638,12 @@ def e2eFlex(endpoints, flex) {
   fastUnstash('auth_token_gen')
   def espImgFlex = espFlexDockerImage()
   def rcTestVersion = getUniqueID('', false)
-  def skipCleanup = getSkipCleanup() ? "-k" : ""
+  def skipCleanup = getSkipCleanup() ? '-k' : ''
   def logBucket = "gs://${BUCKET}/${GIT_SHA}/logs"
   def durationHour = getDurationHour()
-  def endpointsFlag = endpoints ? "-e " : ""
-  def flexFlag = flex ? "-f " : ""
+  def endpointsFlag = endpoints ? '-e ' : ''
+  def flexFlag = flex ? '-f ' : ''
+  def useLatestVersion = getUseLatestRelease() ? '-L ' : ''
 
   sh "script/linux-test-vm-bookstore " +
       "${endpointsFlag}" +
@@ -641,6 +652,7 @@ def e2eFlex(endpoints, flex) {
       "-i ${espImgFlex} " +
       "-l ${durationHour} " +
       "-b ${logBucket} " +
+      "${useLatestVersion} " +
       "${skipCleanup}"
 }
 
@@ -670,26 +682,35 @@ def getSkipCleanup() {
 
 def getGitCommit() {
   // Using a parameterized build with GIT_COMMIT env variable
-  def gitCommit = 'HEAD'
   try {
-    gitCommit = "${GIT_COMMIT}"
+    def gitCommit = "${GIT_COMMIT}"
     if (gitCommit == 'INVALID') {
       failBranch('You must specify a valid GIT_COMMIT.')
     }
+    return gitCommit
   } catch (MissingPropertyException e) {
+    return 'HEAD'
   }
-  return gitCommit
 }
 
 def getServiceManagementUrl() {
   // Using a parameterized build with SERVICE_MANAGEMENT_URL env variable
-  def url = ''
   try {
-    url = "${SERVICE_MANAGEMENT_URL}"
+    return "${SERVICE_MANAGEMENT_URL}"
   } catch (MissingPropertyException e) {
+    return ''
   }
-  return url
 }
+
+def getGcloudUrl() {
+  // Using a parameterized build with GCLOUD_URL env variable
+  try {
+    return "${GCLOUD_URL}"
+  } catch (MissingPropertyException e) {
+    return ''
+  }
+}
+
 
 def getServerConfig() {
   // Using a parameterized build with SERVER_CONFIG env variable
@@ -702,25 +723,32 @@ def getServerConfig() {
 
 def getDebianPackageRepo() {
   // Using a parameterized build with DEBIAN_PACKAGE_REPO env variable
-  def debianPackageRepo = ''
   try {
-    debianPackageRepo = "${DEBIAN_PACKAGE_REPO}"
+    def debianPackageRepo = "${DEBIAN_PACKAGE_REPO}"
     if (debianPackageRepo == 'INVALID') {
       failBranch('You must specify a valid DEBIAN_PACKAGE_REPO.')
     }
+    return debianPackageRepo
   } catch (MissingPropertyException e) {
+    return ''
   }
-  return debianPackageRepo
 }
 
 def getDurationHour() {
   // Using a parameterized build with DURATION_HOUR env variable
-  def durationHour = 0
   try {
-    durationHour = "${DURATION_HOUR}".toInteger()
+    return "${DURATION_HOUR}".toInteger()
   } catch (MissingPropertyException e) {
+    return 0
   }
-  return durationHour
+}
+
+def getUseLatestRelease() {
+  try {
+    return "${USE_LATEST_RELEASE}" == 'true'
+  } catch (MissingPropertyException e) {
+    return false
+  }
 }
 
 def getUseTestSlave() {
@@ -742,25 +770,22 @@ def getReleaseQualification() {
 
 def getStage() {
   // Using a parameterized build with STAGE env variable
-  def defaultStage = ALL_STAGES
   try {
     def stage = "${STAGE}".toString().trim()
     if (stage != '') return stage
   } catch (MissingPropertyException e) {
-
   }
-  return defaultStage
+  return ALL_STAGES
 }
 
 def getE2eFilters() {
   // Using a parameterized build with E2E_FILTERS env variable
-  def defaultFilters = '.*'
   try {
     def filters = "${E2E_FILTERS}".toString().trim()
     if (filters != '') return filters
   } catch (MissingPropertyException e) {
   }
-  return defaultFilters
+  return '.*'
 }
 
 /*
@@ -829,6 +854,9 @@ def generateServiceName(uniqueID, servicePrefix = '') {
   def serviceUrl = getServiceManagementUrl()
   if (serviceUrl != '') {
     servicePrefix = 'staging-${servicePrefix}'
+  }
+  if (getUseLatestRelease() || getGcloudUrl()) {
+    return "${uniqueID}-dot-${PROJECT_ID}.appspot.com"
   }
   return "${servicePrefix}testing-dot-${PROJECT_ID}.appspot.com"
 }
@@ -955,6 +983,9 @@ def setGCloud() {
     timeout(1) {
       sh "gcloud config set compute/zone ${ZONE}"
       sh "gcloud container clusters get-credentials ${CLUSTER}"
+      if (getGcloudUrl() != '') {
+        sh 'gcloud components update -q'
+      }
     }
     sleep 5
   }

@@ -25,7 +25,7 @@
 runtime: nodejs
 vm: true
 api_version: 1
-module: default
+service: default
 
 resources:
   cpu: 4

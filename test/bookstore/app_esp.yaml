@@ -25,7 +25,7 @@
 runtime: nodejs
 ${APPENGINE_ENV}
 api_version: 1
-module: default
+service: default
 
 resources:
   cpu: 1
@@ -37,7 +37,7 @@ manual_scaling:
 
 beta_settings:
   allow_ssh: true
-  gae_nginx_proxy_image_name: ${IMAGE_NAME}
+  ${CUSTOM_IMAGE}
   service_account_scopes: compute,devstorage.full_control,appengine.apis,servicecontrol
   use_endpoints_api_management: ${ENABLE_ENDPOINTS}
   endpoints_swagger_spec_file: swagger.json
