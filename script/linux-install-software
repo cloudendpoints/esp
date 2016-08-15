@@ -112,6 +112,17 @@ ${SUDO} apt-get purge -y docker.io* \
 ${SUDO} apt-get purge -y docker-engine \
   || echo 'docker-engine not installed, proceeding...'
 
+echo 'Installing go'
+GO_VERSION="go1.6.3.linux-amd64.tar.gz"
+curl --silent --show-error --retry 10 \
+  "https://storage.googleapis.com/golang/$GO_VERSION" > $GO_VERSION
+${SUDO} tar -C /usr/local -xzf $GO_VERSION
+export PATH=$PATH:/usr/local/go/bin
+go version || error_exit 'Cannot install go'
+mkdir $HOME/go || error_exit 'Cannot create go workspace'
+export GOPATH=$HOME/go
+sh $DIR/go-dependencies
+
 echo 'Adding repo for docker'
 echo "deb https://apt.dockerproject.org/repo debian-jessie main" \
   | ${SUDO} tee /etc/apt/sources.list.d/docker.list
