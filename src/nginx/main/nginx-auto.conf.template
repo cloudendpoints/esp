@@ -24,8 +24,8 @@ http {
     # Running port
     listen ${port};
 
-% if ssl:
-    ssl on;
+% if ssl != "":
+    listen ${ssl} ssl;
     ssl_certificate /etc/nginx/ssl/nginx.crt;
     ssl_certificate_key /etc/nginx/ssl/nginx.key;
 % endif

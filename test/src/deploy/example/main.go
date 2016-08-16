@@ -40,11 +40,11 @@ const root = "../../../.."
 
 func main() {
 	d := deploy.Deployment{
-		ESP: deploy.Service{
+		ESP: deploy.KubernetesService{
 			Name:   "esp",
 			Status: "/endpoints_status",
 		},
-		Backend: deploy.Service{
+		Backend: deploy.KubernetesService{
 			Name:   "backend",
 			Status: "/shelves",
 		},
@@ -61,11 +61,11 @@ func main() {
 
 	// ESP
 	flag.StringVar(&d.ESP.Image, "esp",
-		"gcr.io/endpoints-jenkins/esp-autoconf",
+		"gcr.io/endpoints-jenkins/esp-autoconf2",
 		"Docker image for ESP")
 	flag.IntVar(&d.ESP.Port, "port", 8080, "ESP port")
 	flag.IntVar(&d.ESP.StatusPort, "status", 8090, "ESP status port")
-	flag.BoolVar(&d.ESPSsl, "ssl", false, "Enable SSL for ESP port")
+	flag.IntVar(&d.ESP.SSLPort, "ssl", 0, "Enable SSL for ESP using this port")
 
 	// Service
 	flag.StringVar(&d.ServiceName, "service", "testing-dot-endpoints-jenkins.appspot.com", "Service name")

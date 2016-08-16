@@ -43,22 +43,22 @@ import (
 
 const app = "esp-backend"
 
-type Service struct {
+type KubernetesService struct {
 	Name       string
 	Image      string
 	Port       int
+	SSLPort    int
 	StatusPort int
 	// URL of the health status location (e.g. /endpoints_status)
 	Status string
 }
 
 type Deployment struct {
-	Backend Service
-	ESP     Service
+	Backend KubernetesService
+	ESP     KubernetesService
 
 	// ESP
 	NginxFile string
-	ESPSsl    bool
 	SSLKey    string
 	SSLCert   string
 
@@ -203,6 +203,14 @@ func makeSecretVolume(name string) api.Volume {
 	}
 }
 
+func (d *Deployment) port() int {
+	if d.ESP.SSLPort > 0 {
+		return d.ESP.SSLPort
+	} else {
+		return d.ESP.Port
+	}
+}
+
 func (d *Deployment) DeployPods() bool {
 	// Create config volumes and push data
 	volumeMounts := make([]api.VolumeMount, 0)
@@ -211,9 +219,9 @@ func (d *Deployment) DeployPods() bool {
 		"/usr/sbin/start_esp.py",
 		"-s", d.ServiceName,
 		"-v", d.ServiceVersion,
-		"--port", strconv.Itoa(d.ESP.Port),
-		"--status", strconv.Itoa(d.ESP.StatusPort),
-		"--backend", "localhost:" + strconv.Itoa(d.Backend.Port),
+		"-p", strconv.Itoa(d.ESP.Port),
+		"-N", strconv.Itoa(d.ESP.StatusPort),
+		"-a", "localhost:" + strconv.Itoa(d.Backend.Port),
 	}
 	var failed bool
 
@@ -228,12 +236,12 @@ func (d *Deployment) DeployPods() bool {
 		})
 	}
 
-	if d.ESPSsl {
+	if d.ESP.SSLPort > 0 {
 		ssl := "nginx-ssl"
 		volumeMounts = append(volumeMounts,
 			api.VolumeMount{Name: ssl, MountPath: "/etc/nginx/ssl", ReadOnly: true})
 		volumes = append(volumes, makeSecretVolume(ssl))
-		commands = append(commands, "--ssl")
+		commands = append(commands, "-S", strconv.Itoa(d.ESP.SSLPort))
 		failed = failed || !d.addSecret(ssl, map[string]string{
 			"nginx.key": d.SSLKey,
 			"nginx.crt": d.SSLCert,
@@ -249,7 +257,7 @@ func (d *Deployment) DeployPods() bool {
 		Name:  d.ESP.Name,
 		Image: d.ESP.Image,
 		Ports: []api.ContainerPort{
-			api.ContainerPort{ContainerPort: int32(d.ESP.Port)},
+			api.ContainerPort{ContainerPort: int32(d.port())},
 			api.ContainerPort{ContainerPort: int32(d.ESP.StatusPort)},
 		},
 		VolumeMounts: volumeMounts,
@@ -310,7 +318,7 @@ func (d *Deployment) DeployService() bool {
 		},
 		Spec: api.ServiceSpec{
 			Ports: []api.ServicePort{
-				api.ServicePort{Name: "esp", Protocol: api.ProtocolTCP, Port: int32(d.ESP.Port)},
+				api.ServicePort{Name: "esp", Protocol: api.ProtocolTCP, Port: int32(d.port())},
 				api.ServicePort{Name: "status", Protocol: api.ProtocolTCP, Port: int32(d.ESP.StatusPort)},
 				api.ServicePort{Name: "backend", Protocol: api.ProtocolTCP, Port: int32(d.Backend.Port)},
 			},
@@ -404,7 +412,7 @@ func (d *Deployment) WaitReady() string {
 
 	} else {
 		ok := Repeat(func() bool {
-			log.Println("Retrieving IP of the service")
+			log.Println("Retrieving address of the service")
 			svc, err := d.c.Services(d.K8sNamespace).Get(app)
 			if err != nil {
 				return false
@@ -435,6 +443,10 @@ func (d *Deployment) WaitReady() string {
 		port = d.ESP.Port
 		statusPort = d.ESP.StatusPort
 		backendPort = d.Backend.Port
+
+		if d.ESP.SSLPort > 0 {
+			port = d.ESP.SSLPort
+		}
 	}
 
 	log.Println("Address is", ip)
@@ -443,7 +455,7 @@ func (d *Deployment) WaitReady() string {
 	d.WaitService(ip, statusPort, d.ESP.Status)
 	d.WaitService(ip, backendPort, d.Backend.Status)
 
-	if d.ESPSsl {
+	if d.ESP.SSLPort > 0 {
 		return fmt.Sprintf("https://%s:%d", ip, port)
 	} else {
 		return fmt.Sprintf("http://%s:%d", ip, port)

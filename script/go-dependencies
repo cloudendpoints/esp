@@ -27,3 +27,4 @@
 
 echo 'Installing go packages'
 go get k8s.io/kubernetes/pkg/client/unversioned
+go get github.com/golang/protobuf/jsonpb

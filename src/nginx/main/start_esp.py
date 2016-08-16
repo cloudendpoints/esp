@@ -128,9 +128,16 @@ def log_and_raise(code, message):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-k', help='Service account JSON key file')
+    parser.add_argument('-k', help='Service account JSON key file (optional)')
+
     parser.add_argument('-s', help='Service name')
     parser.add_argument('-v', help='Service version')
+
+    parser.add_argument('-c', help='NGINX configuration')
+    parser.add_argument('-p', default='8080', help='ESP port')
+    parser.add_argument('-N', default='8090', help='ESP status port')
+    parser.add_argument('-a', default='localhost:8081', help='Backend address')
+    parser.add_argument('-S', default='', help='ESP SSL port (optional)')
 
     parser.add_argument('--mgmt',
                         default=_SERVICE_MGMT_URL_TEMPLATE,
@@ -140,15 +147,8 @@ if __name__ == '__main__':
                         help='Nginx binary')
     parser.add_argument('--json',
                         default=SERVICE_JSON,
-                        help='Service JSON file location')
+                        help='Service JSON file location to place after fetch')
 
-    parser.add_argument('-c', help='NGINX configuration')
-    parser.add_argument('--port', default='8080', help='ESP port')
-    parser.add_argument('--status', default='8090', help='ESP status port')
-    parser.add_argument(
-        '--backend', default='localhost:8081', help='Backend address')
-    parser.add_argument('--ssl', dest='ssl', action='store_true')
-    parser.set_defaults(ssl=False)
 
     args = parser.parse_args()
 
@@ -170,11 +170,11 @@ if __name__ == '__main__':
     if args.c == None:
         template = Template(filename=NGINX_CONF_TEMPLATE)
         conf = template.render(
-            port=args.port,
-            status=args.status,
-            backend=args.backend,
+            port=args.p,
+            status=args.N,
+            backend=args.a,
             service_json=args.json,
-            ssl=args.ssl,
+            ssl=args.S,
             service_token=args.k)
         f = open(NGINX_CONF, 'w+')
         f.write(conf)
