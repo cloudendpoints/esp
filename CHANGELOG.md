@@ -1,3 +1,26 @@
+# Release 0.3.4 17-08-2016
+
+- Add Kubernetes support & deployment improvements.
+- Add configuration settings for local development using ESP.
+- Aggregate traces and batch to CloudTrace API.
+- Consolidate docs into a tutorial.
+- Do not report producer project in errors.
+- Improve GRPC/transcoding error handling.
+- Print ESP version when running nginx-esp -V.
+- Start a new Go based Test Infrastructure.
+- Cleanups, bug fixes & Infrastructure improvements:
+  - Add more test coverage.
+  - Add presubmits to Jenkins.
+  - Apply buildifer to BUILD files.
+  - Parallelize t-tests.
+  - Remove libgrpc based downstream implementation.
+  - Stabilize stress tests.
+  - Update Bazel to 0.3.1.
+  - Update NGINX to 1.11.3.
+  - Use NGINX trailers when finalizing gRPC response.
+  - etc
+
+
 # Release 0.3.3 26-07-2016
 
 - Add HTTP2 load test. Refactored common functionality in the load test
