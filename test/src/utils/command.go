@@ -24,30 +24,74 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
+// A set of shell command utilities
+//
 package utils
 
 import (
+	"crypto/tls"
+	"io/ioutil"
 	"log"
-	"regexp"
+	"net/http"
+	"os/exec"
+	"strings"
+	"time"
 )
 
-func GenAuthToken(secretFile string, audience string) (string, error) {
-	var testBinRoot, err = GetTestBinRootPath()
+// Execute command and return the merged output from stderr and stdout, error code
+func Run(name string, args ...string) (s string, err error) {
+	log.Println(">", name, strings.Join(args, " "))
+	c := exec.Command(name, args...)
+	bytes, err := c.Output()
 	if err != nil {
-		log.Printf("Failed to get the test env path. %s", err)
-		return "", err
+		log.Println(err)
 	}
-	var binPath = testBinRoot + "/src/tools/auth_token_gen"
-	output, err := Run(binPath, secretFile, audience)
+	s = string(bytes)
+	return
+}
 
+const MaxTries = 10
+
+// Repeat until success (function returns true) up to MaxTries
+func Repeat(f func() bool) bool {
+	try := 0
+	delay := 2 * time.Second
+	result := false
+	for !result && try < MaxTries {
+		if try > 0 {
+			log.Println("Waiting for next attempt: ", delay)
+			time.Sleep(delay)
+			delay = 2 * delay
+			log.Println("Repeat attempt #", try+1)
+		}
+		result = f()
+		try = try + 1
+	}
+
+	if !result {
+		log.Println("Failed all attempts")
+	}
+
+	return result
+}
+
+// CURL replacement: true if the URL responds with a body
+func HTTPGet(url string) bool {
+	log.Println("HTTP GET", url)
+	timeout := time.Duration(5 * time.Second)
+	client := &http.Client{
+		Timeout: timeout,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
+	resp, err := client.Get(url)
 	if err != nil {
-		log.Printf("Failed to generate auth token. %s", err)
-		return "", err
+		log.Println(err)
+		return false
 	}
-
-	re := regexp.MustCompile("Auth token:?")
-	loc := re.FindStringIndex(output)
-	authToken := output[loc[1]+1 : len(output)-1]
-
-	return authToken, nil
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+	log.Println(string(body))
+	return true
 }

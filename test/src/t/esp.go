@@ -54,6 +54,8 @@ func GetNginxBinary() (string, error) {
 func startEspInstance(
 	sandboxParentDir string,
 	serviceConfigFileName string,
+	serviceControlPort int,
+	serviceName string,
 	nginxPort int,
 	backendPort int,
 	metadataPort int,

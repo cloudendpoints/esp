@@ -24,30 +24,43 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
-package utils
+// Bookstore client test
+// TODO: convert to go
+//
+package t
 
 import (
+	"deploy"
 	"log"
-	"regexp"
+	"utils"
 )
 
-func GenAuthToken(secretFile string, audience string) (string, error) {
-	var testBinRoot, err = GetTestBinRootPath()
+func RunBookstore(url string, service deploy.Service) bool {
+	path, err := utils.GetTestDataRootPath()
 	if err != nil {
-		log.Printf("Failed to get the test env path. %s", err)
-		return "", err
+		log.Println("Cannot get root path")
+		return false
 	}
-	var binPath = testBinRoot + "/src/tools/auth_token_gen"
-	output, err := Run(binPath, secretFile, audience)
+	secret := path + "/client/custom/esp-test-client-secret-jwk.json"
+	testToken, err := utils.GenAuthToken(secret, service.Name)
 
 	if err != nil {
-		log.Printf("Failed to generate auth token. %s", err)
-		return "", err
+		log.Println("Cannot create auth token", err)
+		return false
 	}
 
-	re := regexp.MustCompile("Auth token:?")
-	loc := re.FindStringIndex(output)
-	authToken := output[loc[1]+1 : len(output)-1]
+	out, err := utils.Run(path+"/test/client/esp_bookstore_test.py",
+		"--verbose=true",
+		"--host="+url,
+		"--api_key="+service.Key,
+		"--auth_token="+testToken,
+		"--allow_unverified_cert=true")
 
-	return authToken, nil
+	if err != nil {
+		log.Println(out)
+		return false
+	}
+
+	log.Println("Bookstore test passed")
+	return true
 }

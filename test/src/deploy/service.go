@@ -37,15 +37,19 @@ import (
 )
 
 var (
-	ServiceManagement = []string{"alpha", "service-management"}
+	ServiceManagement = []string{"beta", "service-management"}
 )
 
 type Service struct {
-	Name                string
+	Name    string
+	Version string
+	Token   string
+	Key     string
+
+	// Creation parameters
 	Delete              bool
 	ConsumerProjectId   string
 	ProducerProjectId   string
-	Version             string
 	ServiceControlUrl   string
 	ServiceJsonPath     string
 	SwaggertemplatePath string
@@ -179,19 +183,30 @@ func (s *Service) setVersion() bool {
 	if s.Version != "" {
 		return true
 	}
-	if f, err := s.describeService(); err == nil {
+	version, err := s.GetVersion()
+	if err == nil {
+		s.Version = version
+		return true
+	} else {
+		return false
+	}
+}
+
+func (s *Service) GetVersion() (string, error) {
+	f, err := s.describeService()
+	if err == nil {
 		m := f.(map[string]interface{})
 		sc, ok := m["serviceConfig"].(map[string]interface{})
 		if !ok {
-			return false
+			return "", errors.New("Service config format")
 		}
 		id, ok := sc["id"].(string)
 		if !ok {
-			return false
+			return "", errors.New("Service config format")
 		}
-		log.Printf("Setting s.Version to %s", id)
-		s.Version = id
-		return true
+		log.Printf("Version of %s is %s", s.Name, id)
+		return id, nil
 	}
-	return false
+
+	return "", err
 }

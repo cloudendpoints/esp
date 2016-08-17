@@ -171,6 +171,7 @@ go_library(
     name = "vendor/utils",
     srcs = [
         "utils/auth_token_gen.go",
+        "utils/command.go",
         "utils/nginx_config.go",
         "utils/service_config.go",
         "utils/service_control.go",

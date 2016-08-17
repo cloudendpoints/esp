@@ -95,6 +95,8 @@ func SetupLocal(
 	ts.esp, err = startEspInstance(
 		sandboxParentDir,
 		serviceConfigFileName,
+		serviceControlPort,
+		serviceName,
 		nginxPort,
 		backendPort,
 		metadataPort,

@@ -61,6 +61,7 @@ func GcloudCommand(args ...string) (interface{}, error) {
 	c := exec.Command(GcloudBinary, command...)
 	o, err := c.Output()
 	if err != nil {
+		log.Println("Error: ", err)
 		return nil, err
 	}
 	log.Printf("Gcloud Json Output:\n%s", o)

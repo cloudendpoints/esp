@@ -27,10 +27,10 @@
 package utils
 
 import (
-	"io/ioutil"
-	"os"
 	"errors"
+	"io/ioutil"
 	"log"
+	"os"
 	"strings"
 )
 
@@ -44,7 +44,8 @@ func GetTestBinRootPath() (string, error) {
 		return os.Getenv("TEST_SRCDIR") + "/__main__", nil
 	// running with native go
 	case os.Getenv("GOPATH") != "":
-		return os.Getenv("GOPATH") + "/../bazel-bin", nil
+		list := strings.Split(os.Getenv("GOPATH"), string(os.PathListSeparator))
+		return list[0] + "/../bazel-bin", nil
 	}
 	log.Printf("ERROR: One of TEST_BIN_ROOT, TEST_SRCDIR, GO_PATH has to be set.")
 	return "", errors.New("One of TEST_BIN_ROOT, TEST_SRCDIR, GO_PATH has to be set.")
@@ -60,7 +61,8 @@ func GetTestDataRootPath() (string, error) {
 		return os.Getenv("TEST_SRCDIR") + "/__main__", nil
 	// running with native go
 	case os.Getenv("GOPATH") != "":
-		return os.Getenv("GOPATH") + "/..", nil
+		list := strings.Split(os.Getenv("GOPATH"), string(os.PathListSeparator))
+		return list[0] + "/..", nil
 	}
 	log.Printf("ERROR: One of TEST_BIN_ROOT, TEST_SRCDIR, GO_PATH has to be set.")
 	return "", errors.New("One of TEST_BIN_ROOT, TEST_SRCDIR, GO_PATH has to be set.")
@@ -76,4 +78,20 @@ func GetVersion() (string, error) {
 		return "", err
 	}
 	return strings.TrimSpace(string(ver)), nil
+}
+
+func SSLKeyFile() string {
+	path, err := GetTestDataRootPath()
+	if err != nil {
+		log.Fatalln("Cannot find data root path")
+	}
+	return path + "/test/src/utils/nginx.key"
+}
+
+func SSLCertFile() string {
+	path, err := GetTestDataRootPath()
+	if err != nil {
+		log.Fatalln("Cannot find data root path")
+	}
+	return path + "/test/src/utils/nginx.crt"
 }

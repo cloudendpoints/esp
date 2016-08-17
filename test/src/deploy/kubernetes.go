@@ -27,14 +27,11 @@
 package deploy
 
 import (
-	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net/http"
-	"path"
 	"strconv"
-	"time"
+	"utils"
 
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/client/restclient"
@@ -43,90 +40,58 @@ import (
 
 const app = "esp-backend"
 
-type KubernetesService struct {
-	Name       string
-	Image      string
-	Port       int
-	SSLPort    int
+type Application struct {
+	Name string
+	// Docker image URL
+	Image string
+	Port  int
+	// Optional SSL port
+	SSLPort int
+	// Status port for querying Status
 	StatusPort int
 	// URL of the health status location (e.g. /endpoints_status)
 	Status string
 }
 
 type Deployment struct {
-	Backend KubernetesService
-	ESP     KubernetesService
+	Backend *Application
+	ESP     *Application
+	Config  *Service
 
-	// ESP
-	NginxFile string
 	SSLKey    string
 	SSLCert   string
-
-	// Service config
-	ServiceName    string
-	ServiceVersion string
-	ServiceAPIKey  string
-	ServiceToken   string
-
-	// Kubernetes
-	K8sNamespace string
-	K8sPort      int
-	Minikube     string
-	c            *client.Client
-
-	// Phase control
-	RunDeploy   bool
-	RunTest     bool
-	RunTearDown bool
+	IP        string
+	c         *client.Client
+	namespace string
 }
 
-// Extract the base name of the file
-func (d *Deployment) Basename(file string) string {
-	return path.Base(file)
-}
-
-// Run test given the URL of ESP endpoint
-func (d *Deployment) Run(test func(string)) {
+func (d *Deployment) Init(port int, namespace string) {
 	// connect to k8s API
-	log.Println("Connecting to kubectl proxy")
+	log.Println("Connecting to kubectl proxy at port:", port)
 	config := restclient.Config{
-		Host: fmt.Sprintf("localhost:%d", d.K8sPort),
+		Host: fmt.Sprintf("localhost:%d", port),
 	}
 	var err error
+
 	d.c, err = client.New(&config)
 	if err != nil {
 		log.Fatalln("Can't connect to Kubernetes API: ", err)
 	}
 
-	// deploy to cluster
-	if d.RunDeploy {
-		d.Deploy()
-	}
-
-	// run test
-	if d.RunTest {
-		addr := d.WaitReady()
-		test(addr)
-	}
-
-	// tear down the cluster
-	if d.RunTearDown {
-		d.CollectLogs()
-		d.TearDown()
-	}
+	d.namespace = namespace
 }
 
-func (d *Deployment) addConfig(key string, fileNames ...string) bool {
-	log.Printf("Add config %s from %v\n", key, fileNames)
+func (d *Deployment) addConfig(key string, files map[string]string) bool {
+	log.Printf("Add config %s from %v\n", key, files)
 
 	m := map[string]string{}
-	for _, fileName := range fileNames {
+	for k, fileName := range files {
 		data, err := ioutil.ReadFile(fileName)
 		if err != nil {
 			log.Println("Cannot find config file", fileName)
 			return false
 		}
-		m[d.Basename(fileName)] = string(data)
+		m[k] = string(data)
 	}
 
 	config := &api.ConfigMap{
@@ -136,7 +101,7 @@ func (d *Deployment) addConfig(key string, fileNames ...string) bool {
 		Data: m,
 	}
 
-	configMaps := d.c.ConfigMaps(d.K8sNamespace)
+	configMaps := d.c.ConfigMaps(d.namespace)
 	_, err := configMaps.Create(config)
 	if err != nil {
 		log.Println("Cannot create configmap", err)
@@ -167,7 +132,7 @@ func (d *Deployment) addSecret(key string, files map[string]string) bool {
 		Data: m,
 	}
 
-	secrets := d.c.Secrets(d.K8sNamespace)
+	secrets := d.c.Secrets(d.namespace)
 	_, err := secrets.Create(config)
 	if err != nil {
 		log.Println("Cannot create secret", err)
@@ -217,22 +182,22 @@ func (d *Deployment) DeployPods() bool {
 	volumes := make([]api.Volume, 0)
 	commands := []string{
 		"/usr/sbin/start_esp.py",
-		"-s", d.ServiceName,
-		"-v", d.ServiceVersion,
+		"-s", d.Config.Name,
+		"-v", d.Config.Version,
 		"-p", strconv.Itoa(d.ESP.Port),
 		"-N", strconv.Itoa(d.ESP.StatusPort),
 		"-a", "localhost:" + strconv.Itoa(d.Backend.Port),
 	}
 	var failed bool
 
-	if d.ServiceToken != "" {
+	if d.Config.Token != "" {
 		token := "service-token"
 		volumeMounts = append(volumeMounts,
 			api.VolumeMount{Name: token, MountPath: "/etc/nginx/creds", ReadOnly: true})
 		volumes = append(volumes, makeSecretVolume(token))
 		commands = append(commands, "-k", "/etc/nginx/creds/secret.json")
 		failed = failed || !d.addSecret(token, map[string]string{
-			"secret.json": d.ServiceToken,
+			"secret.json": d.Config.Token,
 		})
 	}
 
@@ -297,7 +262,7 @@ func (d *Deployment) DeployPods() bool {
 	}
 
 	log.Println("Create replication controller")
-	_, err := d.c.ReplicationControllers(d.K8sNamespace).Create(rc)
+	_, err := d.c.ReplicationControllers(d.namespace).Create(rc)
 	if err != nil {
 		log.Println("Cannot create replication controller", err)
 		return false
@@ -308,7 +273,7 @@ func (d *Deployment) DeployPods() bool {
 
 func (d *Deployment) DeployService() bool {
 	st := api.ServiceTypeLoadBalancer
-	if d.Minikube != "" {
+	if d.IP != "" {
 		// Change to node port for local development
 		st = api.ServiceTypeNodePort
 	}
@@ -330,7 +295,7 @@ func (d *Deployment) DeployService() bool {
 	}
 
 	log.Println("Create service")
-	_, err := d.c.Services(d.K8sNamespace).Create(svc)
+	_, err := d.c.Services(d.namespace).Create(svc)
 	if err != nil {
 		log.Println("Cannot create service", err)
 		return false
@@ -342,23 +307,45 @@ func (d *Deployment) DeployService() bool {
 // Create a kubernetes cluster and push configuration
 func (d *Deployment) Deploy() bool {
 	// Delete namespace if it exists
-	if d.ExistsNamespace() {
+	if d.namespace != "" && d.ExistsNamespace() {
 		if !d.TearDown() {
+			log.Println("Cannot delete namespace")
+			return false
+		}
+
+		// Poll to make sure namespace is deleted
+		if !utils.Repeat(func() bool {
+			return !d.ExistsNamespace()
+		}) {
 			log.Println("Cannot delete namespace")
 			return false
 		}
 	}
 
 	log.Println("Create namespace")
-	namespace := &api.Namespace{
-		ObjectMeta: api.ObjectMeta{
-			Name: d.K8sNamespace,
-		},
+
+	namespace := &api.Namespace{}
+
+	// Request a unique name
+	if d.namespace == "" {
+		namespace.ObjectMeta.GenerateName = "test-"
+	} else {
+		namespace.ObjectMeta.Name = d.namespace
 	}
-	d.c.Namespaces().Create(namespace)
+
+	ns, err := d.c.Namespaces().Create(namespace)
+	if err != nil {
+		log.Println("Cannot create namespace")
+		return false
+	}
+
+	// Save namespace name for next phases
+	if d.namespace == "" {
+		d.namespace = ns.ObjectMeta.Name
+	}
 
 	// Poll to make sure namespace exists
-	if !Repeat(func() bool {
+	if !utils.Repeat(func() bool {
 		return d.ExistsNamespace()
 	}) {
 		log.Println("Cannot create namespace")
@@ -376,7 +363,7 @@ func (d *Deployment) Deploy() bool {
 	return true
 }
 
-// Wait till all services are ready
+// Wait till all services are ready and return ESP URL
 func (d *Deployment) WaitReady() string {
 	// Get external address
 	var ip string
@@ -384,12 +371,12 @@ func (d *Deployment) WaitReady() string {
 	var statusPort int
 	var backendPort int
 
-	if d.Minikube != "" {
-		ip = d.Minikube
+	if d.IP != "" {
+		ip = d.IP
 
-		ok := Repeat(func() bool {
+		ok := utils.Repeat(func() bool {
 			log.Println("Retrieving ports of the service")
-			svc, err := d.c.Services(d.K8sNamespace).Get(app)
+			svc, err := d.c.Services(d.namespace).Get(app)
 			if err != nil {
 				return false
 			}
@@ -411,9 +398,9 @@ func (d *Deployment) WaitReady() string {
 		}
 
 	} else {
-		ok := Repeat(func() bool {
+		ok := utils.Repeat(func() bool {
 			log.Println("Retrieving address of the service")
-			svc, err := d.c.Services(d.K8sNamespace).Get(app)
+			svc, err := d.c.Services(d.namespace).Get(app)
 			if err != nil {
 				return false
 			}
@@ -464,8 +451,8 @@ func (d *Deployment) WaitReady() string {
 
 // Check service
 func (d *Deployment) WaitService(ip string, port int, status string) bool {
-	return Repeat(func() bool {
-		return HTTPGet(fmt.Sprintf("http://%s:%d%s", ip, port, status))
+	return utils.Repeat(func() bool {
+		return utils.HTTPGet(fmt.Sprintf("http://%s:%d%s", ip, port, status))
 	})
 }
 
@@ -480,7 +467,7 @@ func (d *Deployment) CollectLogs() {
 				Container:  container,
 				Timestamps: true,
 			}
-			raw, err := d.c.Pods(d.K8sNamespace).GetLogs(pod, logOptions).Do().Raw()
+			raw, err := d.c.Pods(d.namespace).GetLogs(pod, logOptions).Do().Raw()
 			if err != nil {
 				log.Println("Request error", err)
 			} else {
@@ -492,7 +479,7 @@ func (d *Deployment) CollectLogs() {
 
 // Get pod names
 func (d *Deployment) GetPods() []string {
-	list, err := d.c.Pods(d.K8sNamespace).List(api.ListOptions{})
+	list, err := d.c.Pods(d.namespace).List(api.ListOptions{})
 	if err != nil {
 		return nil
 	}
@@ -505,13 +492,14 @@ func (d *Deployment) GetPods() []string {
 
 // Attempt to shut down
 func (d *Deployment) TearDown() bool {
-	log.Println("Delete namespace", d.K8sNamespace)
-	d.c.Namespaces().Delete(d.K8sNamespace)
+	log.Println("Delete namespace", d.namespace)
+	err := d.c.Namespaces().Delete(d.namespace)
+	if err != nil {
+		log.Println("Cannot delete namespace")
+		return false
+	}
 
-	// Poll to make sure namespace is deleted
-	return Repeat(func() bool {
-		return !d.ExistsNamespace()
-	})
+	return true
 }
 
 // Check if namespace exists
@@ -522,57 +510,12 @@ func (d *Deployment) ExistsNamespace() bool {
 	}
 
 	for _, item := range list.Items {
-		if item.Name == d.K8sNamespace {
-			log.Println("Namespace exists:", d.K8sNamespace)
+		if item.Name == d.namespace {
+			log.Println("Namespace exists:", d.namespace)
 			return true
 		}
 	}
 
-	log.Println("Namespace does not exist:", d.K8sNamespace)
+	log.Println("Namespace does not exist:", d.namespace)
 	return false
-}
-
-// Repeat until success (function returns true) up to MaxTries
-const MaxTries = 10
-
-func Repeat(f func() bool) bool {
-	try := 0
-	delay := 2 * time.Second
-	result := false
-	for !result && try < MaxTries {
-		if try > 0 {
-			log.Println("Waiting for next attempt: ", delay)
-			time.Sleep(delay)
-			delay = 2 * delay
-			log.Println("Repeat attempt #", try+1)
-		}
-		result = f()
-		try = try + 1
-	}
-
-	if !result {
-		log.Println("Failed all attempts")
-	}
-
-	return result
-}
-
-func HTTPGet(url string) bool {
-	log.Println("HTTP GET", url)
-	timeout := time.Duration(5 * time.Second)
-	client := &http.Client{
-		Timeout: timeout,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
-	}
-	resp, err := client.Get(url)
-	if err != nil {
-		log.Println(err)
-		return false
-	}
-	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
-	log.Println(string(body))
-	return true
 }
