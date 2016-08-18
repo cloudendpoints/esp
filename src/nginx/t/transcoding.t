@@ -45,7 +45,7 @@ my $NginxPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $GrpcServerPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(19);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(15);
 
 $t->write_file('service.json',
   ApiManager::get_transcoding_test_service_config(
@@ -153,10 +153,14 @@ my $final_shelves_response_expected = {
   ]
 };
 
-ApiManager::compare_http_response_json_body($initial_shelves_response, $initial_shelves_response_expected);
-ApiManager::compare_http_response_json_body($shelf1_response, $shelf1_response_expected);
-ApiManager::compare_http_response_json_body($shelf2_response, $shelf2_response_expected);
-ApiManager::compare_http_response_json_body($final_shelves_response, $final_shelves_response_expected);
+ok(ApiManager::verify_http_json_response($initial_shelves_response, $initial_shelves_response_expected),
+                                         "Initial shelves response is good");
+ok(ApiManager::verify_http_json_response($shelf1_response, $shelf1_response_expected),
+                                         "Add shelf1 response is good");
+ok(ApiManager::verify_http_json_response($shelf2_response, $shelf2_response_expected),
+                                         "Add shelf2 response is good");
+ok(ApiManager::verify_http_json_response($final_shelves_response, $final_shelves_response_expected),
+                                         "Final shelves response is good");
 
 # Check service control calls
 # We expect 3 service control calls:

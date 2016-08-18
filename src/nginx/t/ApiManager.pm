@@ -422,14 +422,34 @@ sub read_http_stream {
 
 # Checks that response Content-Type header is application/json and matches the
 # response body with the expected JSON.
-sub compare_http_response_json_body {
+sub verify_http_json_response {
   my ($response, $expected_body) = @_;
 
   # Parse out the body
   my ($headers, $actual_body) = split /\r\n\r\n/, $response, 2;
 
-  like($headers, qr/content-type:(\s)*application\/json/i, 'Response is JSON');
-  ok(compare_json($actual_body, $expected_body), 'Response matches');
+  if ($headers !~ qr/HTTP\/1.1 200 OK/i) {
+    Test::More::diag("Status code doesn't match\n");
+    Test::More::diag("Expected: 200 OK\n");
+    Test::More::diag("Actual headers: ${headers}\n");
+    return 0;
+  }
+
+  if ($headers !~ qr/content-type:(\s)*application\/json/i) {
+    Test::More::diag("Content-Type doesn't match\n");
+    Test::More::diag("Expected: application/json\n");
+    Test::More::diag("Actual headers: ${headers}\n");
+    return 0;
+  }
+
+  if (!compare_json($actual_body, $expected_body)) {
+    Test::More::diag("Response body doesn't match\n");
+    Test::More::diag("Expected: " . encode_json(${expected_body}) . "\n");
+    Test::More::diag("Actual: ${actual_body}\n");
+    return 0;
+  }
+
+  return 1;
 }
 
 # Initial port is 8080 or $TEST_PORT env variable. A test is allowed to use 10
