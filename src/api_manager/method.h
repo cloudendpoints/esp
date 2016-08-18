@@ -88,9 +88,6 @@ class MethodInfo {
 
   // Get whether response is streaming
   virtual bool response_streaming() const = 0;
-
-  // The field in the request message to be mapped to the HTTP body
-  virtual const std::string &body_field_path() const = 0;
 };
 
 }  // namespace api_manager

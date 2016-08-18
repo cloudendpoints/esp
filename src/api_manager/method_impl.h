@@ -81,8 +81,6 @@ class MethodInfoImpl : public MethodInfo {
 
   bool response_streaming() const { return response_streaming_; }
 
-  const std::string &body_field_path() const { return body_field_path_; }
-
   // Adds allowed audiences (comma delimated, no space) for the issuer.
   // audiences_list can be empty.
   void addAudiencesForIssuer(const std::string &issuer,
@@ -127,10 +125,6 @@ class MethodInfoImpl : public MethodInfo {
     response_streaming_ = response_streaming;
   }
 
-  void set_body_field_path(std::string body_field_path) {
-    body_field_path_ = std::move(body_field_path);
-  }
-
  private:
   // Method name.
   std::string name_;
@@ -170,9 +164,6 @@ class MethodInfoImpl : public MethodInfo {
 
   // Whether the response is streaming or not.
   bool response_streaming_;
-
-  // The field in the request message to be mapped to the HTTP body
-  std::string body_field_path_;
 };
 
 typedef std::unique_ptr<MethodInfoImpl> MethodInfoImplPtr;

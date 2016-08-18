@@ -102,7 +102,7 @@ pbutil::Status MethodCallInfoToRequestInfo(TypeHelper* type_helper,
   }
 
   // Copy the body field path
-  request_info->body_field_path = call_info.method_info->body_field_path();
+  request_info->body_field_path = call_info.body_field_path;
 
   // Resolve the field paths of the bindings and add to the request_info
   for (const auto& unresolved_binding : call_info.variable_bindings) {

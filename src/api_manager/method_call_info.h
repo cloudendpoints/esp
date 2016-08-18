@@ -54,6 +54,8 @@ struct MethodCallInfo {
   const MethodInfo* method_info;
   // Variable bindings
   std::vector<VariableBinding> variable_bindings;
+  // Body prefix (the field of the message where the HTTP body should go)
+  std::string body_field_path;
 };
 
 }  // namespace api_manager

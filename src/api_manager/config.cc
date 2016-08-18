@@ -143,9 +143,8 @@ bool Config::LoadHttpMethods(ApiManagerEnvInterface *env,
     }
 
     MethodInfoImpl *mi = GetOrCreateMethodInfoImpl(selector);
-    mi->set_body_field_path(rule.body());
 
-    if (!pmb->Register(service_.name(), http_method, *url, mi)) {
+    if (!pmb->Register(service_.name(), http_method, *url, rule.body(), mi)) {
       string error("Invalid HTTP template: ");
       error += *url;
       env->LogError(error.c_str());
@@ -187,7 +186,7 @@ bool Config::AddOptionsMethodForAllUrls(ApiManagerEnvInterface *env,
   mi->set_allow_unregistered_calls(true);
 
   for (auto url : all_urls) {
-    if (!pmb->Register(service_.name(), http_options, url, mi)) {
+    if (!pmb->Register(service_.name(), http_options, url, std::string(), mi)) {
       env->LogError(
           std::string("Failed to add http options template for url: " + url));
     }
@@ -227,7 +226,7 @@ bool Config::LoadRpcMethods(ApiManagerEnvInterface *env,
       mi->set_response_type_url(method.response_type_url());
       mi->set_response_streaming(method.response_streaming());
 
-      if (!pmb->Register(service_.name(), http_post, path, mi)) {
+      if (!pmb->Register(service_.name(), http_post, path, std::string(), mi)) {
         string error("Invalid method: ");
         error += selector;
         env->LogError(error.c_str());
@@ -431,7 +430,8 @@ MethodCallInfo Config::GetMethodCallInfo(const std::string &http_method,
     call_info.method_info = nullptr;
   } else {
     call_info.method_info = static_cast<MethodInfo *>(path_matcher_->Lookup(
-        service_.name(), http_method, url, &call_info.variable_bindings));
+        service_.name(), http_method, url, &call_info.variable_bindings,
+        &call_info.body_field_path));
   }
   return call_info;
 }

@@ -72,7 +72,8 @@ class PathMatcher {
 
   void* Lookup(const std::string& service_name, const std::string& http_method,
                const std::string& path,
-               std::vector<VariableBinding>* variable_bindings) const;
+               std::vector<VariableBinding>* variable_bindings,
+               std::string* body_field_path) const;
 
   void* Lookup(const std::string& service_name, const std::string& http_method,
                const std::string& path) const;
@@ -91,6 +92,7 @@ class PathMatcher {
   struct MethodInfo {
     void* data;
     std::vector<HttpTemplate::Variable> variables;
+    std::string body_field_path;
   };
   // The info associated with each method. The path matcher nodes
   // will hold pointers to MethodInfo objects in this vector.
@@ -117,7 +119,8 @@ class PathMatcherBuilder {
   // is stored.
   // Return false if path is an invalid http template.
   bool Register(std::string service_name, std::string http_method,
-                std::string path, void* method_data);
+                std::string path, std::string body_field_path,
+                void* method_data);
 
   // Returns a shared_ptr to a thread safe PathMatcher that contains all
   // registered path-WrapperGraph pairs.

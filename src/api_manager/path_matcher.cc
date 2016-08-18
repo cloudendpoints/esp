@@ -237,9 +237,10 @@ PathMatcher::~PathMatcher() { utils::STLDeleteValues(&root_ptr_map_); }
 // values parsed from the path.
 // TODO: cache results by adding get/put methods here (if profiling reveals
 // benefit)
-void* PathMatcher::Lookup(
-    const string& service_name, const string& http_method, const string& path,
-    std::vector<VariableBinding>* variable_bindings) const {
+void* PathMatcher::Lookup(const string& service_name, const string& http_method,
+                          const string& path,
+                          std::vector<VariableBinding>* variable_bindings,
+                          std::string* body_field_path) const {
   const vector<string> parts = ExtractRequestParts(path);
 
   PathMatcherNode* root_ptr = utils::FindPtrOrNull(root_ptr_map_, service_name);
@@ -270,12 +271,15 @@ void* PathMatcher::Lookup(
   if (variable_bindings != nullptr) {
     ExtractVariableBindings(method->variables, parts, variable_bindings);
   }
+  if (body_field_path != nullptr) {
+    *body_field_path = method->body_field_path;
+  }
   return method->data;
 }
 
 void* PathMatcher::Lookup(const string& service_name, const string& http_method,
                           const string& path) const {
-  return Lookup(service_name, http_method, path, nullptr);
+  return Lookup(service_name, http_method, path, nullptr, nullptr);
 }
 
 // Initializes the builder with a root Path Segment
@@ -309,7 +313,8 @@ void PathMatcherBuilder::InsertPathToNode(const PathMatcherNode::PathInfo& path,
 // This wrapper converts the |http_rule| into a HttpTemplate. Then, inserts the
 // template into the trie.
 bool PathMatcherBuilder::Register(string service_name, string http_method,
-                                  string http_template, void* method_data) {
+                                  string http_template, string body_field_path,
+                                  void* method_data) {
   std::unique_ptr<HttpTemplate> ht(HttpTemplate::Parse(http_template));
   if (nullptr == ht) {
     return false;
@@ -323,6 +328,7 @@ bool PathMatcherBuilder::Register(string service_name, string http_method,
   auto method_info = std::unique_ptr<MethodInfo>(new MethodInfo());
   method_info->data = method_data;
   method_info->variables = std::move(ht->Variables());
+  method_info->body_field_path = std::move(body_field_path);
   // Don't mark batch methods as duplicates, since we insert them into each
   // service, and their graphs are all the same. We'll just use the first one
   // as the default. This allows batch requests on any service name to work.

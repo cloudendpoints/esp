@@ -79,9 +79,12 @@ class PathMatcherTest : public ::testing::Test {
   PathMatcherTest() : builder_(false) {}
   ~PathMatcherTest() { utils::STLDeleteElements(&stored_strings_); }
 
-  void* AddPath(std::string http_method, std::string http_template) {
+  void* AddPathWithBodyFieldPath(std::string http_method,
+                                 std::string http_template,
+                                 std::string body_field_path) {
     std::string* data = new std::string(http_method);
-    if (!builder_.Register("", http_method, http_template, data)) {
+    if (!builder_.Register("", http_method, http_template, body_field_path,
+                           data)) {
       delete data;
       return nullptr;
     }
@@ -89,17 +92,30 @@ class PathMatcherTest : public ::testing::Test {
     return data;
   }
 
+  void* AddPath(std::string http_method, std::string http_template) {
+    return AddPathWithBodyFieldPath(http_method, http_template, std::string());
+  }
+
   void* AddGetPath(std::string path) { return AddPath("GET", path); }
 
   void Build() { matcher_ = builder_.Build(); }
 
+  void* LookupWithBodyFieldPath(std::string method, std::string path,
+                                Bindings* bindings,
+                                std::string* body_field_path) {
+    return matcher_->Lookup("", method, path, bindings, body_field_path);
+  }
+
   void* Lookup(std::string method, std::string path, Bindings* bindings) {
-    return matcher_->Lookup("", method, path, bindings);
+    std::string body_field_path;
+    return matcher_->Lookup("", method, path, bindings, &body_field_path);
   }
 
   void* LookupNoBindings(std::string method, std::string path) {
     Bindings bindings;
-    auto result = matcher_->Lookup("", method, path, &bindings);
+    std::string body_field_path;
+    auto result =
+        matcher_->Lookup("", method, path, &bindings, &body_field_path);
     EXPECT_EQ(0, bindings.size());
     return result;
   }
@@ -594,6 +610,20 @@ TEST_F(PathMatcherTest, DifferentHttpMethod) {
   EXPECT_NE(nullptr, ab);
   EXPECT_EQ(LookupNoBindings("GET", "/a/b"), ab);
   EXPECT_EQ(LookupNoBindings("POST", "/a/b"), nullptr);
+}
+
+TEST_F(PathMatcherTest, BodyFieldPathTest) {
+  auto a = AddPathWithBodyFieldPath("GET", "/a", "b");
+  auto cd = AddPathWithBodyFieldPath("GET", "/c/d", "e.f.g");
+  Build();
+  EXPECT_NE(nullptr, a);
+  EXPECT_NE(nullptr, cd);
+  std::string body_field_path;
+  EXPECT_EQ(LookupWithBodyFieldPath("GET", "/a", nullptr, &body_field_path), a);
+  EXPECT_EQ("b", body_field_path);
+  EXPECT_EQ(LookupWithBodyFieldPath("GET", "/c/d", nullptr, &body_field_path),
+            cd);
+  EXPECT_EQ("e.f.g", body_field_path);
 }
 
 }  // namespace

@@ -559,7 +559,6 @@ TEST(Config, RpcMethodsWithHttpRules) {
   EXPECT_EQ("types.googleapis.com/Bookstore.ListShelvesResponse",
             list_shelves->response_type_url());
   EXPECT_EQ(false, list_shelves->response_streaming());
-  EXPECT_EQ("", list_shelves->body_field_path());
 
   const MethodInfo *create_shelves =
       config->GetMethodInfo("POST", "/Bookstore/CreateShelves");
@@ -572,7 +571,6 @@ TEST(Config, RpcMethodsWithHttpRules) {
   EXPECT_EQ("types.googleapis.com/Bookstore.Shelf",
             create_shelves->response_type_url());
   EXPECT_EQ(true, create_shelves->response_streaming());
-  EXPECT_EQ("", create_shelves->body_field_path());
 
   // Matching through http rule path must yield the same method
   EXPECT_EQ(list_shelves, config->GetMethodInfo("GET", "/shelves"));
@@ -617,6 +615,11 @@ TEST(Config, RpcMethodsWithHttpRulesAndVariableBindings) {
           post: "/shelves/{shelf=*}/books"
           body: "book"
         }
+        rules {
+          selector: "Bookstore.CreateBook"
+          post: "/shelves/{shelf=*}/books/{book.id}/{book.author}"
+          body: "book.title"
+        }
       }
     )";
 
@@ -634,7 +637,7 @@ TEST(Config, RpcMethodsWithHttpRulesAndVariableBindings) {
   EXPECT_EQ("types.googleapis.com/Bookstore.ListShelvesResponse",
             list_shelves.method_info->response_type_url());
   EXPECT_EQ(false, list_shelves.method_info->response_streaming());
-  EXPECT_EQ("", list_shelves.method_info->body_field_path());
+  EXPECT_EQ("", list_shelves.body_field_path);
   EXPECT_EQ(0, list_shelves.variable_bindings.size());
 
   MethodCallInfo list_books =
@@ -649,7 +652,7 @@ TEST(Config, RpcMethodsWithHttpRulesAndVariableBindings) {
   EXPECT_EQ("types.googleapis.com/Bookstore.ListBooksResponse",
             list_books.method_info->response_type_url());
   EXPECT_EQ(false, list_books.method_info->response_streaming());
-  EXPECT_EQ("", list_books.method_info->body_field_path());
+  EXPECT_EQ("", list_books.body_field_path);
   ASSERT_EQ(1, list_books.variable_bindings.size());
   EXPECT_EQ(std::vector<std::string>(1, "shelf"),
             list_books.variable_bindings[0].field_path);
@@ -667,11 +670,38 @@ TEST(Config, RpcMethodsWithHttpRulesAndVariableBindings) {
   EXPECT_EQ("types.googleapis.com/Bookstore.Book",
             create_book.method_info->response_type_url());
   EXPECT_EQ(false, create_book.method_info->response_streaming());
-  EXPECT_EQ("book", create_book.method_info->body_field_path());
+  EXPECT_EQ("book", create_book.body_field_path);
   ASSERT_EQ(1, create_book.variable_bindings.size());
   EXPECT_EQ(std::vector<std::string>(1, "shelf"),
             create_book.variable_bindings[0].field_path);
   EXPECT_EQ("99", create_book.variable_bindings[0].value);
+
+  MethodCallInfo create_book_1 =
+      config->GetMethodCallInfo("POST", "/shelves/77/books/88/auth");
+
+  ASSERT_NE(nullptr, create_book_1.method_info);
+  EXPECT_EQ("/Bookstore/CreateBook",
+            create_book_1.method_info->rpc_method_full_name());
+  EXPECT_EQ("types.googleapis.com/Bookstore.CreateBookRequest",
+            create_book_1.method_info->request_type_url());
+  EXPECT_EQ(false, create_book_1.method_info->request_streaming());
+  EXPECT_EQ("types.googleapis.com/Bookstore.Book",
+            create_book_1.method_info->response_type_url());
+  EXPECT_EQ(false, create_book_1.method_info->response_streaming());
+  EXPECT_EQ("book.title", create_book_1.body_field_path);
+  ASSERT_EQ(3, create_book_1.variable_bindings.size());
+
+  EXPECT_EQ(std::vector<std::string>(1, "shelf"),
+            create_book_1.variable_bindings[0].field_path);
+  EXPECT_EQ("77", create_book_1.variable_bindings[0].value);
+
+  EXPECT_EQ((std::vector<std::string>{"book", "id"}),
+            create_book_1.variable_bindings[1].field_path);
+  EXPECT_EQ("88", create_book_1.variable_bindings[1].value);
+
+  EXPECT_EQ((std::vector<std::string>{"book", "author"}),
+            create_book_1.variable_bindings[2].field_path);
+  EXPECT_EQ("auth", create_book_1.variable_bindings[2].value);
 }
 
 TEST(Config, TestHttpOptions) {

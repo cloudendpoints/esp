@@ -147,6 +147,7 @@ class TranscoderTest : public ::testing::Test {
     MethodCallInfo call_info;
     call_info.method_info = method_info_.get();
     call_info.variable_bindings = std::move(variable_bindings_);
+    call_info.body_field_path = method_info_->body_field_path();
 
     return transcoder_factory_->Create(call_info, request_input, response_input,
                                        transcoder);
