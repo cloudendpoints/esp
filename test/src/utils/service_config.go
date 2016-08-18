@@ -28,6 +28,7 @@ package utils
 
 import (
 	"bytes"
+	"io/ioutil"
 	"text/template"
 )
 
@@ -132,12 +133,28 @@ func GenerateAuthConfig(providers []AuthProvider) (string, error) {
 
 var serviceTemplates = template.Must(template.New("script").Parse(basicConfig))
 
+func readLogMetrics(script *bytes.Buffer) error {
+	path, err := GetTestDataRootPath()
+	if err != nil {
+		return err
+	}
+	m, err := ioutil.ReadFile(path + "/src/nginx/t/testdata/logs_metrics.pb.txt")
+	if err != nil {
+		return err
+	}
+	_, err = script.Write(m)
+	return err
+}
+
 func GenerateBasicServiceConfig(context *BasicContext) (string, error) {
 	var script bytes.Buffer
 	if err := serviceTemplates.Execute(&script, context); err != nil {
 		return "", err
 	}
 	script.WriteString("")
+	if err := readLogMetrics(&script); err != nil {
+		return "", err
+	}
 	return script.String(), nil
 }
 

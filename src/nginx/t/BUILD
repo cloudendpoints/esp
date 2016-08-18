@@ -283,3 +283,4 @@ nginx_suite(
 
 # Used by Go tests
 exports_files(["matching-client-secret.json"])
+exports_files(["testdata/logs_metrics.pb.txt"])

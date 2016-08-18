@@ -178,13 +178,18 @@ go_library(
         "utils/status.go",
         "utils/test_env_path.go",
     ],
-    deps = [
-        "@github_com_golang_protobuf//:proto",
-        "@github_com_golang_protobuf//:ptypes/struct",
-        ":vendor/google/api/servicecontrol/v1",
-        ":vendor/google/logging/type",
+    data = [
+        "//include:version",
+        "//src/nginx/t:testdata/logs_metrics.pb.txt",
+        "//src/tools:auth_token_gen",
     ],
     go_prefix = "//test/src:go_prefix",
+    deps = [
+        ":vendor/google/api/servicecontrol/v1",
+        ":vendor/google/logging/type",
+        "@github_com_golang_protobuf//:proto",
+        "@github_com_golang_protobuf//:ptypes/struct",
+    ],
 )
 
 go_test(

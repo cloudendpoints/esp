@@ -27,11 +27,12 @@
 package t
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
+	"strings"
 	"testing"
 	"utils"
 )
@@ -146,7 +147,8 @@ func TestE2e(t *testing.T) {
 	req.Header = map[string][]string{}
 	req.Header["Authorization"] = []string{"Bearer " + token}
 	req.Method = http.MethodGet
-	req.URL, _ = url.Parse("http://127.0.0.1:" + strconv.Itoa(nginxPort) + queryUrl)
+	req.URL, _ = url.Parse(
+		fmt.Sprintf("http://127.0.0.1:%d%s?api_key=api-key-1", nginxPort, queryUrl))
 	res, err := client.Do(&req)
 
 	check_auth := req.Header.Get("Authorization")
@@ -184,21 +186,81 @@ func TestMetadataRequests(t *testing.T) {
 	}
 
 	// first one
-	meta_r := rq[1]
-	if meta_r.Url != ts.metadataServer.metaUrl {
+	meta := rq[1]
+	if meta.Url != ts.metadataServer.metaUrl {
 		t.Errorf("meta URL doesn't match")
 	}
-	if meta_r.Verb != http.MethodGet {
+	if meta.Verb != http.MethodGet {
 		t.Errorf("meta Verb doesn't match")
 	}
 
 	// second one
-	token_r := rq[2]
-	if token_r.Url != ts.metadataServer.tokenUrl {
+	token := rq[2]
+	if token.Url != ts.metadataServer.tokenUrl {
 		t.Errorf("token URL doesn't match")
 	}
-	if token_r.Verb != http.MethodGet {
+	if token.Verb != http.MethodGet {
 		t.Errorf("token Verb doesn't match")
+	}
+}
+
+func TestServiceControlRequests(t *testing.T) {
+
+	// WARNING! This test assumes that all other tests have run
+	// it cannot be run in isolation
+	rq, err := GetServiceControlData(fmt.Sprintf("http://127.0.0.1:%d", serviceControlPort), 3, 2)
+	if err != nil {
+		t.Errorf("Failed to get request data from service control server")
+	}
+
+	// first one is Check
+	r := rq[1]
+	if !strings.HasSuffix(r.Url, ":check") {
+		t.Errorf("wrong check URL: %s", r.Url)
+	}
+	if r.Verb != "POST" {
+		t.Errorf("wrong check verb: %s", r.Verb)
+	}
+
+	ver, err := utils.GetVersion()
+	if err != nil {
+		t.Errorf("Failed to get expected version.")
+	}
+
+	if !utils.VerifyCheck(r.Body, &utils.ExpectedCheck{
+		Version:       ver,
+		ServiceName:   "SERVICENAME",
+		ConsumerID:    "api_key:api-key-1",
+		OperationName: "ListShelves",
+		CallerIp:      "127.0.0.1",
+	}) {
+		t.Errorf("Check request data doesn't match.")
+	}
+
+	// second one is Report
+	r = rq[2]
+	if !strings.HasSuffix(r.Url, ":report") {
+		t.Errorf("wrong report URL: %s", r.Url)
+	}
+	if r.Verb != "POST" {
+		t.Errorf("wrong report verb: %s", r.Verb)
+	}
+	if !utils.VerifyReport(r.Body, &utils.ExpectedReport{
+		Version:           ver,
+		ApiKey:            "api-key-1",
+		URL:               "/shelves?api_key=api-key-1",
+		ApiName:           "SERVICENAME",
+		ApiMethod:         "ListShelves",
+		Platform:          "GCE",
+		ProducerProjectID: "endpoints-app",
+		Location:          "us-west1-d",
+		HttpMethod:        "GET",
+		LogMessage:        "Method: ListShelves",
+		RequestSize:       894,
+		ResponseSize:      270,
+		ResponseCode:      200,
+	}) {
+		t.Errorf("Report request data doesn't match.")
 	}
 }
 
@@ -207,4 +269,3 @@ func TestCleanup(t *testing.T) {
 
 	TearDownLocal(ts, saveSandbox)
 }
-

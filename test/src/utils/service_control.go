@@ -27,9 +27,11 @@
 package utils
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"math"
+	"sort"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/struct"
@@ -76,6 +78,22 @@ type distOptions struct {
 var (
 	timeDistOptions = distOptions{8, 10.0, 1e-6}
 	sizeDistOptions = distOptions{8, 10.0, 1}
+	randomMatrics   = map[string]bool{
+		"serviceruntime.googleapis.com/api/consumer/total_latencies":                        true,
+		"serviceruntime.googleapis.com/api/producer/total_latencies":                        true,
+		"serviceruntime.googleapis.com/api/consumer/backend_latencies":                      true,
+		"serviceruntime.googleapis.com/api/producer/backend_latencies":                      true,
+		"serviceruntime.googleapis.com/api/consumer/request_overhead_latencies":             true,
+		"serviceruntime.googleapis.com/api/producer/request_overhead_latencies":             true,
+		"serviceruntime.googleapis.com/api/producer/by_consumer/total_latencies":            true,
+		"serviceruntime.googleapis.com/api/producer/by_consumer/request_overhead_latencies": true,
+		"serviceruntime.googleapis.com/api/producer/by_consumer/backend_latencies":          true,
+	}
+	randomLogEntries = []string{
+		"timestamp",
+		"request_latency_in_ms",
+	}
+	fakeLatency = 1000
 )
 
 func CreateCheck(er *ExpectedCheck) servicecontrol.CheckRequest {
@@ -95,25 +113,6 @@ func CreateCheck(er *ExpectedCheck) servicecontrol.CheckRequest {
 			er.CallerIp
 	}
 	return erPb
-}
-
-func VerifyCheck(body []byte, er *ExpectedCheck) bool {
-	cr := servicecontrol.CheckRequest{}
-	err := proto.Unmarshal(body, &cr)
-	if err != nil {
-		log.Println("failed to parse body into CheckRequest.")
-		return false
-	}
-	fmt.Println("From body: ", cr.String())
-	// Clear some fields
-	cr.Operation.OperationId = ""
-	cr.Operation.StartTime = nil
-	cr.Operation.EndTime = nil
-
-	erPb := CreateCheck(er)
-	fmt.Println("Expected: ", erPb.String())
-
-	return proto.Equal(&cr, &erPb)
 }
 
 func responseCodes(code int) (response, status, class string) {
@@ -235,7 +234,7 @@ func createDistMetricSet(options *distOptions, name string, value int64) *servic
 	fValue := float64(value)
 	idx := 0
 	if fValue >= options.Scale {
-		idx = 1 + int(math.Log(fValue/options.Scale/options.Growth))
+		idx = 1 + int(math.Log(fValue/options.Scale)/math.Log(options.Growth))
 		if idx >= len(buckets) {
 			idx = len(buckets) - 1
 		}
@@ -268,6 +267,36 @@ func createDistMetricSet(options *distOptions, name string, value int64) *servic
 	}
 }
 
+func updateDistMetricSet(m *servicecontrol.MetricValueSet, fValue float64) {
+	for _, v := range m.MetricValues {
+		d := v.GetDistributionValue()
+		o := d.GetExponentialBuckets()
+
+		d.Mean = fValue
+		d.Minimum = fValue
+		d.Maximum = fValue
+
+		buckets := d.BucketCounts
+		idx := 0
+		if fValue >= o.Scale {
+			idx = 1 + int(math.Log(fValue/o.Scale)/math.Log(o.GrowthFactor))
+			if idx >= len(buckets) {
+				idx = len(buckets) - 1
+			}
+		}
+		for i, _ := range buckets {
+			buckets[i] = 0
+		}
+		buckets[idx] = 1
+	}
+}
+
+type metricSetSorter []*servicecontrol.MetricValueSet
+
+func (a metricSetSorter) Len() int           { return len(a) }
+func (a metricSetSorter) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a metricSetSorter) Less(i, j int) bool { return a[i].MetricName < a[j].MetricName }
+
 func CreateReport(er *ExpectedReport) servicecontrol.ReportRequest {
 	op := servicecontrol.Operation{
 		OperationName: er.ApiMethod,
@@ -284,7 +313,7 @@ func CreateReport(er *ExpectedReport) servicecontrol.ReportRequest {
 		createLogEntry(er),
 	}
 
-	op.MetricValueSets = []*servicecontrol.MetricValueSet{
+	ms := []*servicecontrol.MetricValueSet{
 		createInt64MetricSet("serviceruntime.googleapis.com/api/consumer/request_count", 1),
 		createInt64MetricSet("serviceruntime.googleapis.com/api/producer/request_count", 1),
 		createInt64MetricSet("serviceruntime.googleapis.com/api/producer/by_consumer/request_count", 1),
@@ -294,10 +323,13 @@ func CreateReport(er *ExpectedReport) servicecontrol.ReportRequest {
 		createDistMetricSet(&sizeDistOptions,
 			"serviceruntime.googleapis.com/api/producer/request_sizes", er.RequestSize),
 		createDistMetricSet(&sizeDistOptions,
-			"serviceruntime.googleapis.com/api/producer/by/consumer/request_sizes", er.RequestSize),
+			"serviceruntime.googleapis.com/api/producer/by_consumer/request_sizes", er.RequestSize),
+	}
+	for name, _ := range randomMatrics {
+		ms = append(ms, createDistMetricSet(&timeDistOptions, name, int64(fakeLatency)))
 	}
 	if er.ResponseSize != 0 {
-		op.MetricValueSets = append(op.MetricValueSets,
+		ms = append(ms,
 			createDistMetricSet(&sizeDistOptions,
 				"serviceruntime.googleapis.com/api/consumer/response_sizes", er.ResponseSize),
 			createDistMetricSet(&sizeDistOptions,
@@ -306,15 +338,81 @@ func CreateReport(er *ExpectedReport) servicecontrol.ReportRequest {
 				"serviceruntime.googleapis.com/api/producer/by_consumer/response_sizes", er.ResponseSize))
 	}
 	if er.ErrorType != "" {
-		op.MetricValueSets = append(op.MetricValueSets,
+		ms = append(ms,
 			createInt64MetricSet("serviceruntime.googleapis.com/api/consumer/error_count", 1),
 			createInt64MetricSet("serviceruntime.googleapis.com/api/producer/error_count", 1),
 			createInt64MetricSet("serviceruntime.googleapis.com/api/producer/by_consumer/error_count", 1))
 	}
+	sort.Sort(metricSetSorter(ms))
+	op.MetricValueSets = ms
 
 	erPb := servicecontrol.ReportRequest{
 		ServiceName: er.ApiName,
 		Operations:  []*servicecontrol.Operation{&op},
 	}
 	return erPb
+}
+
+func stripRandomFields(op *servicecontrol.Operation) {
+	// Clear some fields
+	op.OperationId = ""
+	op.StartTime = nil
+	op.EndTime = nil
+
+	for _, m := range op.MetricValueSets {
+		if _, found := randomMatrics[m.MetricName]; found {
+			updateDistMetricSet(m, float64(fakeLatency))
+		}
+	}
+	sort.Sort(metricSetSorter(op.MetricValueSets))
+
+	for _, l := range op.LogEntries {
+		l.Timestamp = nil
+		for _, s := range randomLogEntries {
+			delete(l.GetStructPayload().Fields, s)
+		}
+	}
+}
+
+func compareProto(t, e proto.Message) bool {
+	if proto.Equal(t, e) {
+		return true
+	}
+	var ts bytes.Buffer
+	if err := proto.MarshalText(&ts, t); err == nil {
+		fmt.Println("=== Got:\n", ts.String())
+	}
+	var es bytes.Buffer
+	if err := proto.MarshalText(&es, e); err == nil {
+		fmt.Println("=== Expected:\n", es.String())
+	}
+	return false
+}
+
+func VerifyCheck(body []byte, er *ExpectedCheck) bool {
+	cr := servicecontrol.CheckRequest{}
+	err := proto.Unmarshal(body, &cr)
+	if err != nil {
+		log.Println("failed to parse body into CheckRequest.")
+		return false
+	}
+	stripRandomFields(cr.Operation)
+
+	erPb := CreateCheck(er)
+	return compareProto(&cr, &erPb)
+}
+
+func VerifyReport(body []byte, er *ExpectedReport) bool {
+	cr := servicecontrol.ReportRequest{}
+	err := proto.Unmarshal(body, &cr)
+	if err != nil {
+		log.Println("failed to parse body into ReportRequest.")
+		return false
+	}
+	for _, op := range cr.Operations {
+		stripRandomFields(op)
+	}
+
+	erPb := CreateReport(er)
+	return compareProto(&cr, &erPb)
 }

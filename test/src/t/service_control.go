@@ -32,6 +32,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type ServiceController struct {
@@ -114,4 +115,22 @@ func (sc *ServiceController) Config(checkRespCode int, checkRespBody string, rep
 	}
 
 	return err
+}
+
+func GetServiceControlData(server string, n, timeout int) (rq fakes.Requests, err error) {
+	// Wait until timeout seconds to wait for n requests.
+	// Report is cached by ApiManager for 1 second. If the caller needs to get Report
+	// data, it may need to wait at least for 1 second.
+	for i := 0; i < timeout*10; i++ {
+		rq, err := fakes.GetRequests(server, "")
+		if err != nil {
+			log.Println("failed to get data from service control server")
+			return rq, err
+		}
+		if len(rq) >= n {
+			return rq, nil
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	return rq, nil
 }
