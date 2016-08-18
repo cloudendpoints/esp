@@ -44,7 +44,7 @@ my $NginxPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $GrpcServerPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(15);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(27);
 
 $t->write_file('service.json',
   ApiManager::get_transcoding_test_service_config(
@@ -122,6 +122,62 @@ like($response, qr/HTTP\/1\.1 404 Not Found/, 'Got a 404.');
 like($response, qr/Content-Type: application\/json/i, 'Content-type is application/json');
 like($response, qr/Method does not exist/i, "the message from the backend was propogated.");
 
+# 5. Posting invalid JSON - no braces
+$response = ApiManager::http($NginxPort,<<EOF);
+POST /shelves?key=api-key HTTP/1.0
+Host: 127.0.0.1:${NginxPort}
+Content-Type: application/json
+Content-Length: 16
+
+NOT_A_VALID_JSON
+EOF
+
+like($response, qr/HTTP\/1\.1 400 Bad Request/, 'Got a 400.');
+like($response, qr/Content-Type: application\/json/i, 'Content-type is application/json');
+like($response, qr/Unexpected token.*NOT_A_VALID_JSON.*/i, "Got the unexpected token message");
+
+# 6. Posting invalid JSON - mismatched {
+$response = ApiManager::http($NginxPort,<<EOF);
+POST /shelves?key=api-key HTTP/1.0
+Host: 127.0.0.1:${NginxPort}
+Content-Type: application/json
+Content-Length: 22
+
+{ "theme" : "Children"
+EOF
+
+like($response, qr/HTTP\/1\.1 400 Bad Request/, 'Got a 400.');
+like($response, qr/Content-Type: application\/json/i, 'Content-type is application/json');
+like($response, qr/Unexpected end of string.*/i, "Got the mismatched { message");
+
+# 7. Posting invalid JSON - extra characters
+$response = ApiManager::http($NginxPort,<<EOF);
+POST /shelves?key=api-key HTTP/1.0
+Host: 127.0.0.1:${NginxPort}
+Content-Type: application/json
+Content-Length: 30
+
+{ "theme" : "Children" } EXTRA
+EOF
+
+like($response, qr/HTTP\/1\.1 400 Bad Request/, 'Got a 400.');
+like($response, qr/Content-Type: application\/json/i, 'Content-type is application/json');
+like($response, qr/Parsing terminated before end of input./i, "Got the extra characters message");
+
+# 8. Posting invalid JSON - no colon
+$response = ApiManager::http($NginxPort,<<EOF);
+POST /shelves?key=api-key HTTP/1.0
+Host: 127.0.0.1:${NginxPort}
+Content-Type: application/json
+Content-Length: 22
+
+{ "theme"  "Children" }
+EOF
+
+like($response, qr/HTTP\/1\.1 400 Bad Request/, 'Got a 400.');
+like($response, qr/Content-Type: application\/json/i, 'Content-type is application/json');
+like($response, qr/Expected : between key:value pair./i, "Got the missing colon message");
+
 ################################################################################
 
 sub service_control {
@@ -145,32 +201,28 @@ sub service_control {
 }
 EOF
 
-  # 1 - check fails
-  $server->on('POST', '/v1/services/endpoints-transcoding-test.cloudendpointsapis.com:check', <<'EOF' . $failed_check);
+  my $first_check = 1;
+
+  $server->on_sub('POST', '/v1/services/endpoints-transcoding-test.cloudendpointsapis.com:check', sub {
+    my ($headers, $body, $client) = @_;
+
+    # Fail the first check to simulate service-control error and succeed the rest
+    if ($first_check) {
+      print $client <<EOF . $failed_check;
 HTTP/1.1 200 OK
 Connection: close
 
 EOF
-
-
-  # 2, 3 & 4 - check passes
-  $server->on('POST', '/v1/services/endpoints-transcoding-test.cloudendpointsapis.com:check', <<'EOF');
+      $first_check = 0;
+    } else {
+      print $client <<EOF;
 HTTP/1.1 200 OK
+Content-Type: application/json
 Connection: close
 
 EOF
-
-  $server->on('POST', '/v1/services/endpoints-transcoding-test.cloudendpointsapis.com:check', <<'EOF');
-HTTP/1.1 200 OK
-Connection: close
-
-EOF
-
-  $server->on('POST', '/v1/services/endpoints-transcoding-test.cloudendpointsapis.com:check', <<'EOF');
-HTTP/1.1 200 OK
-Connection: close
-
-EOF
+    }
+  });
 
   $server->on_sub('POST', '/v1/services/endpoints-transcoding-test.cloudendpointsapis.com:report', sub {
     my ($headers, $body, $client) = @_;
