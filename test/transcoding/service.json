@@ -1102,6 +1102,10 @@
       "post": "/shelves/{shelf}/books",
       "body": "book"
     }, {
+      "selector": "endpoints.examples.bookstore.Bookstore.CreateBook",
+      "post": "/shelves/{shelf}/books/{book.id}/{book.author}",
+      "body": "book.title"
+    }, {
       "selector": "endpoints.examples.bookstore.Bookstore.GetBook",
       "get": "/shelves/{shelf}/books/{book}"
     }, {
