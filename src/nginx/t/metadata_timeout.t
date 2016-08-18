@@ -108,7 +108,11 @@ like($books, qr/^HTTP\/1\.1 401/, '/books returned HTTP 401.');
 
 # Check metadata server log.
 my @metadata_requests = ApiManager::read_http_stream($t, 'metadata.log');
-is(scalar @metadata_requests, 4, 'Metadata server received all requests.');
+# There will be 3 requests to fake metadata server.
+# the first one is time-out-ed since server puts a 2 second sleep.
+# the retry (2nd request) should be fine since there is not sleep.
+# the 3rd request is token fetching.
+is(scalar @metadata_requests, 3, 'Metadata server received all requests.');
 
 # Metadata request 1
 my $r = shift @metadata_requests;
@@ -200,12 +204,16 @@ sub metadata {
   my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
+  my $request_count = 0;
 
   $server->on_sub('GET', '/computeMetadata/v1/?recursive=true', sub {
     my ($headers, $body, $client) = @_;
 
-    # Trigger a timeout.
-    sleep 2;
+    $request_count++;
+    if ($request_count == 1) {
+        # Trigger a timeout for the first request.
+        sleep 2;
+    }
 
     print $client <<'EOF' . ApiManager::get_metadata_response_body();
 HTTP/1.1 200 OK
