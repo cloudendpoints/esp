@@ -170,6 +170,7 @@ class BookstoreServiceImpl : public Bookstore::Service {
 
     if (it != std::end(shelves_)) {
       shelves_.erase(it);
+      books_.erase(id);
       return ::grpc::Status::OK;
     } else {
       return ::grpc::Status(grpc::NOT_FOUND, "Shelf not found");
@@ -181,7 +182,17 @@ class BookstoreServiceImpl : public Bookstore::Service {
                            ListBooksResponse* reply) {
     std::cerr << "GRPC-BACKEND: ListBooks" << std::endl;
     PrintRequest(*request);
-    // Not implemented yet
+
+    auto shelf_id = request->shelf();
+    if (!ShelfExists(shelf_id)) {
+      return ::grpc::Status(grpc::NOT_FOUND, "Shelf not found");
+    }
+
+    for (auto it = books_.lower_bound(shelf_id);
+         it != books_.upper_bound(shelf_id); ++it) {
+      *reply->add_books() = it->second;
+    }
+
     return ::grpc::Status::OK;
   }
 
@@ -189,7 +200,20 @@ class BookstoreServiceImpl : public Bookstore::Service {
                             const CreateBookRequest* request, Book* reply) {
     std::cerr << "GRPC-BACKEND: CreateBook" << std::endl;
     PrintRequest(*request);
-    // Not implemented yet
+
+    auto shelf_id = request->shelf();
+    if (!ShelfExists(shelf_id)) {
+      return ::grpc::Status(grpc::NOT_FOUND, "Shelf not found");
+    }
+
+    auto book = request->book();
+    if (book.id() == 0) {
+      book.set_id(IdGenerator<Book>());
+    }
+
+    *reply = book;
+    books_.insert(std::make_pair(shelf_id, book));
+
     return ::grpc::Status::OK;
   }
 
@@ -197,8 +221,21 @@ class BookstoreServiceImpl : public Bookstore::Service {
                          Book* reply) {
     std::cerr << "GRPC-BACKEND: GetBook" << std::endl;
     PrintRequest(*request);
-    // Not implemented yet
-    return ::grpc::Status::OK;
+
+    auto shelf_id = request->shelf();
+    if (!ShelfExists(shelf_id)) {
+      return ::grpc::Status(grpc::NOT_FOUND, "Shelf not found");
+    }
+
+    for (auto it = books_.lower_bound(shelf_id);
+         it != books_.upper_bound(shelf_id); ++it) {
+      if (it->second.id() == request->book()) {
+        *reply = it->second;
+        return ::grpc::Status::OK;
+      }
+    }
+
+    return ::grpc::Status(grpc::NOT_FOUND, "Book not found");
   }
 
   ::grpc::Status DeleteBook(::grpc::ServerContext*,
@@ -206,8 +243,21 @@ class BookstoreServiceImpl : public Bookstore::Service {
                             ::google::protobuf::Empty* reply) {
     std::cerr << "GRPC-BACKEND: DeleteBook" << std::endl;
     PrintRequest(*request);
-    // Not implemented yet
-    return ::grpc::Status::OK;
+
+    auto shelf_id = request->shelf();
+    if (!ShelfExists(shelf_id)) {
+      return ::grpc::Status(grpc::NOT_FOUND, "Shelf not found");
+    }
+
+    for (auto it = books_.lower_bound(shelf_id);
+         it != books_.upper_bound(shelf_id); ++it) {
+      if (it->second.id() == request->book()) {
+        books_.erase(it);
+        return ::grpc::Status::OK;
+      }
+    }
+
+    return ::grpc::Status(grpc::NOT_FOUND, "Book not found");
   }
 
  private:
@@ -228,9 +278,16 @@ class BookstoreServiceImpl : public Bookstore::Service {
     return book;
   }
 
+  bool ShelfExists(int id) const {
+    return std::find_if(std::begin(shelves_), std::end(shelves_),
+                        [id](const Shelf& shelf) {
+                          return id == shelf.id();
+                        }) != std::end(shelves_);
+  }
+
   // The database of shelves and books
   std::vector<Shelf> shelves_;
-  std::map<int, Book> books_;
+  std::multimap<int, Book> books_;
 };
 
 }  // namespace bookstore {
