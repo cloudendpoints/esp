@@ -76,8 +76,10 @@ function tag_stable_image() {
   docker_tag_f "${image}" "${stable}"
   docker_tag_f "${image}" "${latest}"
 
-  retry "${GCLOUD}" docker push "${stable}"
-  retry "${GCLOUD}" docker push "${latest}"
+  retry "${GCLOUD}" docker push "${stable}" \
+    || error_exit "ERROR: failed to push '${stable}'"
+  retry "${GCLOUD}" docker push "${latest}" \
+    || error_exit "ERROR: failed to push '${latest}'"
 }
 
 # Tag generic and -grpc images as stable.
@@ -89,7 +91,8 @@ for SUFFIX in '' '-grpc'; do
 done
 
 rapture --universe=cloud-apt settag ${DEBIAN_PACKAGE_REPOSITORY} \
-  endpoints-dev.stable:true
+  endpoints-dev.stable:true \
+  || error_exit "ERROR: failed to mark the debian package '${DEBIAN_PACKAGE_REPOSITORY}' as stable"
 
 printf '\e[31m
 ***************************************************************************
