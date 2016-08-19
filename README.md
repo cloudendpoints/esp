@@ -64,6 +64,7 @@ To find out more about building, running, and testing ESP, please review
 
 * [ESP Tutorial](/doc/tutorial.md)
 * [Testing ESP with Bazel](/doc/testing.md)
+* [Run ESP on Kubernetes](/doc/k8s/README.md)
 
 
 ## Contributing ##
