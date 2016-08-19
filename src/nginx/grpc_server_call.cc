@@ -585,6 +585,9 @@ void NgxEspGrpcServerCall::Write(const ::grpc::ByteBuffer &msg,
 }
 
 void NgxEspGrpcServerCall::RecordBackendTime(int64_t backend_time) {
+  if (!cln_.data) {
+    return;
+  }
   ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
   if (ctx != nullptr) {
     ctx->backend_time = backend_time;
