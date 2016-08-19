@@ -16,9 +16,20 @@ build:tsan --copt -fno-omit-frame-pointer
 build:tsan --linkopt -fsanitize=thread
 build:tsan --linkopt -pie
 # Use -Wl,-ltsan instead of -ltsan to make Bazel link libtsan before all other
-# libs. TSAN on Ubuntu 12.04 (used by Travis) doesn't work if -lpthread is
-# specified before -ltsan.
+# libs in particularly before -lpthread. This allows TSAN to pull in it's own
+# version of -lpthread.
 build:tsan --linkopt -Wl,-ltsan
+
+# Our default TSAN setup with -pie does not work with some linux versions (e.g.,
+# on Travis's trusty). See https://github.com/google/sanitizers/issues/503
+# So for TSAN on Travis we use gcc-5, which supports TSAN for non-pie binaries.
+build:tsan_nopie --strip=never
+build:tsan_nopie --copt -fsanitize=thread
+build:tsan_nopie --copt -O2
+build:tsan_nopie --copt -g
+build:tsan_nopie --copt -fno-omit-frame-pointer
+build:tsan_nopie --linkopt -fsanitize=thread
+build:tsan_nopie --linkopt -Wl,-ltsan
 
 # Release builds
 build:release -c opt

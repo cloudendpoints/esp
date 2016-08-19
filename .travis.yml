@@ -11,6 +11,9 @@ addons:
     packages:
       - g++-4.8
       - gcc-4.8
+      # We need gcc-5 for TSAN. See comments in tools/bazel.rc.
+      - g++-5
+      - gcc-5
       - lcov
       - libio-socket-ssl-perl
       - oracle-java8-installer
@@ -30,8 +33,8 @@ env:
     - SCENARIO="build-and-test"
     # Build & run the tests with ASAN enabled
     - SCENARIO="asan"
-    # Build & run the tests with TSAN enabled
-    - SCENARIO="tsan"
+    # Build & run the tests with TSAN enabled (using gcc-5)
+    - SCENARIO="tsan" CC=gcc-5 CXX=g++-5
     # Build & run the tests & generate coverage report
     - SCENARIO="coverage"
     # Build & run docker tests

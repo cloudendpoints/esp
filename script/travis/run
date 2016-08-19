@@ -36,7 +36,7 @@ SCENARIO="$1"
 case $SCENARIO in
   build-and-test) build_and_test || error_exit "Build and Tests failed";;
   asan) asan || error_exit "ASAN tests failed";;
-  tsan) tsan || error_exit "TSAN tests failed";;
+  tsan) tsan_nopie || error_exit "TSAN tests failed";;
   coverage) coverage || error_exit "Coverage failed";;
   docker-tests) docker_tests || error_exit "Docker tests failed";;
   *) error_exit "Usage: travis-run build-and-test|asan|tsan|coverage|docker-tests";;

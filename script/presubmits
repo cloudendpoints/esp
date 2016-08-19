@@ -73,6 +73,10 @@ function tsan() {
   build_and_test 'tsan' || return 1
 }
 
+function tsan_nopie() {
+  build_and_test 'tsan_nopie' || return 1
+}
+
 function release() {
   build_and_test 'release' || return 1
 }
