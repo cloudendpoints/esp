@@ -46,7 +46,7 @@ bind(
 # and run ./tools/buildgen/generate_projects.sh in GRPC repo.
 new_git_repository(
     name = "grpc_git",
-    commit = "03efbd34ce64615f58007eae667b375accc6c8e6",  # 0.15.0
+    commit = "2a69139aa7f609e439c24a46754252a5f9d37500",  # v1.0.0
     remote = "https://github.com/grpc/grpc.git",
     build_file = "third_party/BUILD.grpc",
 )
@@ -78,7 +78,7 @@ bind(
 
 new_git_repository(
     name = "protobuf_git",
-    commit = "56855f6f002eeee8cf03021eaf2ece2adff2a297", # 3.0.0-beta-4
+    commit = "e8ae137c96444ea313485ed1118c5e43b2099cf1",  # v3.0.0
     remote = "https://github.com/google/protobuf.git",
     build_file = "third_party/BUILD.protobuf",
 )

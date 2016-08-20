@@ -13,6 +13,7 @@ build:tsan --copt -pie
 build:tsan --copt -O2
 build:tsan --copt -g
 build:tsan --copt -fno-omit-frame-pointer
+build:tsan --copt -DGRPC_TSAN
 build:tsan --linkopt -fsanitize=thread
 build:tsan --linkopt -pie
 # Use -Wl,-ltsan instead of -ltsan to make Bazel link libtsan before all other
@@ -28,6 +29,7 @@ build:tsan_nopie --copt -fsanitize=thread
 build:tsan_nopie --copt -O2
 build:tsan_nopie --copt -g
 build:tsan_nopie --copt -fno-omit-frame-pointer
+build:tsan_nopie --copt -DGRPC_TSAN
 build:tsan_nopie --linkopt -fsanitize=thread
 build:tsan_nopie --linkopt -Wl,-ltsan
 
