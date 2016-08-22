@@ -58,6 +58,7 @@ type Deployment struct {
 	ESP     *Application
 	Config  *Service
 
+	GRPC      bool
 	SSLKey    string
 	SSLCert   string
 	IP        string
@@ -184,11 +185,17 @@ func (d *Deployment) DeployPods() bool {
 		"/usr/sbin/start_esp.py",
 		"-s", d.Config.Name,
 		"-v", d.Config.Version,
-		"-p", strconv.Itoa(d.ESP.Port),
 		"-N", strconv.Itoa(d.ESP.StatusPort),
 		"-a", "localhost:" + strconv.Itoa(d.Backend.Port),
 	}
 	var failed bool
+
+	if d.GRPC {
+		commands = append(commands, "-p", "0",
+			"-g", "-P", strconv.Itoa(d.ESP.Port))
+	} else {
+		commands = append(commands, "-p", strconv.Itoa(d.ESP.Port))
+	}
 
 	if d.Config.Token != "" {
 		token := "service-token"
@@ -440,7 +447,12 @@ func (d *Deployment) WaitReady() string {
 
 	// Check that backends work
 	d.WaitService(ip, statusPort, d.ESP.Status)
-	d.WaitService(ip, backendPort, d.Backend.Status)
+
+	if d.GRPC {
+		// TODO: create a status port for GRPC backend
+	} else {
+		d.WaitService(ip, backendPort, d.Backend.Status)
+	}
 
 	if d.ESP.SSLPort > 0 {
 		return fmt.Sprintf("https://%s:%d", ip, port)

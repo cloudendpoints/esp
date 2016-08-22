@@ -58,7 +58,8 @@ var (
 )
 
 const (
-	gke = "gke"
+	gke      = "gke"
+	gke_grpc = "gke_grpc"
 )
 
 func init() {
@@ -90,7 +91,7 @@ func init() {
 
 	// ESP image
 	flag.StringVar(&esp.Image, "esp",
-		"gcr.io/endpoints-jenkins/esp-autoconf2",
+		"gcr.io/endpoints-jenkins/esp-updated",
 		"Docker image for ESP")
 	flag.IntVar(&esp.Port, "port", 8080, "ESP port")
 	flag.IntVar(&esp.StatusPort, "status", 8090, "ESP status port")
@@ -128,11 +129,14 @@ func main() {
 
 	switch engine {
 	case gke:
-		kubernetes()
+		kubernetes(false)
+	case gke_grpc:
+		kubernetes(true)
 	}
+
 }
 
-func kubernetes() {
+func kubernetes(grpc bool) {
 	d := deploy.Deployment{
 		ESP:     &esp,
 		Backend: &backend,
@@ -140,6 +144,7 @@ func kubernetes() {
 		SSLKey:  utils.SSLKeyFile(),
 		SSLCert: utils.SSLCertFile(),
 		IP:      minikubeIP,
+		GRPC:    grpc,
 	}
 
 	d.Init(ctlport, namespace)
@@ -159,7 +164,11 @@ func kubernetes() {
 	// run test
 	if test {
 		addr := d.WaitReady()
-		result = t.RunBookstore(addr, service)
+		log.Println("Service available at address:", addr)
+		if d.GRPC {
+		} else {
+			result = t.RunBookstore(addr, service)
+		}
 	}
 
 	// tear down the cluster

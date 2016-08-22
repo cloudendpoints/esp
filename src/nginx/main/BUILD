@@ -183,6 +183,7 @@ pkg_tar(
         ":fetch_service_config.sh",
         ":nginx",
         ":nginx-debug",
+        ":fetch_service_config.py",
         ":start_esp.py",
     ],
     mode = "0755",

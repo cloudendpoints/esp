@@ -1,0 +1,172 @@
+#!/usr/bin/python
+#
+# Copyright (C) Endpoints Server Proxy Authors
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+
+import json
+import urllib3
+
+from oauth2client.service_account import ServiceAccountCredentials
+
+_GOOGLE_API_SCOPE = (
+    "https://www.googleapis.com/auth/service.management.readonly")
+_METADATA_URL_PREFIX = (
+    "http://metadata.google.internal/computeMetadata/v1/instance")
+_SERVICE_MGMT_URL_TEMPLATE = (
+    "https://servicemanagement.googleapis.com"
+    "/v1/services/{}/config?configId={}")
+
+
+class FetchError(Exception):
+    """Error class for fetching and validation errors."""
+    def __init__(self, code, message):
+        self.code = code
+        self.message = message
+    def __str__(self):
+        return self.message
+
+def fetch_service_name(url_prefix):
+    """Fetch service name from metadata URL."""
+    url = url_prefix + "/attributes/endpoints-service-name"
+    headers = {"Metadata-Flavor": "Google"}
+    client = urllib3.PoolManager()
+    try:
+        response = client.request("GET", url, headers=headers)
+    except:
+        raise FetchError(1, "Failed to fetch service name from metadata")
+    status_code = response.status
+
+    if status_code != 200:
+        message_template = "Fetching service name failed (status code {})"
+        raise FetchError(1, message_template.format(status_code))
+
+    name = response.data
+    print "Service name:", name
+    return name
+
+
+def fetch_service_version(url_prefix):
+    """Fetch service version from metadata URL."""
+    url = url_prefix + "/attributes/endpoints-service-version"
+    headers = {"Metadata-Flavor": "Google"}
+    client = urllib3.PoolManager()
+    try:
+        response = client.request("GET", url, headers=headers)
+    except:
+        raise FetchError(1, "Failed to fetch service version from metadata")
+    status_code = response.status
+
+    if status_code != 200:
+        message_template = "Fetching service version failed (status code {})"
+        raise FetchError(1, message_template.format(status_code))
+
+    version = response.data
+    print "Service version:", version
+    return version
+
+
+def make_access_token(secret_token_json):
+    """Construct an access token from service account token."""
+    credentials = ServiceAccountCredentials.from_json_keyfile_name(
+        secret_token_json,
+        scopes=[_GOOGLE_API_SCOPE])
+    token = credentials.get_access_token().access_token
+    return token
+
+
+def fetch_access_token(url_prefix):
+    """Fetch access token from metadata URL."""
+    access_token_url = url_prefix + "/service-accounts/default/token"
+    headers = {"Metadata-Flavor": "Google"}
+    client = urllib3.PoolManager()
+    try:
+        response = client.request("GET", access_token_url, headers=headers)
+    except:
+        raise FetchError(1, "Failed to fetch access token from metadata")
+    status_code = response.status
+
+    if status_code != 200:
+        message_template = "Fetching access token failed (status code {})"
+        raise FetchError(1, message_template.format(status_code))
+
+    token = json.loads(response.data)["access_token"]
+    return token
+
+
+def fetch_service_json(url_template, service_name, service_version, access_token):
+    """Fetch service config."""
+    service_mgmt_url = url_template.format(service_name, service_version)
+    headers = {"Authorization": "Bearer {}".format(access_token)}
+    client = urllib3.PoolManager()
+    try:
+        response = client.request("GET", service_mgmt_url, headers=headers)
+    except:
+        raise FetchError(1, "Failed to fetch service config")
+    status_code = response.status
+
+    if status_code != 200:
+        message_template = "Fetching service config failed (status code {})"
+        raise FetchError(1, message_template.format(status_code))
+
+    service_config = json.loads(response.data)
+    validate_service_config(service_config, service_name, service_version)
+    return service_config
+
+
+def validate_service_config(service_config, expected_service_name,
+                            expected_service_version):
+    """Validate service config."""
+    service_name = service_config.get("name", None)
+
+    if not service_name:
+        raise FetchError(2, "No service name in the service config")
+
+    if service_name != expected_service_name:
+        message_template = "Unexpected service name in service config: {}"
+        raise FetchError(2, message_template.format(service_name))
+
+    service_version = service_config.get("id", None)
+
+    if not service_version:
+        raise FetchError(2, "No service version in the service config")
+
+    if service_version != expected_service_version:
+        message_template = "Unexpected service version in service config: {}"
+        raise FetchError(2, message_template.format(service_version))
+
+    # WARNING: sandbox migration workaround
+    control = service_config.get("control", None)
+
+    if not control:
+        raise FetchError(2, "No control section in the service config")
+
+    environment = control.get("environment", None)
+
+    if not environment:
+        raise FetchError(2, "Missing control environment")
+
+    if environment == "endpoints-servicecontrol.sandbox.googleapis.com":
+        print "WARNING: Replacing sandbox control environment in the service config"
+        service_config["control"]["environment"] = (
+            "servicecontrol.googleapis.com")

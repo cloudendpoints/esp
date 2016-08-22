@@ -14,39 +14,56 @@ http {
   include /etc/nginx/mime.types;
   server_tokens off;
   client_max_body_size 32m;
+  client_body_buffer_size 128k;
 
-  upstream app_server {
+% for i, location in enumerate(ingress.locations):
+% if not location.grpc:
+  upstream app_server${i} {
+  % for backend in location.backends:
     server ${backend};
+  % endfor
     keepalive 128;
   }
+% endif
+% endfor
 
   server {
-    # Running port
-    listen ${port};
+    server_name ${ingress.host};
 
-% if ssl != "":
-    listen ${ssl} ssl;
+% for port in ingress.ports:
+  % if port.proto == 'http':
+    listen ${port.port};
+  % elif port.proto == 'http2':
+    listen ${port.port} http2;
+  % elif port.proto == 'ssl':
+    listen ${port.port} ssl http2;
     ssl_certificate /etc/nginx/ssl/nginx.crt;
     ssl_certificate_key /etc/nginx/ssl/nginx.key;
-% endif
+  % endif
+% endfor
 
     # Logging to stdout enables better integration with Docker and GKE/Kubernetes.
-    access_log stdout;
+    access_log /dev/stdout;
 
-    location / {
+% for i, location in enumerate(ingress.locations):
+    location ${location.path} {
       # Begin Endpoints v2 Support
       endpoints {
         on;
-        api ${service_json};
-% if service_token:
-        google_authentication_secret ${service_token};
+        api ${location.service_config};
+% if service_account:
+        google_authentication_secret ${service_account};
 % else:
         metadata_server;
 % endif
       }
       # End Endpoints v2 Support
 
-      proxy_pass http://app_server;
+% if location.grpc:
+      # WARNING: only first backend is used
+      grpc_pass ${location.backends[0]} override;
+% else:
+      proxy_pass http://app_server${i};
       proxy_redirect off;
       proxy_set_header Host $host;
       proxy_set_header X-Real-IP $remote_addr;
@@ -61,6 +78,8 @@ http {
       # 86400 seconds (24 hours) is the maximum a server is allowed.
       proxy_send_timeout 86400s;
       proxy_read_timeout 86400s;
+% endif
+% endfor
     }
 
     include /var/lib/nginx/extra/*.conf;
