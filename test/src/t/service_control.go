@@ -27,12 +27,14 @@
 package t
 
 import (
-	"fakes"
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"fakes"
 )
 
 type ServiceController struct {
@@ -131,6 +133,10 @@ func GetServiceControlData(server string, n, timeout int) (rq fakes.Requests, er
 			return rq, nil
 		}
 		time.Sleep(100 * time.Millisecond)
+	}
+	if len(rq) < n {
+		log.Println("timed out while waiting for service control data")
+		return rq, errors.New("timed out while waiting for service control data")
 	}
 	return rq, nil
 }

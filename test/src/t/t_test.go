@@ -208,7 +208,7 @@ func TestServiceControlRequests(t *testing.T) {
 
 	// WARNING! This test assumes that all other tests have run
 	// it cannot be run in isolation
-	rq, err := GetServiceControlData(fmt.Sprintf("http://127.0.0.1:%d", serviceControlPort), 3, 2)
+	rq, err := GetServiceControlData(fmt.Sprintf("http://127.0.0.1:%d", serviceControlPort), 3, 5)
 	if err != nil {
 		t.Errorf("Failed to get request data from service control server")
 	}
