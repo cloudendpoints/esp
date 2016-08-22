@@ -35,6 +35,7 @@ use ApiManager;   # Must be first (sets up import path to the Nginx test module)
 use JSON::PP;
 use Test::Nginx;  # Imports Nginx's test module
 use Test::More;   # And the test framework
+use Time::HiRes;
 use HttpServer;
 use ServiceControl;
 
@@ -46,8 +47,9 @@ my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $CloudTracePort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(27);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(11);
 
+# Save service name in the service configuration protocol buffer file.
 my $config = ApiManager::get_bookstore_service_config_allow_unregistered .
     ApiManager::read_test_file('testdata/logs_metrics.pb.txt') . <<"EOF";
 producer_project_id: "api-manager-project"
@@ -57,9 +59,19 @@ control {
 EOF
 $t->write_file('service.pb.txt', $config);
 
+# Set a very large timer timeout to to ensure this test won't be flaky.
+# Set the cache_max_size to 0 to disable trace request aggregation.
+# Uses the default sampling qps.
 $t->write_file('server_config.pb.txt', <<"EOF");
 cloud_tracing_config {
   url_override: "http://127.0.0.1:${CloudTracePort}"
+  aggregation_config {
+    time_millisec: 100000
+    cache_max_size: 0
+  }
+  samling_config {
+    minimum_qps: 1
+  }
 }
 EOF
 
@@ -87,11 +99,10 @@ http {
 }
 EOF
 
-my $report_done = 'report_done';
 my $trace_done = 'trace_done';
 
 $t->run_daemon(\&bookstore, $t, $BackendPort, 'bookstore.log');
-$t->run_daemon(\&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log', $report_done);
+$t->run_daemon(\&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log');
 $t->run_daemon(\&cloudtrace, $t, $CloudTracePort, 'cloudtrace.log', $trace_done);
 
 is($t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'Bookstore socket ready.');
@@ -102,79 +113,40 @@ $t->run();
 
 ################################################################################
 
-# This request triggers trace.
-my $trace_id = 'e133eacd437d8a12068fd902af3962d8';
-my $parent_span_id = '12345678';
-my $response = ApiManager::http($NginxPort,<<"EOF");
-GET /shelves?key=this-is-an-api-key HTTP/1.0
+# The first request of these two will have trace sampled, the following one won't.
+ApiManager::http( $NginxPort, <<"EOF" );
+GET /invalid?key=this-is-an-api-key HTTP/1.0
 Host: localhost
-X-Cloud-Trace-Context: ${trace_id}/${parent_span_id};o=1
 
 EOF
 
-is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');
+
 is($t->waitforfile("$t->{_testdir}/${trace_done}"), 1, 'Trace body file ready.');
-$t->stop_daemons();
-
-my @trace_requests = ApiManager::read_http_stream($t, 'cloudtrace.log');
-
-
-# Verify there is only one trace request.
-is(scalar @trace_requests, 1, 'Cloud Trace received 1 request.');
-
-my $trace_request = shift @trace_requests;
-is($trace_request->{verb}, 'PATCH', 'Cloud Trace: request is PATCH.');
-is($trace_request->{uri}, '/v1/projects/api-manager-project/traces',
-    'Trace request was called with correct project id in url.');
-
-my $json_obj = decode_json($trace_request->{body});
-is($json_obj->{traces}->[0]->{projectId}, 'api-manager-project', 'Project ID in body is correct.');
-is($json_obj->{traces}->[0]->{traceId}, $trace_id, 'Trace ID matches the provided one.');
-is($json_obj->{traces}->[0]->{spans}->[0]->{name},
-    'endpoints-test.cloudendpointsapis.com.ListShelves',
-    'Root trace span name is set to method name of ListShelves');
-is($json_obj->{traces}->[0]->{spans}->[0]->{kind}, 'RPC_SERVER', 'Trace span kind is RPC_SERVER');
-is($json_obj->{traces}->[0]->{spans}->[0]->{parentSpanId}, $parent_span_id,
-    'Parent span of root should be the provided one');
-my $agent = $json_obj->{traces}->[0]->{spans}->[0]->{labels}->{'trace.cloud.google.com/agent'};
-is($agent, 'esp/' . ServiceControl::get_version(), 'Agent is set to "esp/xxx".');
-my $rootid = $json_obj->{traces}->[0]->{spans}->[0]->{spanId};
-is($json_obj->{traces}->[0]->{spans}->[1]->{name}, 'CheckServiceControl',
-    'Next trace span is CheckServiceControl');
-is($json_obj->{traces}->[0]->{spans}->[1]->{parentSpanId}, $rootid,
-    'Parent of CheckServiceControlCache span is root');
-my $check_service_control_id = $json_obj->{traces}->[0]->{spans}->[1]->{spanId};
-is($json_obj->{traces}->[0]->{spans}->[2]->{name}, 'CheckServiceControlCache',
-    'Next trace span is CheckServiceControlCache');
-is($json_obj->{traces}->[0]->{spans}->[2]->{parentSpanId}, $check_service_control_id,
-    'Parent of CheckServiceControlCache span is CheckServiceControl');
-my $check_service_control_cache_id = $json_obj->{traces}->[0]->{spans}->[2]->{spanId};
-is($json_obj->{traces}->[0]->{spans}->[3]->{name}, 'Call ServiceControl server',
-    'Next trace span is Call ServiceControl server');
-is($json_obj->{traces}->[0]->{spans}->[3]->{parentSpanId}, $check_service_control_cache_id,
-    'Parent of Call ServiceControl sever span is CheckServiceControlCache');
-is($json_obj->{traces}->[0]->{spans}->[4]->{name}, 'Backend',
-    'Next trace span is Backend');
-is($json_obj->{traces}->[0]->{spans}->[4]->{parentSpanId}, $rootid,
-    'Parent of Beckend span is root');
-my $backend_span_id = $json_obj->{traces}->[0]->{spans}->[4]->{spanId};
 
 my @bookstore_requests = ApiManager::read_http_stream($t, 'bookstore.log');
-is(scalar @bookstore_requests, 1, 'Bookstore received 1 request.');
+is(scalar @bookstore_requests, 0, 'Bookstore received 0 request.');
 
-my $bookstore_request = shift @bookstore_requests;
-is($bookstore_request->{verb}, 'GET', 'backend received a get');
-is($bookstore_request->{path}, '/shelves', 'backend received get /shelves');
-my $backend_trace_header = $bookstore_request->{headers}->{'x-cloud-trace-context'};
-isnt($backend_trace_header, undef, 'X-Cloud-Trace-Context was received');
-is($backend_trace_header, $trace_id . '/' . $backend_span_id . ';o=1',
-    'X-Cloud-Trace-Context header is correct.');
+my @requests = ApiManager::read_http_stream($t, 'cloudtrace.log');
 
+# Verify there are two trace requests received.
+is(scalar @requests, 1, 'Cloud Trace received 1 requests.');
+my $trace_request = shift @requests;
+is( $trace_request->{verb}, 'PATCH', 'Cloud Trace: request is PATCH.' );
+is( $trace_request->{uri}, '/v1/projects/api-manager-project/traces',
+    'Trace request was called with correct project id in url.' );
+my $json_obj = decode_json( $trace_request->{body} );
+my $traces = $json_obj->{traces};
+is( scalar @$traces, 1, 'Trace request contains 1 trace.' );
+like( $json_obj->{traces}->[0]->{traceId}, qr/[0-9a-fA-F]{32}/,
+    'Trace ID is valid.' );
+is( $json_obj->{traces}->[0]->{spans}->[0]->{name},
+    'endpoints-test.cloudendpointsapis.com.<Unknown Operation Name>',
+    'Root trace span name is set to <Unknown Operation Name>');
 
 ################################################################################
 
 sub servicecontrol {
-  my ($t, $port, $file, $done) = @_;
+  my ($t, $port, $file) = @_;
   my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
@@ -195,7 +167,6 @@ HTTP/1.1 200 OK
 Connection: close
 
 EOF
-    $t->write_file($done, ':report done');
   });
 
   $server->run();
@@ -204,21 +175,10 @@ EOF
 ################################################################################
 
 sub bookstore {
-  my ($t, $port, $file) = @_;
+  my ($t, $port, $file, $done) = @_;
   my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
-
-  $server->on_sub('GET', '/shelves', sub {
-    my ($headers, $body, $client) = @_;
-    print $client <<'EOF';
-HTTP/1.1 200 OK
-Connection: close
-
-Shelves data.
-EOF
-  });
-
   $server->run();
 }
 
@@ -238,7 +198,7 @@ Connection: close
 
 {}
 EOF
-    $t->write_file($done, ':trace done');
+    $t->write_file( $done, ':trace done' );
   });
 
   $server->run();

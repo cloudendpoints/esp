@@ -108,8 +108,21 @@ RequestContext::RequestContext(std::shared_ptr<ServiceContext> service_context,
     std::string trace_context_header;
     request_->FindHeader(kCloudTraceContextHeader, &trace_context_header);
 
+    std::string method_name = kUnrecognizedOperation;
+    if (method_call_.method_info) {
+      method_name = method_call_.method_info->name();
+    }
+    // If the method_name does not have service_name prefix, append service_name
+    // in front of it. In http case, the method_name will be a bare method name,
+    // such as "ListShelves", where we want to prepend service_name.
+    // In gRPC case, the method name already has service_name prefix, we will do
+    // nothing.
+    if (method_name.substr(0, service_context_->service_name().size()) !=
+        service_context_->service_name()) {
+      method_name = service_context_->service_name() + '.' + method_name;
+    }
     cloud_trace_.reset(cloud_trace::CreateCloudTrace(
-        trace_context_header,
+        trace_context_header, method_name,
         &service_context_->cloud_trace_aggregator()->sampler()));
   }
 }

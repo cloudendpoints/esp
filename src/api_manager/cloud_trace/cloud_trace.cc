@@ -50,7 +50,6 @@ namespace cloud_trace {
 namespace {
 
 const char kCloudTraceService[] = "/google.devtools.cloudtrace.v1.TraceService";
-const char kApiManagerRoot[] = "API_MANAGER_ROOT";
 // Cloud Trace agent label key
 const char kCloudTraceAgentKey[] = "trace.cloud.google.com/agent";
 // Cloud Trace agent label value
@@ -69,7 +68,8 @@ void GetNow(Timestamp *ts);
 
 // Get a new Trace object stored in the trace parameter. The new object has
 // the given trace id and contains a root span with default settings.
-void GetNewTrace(std::string trace_id_str, Trace **trace);
+void GetNewTrace(std::string trace_id_str, const std::string &root_span_name,
+                 Trace **trace);
 
 // Parse the trace context header.
 // Assigns Trace object to the trace pointer if context is parsed correctly and
@@ -83,7 +83,8 @@ void GetNewTrace(std::string trace_id_str, Trace **trace);
 // span-id       := decimal representation of a 64 bit value
 // trace-options := decimal representation of a 32 bit value
 //
-void GetTraceFromContextHeader(const std::string &trace_context, Trace **trace,
+void GetTraceFromContextHeader(const std::string &trace_context,
+                               const std::string &root_span_name, Trace **trace,
                                std::string *options);
 }  // namespace
 
@@ -261,10 +262,11 @@ void CloudTraceSpan::Write(const std::string &msg) {
 }
 
 CloudTrace *CreateCloudTrace(const std::string &trace_context,
+                             const std::string &root_span_name,
                              Sampler *sampler) {
   Trace *trace = nullptr;
   std::string options;
-  GetTraceFromContextHeader(trace_context, &trace, &options);
+  GetTraceFromContextHeader(trace_context, root_span_name, &trace, &options);
   if (trace) {
     // When trace is triggered by the context header, refresh the previous
     // timestamp in sampler.
@@ -274,7 +276,7 @@ CloudTrace *CreateCloudTrace(const std::string &trace_context,
     return new CloudTrace(trace, options);
   } else if (sampler && sampler->On()) {
     // Trace is turned on by sampler.
-    GetNewTrace(RandomUInt128HexString(), &trace);
+    GetNewTrace(RandomUInt128HexString(), root_span_name, &trace);
     return new CloudTrace(trace, kDefaultTraceOptions);
   } else {
     return nullptr;
@@ -331,19 +333,21 @@ void GetNow(Timestamp *ts) {
   ts->set_nanos(nanos % 1000000000);
 }
 
-void GetNewTrace(std::string trace_id_str, Trace **trace) {
+void GetNewTrace(std::string trace_id_str, const std::string &root_span_name,
+                 Trace **trace) {
   *trace = new Trace;
   (*trace)->set_trace_id(trace_id_str);
   TraceSpan *root_span = (*trace)->add_spans();
   root_span->set_kind(TraceSpan_SpanKind::TraceSpan_SpanKind_RPC_SERVER);
   root_span->set_span_id(RandomUInt64());
-  root_span->set_name(kApiManagerRoot);
+  root_span->set_name(root_span_name);
   // Agent label is defined as "<agent>/<version>".
   root_span->mutable_labels()->insert({kCloudTraceAgentKey, kServiceAgent});
   GetNow(root_span->mutable_start_time());
 }
 
-void GetTraceFromContextHeader(const std::string &trace_context, Trace **trace,
+void GetTraceFromContextHeader(const std::string &trace_context,
+                               const std::string &root_span_name, Trace **trace,
                                std::string *options) {
   std::stringstream header_stream(trace_context);
 
@@ -410,7 +414,7 @@ void GetTraceFromContextHeader(const std::string &trace_context, Trace **trace,
   }
 
   // At this point, trace is enabled and trace id is successfully parsed.
-  GetNewTrace(trace_id_str, trace);
+  GetNewTrace(trace_id_str, root_span_name, trace);
   TraceSpan *root_span = (*trace)->mutable_spans(0);
   // Set parent of root span to the given one if provided.
   if (span_id != 0) {

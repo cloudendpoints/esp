@@ -199,6 +199,7 @@ class CloudTraceSpan {
 // Otherwise return nullptr.
 // For trace_context, pass the value of "X-Cloud-Trace-Context" HTTP header.
 CloudTrace *CreateCloudTrace(const std::string &trace_context,
+                             const std::string &root_span_name,
                              Sampler *sampler = nullptr);
 
 // Creates trace span if trace is enabled.
