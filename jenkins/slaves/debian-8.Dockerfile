@@ -29,6 +29,9 @@ RUN rm -rf /usr/lib/google-cloud-sdk \
 
 ENV PATH /usr/lib/google-cloud-sdk/bin:$PATH
 
+# gcloud needs a UTF-8 locale
+ENV LANG C.UTF-8
+
 # Installing Tools
 ADD script /tmp/esp_tmp/script
 RUN chmod +x /tmp/esp_tmp/script/linux-install-software

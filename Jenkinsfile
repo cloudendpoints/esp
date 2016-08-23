@@ -324,6 +324,7 @@ def e2eTest(nodeLabel) {
   }
 
   withEnv([
+      "LANG=C.UTF-8",
       "CLOUDSDK_API_ENDPOINT_OVERRIDES_SERVICEMANAGEMENT=${getServiceManagementUrl()}",
       "CLOUDSDK_COMPONENT_MANAGER_SNAPSHOT_URL=${getGcloudUrl()}"]) {
     parallel branches
