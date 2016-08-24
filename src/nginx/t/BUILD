@@ -267,6 +267,7 @@ nginx_suite(
     size = "small",
     data = [
         "testdata/grpc_tsan_suppressions",
+        "//test/transcoding:bookstore-client",
         "//test/transcoding:bookstore-server",
         "//test/transcoding:service.json",
     ],
@@ -279,6 +280,7 @@ nginx_suite(
         "transcoding_bindings.t",
         "transcoding_errors.t",
         "transcoding_streaming.t",
+        "transcoding_shared_port_ssl.t",
     ],
     deps = [
         ":perl_library",

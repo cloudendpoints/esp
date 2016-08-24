@@ -1121,5 +1121,114 @@
   },
   "configVersion": 3,
   "systemParameters": {
+    "rules": [{
+      "selector": "endpoints.examples.bookstore.Bookstore.ListShelves",
+      "parameters": [{
+        "name": "api_key",
+        "httpHeader": "x-api-key"
+      }, {
+        "name": "api_key",
+        "urlQueryParameter": "key"
+      }, {
+        "name": "api_key",
+        "urlQueryParameter": "api_key"
+      }]
+    }, {
+      "selector": "endpoints.examples.bookstore.Bookstore.CreateShelf",
+      "parameters": [{
+        "name": "api_key",
+        "httpHeader": "x-api-key"
+      }, {
+        "name": "api_key",
+        "urlQueryParameter": "key"
+      }, {
+        "name": "api_key",
+        "urlQueryParameter": "api_key"
+      }]
+    }, {
+      "selector": "endpoints.examples.bookstore.Bookstore.BulkCreateShelf",
+      "parameters": [{
+        "name": "api_key",
+        "httpHeader": "x-api-key"
+      }, {
+        "name": "api_key",
+        "urlQueryParameter": "key"
+      }, {
+        "name": "api_key",
+        "urlQueryParameter": "api_key"
+      }]
+    }, {
+      "selector": "endpoints.examples.bookstore.Bookstore.GetShelf",
+      "parameters": [{
+        "name": "api_key",
+        "httpHeader": "x-api-key"
+      }, {
+        "name": "api_key",
+        "urlQueryParameter": "key"
+      }, {
+        "name": "api_key",
+        "urlQueryParameter": "api_key"
+      }]
+    }, {
+      "selector": "endpoints.examples.bookstore.Bookstore.DeleteShelf",
+      "parameters": [{
+        "name": "api_key",
+        "httpHeader": "x-api-key"
+      }, {
+        "name": "api_key",
+        "urlQueryParameter": "key"
+      }, {
+        "name": "api_key",
+        "urlQueryParameter": "api_key"
+      }]
+    }, {
+      "selector": "endpoints.examples.bookstore.Bookstore.ListBooks",
+      "parameters": [{
+        "name": "api_key",
+        "httpHeader": "x-api-key"
+      }, {
+        "name": "api_key",
+        "urlQueryParameter": "key"
+      }, {
+        "name": "api_key",
+        "urlQueryParameter": "api_key"
+      }]
+    }, {
+      "selector": "endpoints.examples.bookstore.Bookstore.CreateBook",
+      "parameters": [{
+        "name": "api_key",
+        "httpHeader": "x-api-key"
+      }, {
+        "name": "api_key",
+        "urlQueryParameter": "key"
+      }, {
+        "name": "api_key",
+        "urlQueryParameter": "api_key"
+      }]
+    }, {
+      "selector": "endpoints.examples.bookstore.Bookstore.GetBook",
+      "parameters": [{
+        "name": "api_key",
+        "httpHeader": "x-api-key"
+      }, {
+        "name": "api_key",
+        "urlQueryParameter": "key"
+      }, {
+        "name": "api_key",
+        "urlQueryParameter": "api_key"
+      }]
+    }, {
+      "selector": "endpoints.examples.bookstore.Bookstore.DeleteBook",
+      "parameters": [{
+        "name": "api_key",
+        "httpHeader": "x-api-key"
+      }, {
+        "name": "api_key",
+        "urlQueryParameter": "key"
+      }, {
+        "name": "api_key",
+        "urlQueryParameter": "api_key"
+      }]
+    }]
   }
 }

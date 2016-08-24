@@ -56,6 +56,7 @@ cc_binary(
     deps = [
         ":bookstore",
         "//external:protobuf",
+        "//external:gflags",
     ],
 )
 

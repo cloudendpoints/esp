@@ -328,6 +328,16 @@ sub run_transcoding_test_server {
   open STDOUT, ">&", \*ORIGINAL;
 }
 
+sub call_bookstore_client {
+  my ($t, @args) = @_;
+  my $client = $ENV{TEST_SRCDIR} . '/test/transcoding/bookstore-client';
+  my $output_file = $t->{_testdir} . '/bookstore-client.log';
+
+  my $rc = system "$client " . join(' ', @args) . " > $output_file";
+
+  return ($rc, read_file_using_full_path($output_file))
+}
+
 sub run_grpc_test {
   my ($t, $plans) = @_;
   $t->write_file('test_plans.txt', $plans);
