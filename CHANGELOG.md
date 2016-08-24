@@ -1,3 +1,24 @@
+# Release 0.3.5 24-08-2016
+
+- Add bindings and body prefix test for transcoding
+- Allow multiple HTTP rules for the same RPC method
+- Add cloud trace request sampling.
+- Add doc for ESP on k8s.
+- Added a test to verify service control data.
+- Cleanups, bug fixes & Infrastructure improvements
+  - Set corret LANG environment variable for Jenkins
+  - Fix ASAN failure in jenkins presubmit
+  - Fix error handling of release-stable script
+  - Fix Travis TSAN build
+  - Implement books support in grpc bookstore backend
+  - Add invalid JSON cases to transcoding errors test
+  - Check HTTP status code in transcoding tests
+  - Fix ASAN heap-use-after-free warning
+  - Fixed metadata_timeout t asan failure.
+  - Integrate GKE go script into Jenkins pipeline
+  - Running e2e test on released artifacts and gcloud release candidate
+
+
 # Release 0.3.4 17-08-2016
 
 - Add Kubernetes support & deployment improvements.
