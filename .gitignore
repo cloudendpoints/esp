@@ -1,8 +1,10 @@
 .*.swp
 *.iml
+*.pyc
 .idea/
 .project
 .cproject
+CMakeLists.txt
 
 /bazel-*
 
