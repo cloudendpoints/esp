@@ -114,7 +114,7 @@ $t->run();
 ################################################################################
 
 # The first request of these two will have trace sampled, the following one won't.
-ApiManager::http( $NginxPort, <<"EOF" );
+ApiManager::http($NginxPort, <<"EOF");
 GET /invalid?key=this-is-an-api-key HTTP/1.0
 Host: localhost
 
@@ -131,15 +131,15 @@ my @requests = ApiManager::read_http_stream($t, 'cloudtrace.log');
 # Verify there are two trace requests received.
 is(scalar @requests, 1, 'Cloud Trace received 1 requests.');
 my $trace_request = shift @requests;
-is( $trace_request->{verb}, 'PATCH', 'Cloud Trace: request is PATCH.' );
-is( $trace_request->{uri}, '/v1/projects/api-manager-project/traces',
-    'Trace request was called with correct project id in url.' );
-my $json_obj = decode_json( $trace_request->{body} );
+is($trace_request->{verb}, 'PATCH', 'Cloud Trace: request is PATCH.');
+is($trace_request->{uri}, '/v1/projects/api-manager-project/traces',
+    'Trace request was called with correct project id in url.');
+my $json_obj = decode_json($trace_request->{body} );
 my $traces = $json_obj->{traces};
-is( scalar @$traces, 1, 'Trace request contains 1 trace.' );
-like( $json_obj->{traces}->[0]->{traceId}, qr/[0-9a-fA-F]{32}/,
-    'Trace ID is valid.' );
-is( $json_obj->{traces}->[0]->{spans}->[0]->{name},
+is(scalar @$traces, 1, 'Trace request contains 1 trace.' );
+like($json_obj->{traces}->[0]->{traceId}, qr/[0-9a-fA-F]{32}/,
+    'Trace ID is valid.');
+is($json_obj->{traces}->[0]->{spans}->[0]->{name},
     'endpoints-test.cloudendpointsapis.com.<Unknown Operation Name>',
     'Root trace span name is set to <Unknown Operation Name>');
 
@@ -198,7 +198,7 @@ Connection: close
 
 {}
 EOF
-    $t->write_file( $done, ':trace done' );
+    $t->write_file($done, ':trace done');
   });
 
   $server->run();

@@ -117,8 +117,8 @@ RequestContext::RequestContext(std::shared_ptr<ServiceContext> service_context,
     // such as "ListShelves", where we want to prepend service_name.
     // In gRPC case, the method name already has service_name prefix, we will do
     // nothing.
-    if (method_name.substr(0, service_context_->service_name().size()) !=
-        service_context_->service_name()) {
+    if (method_name.compare(0, service_context_->service_name().size(),
+                            service_context_->service_name())) {
       method_name = service_context_->service_name() + '.' + method_name;
     }
     cloud_trace_.reset(cloud_trace::CreateCloudTrace(
