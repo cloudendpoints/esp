@@ -57,6 +57,15 @@ CONFIG_DIR = "/etc/nginx/endpoints"
 # GRPC protocol prefix
 GRPC_PREFIX = "grpc://"
 
+# Metadata service
+METADATA_ADDRESS = "http://169.254.169.254"
+
+# Service management service
+SERVICE_MGMT_URL_TEMPLATE = (
+    "https://servicemanagement.googleapis.com"
+    "/v1/services/{}/config?configId={}")
+
+
 Port = collections.namedtuple('Port',
         ['port', 'proto'])
 Location = collections.namedtuple('Location',
@@ -64,7 +73,12 @@ Location = collections.namedtuple('Location',
 Ingress = collections.namedtuple('Ingress',
         ['ports', 'host', 'locations'])
 
-def write_template(template, status, service_account, ingress, nginx_conf):
+def write_template(template,
+                   status,
+                   service_account,
+                   ingress,
+                   metadata,
+                   nginx_conf):
     # Load template
     try:
         template = Template(filename=template)
@@ -75,7 +89,8 @@ def write_template(template, status, service_account, ingress, nginx_conf):
     conf = template.render(
             status=status,
             service_account=service_account,
-            ingress=ingress)
+            ingress=ingress,
+            metadata=metadata)
 
     # Save nginx conf
     try:
@@ -109,13 +124,13 @@ def fetch_service_config(args, service_config):
     try:
         # Fetch service config
         if args.service is None:
-            args.service = fetch.fetch_service_name(args.metadata_url_prefix)
+            args.service = fetch.fetch_service_name(args.metadata)
 
         if args.version is None:
-            args.version = fetch.fetch_service_version(args.metadata_url_prefix)
+            args.version = fetch.fetch_service_version(args.metadata)
 
         if args.service_account_key is None:
-            token = fetch.fetch_access_token(args.metadata_url_prefix)
+            token = fetch.fetch_access_token(args.metadata)
         else:
             token = fetch.make_access_token(args.service_account_key)
 
@@ -239,8 +254,8 @@ def make_argparser():
         For GRPC backends, please use grpc:// prefix, e.g. grpc://localhost:8081.
     ''')
 
-    parser.add_argument('-m', '--service_management',
-        default=fetch._SERVICE_MGMT_URL_TEMPLATE, help='''
+    parser.add_argument('-c', '--service_management',
+        default=SERVICE_MGMT_URL_TEMPLATE, help='''
         Specify the service management service URL template. The template string takes
         the service name and the service version as parameters.
     ''')
@@ -257,21 +272,24 @@ def make_argparser():
     parser.set_defaults(fetch=True)
 
     # Customize metadata service url prefix.
-    parser.add_argument('-u', '--metadata_url_prefix',
-        default=fetch._METADATA_URL_PREFIX,
+    parser.add_argument('-m', '--metadata',
+        default=METADATA_ADDRESS,
         help=argparse.SUPPRESS)
 
     # Fetched service config and generated nginx config are placed
     # into config_dir as service.json and nginx.conf files
-    parser.add_argument('--config_dir', default=CONFIG_DIR,
+    parser.add_argument('--config_dir',
+        default=CONFIG_DIR,
         help=argparse.SUPPRESS)
 
     # nginx.conf template
-    parser.add_argument('--template', default=NGINX_CONF_TEMPLATE,
+    parser.add_argument('--template',
+        default=NGINX_CONF_TEMPLATE,
         help=argparse.SUPPRESS)
 
     # nginx binary location
-    parser.add_argument('--nginx', default=NGINX,
+    parser.add_argument('--nginx',
+        default=NGINX,
         help=argparse.SUPPRESS)
 
     return parser
@@ -302,6 +320,7 @@ if __name__ == '__main__':
                 status=args.status_port,
                 service_account=args.service_account_key,
                 ingress=ingress,
+                metadata=args.metadata,
                 nginx_conf=nginx_conf)
 
         start_nginx(args.nginx, nginx_conf)

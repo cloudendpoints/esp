@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright (C) Endpoints Server Proxy Authors
 # All rights reserved.
 #
@@ -35,9 +36,6 @@ NGINX_STATUS_PORT=''
 SERVER_ADDRESS=''
 NGINX_CONF_PATH=''
 PUBLISH='--publish-all'
-BACKEND="${ROOT}/test/docker/backend"
-VOLUMES='--volumes-from=app'
-VOLUMES+=" --volume=${BACKEND}/service.json:/etc/nginx/endpoints/service.json"
 SERVICE_NAME=''
 SERVICE_VERSION=''
 
@@ -65,25 +63,32 @@ fi
 
 ARGS=()
 DIR="${ROOT}/test/docker/esp_generic"
+ARGS+=(-m http://metadata:8080)
+ARGS+=(-c "http://management:8080/v1/services/{}/config?configId={}")
+ARGS+=(-s "${SERVICE_NAME}")
+ARGS+=(-v "${SERVICE_VERSION}")
+[[ -n "${SERVER_ADDRESS}" ]] && ARGS+=(-a "${SERVER_ADDRESS}")
 
-[[ -n "${PORT}" ]]              && ARGS+=(-p "${PORT}")
+if [[ -n "${PORT}" ]]; then
+  ARGS+=(-p "${PORT}")
+else
+  PORT=8080
+fi
+
 [[ -n "${SSL_PORT}" ]]          && {
   ARGS+=(-S "${SSL_PORT}");
   PUBLISH+=" --expose=${SSL_PORT}";
   VOLUMES+=" --volume=${DIR}/nginx.key:/etc/nginx/ssl/nginx.key";
   VOLUMES+=" --volume=${DIR}/nginx.crt:/etc/nginx/ssl/nginx.crt";
 }
-[[ -n "${SERVER_ADDRESS}" ]]    && ARGS+=(-a "${SERVER_ADDRESS}")
 [[ -n "${NGINX_STATUS_PORT}" ]] && {
   ARGS+=(-N "${NGINX_STATUS_PORT}");
   PUBLISH+=" --expose=${NGINX_STATUS_PORT}";
 }
 [[ -n "${NGINX_CONF_PATH}" ]]   && {
   ARGS+=(-n "${NGINX_CONF_PATH}");
-  VOLUMES+=" --volume=${DIR}/custom_nginx.conf:/etc/nginx/custom/nginx.conf";
+  VOLUMES+=" --volume=${DIR}/custom_nginx.conf:${NGINX_CONF_PATH}";
 }
-[[ -n "${SERVICE_NAME}" ]]      && ARGS+=(-s "${SERVICE_NAME}")
-[[ -n "${SERVICE_VERSION}" ]]   && ARGS+=(-v "${SERVICE_VERSION}")
 
 # Start Endpoints proxy container.
 docker run \
@@ -93,8 +98,8 @@ docker run \
     --link=metadata:metadata \
     --link=control:control \
     --link=app:app \
+    --link=management:management \
     ${VOLUMES} \
-    --entrypoint=/var/lib/nginx/bin/start_nginx.sh \
     esp-image \
     ${ARGS[@]} \
   || error_exit "Cannot start Endpoints proxy container."
@@ -151,9 +156,6 @@ fi
 printf "\nCheck esp status port.\n"
 wait_for "${ESP_NGINX_STATUS_PORT}/nginx_status" \
   || error_exit "ESP container didn't come up."
-
-# By default, ESP listens at port 8080 for http requests.
-[[ -n "${PORT}" ]] || PORT=8080
 
 ESP_PORT=$(docker port esp $PORT) \
   || error_exit "Cannot get esp port number."

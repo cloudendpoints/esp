@@ -54,7 +54,7 @@ http {
 % if service_account:
         google_authentication_secret ${service_account};
 % else:
-        metadata_server;
+        metadata_server ${metadata};
 % endif
       }
       # End Endpoints v2 Support

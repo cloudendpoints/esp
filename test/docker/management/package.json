@@ -1,0 +1,23 @@
+{
+  "name": "management-server",
+  "version": "0.0.1",
+  "description": "A fake service management server.",
+  "main": "management.js",
+  "scripts": {
+    "start": "node management.js"
+  },
+  "repository": {
+  },
+  "license": "Apache-2.0",
+  "dependencies": {
+    "express": "^4.12.3"
+  },
+  "engines" : {
+    "node" : ">=4.1.2"
+  },
+  "files": [
+    "management.js",
+    "README.md",
+    "service.json"
+  ]
+}

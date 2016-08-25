@@ -31,11 +31,9 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 _GOOGLE_API_SCOPE = (
     "https://www.googleapis.com/auth/service.management.readonly")
-_METADATA_URL_PREFIX = (
-    "http://metadata.google.internal/computeMetadata/v1/instance")
-_SERVICE_MGMT_URL_TEMPLATE = (
-    "https://servicemanagement.googleapis.com"
-    "/v1/services/{}/config?configId={}")
+
+# Metadata service path
+_METADATA_PATH = "/computeMetadata/v1/instance"
 
 
 class FetchError(Exception):
@@ -46,9 +44,9 @@ class FetchError(Exception):
     def __str__(self):
         return self.message
 
-def fetch_service_name(url_prefix):
+def fetch_service_name(metadata):
     """Fetch service name from metadata URL."""
-    url = url_prefix + "/attributes/endpoints-service-name"
+    url = metadata + _METADATA_PATH + "/attributes/endpoints-service-name"
     headers = {"Metadata-Flavor": "Google"}
     client = urllib3.PoolManager()
     try:
@@ -66,9 +64,9 @@ def fetch_service_name(url_prefix):
     return name
 
 
-def fetch_service_version(url_prefix):
+def fetch_service_version(metadata):
     """Fetch service version from metadata URL."""
-    url = url_prefix + "/attributes/endpoints-service-version"
+    url = metadata + _METADATA_PATH + "/attributes/endpoints-service-version"
     headers = {"Metadata-Flavor": "Google"}
     client = urllib3.PoolManager()
     try:
@@ -95,9 +93,9 @@ def make_access_token(secret_token_json):
     return token
 
 
-def fetch_access_token(url_prefix):
+def fetch_access_token(metadata):
     """Fetch access token from metadata URL."""
-    access_token_url = url_prefix + "/service-accounts/default/token"
+    access_token_url = metadata + _METADATA_PATH + "/service-accounts/default/token"
     headers = {"Metadata-Flavor": "Google"}
     client = urllib3.PoolManager()
     try:
