@@ -61,15 +61,6 @@ $t->write_file('service.pb.txt', ApiManager::get_grpc_test_service_config($GrpcB
 control {
   environment: "http://127.0.0.1:${ServiceControlPort}"
 }
-system_parameters {
-  rules {
-    selector: "test.grpc.Test.Echo"
-    parameters {
-      name: "api_key"
-      http_header: "x-api-key"
-    }
-  }
-}
 EOF
 
 # For posterity, here's where the next three files came from:

@@ -14,16 +14,6 @@ authentication:
     - id: test_jwk
       issuer: loadtest@esp-test-client.iam.gserviceaccount.com
       jwks_uri: https://www.googleapis.com/service_accounts/v1/jwk/loadtest@esp-test-client.iam.gserviceaccount.com
-system_parameters:
-  rules:
-    - selector: test.grpc.Test.EchoStream
-      parameters:
-        - name: api_key
-          http_header: x-api-key
-        - name: api_key
-          url_query_parameter: key
-        - name: api_key
-          url_query_parameter: api_key
 usage:
   rules:
     - selector: test.grpc.Test.Echo

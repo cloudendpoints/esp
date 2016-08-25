@@ -57,8 +57,9 @@ const char kUnrecognizedOperation[] = "<Unknown Operation Name>";
 const int kMaxUUIDBufSize = 40;
 
 // Default api key names
-const char kDefaultApiKeyName1[] = "key";
-const char kDefaultApiKeyName2[] = "api_key";
+const char kDefaultApiKeyQueryName1[] = "key";
+const char kDefaultApiKeyQueryName2[] = "api_key";
+const char kDefaultApiKeyHeaderName[] = "x-api-key";
 
 // Default location
 const char kDefaultLocation[] = "us-central1";
@@ -152,8 +153,10 @@ void RequestContext::ExtractApiKey() {
   if (!api_key_defined) {
     // If api_key is not specified for a method,
     // check "key" first, if not, check "api_key" in query parameter.
-    if (!request_->FindQuery(kDefaultApiKeyName1, &api_key_)) {
-      request_->FindQuery(kDefaultApiKeyName2, &api_key_);
+    if (!request_->FindQuery(kDefaultApiKeyQueryName1, &api_key_)) {
+      if (!request_->FindQuery(kDefaultApiKeyQueryName2, &api_key_)) {
+        request_->FindHeader(kDefaultApiKeyHeaderName, &api_key_);
+      }
     }
   }
 }

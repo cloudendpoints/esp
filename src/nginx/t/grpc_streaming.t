@@ -53,15 +53,6 @@ $t->write_file('service.pb.txt',
 control {
   environment: "http://127.0.0.1:${ServiceControlPort}"
 }
-system_parameters {
-  rules {
-    selector: "test.grpc.Test.EchoStream"
-    parameters {
-      name: "api_key"
-      http_header: "x-api-key"
-    }
-  }
-}
 EOF
 
 ApiManager::write_file_expand($t, 'nginx.conf', <<"EOF");

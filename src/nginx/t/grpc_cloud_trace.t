@@ -54,15 +54,6 @@ $t->write_file('service.pb.txt',
 control {
   environment: "http://127.0.0.1:${ServiceControlPort}"
 }
-system_parameters {
-  rules {
-    selector: "test.grpc.Test.Echo"
-    parameters {
-      name: "api_key"
-      http_header: "x-api-key"
-    }
-  }
-}
 EOF
 
 # Set the trace cache to 0 so that trace request will be sent immediately.

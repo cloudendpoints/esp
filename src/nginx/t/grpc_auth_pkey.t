@@ -65,15 +65,6 @@ authentication {
 control {
   environment: "http://127.0.0.1:${ServiceControlPort}"
 }
-system_parameters {
-  rules {
-    selector: "test.grpc.Test.Echo"
-    parameters {
-      name: "api_key"
-      http_header: "x-api-key"
-    }
-  }
-}
 EOF
 
 ApiManager::write_file_expand($t, 'nginx.conf', <<"EOF");

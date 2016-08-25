@@ -76,15 +76,6 @@ apis {
     name: "Echo"
   }
 }
-system_parameters {
-  rules {
-    selector: "test.grpc.Test.Echo"
-    parameters {
-      name: "api_key"
-      http_header: "x-api-key"
-    }
-  }
-}
 control {
   environment: "http://127.0.0.1:${ServiceControlPort}"
 }

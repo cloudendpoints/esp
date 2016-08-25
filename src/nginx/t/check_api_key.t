@@ -45,7 +45,7 @@ my $NginxPort = ApiManager::pick_port();
 my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(21);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(26);
 
 # Save service name in the service configuration protocol buffer file.
 my $config = ApiManager::get_bookstore_service_config .
@@ -95,6 +95,12 @@ $t->run();
 my $response1 = ApiManager::http_get($NginxPort,'/shelves?key=key-1');
 my $response2 = ApiManager::http_get($NginxPort,'/shelves?api_key=api-key-1');
 my $response3 = ApiManager::http_get($NginxPort,'/shelves?api_key=api-key-2&key=key-2');
+my $response4 = ApiManager::http($NginxPort,<<'EOF');
+GET /shelves HTTP/1.0
+X-API-KEY: key-4
+Host: localhost
+
+EOF
 
 is($t->waitforfile($report_done), 1, 'Report body file ready.');
 $t->stop_daemons();
@@ -105,21 +111,24 @@ like($response2, qr/HTTP\/1\.1 200 OK/, 'Response for api-key-1 - 200 OK');
 like($response2, qr/List of shelves\.$/, 'Response for api-key-1 - body');
 like($response3, qr/HTTP\/1\.1 200 OK/, 'Response for api-key-2&key-2 - 200 OK');
 like($response3, qr/List of shelves\.$/, 'Response for api-key-2&key-2 - body');
+like($response4, qr/HTTP\/1\.1 200 OK/, 'Response for x-api-key:key-4 - 200 OK');
+like($response4, qr/List of shelves\.$/, 'Response for x-api-key:key-4 - body');
 
 my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
-is(scalar @servicecontrol_requests, 4, 'Service control was called four times.');
+is(scalar @servicecontrol_requests, 5, 'Service control was called 5 times.');
 
-my ($check1, $check2, $check3, $report) = @servicecontrol_requests;
+my ($check1, $check2, $check3, $check4, $report) = @servicecontrol_requests;
 like($check1->{uri}, qr/:check$/, 'Check 1 uri');
 like($check2->{uri}, qr/:check$/, 'Check 2 uri');
 like($check3->{uri}, qr/:check$/, 'Check 3 uri');
+like($check4->{uri}, qr/:check$/, 'Check 4 uri');
 like($report->{uri}, qr/:report$/, 'Report uri');
 
 # Parse out operations from the report.
 my $report_json = decode_json(ServiceControl::convert_proto($report->{body}, 'report_request', 'json'));
 my $operations = $report_json->{operations};
-is(@{$operations}, 3, 'There are 3 report operations total');
-my ($report1, $report2, $report3) = @{$operations};
+is(@{$operations}, 4, 'There are 4 report operations total');
+my ($report1, $report2, $report3, $report4) = @{$operations};
 
 # Match the report operations to checks.
 my $check1_body = decode_json(ServiceControl::convert_proto($check1->{body}, 'check_request', 'json'));
@@ -139,6 +148,12 @@ is($check3_body->{operation}->{consumerId}, 'api_key:key-2',
    'check body has correct consumer id for api-key-2&key-2.');
 is($report3->{consumerId}, 'api_key:key-2',
    'report_body has correct consumerId for api-key-2&key-2');
+
+my $check4_body = decode_json(ServiceControl::convert_proto($check4->{body}, 'check_request', 'json'));
+is($check4_body->{operation}->{consumerId}, 'api_key:key-4',
+   'check body has correct consumer id for key-4.');
+is($report4->{consumerId}, 'api_key:key-4',
+   'report_body has correct consumerId for key-4');
 
 ################################################################################
 

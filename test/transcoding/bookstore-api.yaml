@@ -55,15 +55,5 @@ http:
     get: "/shelves/{shelf}/books/{book}"
   - selector: "Bookstore.DeleteBook"
     delete: "/shelves/{shelf}/books/{book}"
-system_parameters:
-  rules:
-  - selector: "*"
-    parameters:
-    - name: "api_key"
-      http_header: "x-api-key"
-    - name: "api_key"
-      url_query_parameter: "key"
-    - name: "api_key"
-      url_query_parameter: "api_key"
 control:
     environment:  servicecontrol.googleapis.com
