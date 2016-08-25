@@ -115,6 +115,7 @@ cc_binary(
         "//third_party/nginx:http_realip",
         "//third_party/nginx:http_referer",
         "//third_party/nginx:http_rewrite",
+        "//third_party/nginx:http_split_clients",
         "//third_party/nginx:http_stub_status",
         "//third_party/nginx:http_sub",
         "//third_party/nginx:http_upstream_hash",
@@ -122,6 +123,15 @@ cc_binary(
         "//third_party/nginx:http_upstream_keepalive",
         "//third_party/nginx:http_upstream_least_conn",
         "//third_party/nginx:http_userid",
+        "//third_party/nginx:stream",
+        "//third_party/nginx:stream_access",
+        "//third_party/nginx:stream_geo",
+        "//third_party/nginx:stream_limit_conn",
+        "//third_party/nginx:stream_map",
+        "//third_party/nginx:stream_return",
+        "//third_party/nginx:stream_split_clients",
+        "//third_party/nginx:stream_upstream_hash",
+        "//third_party/nginx:stream_upstream_least_conn",
     ],
 )
 
