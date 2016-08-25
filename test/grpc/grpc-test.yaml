@@ -20,9 +20,19 @@ system_parameters:
       parameters:
         - name: api_key
           http_header: x-api-key
+        - name: api_key
+          url_query_parameter: key
+        - name: api_key
+          url_query_parameter: api_key
 usage:
   rules:
     - selector: test.grpc.Test.Echo
       allow_unregistered_calls: true
 control:
     environment:  servicecontrol.googleapis.com
+http:
+  rules:
+    - selector: test.grpc.Test.Echo
+      post: "/echo"
+    - selector: test.grpc.Test.EchoStream
+      post: "/echostream"
