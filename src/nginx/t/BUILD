@@ -140,6 +140,7 @@ nginx_suite(
     tests = [
         "grpc_interop_unary.t",
         "grpc_interop_streaming.t",
+        "grpc_interop_status.t",
     ],
     deps = [
         ":perl_library",
