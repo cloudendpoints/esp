@@ -139,6 +139,7 @@ nginx_suite(
     nginx = "//src/nginx/main:nginx-esp",
     tests = [
         "grpc_interop_unary.t",
+        "grpc_interop_streaming.t",
     ],
     deps = [
         ":perl_library",
