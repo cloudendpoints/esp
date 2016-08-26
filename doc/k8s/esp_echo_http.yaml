@@ -28,10 +28,10 @@ metadata:
   name: esp-echo
 spec:
   ports:
-  - port: 80
-    targetPort: 8080
-    protocol: TCP
-    name: http
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
   selector:
     app: esp-echo
   # Change this type to NodePort if you use Minikube.
@@ -48,20 +48,28 @@ spec:
       labels:
         app: esp-echo
     spec:
+      volumes:
+        - name: service-account-creds
+          secret:
+            secretName: service-account-creds
       containers:
-      - name: esp
-        image: b.gcr.io/endpoints/endpoints-runtime:0.3
-        command: [
-          "/usr/sbin/start_esp.py",
-          "-p", "8080",
-          "-a", "127.0.0.1:8081",
-          "-s", "SERVICE_NAME",
-          "-v", "SERVICE_VERSION",
-          "-k", "/etc/nginx/creds/service-account-creds.json",
-        ]
-        ports:
-          - containerPort: 8080
-      - name: echo
-        image: b.gcr.io/endpoints/echo:latest
-        ports:
-          - containerPort: 8081
+        - name: esp
+          image: b.gcr.io/endpoints/endpoints-runtime:0.3
+          command: [
+            "/usr/sbin/start_esp.py",
+            "-p", "8080",
+            "-a", "127.0.0.1:8081",
+            "-s", "SERVICE_NAME",
+            "-v", "SERVICE_VERSION",
+            "-k", "/etc/nginx/creds/service-account-creds.json",
+          ]
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - mountPath: /etc/nginx/creds
+              name: service-account-creds
+              readOnly: true
+        - name: echo
+          image: b.gcr.io/endpoints/echo:latest
+          ports:
+            - containerPort: 8081
