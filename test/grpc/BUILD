@@ -91,6 +91,9 @@ cc_binary(
 cc_binary(
     name = "interop-client",
     testonly = 1,
+    srcs = [
+        "interop-client.cc",
+    ],
     deps = [
         "@grpc_git//:interop_client_main",
     ],
