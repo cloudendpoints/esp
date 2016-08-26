@@ -23,14 +23,6 @@ http {
     server ${SERVER_ADDRESS};
   }
 
-  upstream metadata_server {
-    server metadata:8080;
-  }
-
-  upstream service_control {
-    server control:8080;
-  }
-
   geo $source_type {
     default ext;
     127.0.0.0/8 lo;
@@ -40,7 +32,7 @@ http {
   }
 
   endpoints {
-    metadata_server http://metadata_server;
+    metadata_server http://metadata:8080;
   }
 
   server {

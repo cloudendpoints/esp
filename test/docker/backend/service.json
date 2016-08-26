@@ -81,7 +81,7 @@
   "configVersion": 3,
   "context": {},
   "control": {
-    "environment": "http://service_control"
+    "environment": "http://control:8080"
   },
   "customError": {},
   "documentation": {},

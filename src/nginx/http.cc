@@ -198,8 +198,8 @@ Status ngx_esp_upstream_set_url(ngx_pool_t *pool, ngx_http_upstream_t *upstream,
 
   // Parse out the URI part of the URL.
   parsed_url.uri_part = 1;
-  // Do not try to resolve the host name as part of URL parsing.
-  parsed_url.no_resolve = 1;
+  // Try to resolve the host name as part of URL parsing.
+  parsed_url.no_resolve = 0;
 
   if (ngx_parse_url(pool, &parsed_url) != NGX_OK) {
     return Status(NGX_ERROR, "Cannot parse URL");
