@@ -43,15 +43,17 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 API_KEY=''
 SERVICE_NAME='echo-dot-esp-grpc-load-test.appspot.com'
-HOST=''
+HTTP_HOST=''
+GRPC_HOST=''
 DURATION_IN_HOUR=0
 
 REQUEST_COUNT=10000
 
-while getopts :a:h:l:s: arg; do
+while getopts :a:g:h:l:s: arg; do
   case ${arg} in
     a) API_KEY="${OPTARG}";;
-    h) HOST="${OPTARG}";;
+    h) GRPC_HOST="${OPTARG}";;
+    g) HTTP_HOST="${OPTARG}";;
     l) DURATION_IN_HOUR="${OPTARG}";;
     s) SERVICE_NAME="${OPTARG}";;
     *) echo "Invalid option: -${OPTARG}";;
@@ -63,7 +65,7 @@ if ! [[ -n "${API_KEY}" ]]; then
   API_KEY="${ESP_GRPC_LOAD_TEST_API_KEY}"
 fi
 
-[[ -n "${HOST}" ]] || error_exit 'Please specify a host with -h option.'
+[[ -n "${GRPC_HOST}" ]] || error_exit 'Please specify a host with -h option.'
 
 # Nginx default max_concurrent_streams is 128.
 # If CONCURRENT > 128, some requests will fail with RST_STREAM.
@@ -94,7 +96,7 @@ function generate_run_config() {
 # If sending N requests concurrently, N-1 requests will fail while the
 # first request is fetching the metadata.
 cat <<EOF|"${ROOT}/bazel-bin/test/grpc/grpc-test-client"
-server_addr: "${HOST}"
+server_addr: "${GRPC_HOST}"
 plans {
   echo {
     request {
@@ -107,11 +109,15 @@ EOF
 END_TIME=$(date +"%s")
 END_TIME=$((END_TIME + DURATION_IN_HOUR * 60 * 60))
 RUN_COUNT=0
-STRESS_FAILURES=0
+GRPC_STRESS_FAILURES=0
+HTTP_STRESS_FAILURES=0
+
+# esp_client.py needs to run in test/client folder.
+pushd ${ROOT}/test/client > /dev/null
 
 while true; do
   echo "Starting test run ${RUN_COUNT} at $(date)."
-  echo "Failures so far: Stress: ${STRESS_FAILURES}."
+  echo "Failures so far: Grpc: ${GRPC_STRESS_FAILURES}, HTTP: ${HTTP_STRESS_FAILURES}."
 
   #######################
   # Insert tests here
@@ -123,15 +129,24 @@ while true; do
   AUTH_TOKEN=$("${ROOT}/client/custom/gen-auth-token.sh" -a "${SERVICE_NAME}")
 
   "${ROOT}/test/grpc/grpc_stress_input.py" \
-    --server="${HOST}" \
+    --server="${GRPC_HOST}" \
     --api_key="${API_KEY}" \
     --auth_token="${AUTH_TOKEN}" \
     --request_count="${REQUEST_COUNT}" \
     --concurrent="${CONCURRENT}" \
     --requests_per_stream="${STREAM_COUNT}" \
     --random_payload_max_size="${RANDOM_PAYLOAD_SIZE}" \
-    |"${ROOT}/bazel-bin/test/grpc/grpc-test-client" || ((STRESS_FAILURES++))
+    |"${ROOT}/bazel-bin/test/grpc/grpc-test-client" || ((GRPC_STRESS_FAILURES++))
 
+  if [[ -n ${HTTP_HOST} ]]; then
+    echo "Starting transcoding stress test at $(date)."
+    ./esp_client.py \
+        --test=stress \
+        --host="${HTTP_HOST}" \
+        --api_key="${API_KEY}" \
+        --auth_token="${AUTH_TOKEN}" \
+        --test_data=grpc_test_data.json || ((HTTP_STRESS_FAILURES++))
+  fi
   #######################
   # End of test suite
   #######################
@@ -141,7 +156,9 @@ while true; do
   [[ $(date +"%s") -lt ${END_TIME} ]] || [[ ${RUN_COUNT} -lt ${ALL_CONFIG_TYPES} ]] || break
 done
 
-echo "Finished ${RUN_COUNT} test runs."
-echo "Failures: Stress: ${STRESS_FAILURES}."
+popd > /dev/null
 
-exit "${STRESS_FAILURES}"
+echo "Finished ${RUN_COUNT} test runs."
+echo "Failures: Grpc: ${GRPC_STRESS_FAILURES}, HTTP: ${HTTP_STRESS_FAILURES}."
+
+exit $((GRPC_STRESS_FAILURES + HTTP_STRESS_FAILURES))
