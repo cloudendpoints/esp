@@ -348,10 +348,10 @@ sub run_grpc_test {
 }
 
 sub run_grpc_interop_test {
-  my ($t, $port, $test_case) = @_;
+  my ($t, $port, $test_case, @args) = @_;
   my $testdir = $t->testdir();
   my $client = $ENV{TEST_SRCDIR} . '/test/grpc/interop-client';
-  return system $client, '--server_port', $port, '--test_case', $test_case;
+  return system "$client --server_port $port --test_case $test_case " . join(' ', @args)
 }
 
 sub run_nginx_with_stderr_redirect {

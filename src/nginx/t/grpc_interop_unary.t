@@ -54,16 +54,6 @@ $t->write_file(
 control {
   environment: "http://127.0.0.1:${ServiceControlPort}"
 }
-usage {
-  rules {
-    selector: "grpc.testing.TestService.EmptyCall"
-    allow_unregistered_calls: true
-  }
-  rules {
-    selector: "grpc.testing.TestService.UnaryCall"
-    allow_unregistered_calls: true
-  }
-}
 EOF
 
 $t->write_file_expand('nginx.conf', <<"EOF");
@@ -96,13 +86,18 @@ $t->run();
 is($t->waitforsocket("127.0.0.1:${Http2NginxPort}"), 1, 'Nginx socket ready.');
 
 ################################################################################
-my $large_unary_results = &ApiManager::run_grpc_interop_test($t, $Http2NginxPort, 'large_unary');
-my $empty_unary_results = &ApiManager::run_grpc_interop_test($t, $Http2NginxPort, 'empty_unary');
+my @test_cases = (
+    'empty_unary',
+    'large_unary',
+);
+
+foreach my $case (@test_cases) {
+  my $result = &ApiManager::run_grpc_interop_test($t, $Http2NginxPort,
+      $case, '--global_metadata', 'x-api-key:api-key');
+  is($result, 0, "${case} test completed as expected.");
+}
 
 $t->stop_daemons();
-
-is($large_unary_results, 0, 'GRPC large unary test completed as expected.');
-is($empty_unary_results, 0, 'GRPC large unary test completed as expected.');
 
 ################################################################################
 

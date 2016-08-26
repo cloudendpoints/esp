@@ -25,7 +25,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 
+#include <map>
 #include <memory>
+#include <sstream>
 
 #include <gflags/gflags.h>
 #include <grpc++/grpc++.h>
@@ -83,12 +85,53 @@ DEFINE_bool(do_not_abort_on_transient_failures, false,
             "whether abort() is called or not. It does not control whether the "
             "test is retried in case of transient failures (and currently the "
             "interop tests are not retried even if this flag is set to true)");
+DEFINE_string(global_metadata, "",
+              "Global metadata added to every GRPC calls. "
+              "format: <key>:<value>;<key>:<value>");
 
 using grpc::testing::CreateChannelForTestCase;
 using grpc::testing::GetServiceAccountJsonKey;
 
-int main(int argc, char** argv) {
+namespace {
+
+class MetadataGlobalCallbacks : public grpc::ClientContext::GlobalCallbacks {
+ public:
+  MetadataGlobalCallbacks(std::multimap<std::string, std::string> metadata)
+      : metadata_(metadata) {}
+  virtual void DefaultConstructor(grpc::ClientContext *context) override {
+    for (const auto &it : metadata_) {
+      context->AddMetadata(it.first, it.second);
+    }
+  }
+  virtual void Destructor(grpc::ClientContext *context) override {}
+
+ private:
+  std::multimap<std::string, std::string> metadata_;
+};
+
+std::multimap<std::string, std::string> ParseMetadataFlag(
+    const std::string &flag) {
+  std::istringstream ss(flag);
+  std::multimap<std::string, std::string> metadata;
+  std::string token;
+
+  while (std::getline(ss, token, ';')) {
+    size_t pos = token.find(':');
+    if (pos == std::string::npos) {
+      std::cerr << "Ignoring invalid metadata: " << token << std::endl;
+      continue;
+    }
+    metadata.emplace(token.substr(0, pos), token.substr(pos + 1));
+  }
+
+  return metadata;
+};
+}
+
+int main(int argc, char **argv) {
   grpc::testing::InitTest(&argc, &argv, true);
+  MetadataGlobalCallbacks callbacks(ParseMetadataFlag(FLAGS_global_metadata));
+  grpc::ClientContext::SetGlobalCallbacks(&callbacks);
   gpr_log(GPR_INFO, "Testing these cases: %s", FLAGS_test_case.c_str());
   int ret = 0;
   grpc::testing::InteropClient client(CreateChannelForTestCase(FLAGS_test_case),
@@ -166,7 +209,7 @@ int main(int argc, char** argv) {
     }
     // compute_engine_creds only runs in GCE.
   } else {
-    const char* testcases[] = {"all",
+    const char *testcases[] = {"all",
                                "cancel_after_begin",
                                "cancel_after_first_response",
                                "client_compressed_streaming",
@@ -189,7 +232,7 @@ int main(int argc, char** argv) {
                                "server_streaming",
                                "status_code_and_message",
                                "timeout_on_sleeping_server"};
-    char* joined_testcases =
+    char *joined_testcases =
         gpr_strjoin_sep(testcases, GPR_ARRAY_SIZE(testcases), "\n", NULL);
 
     gpr_log(GPR_ERROR, "Unsupported test case %s. Valid options are\n%s",
