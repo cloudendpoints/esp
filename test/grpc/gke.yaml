@@ -5,7 +5,11 @@ metadata:
 spec:
   ports:
   - port: 80
-    targetPort: 8080
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  - port: 8001
+    targetPort: 8001
     protocol: TCP
     name: grpc
   selector:
@@ -27,16 +31,19 @@ spec:
     spec:
       containers:
       - name: endpoints-runtime
-        image: ${ENDPOINTS_RUNTIME_GRPC_IMAGE}
+        image: ${ENDPOINTS_RUNTIME_IMAGE}
         args: [
           "-s", "${GRPC_TEST_SERVICE_NAME}",
           "-v", "${GRPC_TEST_SERVICE_VESION}",
-          "-a", "localhost:8081",
+          "-p", "8000",
+          "-P", "8001",
+          "-a", "grpc://localhost:8081",
         ]
         ports:
-          - containerPort: 8080
+          - containerPort: 8000
+          - containerPort: 8001
         volumeMounts:
       - name: grpc-test-server
-        image: ${GRPC_TEST_SERVER_IMAGE}
+        image: gcr.io/endpointsv2/grpc-test-server
         ports:
           - containerPort: 8081

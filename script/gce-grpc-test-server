@@ -50,9 +50,10 @@ EOF
 }
 
 SERVICE_NAME='echo-dot-esp-grpc-load-test.appspot.com'
-SERVICE_VERSION='2016-07-08r1'
+SERVICE_VERSION='2016-08-25r1'
 PROJECT="esp-grpc-load-test"
 INSTANCE=grpc-test-server-gce-vm
+IMAGE="b.gcr.io/endpoints/endpoints-runtime"
 
 while getopts :i:d:n:p:v:z: arg; do
   case "${arg}" in
@@ -65,8 +66,6 @@ while getopts :i:d:n:p:v:z: arg; do
     *) usage "Invalid option: -${OPTARG}";;
   esac
 done
-
-[[ -n "${IMAGE}" ]] || error_exit "Please use -d to specify docker image name."
 
 GCLOUD=$(which gcloud) || GCLOUD=~/google-cloud-sdk/bin/gcloud
 
@@ -92,10 +91,12 @@ remote "sudo apt-get update && sudo apt-get -qqy install apt-transport-https && 
 
 remote "sudo apt-get update && sudo apt-get -qqy install docker-engine"
 
-remote "sudo docker run -d --name=grpc-test-server gcr.io/endpointsv2/grpc-test-server:latest"
+remote "sudo docker run -d --name=grpc-test-server gcr.io/endpointsv2/grpc-test-server"
 
-remote "sudo docker run -d -p 80:8080 --link=grpc-test-server:grpc-test-server ${IMAGE} \
-  -s ${SERVICE_NAME} -v ${SERVICE_VERSION} -a grpc-test-server:8081"
+# GCE needs to allow port 8001 by creating this rule
+# gcloud compute firewall-rules create grpc-port-8001 --allow tcp:8001 --description="grpc http2 port"
+remote "sudo docker run -d -p 80:8000 -p 8001:8001 --link=grpc-test-server:grpc-test-server ${IMAGE} \
+  -s ${SERVICE_NAME} -v ${SERVICE_VERSION} -p 8000 -P 8001 -a grpc://grpc-test-server:8081"
 
 echo "GCE vm "${INSTANCE}" was created successfully. Its external IP:"
 ${GCLOUD} compute instances describe "${INSTANCE}" "${COMMON_ARGS[@]}" |grep natIP:|awk '{print $2}'
