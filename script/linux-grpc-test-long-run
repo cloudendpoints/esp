@@ -79,17 +79,45 @@ RANDOM_PAYLOAD_SIZE_TYPES_SIZE=${#RANDOM_PAYLOAD_SIZE_TYPES[@]}
 ALL_CONFIG_TYPES=$((CONCURRENT_TYPES_SIZE * STREAM_COUNT_TYPES_SIZE * RANDOM_PAYLOAD_SIZE_TYPES_SIZE))
 
 function generate_run_config() {
-  CONCURRENT_RUN=${1}
-  CONCURRENT=${CONCURRENT_TYPES[$((CONCURRENT_RUN % CONCURRENT_TYPES_SIZE))]}
+  local run=${1}
+  CONCURRENT=${CONCURRENT_TYPES[$((run % CONCURRENT_TYPES_SIZE))]}
   echo concurrent="${CONCURRENT}"
 
-  STREAM_COUNT_RUN=$((CONCURRENT_RUN / CONCURRENT_TYPES_SIZE))
+  STREAM_COUNT_RUN=$((run / CONCURRENT_TYPES_SIZE))
   STREAM_COUNT=${STREAM_COUNT_TYPES[$((STREAM_COUNT_RUN % STREAM_COUNT_TYPES_SIZE))]}
   echo stream_count="${STREAM_COUNT}"
 
   RANDOM_PAYLOAD_SIZE_RUN=$((STREAM_COUNT_RUN / STREAM_COUNT_TYPES_SIZE))
   RANDOM_PAYLOAD_SIZE=${RANDOM_PAYLOAD_SIZE_TYPES[$((RANDOM_PAYLOAD_SIZE_RUN % RANDOM_PAYLOAD_SIZE_TYPES_SIZE))]}
   echo random_payload_size="${RANDOM_PAYLOAD_SIZE}"
+}
+
+function grpc_test_pass_through() {
+  echo "Starting grpc pass through stress test at $(date)."
+  local failures=0
+  for run in $(seq 1 ${ALL_CONFIG_TYPES}); do
+      generate_run_config $((run - 1))
+      "${ROOT}/test/grpc/grpc_stress_input.py" \
+          --server="${GRPC_HOST}" \
+          --api_key="${API_KEY}" \
+          --auth_token="${AUTH_TOKEN}" \
+          --request_count="${REQUEST_COUNT}" \
+          --concurrent="${CONCURRENT}" \
+          --requests_per_stream="${STREAM_COUNT}" \
+          --random_payload_max_size="${RANDOM_PAYLOAD_SIZE}" \
+          |"${ROOT}/bazel-bin/test/grpc/grpc-test-client" || ((failures++))
+  done
+  return $failures
+}
+
+function grpc_test_transcode() {
+  echo "Starting grpc transcode stress test at $(date)."
+  ./esp_client.py \
+      --test=stress \
+      --host="${HTTP_HOST}" \
+      --api_key="${API_KEY}" \
+      --auth_token="${AUTH_TOKEN}" \
+      --test_data=grpc_test_data.json
 }
 
 # Issue a request to allow Endpoints-Runtime to fetch metadata.
@@ -112,53 +140,37 @@ RUN_COUNT=0
 GRPC_STRESS_FAILURES=0
 HTTP_STRESS_FAILURES=0
 
-# esp_client.py needs to run in test/client folder.
+# ${ROOT}/test/client/esp_client.py needs to run at that folder.
 pushd ${ROOT}/test/client > /dev/null
 
 while true; do
   echo "Starting test run ${RUN_COUNT} at $(date)."
-  echo "Failures so far: Grpc: ${GRPC_STRESS_FAILURES}, HTTP: ${HTTP_STRESS_FAILURES}."
+  echo "Failures so far: pass-through: ${GRPC_STRESS_FAILURES}, transcode: ${HTTP_STRESS_FAILURES}."
 
   #######################
   # Insert tests here
   #######################
 
-  generate_run_config "${RUN_COUNT}"
-
   # Generating token for each run, that they expire in 1 hour.
   AUTH_TOKEN=$("${ROOT}/client/custom/gen-auth-token.sh" -a "${SERVICE_NAME}")
-
-  "${ROOT}/test/grpc/grpc_stress_input.py" \
-    --server="${GRPC_HOST}" \
-    --api_key="${API_KEY}" \
-    --auth_token="${AUTH_TOKEN}" \
-    --request_count="${REQUEST_COUNT}" \
-    --concurrent="${CONCURRENT}" \
-    --requests_per_stream="${STREAM_COUNT}" \
-    --random_payload_max_size="${RANDOM_PAYLOAD_SIZE}" \
-    |"${ROOT}/bazel-bin/test/grpc/grpc-test-client" || ((GRPC_STRESS_FAILURES++))
+  grpc_test_pass_through || ((GRPC_STRESS_FAILURES++))
 
   if [[ -n ${HTTP_HOST} ]]; then
-    echo "Starting transcoding stress test at $(date)."
-    ./esp_client.py \
-        --test=stress \
-        --host="${HTTP_HOST}" \
-        --api_key="${API_KEY}" \
-        --auth_token="${AUTH_TOKEN}" \
-        --test_data=grpc_test_data.json || ((HTTP_STRESS_FAILURES++))
+    grpc_test_transcode || ((HTTP_STRESS_FAILURES++))
   fi
+
   #######################
   # End of test suite
   #######################
 
   ((RUN_COUNT++))
   # Break if test has run long enough.
-  [[ $(date +"%s") -lt ${END_TIME} ]] || [[ ${RUN_COUNT} -lt ${ALL_CONFIG_TYPES} ]] || break
+  [[ $(date +"%s") -lt ${END_TIME} ]] || break
 done
 
 popd > /dev/null
 
 echo "Finished ${RUN_COUNT} test runs."
-echo "Failures: Grpc: ${GRPC_STRESS_FAILURES}, HTTP: ${HTTP_STRESS_FAILURES}."
+echo "Failures: pass-through: ${GRPC_STRESS_FAILURES}, transcode: ${HTTP_STRESS_FAILURES}."
 
 exit $((GRPC_STRESS_FAILURES + HTTP_STRESS_FAILURES))
