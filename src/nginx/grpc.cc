@@ -117,6 +117,17 @@ std::pair<Status, std::shared_ptr<::grpc::GenericStub>> GrpcGetStub(
                         std::shared_ptr<::grpc::GenericStub>());
 }
 
+std::multimap<std::string, std::string> ExtractMetadata(ngx_http_request_t *r) {
+  std::multimap<std::string, std::string> metadata;
+
+  for (auto &h : r->headers_in) {
+    metadata.emplace(ngx_str_to_std({h.key.len, h.lowcase_key}),
+                     ngx_str_to_std(h.value));
+  }
+
+  return metadata;
+}
+
 // The content handler for locations configured with grpc_pass.
 ngx_int_t GrpcBackendHandler(ngx_http_request_t *r) {
   ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
@@ -140,8 +151,8 @@ ngx_int_t GrpcBackendHandler(ngx_http_request_t *r) {
     if (status.ok()) {
       // We have a stub for this backend; proxy the call via libgrpc.
 
-      // TODO: Fill in the headers from the request.
-      std::multimap<std::string, std::string> headers;
+      const std::multimap<std::string, std::string> &headers =
+          ExtractMetadata(r);
       std::shared_ptr<NgxEspGrpcPassThroughServerCall> server_call;
       status = NgxEspGrpcPassThroughServerCall::Create(r, &server_call);
 
@@ -177,8 +188,8 @@ ngx_int_t GrpcBackendHandler(ngx_http_request_t *r) {
                        "GrpcBackendHandler: transcoding - method %s",
                        method.c_str());
 
-        // TODO: Fill in the headers from the request.
-        std::multimap<std::string, std::string> headers;
+        const std::multimap<std::string, std::string> &headers =
+            ExtractMetadata(r);
         grpc::ProxyFlow::Start(
             espcf->esp_srv_conf->esp_main_conf->grpc_queue.get(),
             std::move(server_call), std::move(stub), method, headers);
