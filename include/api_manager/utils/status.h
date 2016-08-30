@@ -78,6 +78,9 @@ class Status final {
   // Pre-defined OK status.
   static const Status& OK;
 
+  // Pre-defined DONE status.
+  static const Status& DONE;
+
   // Returns true if this status is not an error
   bool ok() const { return code_ == Code::OK || code_ == 200; }
 

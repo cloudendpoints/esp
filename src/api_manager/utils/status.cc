@@ -255,6 +255,7 @@ bool Status::operator==(const Status& x) const {
 }
 
 /* static */ const Status& Status::OK = Status();
+/* static */ const Status& Status::DONE = Status(-4, "");
 
 // Note: We return 400 instead of 412 for failed precondition as the meaning of
 // 412 is more specific than FAILED_PRECONDITION. If a 412 is desired create an

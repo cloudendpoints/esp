@@ -29,8 +29,8 @@
 #include <cassert>
 #include <utility>
 
-#include <grpc++/support/byte_buffer.h>
-
+#include "grpc++/support/byte_buffer.h"
+#include "include/api_manager/utils/status.h"
 #include "src/nginx/error.h"
 #include "src/nginx/grpc_finish.h"
 #include "src/nginx/module.h"
@@ -317,6 +317,15 @@ void NgxEspGrpcServerCall::CompletePendingRead(bool proceed,
   std::function<void(bool, utils::Status)> continuation;
   std::swap(continuation, read_continuation_);
   read_msg_ = nullptr;
+
+  // We already received end stream flag from downstream (r_reading_body is 0)
+  // and we converted all downstream_slices_ at this point, so it is ok to send
+  // end stream to upstream.
+  if (proceed && !r_->reading_body && downstream_slices_.size() == 0) {
+    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r_->connection->log, 0,
+                   "NgxEspGrpcServerCall::CompletePendingRead: DONE");
+    status = utils::Status::DONE;
+  }
   continuation(proceed, status);
   ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r_->connection->log, 0,
                  "NgxEspGrpcServerCall::CompletePendingRead: complete");

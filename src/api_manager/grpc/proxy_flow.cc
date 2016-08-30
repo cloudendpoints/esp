@@ -181,11 +181,15 @@ void ProxyFlow::StartDownstreamReadMessage(std::shared_ptr<ProxyFlow> flow) {
   }
   flow->server_call_->Read(&flow->downstream_to_upstream_buffer_,
                            [flow](bool proceed, utils::Status status) {
-                             if (!proceed) {
-                               StartUpstreamWritesDone(flow, status);
-                               return;
+                             if (proceed) {
+                               StartUpstreamWriteMessage(flow);
+                               if (status == Status::DONE) {
+                                 status = Status::OK;
+                               } else {
+                                 return;
+                               }
                              }
-                             StartUpstreamWriteMessage(flow);
+                             StartUpstreamWritesDone(flow, status);
                            });
 }
 
