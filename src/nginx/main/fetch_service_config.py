@@ -112,9 +112,8 @@ def fetch_access_token(metadata):
     return token
 
 
-def fetch_service_json(url_template, service_name, service_version, access_token):
+def fetch_service_json(service_mgmt_url, access_token):
     """Fetch service config."""
-    service_mgmt_url = url_template.format(service_name, service_version)
     headers = {"Authorization": "Bearer {}".format(access_token)}
     client = urllib3.PoolManager()
     try:
@@ -128,7 +127,6 @@ def fetch_service_json(url_template, service_name, service_version, access_token
         raise FetchError(1, message_template.format(status_code))
 
     service_config = json.loads(response.data)
-    validate_service_config(service_config, service_name, service_version)
     return service_config
 
 

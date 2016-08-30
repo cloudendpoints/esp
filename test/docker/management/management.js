@@ -51,9 +51,7 @@ function management() {
   // Set a custom service control
   json.control.environment = "http://127.0.0.1:" + process.env.CONTROL_PORT;
 
-  var path = '/v1/services/' + json.name + '/config';
-  console.log('Path: ' + path);
-  management.get(path, function(req, res) {
+  management.get("/service_config", function(req, res) {
     if (req.param.configId == json.id) {
       res.send('Incorrect version');
       return;

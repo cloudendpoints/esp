@@ -64,7 +64,7 @@ fi
 ARGS=()
 DIR="${ROOT}/test/docker/esp_generic"
 ARGS+=(-m http://127.0.0.1:${METADATA_PORT})
-ARGS+=(-c "http://127.0.0.1:${MANAGEMENT_PORT}/v1/services/{}/config?configId={}")
+ARGS+=(-c "http://127.0.0.1:${MANAGEMENT_PORT}/service_config")
 ARGS+=(-s "${SERVICE_NAME}")
 ARGS+=(-v "${SERVICE_VERSION}")
 [[ -n "${SERVER_ADDRESS}" ]] && ARGS+=(-a "${SERVER_ADDRESS}")

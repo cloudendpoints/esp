@@ -123,22 +123,29 @@ def start_nginx(nginx, nginx_conf):
 def fetch_service_config(args, service_config):
     try:
         # Fetch service config
-        if args.service is None:
-            args.service = fetch.fetch_service_name(args.metadata)
+        if args.service_config_url is None:
+            if args.service is None:
+                args.service = fetch.fetch_service_name(args.metadata)
 
-        if args.version is None:
-            args.version = fetch.fetch_service_version(args.metadata)
+            if args.version is None:
+                args.version = fetch.fetch_service_version(args.metadata)
 
+            service_mgmt_url = SERVICE_MGMT_URL_TEMPLATE.format(args.service,
+                                                                args.version)
+        else:
+            service_mgmt_url = args.service_config_url
+
+        # Get the access token
         if args.service_account_key is None:
             token = fetch.fetch_access_token(args.metadata)
         else:
             token = fetch.make_access_token(args.service_account_key)
 
-        config = fetch.fetch_service_json(
-                args.service_management,
-                args.service,
-                args.version,
-                token)
+        config = fetch.fetch_service_json(service_mgmt_url, token)
+
+        # Validate service config if we have service name version
+        if args.service is not None and args.version is not None:
+            fetch.validate_service_config(config, args.service, args.version)
 
         # Save service json for ESP
         try:
@@ -218,12 +225,12 @@ def make_argparser():
 
     parser.add_argument('-s', '--service', help='''
         Set the name of the Endpoints service.
-        If omitted, ESP contacts the metadata service to fetch the service name.
+        If omitted and -c not specified, ESP contacts the metadata service to fetch the service name.
     ''')
 
     parser.add_argument('-v', '--version', help='''
         Set the config version of the Endpoints service.
-        If omitted, ESP contacts the metadata service to fetch the service version.
+        If omitted and -c not specified, ESP contacts the metadata service to fetch the service version.
     ''')
 
     parser.add_argument('-n', '--nginx_config', help='''
@@ -254,10 +261,9 @@ def make_argparser():
         For GRPC backends, please use grpc:// prefix, e.g. grpc://localhost:8081.
     ''')
 
-    parser.add_argument('-c', '--service_management',
-        default=SERVICE_MGMT_URL_TEMPLATE, help='''
-        Specify the service management service URL template. The template string takes
-        the service name and the service version as parameters.
+    parser.add_argument('-c', '--service_config_url',
+        default=None, help='''
+        Specify the URL to fetch the service configuration.
     ''')
 
     # These two flags enable or disable all fetching by the script
