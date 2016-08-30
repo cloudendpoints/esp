@@ -222,9 +222,6 @@ struct ngx_esp_request_ctx_s {
   // not attempt the wakeup.
   std::shared_ptr<wakeup_context_t> wakeup_context;
 
-  // Endpoints variables.
-  ngx_str_t endpoints_api_userinfo;  // base64 encoded Json of user info.
-
   // Status of the request check/application backend upstream connection
   ::google::api_manager::utils::Status status;
 

@@ -80,10 +80,6 @@ http {
       }
       proxy_pass http://127.0.0.1:${BackendPort};
     }
-    location = /~~endpoints~subrequest~~ {
-        internal;
-        proxy_pass \$endpoints_subrequest_url;
-    }
   }
 }
 EOF

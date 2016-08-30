@@ -58,7 +58,6 @@ struct wakeup_context_s {
 ngx_esp_request_ctx_s::ngx_esp_request_ctx_s(ngx_http_request_t *r,
                                              ngx_esp_loc_conf_t *lc)
     : current_access_handler(nullptr),
-      endpoints_api_userinfo(ngx_null_string),
       status(NGX_OK, ""),
       auth_token(ngx_null_string),
       grpc_server_call(nullptr),
@@ -109,9 +108,6 @@ char *ngx_esp_merge_srv_conf(ngx_conf_t *cf, void *prev, void *conf);
 void *ngx_esp_create_loc_conf(ngx_conf_t *cf);
 char *ngx_esp_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child);
 
-// Pre-configuration initialization.
-ngx_int_t ngx_esp_preconfiguration(ngx_conf_t *cf);
-
 // Post-configuration initialization.
 ngx_int_t ngx_esp_postconfiguration(ngx_conf_t *cf);
 
@@ -122,13 +118,6 @@ ngx_int_t ngx_esp_postconfiguration(ngx_conf_t *cf);
 //
 // Runtime - function declarations.
 //
-
-ngx_int_t ngx_esp_endpoints_variable(ngx_http_request_t *r,
-                                     ngx_http_variable_value_t *v,
-                                     uintptr_t data);
-ngx_int_t ngx_esp_endpoints_deprecated_variable(ngx_http_request_t *r,
-                                                ngx_http_variable_value_t *v,
-                                                uintptr_t data);
 
 // The ESP access handler.
 ngx_int_t ngx_http_esp_access_wrapper(ngx_http_request_t *r);
@@ -185,33 +174,12 @@ ngx_command_t ngx_esp_commands[] = {
     ngx_null_command  // last entry
 };
 
-ngx_http_variable_t ngx_esp_variables[] = {
-    {
-        ngx_string("endpoints_api_userinfo"),                     // name
-        nullptr,                                                  // set_handler
-        ngx_esp_endpoints_variable,                               // get_handler
-        offsetof(ngx_esp_request_ctx_t, endpoints_api_userinfo),  // data
-        NGX_HTTP_VAR_NOCACHEABLE | NGX_HTTP_VAR_NOHASH,           // flags
-        0,                                                        // index
-    },
-    {
-        ngx_string("endpoints_subrequest_url"),          // name
-        nullptr,                                         // set_handler
-        ngx_esp_endpoints_deprecated_variable,           // get_handler
-        0,                                               // data
-        NGX_HTTP_VAR_NOCACHEABLE | NGX_HTTP_VAR_NOHASH,  // flags
-        0,                                               // index
-    },
-
-    {ngx_null_string, nullptr, nullptr, 0, 0, 0}  // last entry
-};
-
 //
 // The module context contains initialization and configuration callbacks.
 //
 ngx_http_module_t ngx_esp_module_ctx = {
     // ngx_int_t (*preconfiguration)(ngx_conf_t *cf);
-    ngx_esp_preconfiguration,
+    nullptr,
     // ngx_int_t (*postconfiguration)(ngx_conf_t *cf);
     ngx_esp_postconfiguration,
     // void *(*create_main_conf)(ngx_conf_t *cf);
@@ -360,28 +328,6 @@ char *ngx_esp_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child) {
   }
 
   return reinterpret_cast<char *>(NGX_CONF_OK);
-}
-
-//
-// ESP Module pre-configuration. Defines module variables.
-//
-ngx_int_t ngx_esp_preconfiguration(ngx_conf_t *cf) {
-  // Define ESP's variables.
-  ngx_http_variable_t *decl;
-
-  for (decl = ngx_esp_variables; decl->name.len > 0; decl++) {
-    ngx_http_variable_t *defn;
-    defn = ngx_http_add_variable(cf, &decl->name, decl->flags);
-    if (defn == nullptr) {
-      return NGX_ERROR;
-    }
-
-    defn->get_handler = decl->get_handler;
-    defn->set_handler = decl->set_handler;
-    defn->data = decl->data;
-  }
-
-  return NGX_OK;
 }
 
 static void handle_endpoints_config_error(ngx_conf_t *cf,
@@ -551,42 +497,6 @@ ngx_int_t ngx_esp_postconfiguration(ngx_conf_t *cf) {
 // ********************************************************
 // * Endpoints Server Proxy - Runtime.                    *
 // ********************************************************
-
-ngx_int_t ngx_esp_endpoints_variable(ngx_http_request_t *r,
-                                     ngx_http_variable_value_t *v,
-                                     uintptr_t data) {
-  ngx_esp_request_ctx_t *ctx;
-  ctx = reinterpret_cast<ngx_esp_request_ctx_t *>(
-      ngx_http_get_module_ctx(r, ngx_esp_module));
-
-  if (ctx == nullptr) {
-    v->not_found = 1;
-    return NGX_OK;
-  }
-
-  ngx_str_t *value = (ngx_str_t *)(((char *)ctx) + data);
-
-  if (value->len <= 0) {
-    v->not_found = 1;
-    return NGX_OK;
-  }
-
-  v->valid = 1;
-  v->no_cacheable = 1;
-  v->not_found = 0;
-
-  v->len = value->len;
-  v->data = value->data;
-
-  return NGX_OK;
-}
-
-ngx_int_t ngx_esp_endpoints_deprecated_variable(ngx_http_request_t *r,
-                                                ngx_http_variable_value_t *v,
-                                                uintptr_t data) {
-  v->not_found = 1;
-  return NGX_OK;
-}
 
 void wakeup_event_handler(ngx_event_t *ev) {
   ngx_log_debug2(NGX_LOG_DEBUG_HTTP, ev->log, 0,
