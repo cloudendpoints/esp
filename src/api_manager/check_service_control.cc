@@ -91,7 +91,7 @@ void CheckServiceControl(std::shared_ptr<context::RequestContext> context,
         TRACE(trace_span) << "Check service control request returned with "
                           << "status " << status.ToString();
         if (status.ok()) {
-          context->set_is_api_key_valid(info.is_api_key_valid);
+          context->set_check_response_info(info);
         }
         continuation(status);
       });

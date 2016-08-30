@@ -67,7 +67,10 @@ class RequestContext {
   }
 
   // set the is_api_key_valid field.
-  void set_is_api_key_valid(bool b) { is_api_key_valid_ = b; }
+  void set_check_response_info(
+      const service_control::CheckResponseInfo &check_response_info) {
+    check_response_info_ = check_response_info;
+  }
 
   // Fill CheckRequestInfo
   void FillCheckRequestInfo(service_control::CheckRequestInfo *info);
@@ -132,11 +135,8 @@ class RequestContext {
   // api key.
   std::string api_key_;
 
-  // TODO: change default to false.
-  // If the request has a valid api key. Used only for Report call.
-  // Initialized to true, and will be set to false if it can be confirmed
-  // by the check call from the service control server.
-  bool is_api_key_valid_;
+  // Pass check response data to Report call.
+  service_control::CheckResponseInfo check_response_info_;
 
   // Needed by both Check() and Report, extract it once and store it here.
   std::string http_referer_;

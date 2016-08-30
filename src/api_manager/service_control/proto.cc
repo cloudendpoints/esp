@@ -63,6 +63,9 @@ struct SupportedMetric {
   const char* name;
   ::google::api::MetricDescriptor_MetricKind metric_kind;
   ::google::api::MetricDescriptor_ValueType value_type;
+
+  enum Mark { PRODUCER = 0, CONSUMER = 1 };
+  Mark mark;
   Status (*set)(const SupportedMetric& m, const ReportRequestInfo& info,
                 Operation* operation);
 };
@@ -202,130 +205,130 @@ const SupportedMetric supported_metrics[] = {
         "serviceruntime.googleapis.com/api/consumer/request_count",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_INT64,
-        set_int64_metric_to_constant_1,
+        SupportedMetric::CONSUMER, set_int64_metric_to_constant_1,
     },
     {
         "serviceruntime.googleapis.com/api/producer/request_count",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_INT64,
-        set_int64_metric_to_constant_1,
+        SupportedMetric::PRODUCER, set_int64_metric_to_constant_1,
     },
     {
         "serviceruntime.googleapis.com/api/producer/by_consumer/request_count",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_INT64,
-        set_int64_metric_to_constant_1,
+        SupportedMetric::PRODUCER, set_int64_metric_to_constant_1,
     },
     {
         "serviceruntime.googleapis.com/api/consumer/request_sizes",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        set_distribution_metric_to_request_size,
+        SupportedMetric::CONSUMER, set_distribution_metric_to_request_size,
     },
     {
         "serviceruntime.googleapis.com/api/producer/request_sizes",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        set_distribution_metric_to_request_size,
+        SupportedMetric::PRODUCER, set_distribution_metric_to_request_size,
     },
     {
         "serviceruntime.googleapis.com/api/producer/by_consumer/request_sizes",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        set_distribution_metric_to_request_size,
+        SupportedMetric::PRODUCER, set_distribution_metric_to_request_size,
     },
     {
         "serviceruntime.googleapis.com/api/consumer/response_sizes",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        set_distribution_metric_to_response_size,
+        SupportedMetric::CONSUMER, set_distribution_metric_to_response_size,
     },
     {
         "serviceruntime.googleapis.com/api/producer/response_sizes",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        set_distribution_metric_to_response_size,
+        SupportedMetric::PRODUCER, set_distribution_metric_to_response_size,
     },
     {
         "serviceruntime.googleapis.com/api/producer/by_consumer/response_sizes",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        set_distribution_metric_to_response_size,
+        SupportedMetric::PRODUCER, set_distribution_metric_to_response_size,
     },
     {
         "serviceruntime.googleapis.com/api/consumer/error_count",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_INT64,
-        set_int64_metric_to_constant_1_if_http_error,
+        SupportedMetric::CONSUMER, set_int64_metric_to_constant_1_if_http_error,
     },
     {
         "serviceruntime.googleapis.com/api/producer/error_count",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_INT64,
-        set_int64_metric_to_constant_1_if_http_error,
+        SupportedMetric::PRODUCER, set_int64_metric_to_constant_1_if_http_error,
     },
     {
         "serviceruntime.googleapis.com/api/producer/by_consumer/error_count",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_INT64,
-        set_int64_metric_to_constant_1_if_http_error,
+        SupportedMetric::PRODUCER, set_int64_metric_to_constant_1_if_http_error,
     },
     {
         "serviceruntime.googleapis.com/api/consumer/total_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        set_distribution_metric_to_request_time,
+        SupportedMetric::CONSUMER, set_distribution_metric_to_request_time,
     },
     {
         "serviceruntime.googleapis.com/api/producer/total_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        set_distribution_metric_to_request_time,
+        SupportedMetric::PRODUCER, set_distribution_metric_to_request_time,
     },
     {
         "serviceruntime.googleapis.com/api/producer/by_consumer/"
         "total_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        set_distribution_metric_to_request_time,
+        SupportedMetric::PRODUCER, set_distribution_metric_to_request_time,
     },
     {
         "serviceruntime.googleapis.com/api/consumer/backend_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        set_distribution_metric_to_backend_time,
+        SupportedMetric::CONSUMER, set_distribution_metric_to_backend_time,
     },
     {
         "serviceruntime.googleapis.com/api/producer/backend_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        set_distribution_metric_to_backend_time,
+        SupportedMetric::PRODUCER, set_distribution_metric_to_backend_time,
     },
     {
         "serviceruntime.googleapis.com/api/producer/by_consumer/"
         "backend_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        set_distribution_metric_to_backend_time,
+        SupportedMetric::PRODUCER, set_distribution_metric_to_backend_time,
     },
     {
         "serviceruntime.googleapis.com/api/consumer/request_overhead_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        set_distribution_metric_to_overhead_time,
+        SupportedMetric::CONSUMER, set_distribution_metric_to_overhead_time,
     },
     {
         "serviceruntime.googleapis.com/api/producer/request_overhead_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        set_distribution_metric_to_overhead_time,
+        SupportedMetric::PRODUCER, set_distribution_metric_to_overhead_time,
     },
     {
         "serviceruntime.googleapis.com/api/producer/by_consumer/"
         "request_overhead_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        set_distribution_metric_to_overhead_time,
+        SupportedMetric::PRODUCER, set_distribution_metric_to_overhead_time,
     },
 };
 const int supported_metrics_count =
@@ -697,7 +700,7 @@ Status VerifyRequiredReportFields(const OperationInfo& info) {
   return Status::OK;
 }
 
-void SetOperationCommonFields(const OperationInfo& info,
+void SetOperationCommonFields(const OperationInfo& info, bool is_api_key_valid,
                               const Timestamp& current_time, Operation* op) {
   if (!info.operation_id.empty()) {
     op->set_operation_id(info.operation_id);
@@ -712,7 +715,7 @@ void SetOperationCommonFields(const OperationInfo& info,
   // info.is_api_key_valid is always true for the check request. If the check
   // request failed with an invalid api key error, info.is_api_key_valid will
   // be set false.
-  if (!info.api_key.empty() && info.is_api_key_valid) {
+  if (!info.api_key.empty() && is_api_key_valid) {
     op->set_consumer_id(std::string(kConsumerIdApiKey) +
                         std::string(info.api_key));
   } else if (!info.producer_project_id.empty()) {
@@ -833,7 +836,7 @@ Status Proto::FillCheckRequest(const CheckRequestInfo& info,
 
   Timestamp current_time = GetCurrentTimestamp();
   Operation* op = request->mutable_operation();
-  SetOperationCommonFields(info, current_time, op);
+  SetOperationCommonFields(info, true, current_time, op);
 
   auto* labels = op->mutable_labels();
   if (!info.client_ip.empty()) {
@@ -857,7 +860,12 @@ Status Proto::FillReportRequest(const ReportRequestInfo& info,
 
   Timestamp current_time = GetCurrentTimestamp();
   Operation* op = request->add_operations();
-  SetOperationCommonFields(info, current_time, op);
+  bool is_api_key_valid = true;
+  if (info.check_response_info.valid &&
+      !info.check_response_info.is_api_key_valid) {
+    is_api_key_valid = false;
+  }
+  SetOperationCommonFields(info, is_api_key_valid, current_time, op);
 
   // Only populate metrics if we can associate them with a method/operation.
   if (!info.operation_id.empty() && !info.operation_name.empty()) {
@@ -872,11 +880,18 @@ Status Proto::FillReportRequest(const ReportRequestInfo& info,
     }
 
     // Populate all metrics.
+    bool send_consumer_metric = true;
+    if (info.check_response_info.valid &&
+        !info.check_response_info.service_is_activated) {
+      send_consumer_metric = false;
+    }
     for (auto it = metrics_.begin(), end = metrics_.end(); it != end; it++) {
       const SupportedMetric* m = *it;
-      if (m->set) {
-        status = (m->set)(*m, info, op);
-        if (!status.ok()) return status;
+      if (send_consumer_metric || m->mark != SupportedMetric::CONSUMER) {
+        if (m->set) {
+          status = (m->set)(*m, info, op);
+          if (!status.ok()) return status;
+        }
       }
     }
   }
@@ -891,7 +906,11 @@ Status Proto::FillReportRequest(const ReportRequestInfo& info,
 Status Proto::ConvertCheckResponse(const CheckResponse& check_response,
                                    const CheckRequestInfo& info,
                                    CheckResponseInfo* check_response_info) {
-  if (check_response_info) check_response_info->is_api_key_valid = true;
+  if (check_response_info) {
+    check_response_info->valid = true;
+    check_response_info->is_api_key_valid = true;
+    check_response_info->service_is_activated = true;
+  }
   if (check_response.check_errors().size() == 0) {
     return Status::OK;
   }
@@ -924,6 +943,8 @@ Status Proto::ConvertCheckResponse(const CheckResponse& check_response,
                     "API key not valid. Please pass a valid API key.",
                     Status::SERVICE_CONTROL);
     case CheckError::SERVICE_NOT_ACTIVATED:
+      if (check_response_info)
+        check_response_info->service_is_activated = false;
       return Status(Code::PERMISSION_DENIED,
                     std::string("API ") + service_name +
                         " is not enabled for the project.",

@@ -79,9 +79,7 @@ using context::ServiceContext;
 
 RequestContext::RequestContext(std::shared_ptr<ServiceContext> service_context,
                                std::unique_ptr<Request> request)
-    : service_context_(service_context),
-      request_(std::move(request)),
-      is_api_key_valid_(true) {
+    : service_context_(service_context), request_(std::move(request)) {
   operation_id_ = GenerateUUID();
   const std::string &method = request_->GetRequestHTTPMethod();
   const std::string &path = request_->GetRequestPath();
@@ -181,7 +179,6 @@ void RequestContext::FillOperationInfo(service_control::OperationInfo *info) {
   }
   info->operation_id = operation_id_;
   info->api_key = api_key_;
-  info->is_api_key_valid = is_api_key_valid_;
   info->producer_project_id = service_context()->project_id();
   info->referer = http_referer_;
 }
@@ -251,6 +248,7 @@ void RequestContext::FillReportRequestInfo(
   info->status = response->GetResponseStatus();
   info->response_code = info->status.HttpCode();
   info->protocol = request_->GetRequestProtocol();
+  info->check_response_info = check_response_info_;
 
   info->auth_issuer = auth_issuer_;
   info->auth_audience = auth_audience_;

@@ -68,18 +68,25 @@ struct OperationInfo {
   // Origin header. If both of them not present, it's empty.
   ::google::protobuf::StringPiece referer;
 
-  // If the request has a valid api key.
-  // Initialized to true, and will be set to false if it cannot be validated
-  // by the service controller.
-  bool is_api_key_valid;
-
-  OperationInfo() : is_api_key_valid(true) {}
+  OperationInfo() {}
 };
 
 // Information to fill Check request protobuf.
 struct CheckRequestInfo : public OperationInfo {
   // The client IP address.
   std::string client_ip;
+};
+
+// Stores the information substracted from the check response.
+struct CheckResponseInfo {
+  // If the information of this struct is valid.
+  bool valid;
+  // If the request have a valid api key.
+  bool is_api_key_valid;
+  // If service is activated.
+  bool service_is_activated;
+
+  CheckResponseInfo() : valid(false) {}
 };
 
 // Information to fill Report request protobuf.
@@ -122,8 +129,11 @@ struct ReportRequestInfo : public OperationInfo {
   // HTTP method. all-caps string such as "GET", "POST" etc.
   std::string method;
 
-  // A recognized cmopute platform (GAE, GCE, GKE).
+  // A recognized compute platform (GAE, GCE, GKE).
   compute_platform::ComputePlatform compute_platform;
+
+  // If consumer data should be sent.
+  CheckResponseInfo check_response_info;
 
   ReportRequestInfo()
       : response_code(200),
@@ -132,12 +142,6 @@ struct ReportRequestInfo : public OperationInfo {
         response_size(-1),
         protocol(protocol::UNKNOWN),
         compute_platform(compute_platform::UNKNOWN) {}
-};
-
-// Stores the information substracted from the check response.
-struct CheckResponseInfo {
-  // If the request have a valid api key.
-  bool is_api_key_valid;
 };
 
 }  // namespace service_control
