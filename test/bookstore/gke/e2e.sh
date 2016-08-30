@@ -100,7 +100,7 @@ function save_logs() {
 }
 
 BOOKSTORE_YAML="${ESP_ROOT}/bookstore.yaml"
-NGINX_CONF_TMPL="${ESP_ROOT}/docker/generic/nginx.conf.template"
+NGINX_CONF_TMPL="${SCRIPT_PATH}/nginx.conf.template"
 NGINX_CONF="${ESP_ROOT}/nginx.conf"
 SERVER_ADDRESS=''
 SWAGGER_TMPL="${SCRIPT_PATH}/../swagger_template.json"
