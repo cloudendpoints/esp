@@ -38,7 +38,6 @@ while getopts :c:d:gi:p: arg; do
   case ${arg} in
     c) CONFIG="${OPTARG}";;
     d) DEB="${OPTARG}";;
-    g) DOCKERFILE="Dockerfile.grpc";;
     i) IMAGE="${OPTARG}";;
     p) PLATFORM="${OPTARG}";;
     *) error_exit "Unrecognized argument -${OPTARG}";;

@@ -35,8 +35,10 @@ REMOTE_ESP_LOG_DIR='/var/log/esp'
 
 function cleanup {
   if [[ "${SKIP_CLEANUP}" == 'false' ]]; then
-    # Deactivating and deleting service
-    delete_service "${ESP_SERVICE}"
+    if [[ "${GRPC}" != 'true' ]]; then
+      # Deactivating and deleting service
+      delete_service "${ESP_SERVICE}"
+    fi
     # Deleting vm
     gcloud compute instances delete "${INSTANCE_NAME}" -q
   fi
@@ -55,7 +57,12 @@ e2e_options "${@}"
 [[ -n "${INSTANCE_NAME}" ]] || e2e_usage "Must provide Instance name via 'i' parameter."
 
 if [[ "${GRPC}" == 'true' ]]; then
-  HOST="${INSTANCE_NAME}:8080"
+  HOST="${INSTANCE_NAME}:80"
+  YAML_TMPL="${SCRIPT_PATH}/esp_grpc_template.yaml"
+  # grpc service config could not come from swagger.
+  # It has to use api-compoiler to compile from yaml config.
+  # For now, it is pushed manually.
+  ESP_SERVICE="grpc-echo-dot-endpoints-jenkins.appspot.com"
   echo "grpc service name is: ${ESP_SERVICE}"
 else
   HOST="http://${INSTANCE_NAME}:8080"

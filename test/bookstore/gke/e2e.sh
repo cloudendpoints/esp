@@ -72,8 +72,10 @@ function create_kb8_namespace() {
 
 function cleanup {
   if [[ "${SKIP_CLEANUP}" == 'false' ]]; then
-    # Deleting and deactivating service
-    delete_service "${ESP_SERVICE}"
+    if [[ "${TEST_TYPE}" != "grpc" ]]; then
+      # Deleting and deactivating service
+      delete_service "${ESP_SERVICE}"
+    fi
     # Delete namespace
     kubectl delete namespace "${NAMESPACE}"
   fi
@@ -133,9 +135,12 @@ case "${COUPLING_OPTION}" in
     YAML_DIR="${SCRIPT_PATH}/tight_coupling"
     KB_SERVICE='esp-bookstore'
     case "${TEST_TYPE}" in
-      'http'|'grpc')
+      'http')
         YAML_TMPL="${YAML_DIR}/esp_bookstore_http_template.yaml"
         YAML_FILE='esp_bookstore_http.yaml';;
+      'grpc')
+        YAML_TMPL="${YAML_DIR}/esp_bookstore_grpc_template.yaml"
+        YAML_FILE='esp_bookstore_grpc.yaml';;
       'https')
         YAML_TMPL="${YAML_DIR}/esp_bookstore_template.yaml"
         YAML_FILE='esp_bookstore.yaml';;
@@ -157,6 +162,12 @@ trap cleanup EXIT
 run cp -f "${SWAGGER_TMPL}" "${SWAGGER_JSON}"
 sed_i "s|\${ENDPOINT_SERVICE}|${ESP_SERVICE}|g" "${SWAGGER_JSON}"
 
+if [[ "${TEST_TYPE}" == "grpc" ]]; then
+  # grpc service config could not come from swagger.
+  # It has to use api-compoiler to compile from yaml config.
+  # For now, it is pushed manually
+  ESP_SERVICE="grpc-echo-dot-endpoints-jenkins.appspot.com"
+fi
 # Creating and Deploying Service. This will export ESP_SERVICE_VERSION.
 create_service "${ESP_SERVICE}" "${SWAGGER_JSON}"
 
@@ -204,7 +215,7 @@ echo "Service is available at: ${ENDPOINT}"
 
 case "${TEST_TYPE}" in
   'https') HOST="https://${ENDPOINT}:443";;
-  'grpc') HOST="${ENDPOINT}:8080";;
+  'grpc') HOST="${ENDPOINT}:80";;
   *) HOST="http://${ENDPOINT}:8080";;
 esac
 

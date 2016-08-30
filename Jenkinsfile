@@ -374,10 +374,6 @@ def espDockerImage(suffix = '') {
   return espGenericDockerImage(suffix)
 }
 
-def espGrpcDockerImage() {
-  return espDockerImage('-grpc')
-}
-
 def espFlexDockerImage() {
   if (isRelease()) {
     return 'does_not_exist'
@@ -442,7 +438,6 @@ def buildPackages() {
   } else {
     def espDebianPackage = espDebianPackage()
     def espImgFlex = espFlexDockerImage()
-    def espImgGrpc = espGrpcDockerImage()
     def serviceManagementUrl = getServiceManagementUrl()
     if (serviceManagementUrl != '') {
       sh "sed -i s,${SERVICE_MGMT_URL},${serviceManagementUrl},g " +
@@ -453,7 +448,6 @@ def buildPackages() {
         "-m ${espImgFlex} " +
         "-g ${espImgGeneric} " +
         "-d ${espDebianPackage} " +
-        "-r ${espImgGrpc}" +
         "${serverConfigFlag} -s"
     // local perf builds its own esp binary package.
     // Using the one built here instead if it exists.
@@ -570,7 +564,6 @@ def e2eGKE(coupling, testType) {
   if (gRpc) {
     fastUnstash('grpc_test_client')
     backendImage = gRpcTestServerImage()
-    espImage = espGrpcDockerImage()
     gRpcFlag = '-g'
   }
   echo 'Running GKE test'
@@ -610,7 +603,6 @@ def e2eGCEContainer(vmImage, gRpc = false) {
   if (gRpc) {
     fastUnstash('grpc_test_client')
     backendImage = gRpcTestServerImage()
-    espImage = espGrpcDockerImage()
     gRpcFlag = '-g'
     testType = "${testType}-grpc"
   }

@@ -52,8 +52,8 @@ REQUEST_COUNT=10000
 while getopts :a:g:h:l:s: arg; do
   case ${arg} in
     a) API_KEY="${OPTARG}";;
-    h) GRPC_HOST="${OPTARG}";;
-    g) HTTP_HOST="${OPTARG}";;
+    g) GRPC_HOST="${OPTARG}";;
+    h) HTTP_HOST="${OPTARG}";;
     l) DURATION_IN_HOUR="${OPTARG}";;
     s) SERVICE_NAME="${OPTARG}";;
     *) echo "Invalid option: -${OPTARG}";;
