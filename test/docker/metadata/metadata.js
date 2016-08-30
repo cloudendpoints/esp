@@ -64,7 +64,8 @@ function metadata() {
 if (module.parent) {
   module.exports = metadata;
 } else {
-  var server = metadata().listen(process.env.PORT || '8080', '0.0.0.0', function() {
+  var server = metadata().listen(process.env.PORT ||
+    process.env.METADATA_PORT || '8080', '0.0.0.0', function() {
     var host = server.address().address;
     var port = server.address().port;
     console.log('Metadata listening at http://%s:%s', host, port);

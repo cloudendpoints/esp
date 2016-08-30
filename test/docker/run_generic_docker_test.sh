@@ -63,8 +63,8 @@ fi
 
 ARGS=()
 DIR="${ROOT}/test/docker/esp_generic"
-ARGS+=(-m http://metadata:8080)
-ARGS+=(-c "http://management:8080/v1/services/{}/config?configId={}")
+ARGS+=(-m http://127.0.0.1:${METADATA_PORT})
+ARGS+=(-c "http://127.0.0.1:${MANAGEMENT_PORT}/v1/services/{}/config?configId={}")
 ARGS+=(-s "${SERVICE_NAME}")
 ARGS+=(-v "${SERVICE_VERSION}")
 [[ -n "${SERVER_ADDRESS}" ]] && ARGS+=(-a "${SERVER_ADDRESS}")
@@ -92,13 +92,10 @@ fi
 
 # Start Endpoints proxy container.
 docker run \
+    --net="host" \
     --name=esp \
     --detach=true \
     ${PUBLISH} \
-    --link=metadata:metadata \
-    --link=control:control \
-    --link=app:app \
-    --link=management:management \
     ${VOLUMES} \
     esp-image \
     ${ARGS[@]} \
@@ -145,34 +142,16 @@ function start_esp_test() {
 # Default nginx status port is 8090.
 [[ -n "${NGINX_STATUS_PORT}" ]] || NGINX_STATUS_PORT=8090
 
-ESP_NGINX_STATUS_PORT=$(docker port esp $NGINX_STATUS_PORT) \
-  || error_exit "Cannot get esp nginx status port number."
-
-if [[ "$(uname)" == "Darwin" ]]; then
-  IP=$(docker-machine ip default)
-  ESP_NGINX_STATUS_PORT=${IP}:${ESP_NGINX_STATUS_PORT##*:}
-fi
-
 printf "\nCheck esp status port.\n"
-wait_for "${ESP_NGINX_STATUS_PORT}/nginx_status" \
+wait_for "localhost:${NGINX_STATUS_PORT}/nginx_status" \
   || error_exit "ESP container didn't come up."
 
-ESP_PORT=$(docker port esp $PORT) \
-  || error_exit "Cannot get esp port number."
-
-if [[ "$(uname)" == "Darwin" ]]; then
-  IP=$(docker-machine ip default)
-  ESP_PORT=${IP}:${ESP_PORT##*:}
-fi
-
 printf "\nStart testing esp http requests.\n"
-start_esp_test "${ESP_PORT}"
+start_esp_test "localhost:${PORT}"
 
 if [[ "${SSL_PORT}" ]]; then
   printf "\nStart testing esp https requests.\n"
-  ESP_SSL_PORT=$(docker port esp $SSL_PORT) \
-    || error_exit "Cannot get esp ssl port number."
-  start_esp_test "https://${ESP_SSL_PORT}"
+  start_esp_test "https://localhost:${SSL_PORT}"
 fi
 
 UUID="$(uuidgen)"

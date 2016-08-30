@@ -49,7 +49,7 @@ function management() {
   var json = JSON.parse(content);
 
   // Set a custom service control
-  json.control.environment = "http://control:8080";
+  json.control.environment = "http://127.0.0.1:" + process.env.CONTROL_PORT;
 
   var path = '/v1/services/' + json.name + '/config';
   console.log('Path: ' + path);
@@ -75,7 +75,7 @@ function management() {
 if (module.parent) {
   module.exports = management;
 } else {
-  var server = management().listen(process.env.PORT || '8080', '0.0.0.0', function() {
+  var server = management().listen(process.env.MANAGEMENT_PORT || '8080', '0.0.0.0', function() {
     var host = server.address().address;
     var port = server.address().port;
 

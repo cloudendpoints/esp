@@ -66,7 +66,7 @@ function control() {
 if (module.parent) {
   module.exports = control;
 } else {
-  var server = control().listen(process.env.PORT || '8080', '0.0.0.0', function() {
+  var server = control().listen(process.env.CONTROL_PORT || '8080', '0.0.0.0', function() {
     var host = server.address().address;
     var port = server.address().port;
 

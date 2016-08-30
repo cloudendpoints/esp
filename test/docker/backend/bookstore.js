@@ -269,7 +269,7 @@ function bookstore() {
 }
 
 (function() {
-  var port = process.env.PORT || '8080';
+  var port = process.env.PORT || process.env.APP_PORT || '8080';
   var server = bookstore().listen(port, '0.0.0.0',
       function() {
         var host = server.address().address;

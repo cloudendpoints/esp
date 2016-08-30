@@ -40,77 +40,13 @@ while getopts d: arg; do
   esac
 done
 
-ACCESS_TOKEN=$(uuidgen)
+export ACCESS_TOKEN=$(uuidgen)
 
 [[ -f "${DEB}" ]] || error_exit "Debian package \"${DEB}\" doesn't exist."
 TEMP_DIR="$(command mktemp -d)"
 cp ${DEB} ${TEMP_DIR}/endpoints-runtime.deb
 cp ${ROOT}/docker/generic/* ${TEMP_DIR}
 cp ${ROOT}/test/docker/backend/service.json ${ROOT}/test/docker/management
-
-# Build Docker images.
-docker build -t metadata-image ${ROOT}/test/docker/metadata \
-  || error_exit "Cannot build a fake metadata Docker image."
-docker build -t app-image ${ROOT}/test/docker/backend \
-  || error_exit "Cannot build the backend Docker image."
-docker build -t control-image ${ROOT}/test/docker/control \
-  || error_exit "Cannot build the fake service control Docker image."
-docker build -t management-image ${ROOT}/test/docker/management \
-  || error_exit "Cannot build the fake service management Docker image."
-docker build -t esp-image ${TEMP_DIR} \
-  || error_exit "Cannot build the Endpoints Proxy Docker image."
-
-# Start metadata container.
-docker run \
-    --name=metadata \
-    --detach=true \
-    --publish-all \
-    --env="ACCESS_TOKEN=${ACCESS_TOKEN}" \
-    metadata-image \
-  || error_exit "Cannot start metadata container."
-
-# Start app container.
-docker run \
-    --name=app \
-    --detach=true \
-    --publish-all \
-    app-image \
-  || error_exit "Cannot start app container."
-
-# Start service control container.
-docker run \
-    --name=control \
-    --detach=true \
-    --publish-all \
-    --env="ACCESS_TOKEN=${ACCESS_TOKEN}" \
-    control-image \
-  || error_exit "Cannot start service control container."
-
-# Start service management container.
-docker run \
-    --name=management \
-    --detach=true \
-    --publish-all \
-    --env="ACCESS_TOKEN=${ACCESS_TOKEN}" \
-    management-image \
-  || error_exit "Cannot start service management container."
-
-METADATA_PORT=$(docker port metadata 8080) \
-  || error_exit "Cannot get metadata port number."
-APP_PORT=$(docker port app 8080) \
-  || error_exit "Cannot get app port number."
-CONTROL_PORT=$(docker port control 8080) \
-  || error_exit "Cannot get service control port number."
-MANAGEMENT_PORT=$(docker port management 8080) \
-  || error_exit "Cannot get service management port number."
-
-if [[ "$(uname)" == "Darwin" ]]; then
-  IP=$(docker-machine ip default)
-  METADATA_PORT=${IP}:${METADATA_PORT##*:}
-  APP_PORT=${IP}:${APP_PORT##*:}
-  CONTROL_PORT=${IP}:${CONTROL_PORT##*:}
-  MANAGEMENT_PORT=${IP}:${MANAGEMENT_PORT##*:}
-fi
 
 function wait_for() {
   local URL=${1}
@@ -123,37 +59,60 @@ function wait_for() {
   return 1
 }
 
-wait_for "${METADATA_PORT}/computeMetadata/v1/instance/service-accounts/default/token" \
+# Build Docker images.
+docker build -t esp-image ${TEMP_DIR} \
+  || error_exit "Cannot build the Endpoints Proxy Docker image."
+
+export METADATA_PORT=7000
+export APP_PORT=7001
+export CONTROL_PORT=7002
+export MANAGEMENT_PORT=7003
+
+for service in metadata control management; do
+  pushd $DIR/$service
+  npm install
+  nodejs $service.js &
+  popd
+done
+
+pushd $DIR/backend
+npm install
+nodejs bookstore.js &
+popd
+
+trap 'jobs -p | xargs kill' EXIT
+
+wait_for "localhost:${METADATA_PORT}/computeMetadata/v1/instance/service-accounts/default/token" \
   || error_exit "Metadata container failed to start."
-wait_for "${APP_PORT}/shelves" \
+wait_for "localhost:${APP_PORT}/shelves" \
   || error_exit "App failed to start."
-wait_for "${CONTROL_PORT}/" \
+wait_for "localhost:${CONTROL_PORT}/" \
   || error_exit "Service control failed to start."
-wait_for "${MANAGEMENT_PORT}/" \
+wait_for "localhost:${MANAGEMENT_PORT}/" \
   || error_exit "Service management failed to start."
 
 printf "\nCalling metadata.\n"
-curl -v ${METADATA_PORT}/computeMetadata/v1/instance/service-accounts/default/token
+curl -v localhost:${METADATA_PORT}/computeMetadata/v1/instance/service-accounts/default/token
 METADATA_RESULT=$?
 
 printf "\nCalling app.\n"
-curl -v ${APP_PORT}/shelves
+curl -v localhost:${APP_PORT}/shelves
 APP_RESULT=$?
 
 printf "\nCalling control :check and :report.\n"
-curl -v -d="" ${CONTROL_PORT}/v1/services/bookstore-backend.endpointsv2.appspot.com:check \
-  && curl -v -d="" ${CONTROL_PORT}/v1/services/bookstore-backend.endpointsv2.appspot.com:report
+curl -v -d="" localhost:${CONTROL_PORT}/v1/services/bookstore-backend.endpointsv2.appspot.com:check \
+  && curl -v -d="" localhost:${CONTROL_PORT}/v1/services/bookstore-backend.endpointsv2.appspot.com:report
 CONTROL_RESULT=$?
 
 printf "\nCalling management.\n"
-curl -v ${MANAGEMENT_PORT}
+curl -v localhost:${MANAGEMENT_PORT}
 MANAGEMENT_RESULT=$?
 
 # The service name and version come from backend/README.md
 printf "\n -- Run docker test for http requests.\n"
 ${DIR}/run_generic_docker_test.sh \
   -p 8080 \
-  -a app:8080 \
+  -a localhost:${APP_PORT} \
   -s bookstore-backend.endpointsv2.appspot.com \
   -v 2016-04-25R1 ||
   error_exit "Docker test for http requests failed."
@@ -161,7 +120,7 @@ ${DIR}/run_generic_docker_test.sh \
 printf "\n -- Run docker test for https requests.\n"
 ${DIR}/run_generic_docker_test.sh \
   -p 8080 \
-  -a app:8080 -S 443 \
+  -a localhost:${APP_PORT} -S 443 \
   -s bookstore-backend.endpointsv2.appspot.com \
   -v 2016-04-25R1 ||
   error_exit "Docker test for https requests failed."
@@ -176,16 +135,21 @@ ${DIR}/run_generic_docker_test.sh \
 printf "\n -- Run docker test for status port change.\n"
 ${DIR}/run_generic_docker_test.sh \
   -p 8080 \
-  -a app:8080 -N 9000 \
+  -a localhost:${APP_PORT} -N 9050 \
+  -s bookstore-backend.endpointsv2.appspot.com \
+  -v 2016-04-25R1 ||
+  error_exit "Docker test for custom nginx.conf failed."
+
+printf "\n -- Run docker test for port change.\n"
+${DIR}/run_generic_docker_test.sh \
+  -p 9050 \
+  -a localhost:${APP_PORT} \
   -s bookstore-backend.endpointsv2.appspot.com \
   -v 2016-04-25R1 ||
   error_exit "Docker test for custom nginx.conf failed."
 
 printf "\nShutting down.\n"
-docker stop metadata app control management
-docker rm metadata app control management
-docker rmi metadata-image app-image control-image esp-image \
-  management-image
+docker rmi esp-image
 
 echo "Metadata result: ${METADATA_RESULT}"
 echo "App result: ${APP_RESULT}"

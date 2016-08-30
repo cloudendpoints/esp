@@ -73,6 +73,7 @@ function install_packages() {
     libio-socket-ssl-perl \
     libtool \
     make \
+    npm \
     openjdk-8-jdk \
     openjdk-8-source \
     pkg-config \
