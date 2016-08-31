@@ -205,17 +205,15 @@ void ProxyFlow::StartUpstreamWritesDone(std::shared_ptr<ProxyFlow> flow,
   flow->upstream_reader_writer_->WritesDone(
       flow->async_grpc_queue_->MakeTag([flow, status](bool ok) {
         if (!ok) {
-          StartDownstreamFinish(
-              flow, Status(UNKNOWN,
-                           std::string(
-                               "failed to tell upstream the stream is done")));
+          // Upstream is not writable, call finish to get status and
+          // and finish the call
+          StartUpstreamFinish(flow, Status::OK);
           return;
         }
         if (!status.ok()) {
-          StartDownstreamFinish(flow, status);
+          StartUpstreamFinish(flow, status);
           return;
         }
-
       }));
 }
 
@@ -225,11 +223,9 @@ void ProxyFlow::StartUpstreamWriteMessage(std::shared_ptr<ProxyFlow> flow) {
       flow->async_grpc_queue_->MakeTag([flow](bool ok) {
         flow->downstream_to_upstream_buffer_.Clear();
         if (!ok) {
-          StartDownstreamFinish(
-              flow,
-              Status(UNKNOWN,
-                     std::string(
-                         "failed to send a message to the upstream backend")));
+          // Upstream is not writable, call finish to get status and
+          // and finish the call
+          StartUpstreamFinish(flow, Status::OK);
           return;
         }
         // Now that the write has completed, it's safe to start the
@@ -297,7 +293,7 @@ void ProxyFlow::StartUpstreamReadMessage(std::shared_ptr<ProxyFlow> flow) {
       &flow->upstream_to_downstream_buffer_,
       flow->async_grpc_queue_->MakeTag([flow](bool ok) {
         if (!ok) {
-          StartUpstreamFinish(flow);
+          StartUpstreamFinish(flow, Status::OK);
           return;
         }
         StartDownstreamWriteMessage(flow);
@@ -325,7 +321,8 @@ void ProxyFlow::StartDownstreamWriteMessage(std::shared_ptr<ProxyFlow> flow) {
       });
 }
 
-void ProxyFlow::StartUpstreamFinish(std::shared_ptr<ProxyFlow> flow) {
+void ProxyFlow::StartUpstreamFinish(std::shared_ptr<ProxyFlow> flow,
+                                    Status status) {
   {
     std::lock_guard<std::mutex> lock(flow->mu_);
     if (flow->started_upstream_finish_) {
@@ -336,7 +333,7 @@ void ProxyFlow::StartUpstreamFinish(std::shared_ptr<ProxyFlow> flow) {
   flow->upstream_reader_writer_->Finish(
       &flow->status_from_upstream_,
       flow->async_grpc_queue_->MakeTag(
-          [flow](bool ok) { StartDownstreamFinish(flow, Status::OK); }));
+          [flow, status](bool ok) { StartDownstreamFinish(flow, status); }));
 }
 
 void ProxyFlow::StartDownstreamFinish(std::shared_ptr<ProxyFlow> flow,
