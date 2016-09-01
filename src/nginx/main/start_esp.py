@@ -65,6 +65,8 @@ SERVICE_MGMT_URL_TEMPLATE = (
     "https://servicemanagement.googleapis.com"
     "/v1/services/{}/config?configId={}")
 
+# DNS resolver
+DNS_RESOLVER = "8.8.8.8"
 
 Port = collections.namedtuple('Port',
         ['port', 'proto'])
@@ -78,7 +80,8 @@ def write_template(template,
                    service_account,
                    ingress,
                    metadata,
-                   nginx_conf):
+                   nginx_conf,
+                   resolver):
     # Load template
     try:
         template = Template(filename=template)
@@ -90,7 +93,8 @@ def write_template(template,
             status=status,
             service_account=service_account,
             ingress=ingress,
-            metadata=metadata)
+            metadata=metadata,
+            resolver=resolver)
 
     # Save nginx conf
     try:
@@ -298,6 +302,11 @@ def make_argparser():
         default=NGINX,
         help=argparse.SUPPRESS)
 
+    # Address of the DNS resolver used by nginx http.cc
+    parser.add_argument('--dns',
+        default=DNS_RESOLVER,
+        help=argparse.SUPPRESS)
+
     return parser
 
 
@@ -327,7 +336,8 @@ if __name__ == '__main__':
                 service_account=args.service_account_key,
                 ingress=ingress,
                 metadata=args.metadata,
-                nginx_conf=nginx_conf)
+                nginx_conf=nginx_conf,
+                resolver=args.dns)
 
         start_nginx(args.nginx, nginx_conf)
 

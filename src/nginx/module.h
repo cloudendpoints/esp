@@ -86,10 +86,13 @@ typedef struct {
   // If true, ESP::Close has been called.
   bool esp_closed;
 
-  // Absolution path to the trusted CA certificates. If not empty, all outgoing
+  // Absolute path to the trusted CA certificates. If not empty, all outgoing
   // HTTPS requests will require server to provide a valid
   // certificate. Self-signed server certificate will not be accepted.
   ngx_str_t cert_path;
+
+  // Address of the http.cc upstream DNS resolver
+  ngx_str_t upstream_resolver;
 
   // HTTP module configuration context pointers used for the HTTP implementation
   // based on NGINX upstream module. Only used in the HTTP subrequest path.

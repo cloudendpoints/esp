@@ -177,6 +177,11 @@ ngx_command_t ngx_esp_commands[] = {
         ngx_string("endpoints_status"), NGX_HTTP_LOC_CONF | NGX_CONF_NOARGS,
         ngx_esp_configure_status_handler, NGX_HTTP_LOC_CONF_OFFSET, 0, nullptr,
     },
+    {
+        ngx_string("endpoints_resolver"), NGX_HTTP_MAIN_CONF | NGX_CONF_TAKE1,
+        ngx_conf_set_str_slot, NGX_HTTP_MAIN_CONF_OFFSET,
+        offsetof(ngx_esp_main_conf_t, upstream_resolver), nullptr,
+    },
     ngx_null_command  // last entry
 };
 
@@ -391,6 +396,7 @@ static void handle_endpoints_config_error(ngx_conf_t *cf,
 
 static ngx_str_t remote_addr = ngx_string("remote_addr");
 static ngx_str_t default_cert_name = ngx_string("trusted-ca-certificates.crt");
+static ngx_str_t google_dns = ngx_string("8.8.8.8");
 
 //
 // Module initialization inserts request handlers into nginx's processing
@@ -414,6 +420,11 @@ ngx_int_t ngx_esp_postconfiguration(ngx_conf_t *cf) {
   } else {
     ngx_log_error(NGX_LOG_WARN, cf->log, 0,
                   "Using trusted CA certificates file: %V", &mc->cert_path);
+  }
+
+  // Use Google DNS by default
+  if (mc->upstream_resolver.data == nullptr) {
+    mc->upstream_resolver = google_dns;
   }
 
   bool endpoints_enabled = false;
@@ -867,8 +878,9 @@ ngx_int_t ngx_esp_create_http_configuration(ngx_conf_t *cf,
   // Create a resolver.
   auto clcf = reinterpret_cast<ngx_http_core_loc_conf_t *>(
       location_configs[ngx_http_core_module.ctx_index]);
-  static ngx_str_t google_dns = ngx_string("8.8.8.8");
-  ngx_str_t names[] = {{google_dns.len, ngx_pstrdup(cf->pool, &google_dns)}};
+  ngx_str_t dns_resolver = mc->upstream_resolver;
+  ngx_str_t names[] = {
+      {dns_resolver.len, ngx_pstrdup(cf->pool, &dns_resolver)}};
   if (names[0].data == nullptr) {
     return NGX_ERROR;
   }
