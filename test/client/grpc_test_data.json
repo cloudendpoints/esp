@@ -6,6 +6,11 @@
     "post_file": "grpc_echo.json"
   },
   {
+    "labels": { "http_method": "POST",  "auth": "None", "api_key": "None" },
+    "url": "${HOST}/echoreport?key=${API_KEY}",
+    "post_file": "grpc_large_report.json"
+  },
+  {
     "labels": { "http_method": "POST",  "auth": "Yes", "api_key": "Yes" },
     "url": "${HOST}/echostream?key=${API_KEY}",
     "headers": [ "Authorization: Bearer ${JWT_TOKEN}" ],
