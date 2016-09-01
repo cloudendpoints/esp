@@ -40,7 +40,7 @@ chain are:
 To download the Endpoints Server Proxy source code, clone the ESP repository:
 
     # Clone ESP repository
-    git clone https://github.com/cloudendpoints/esp.git
+    git clone sso://gcp-apis/esp
 
     # Initialize Git submodules.
     git -C esp submodule update --init --recursive
