@@ -102,9 +102,9 @@ bool NgxRequestZeroCopyInputStream::Next(const void** data, int* size) {
       std::string(reinterpret_cast<const char*>(*data), *size).c_str());
 
   // Advance the positions
-  //  - advance buf->pos to mark everything before pos_ consumed
-  //  - advance pos_ to buf->last as we are returning the remaining buffer
-  buf_->pos = pos_;
+  //  - advance buf_->pos to mark everything before buf_->last consumed
+  //  - advance pos_ to buf_->last as we are returning the remaining buffer
+  buf_->pos = buf_->last;
   pos_ = buf_->last;
 
   return true;

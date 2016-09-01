@@ -85,8 +85,8 @@ is($t->waitforsocket("127.0.0.1:${NginxPort}"), 1, "Nginx socket ready.");
 
 ################################################################################
 
-# Creates a larger body
-my $request = ApiManager::get_large_report_request($t, "3000");
+# Creates a larger body: more than 128 KB
+my $request = ApiManager::get_large_report_request($t, "131584");
 my $content_length = length($request);
 
 my $response = ApiManager::http($NginxPort,<<EOF . $request);
