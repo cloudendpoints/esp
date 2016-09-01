@@ -39,8 +39,11 @@
 #include <grpc++/alarm.h>
 #include <grpc++/grpc++.h>
 
+#include "google/protobuf/util/message_differencer.h"
 #include "src/api_manager/utils/marshalling.h"
 
+using ::google::api::servicecontrol::v1::ReportRequest;
+using ::google::protobuf::util::MessageDifferencer;
 using ::grpc::Alarm;
 using ::grpc::Channel;
 using ::grpc::ChannelCredentials;
@@ -175,6 +178,48 @@ class Echo {
   EchoResponse response_;
   Status status_;
   std::unique_ptr<ClientAsyncResponseReaderInterface<EchoResponse>> rpc_;
+};
+
+class EchoReport {
+ public:
+  typedef EchoReportTest TestDesc;
+
+  static void Start(const EchoReportTest &desc, Test::Stub *server_stub,
+                    Test::Stub *direct_stub, CompletionQueue *cq,
+                    std::function<void(bool, const TestResult &)> done) {
+    std::shared_ptr<EchoReport> echo(new EchoReport(desc, done));
+    echo->rpc_ =
+        server_stub->AsyncEchoReport(&echo->ctx_, echo->desc_.request(), cq);
+    echo->rpc_->Finish(
+        &echo->response_, &echo->status_, new Tag([echo, done](bool ok) {
+          TestResult result;
+          if (!echo->status_.ok()) {
+            result.mutable_status()->set_code(echo->status_.error_code());
+            result.mutable_status()->set_details(echo->status_.error_message());
+            ok = false;
+          } else {
+            *result.mutable_echo_report()->mutable_response() = echo->response_;
+            ok = true;
+          }
+          if (echo->status_.ok()) {
+            ok &= MessageDifferencer::Equals(echo->desc_.request(),
+                                             echo->response_);
+          }
+          done(ok, result);
+        }));
+  }
+
+ private:
+  EchoReport(const EchoReportTest &desc,
+             std::function<void(bool, const TestResult &)> done)
+      : desc_(desc), done_(done) {}
+
+  EchoReportTest desc_;
+  std::function<void(bool, const TestResult &)> done_;
+  ClientContext ctx_;
+  ReportRequest response_;
+  Status status_;
+  std::unique_ptr<ClientAsyncResponseReaderInterface<ReportRequest>> rpc_;
 };
 
 class EchoStream {
@@ -996,6 +1041,9 @@ void RunTestPlans(const TestPlans &plans, TestResults *results) {
       case TestPlan::kProbeUpstreamMessageLimit:
         RunSync<ProbeUpstreamMessageLimit>(
             plans, plan.probe_upstream_message_limit(), result);
+        break;
+      case TestPlan::kEchoReport:
+        RunSync<EchoReport>(plans, plan.echo_report(), result);
         break;
       default:
         std::cerr << "Internal error: unimplemented test plan" << std::endl;

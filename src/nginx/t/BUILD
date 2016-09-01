@@ -138,10 +138,10 @@ nginx_suite(
     },
     nginx = "//src/nginx/main:nginx-esp",
     tests = [
-        "grpc_interop_unary.t",
         "grpc_interop_metadata.t",
-        "grpc_interop_streaming.t",
         "grpc_interop_status.t",
+        "grpc_interop_streaming.t",
+        "grpc_interop_unary.t",
     ],
     deps = [
         ":perl_library",
@@ -171,7 +171,6 @@ nginx_suite(
     nginx = "//src/nginx/main:nginx-esp",
     tests = [
         "aggregated_check_report.t",
-        "check_no_consumer.t",
         "auth_disabled.t",
         "auth_no_auth.t",
         "auth_no_pkey.t",
@@ -180,6 +179,7 @@ nginx_suite(
         "check_api_key.t",
         "check_custom_api_key.t",
         "check_default.t",
+        "check_no_consumer.t",
         "check_referer.t",
         "check_report_body.t",
         "check_with_token.t",
@@ -271,6 +271,8 @@ nginx_suite(
     size = "small",
     data = [
         "testdata/grpc_tsan_suppressions",
+        "//test/grpc:grpc-test-server",
+        "//test/grpc:local/service.json",
         "//test/transcoding:bookstore-client",
         "//test/transcoding:bookstore-server",
         "//test/transcoding:service.json",
@@ -283,8 +285,9 @@ nginx_suite(
         "transcoding.t",
         "transcoding_bindings.t",
         "transcoding_errors.t",
-        "transcoding_streaming.t",
+        "transcoding_large.t",
         "transcoding_shared_port_ssl.t",
+        "transcoding_streaming.t",
     ],
     deps = [
         ":perl_library",
@@ -293,4 +296,5 @@ nginx_suite(
 
 # Used by Go tests
 exports_files(["matching-client-secret.json"])
+
 exports_files(["testdata/logs_metrics.pb.txt"])

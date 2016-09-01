@@ -59,6 +59,7 @@ const char* src_path = 0;
 const char* dst_path = 0;
 OutputType output_format = JSON;
 ProtoMessageType proto_type = CHECK_REQUEST;
+size_t report_request_size = 0;
 
 const int kSourceFile = 1;
 const int kDestinationFile = 2;
@@ -69,6 +70,7 @@ const int kCheckRequstProto = 6;
 const int kCheckResponseProto = 7;
 const int kReportRequstProto = 8;
 const int kReportResponseProto = 9;
+const int kReportRequestSize = 10;
 
 ::google::api::servicecontrol::v1::CheckRequest check_request;
 ::google::api::servicecontrol::v1::CheckResponse check_response;
@@ -93,6 +95,7 @@ void ProcessCmdLine(int argc, char** argv) {
         {"check_response", no_argument, nullptr, kCheckResponseProto},
         {"report_request", no_argument, nullptr, kReportRequstProto},
         {"report_response", no_argument, nullptr, kReportResponseProto},
+        {"report_request_size", required_argument, nullptr, kReportRequestSize},
         {"stdin", no_argument, 0, 'i'},
         {"service_name", required_argument, 0, 's'},
         {"operation_name", required_argument, 0, 'o'},
@@ -135,6 +138,10 @@ void ProcessCmdLine(int argc, char** argv) {
       case kReportResponseProto:
         proto_type = REPORT_RESPONSE;
         break;
+      case kReportRequestSize:
+        proto_type = REPORT_REQUEST;
+        report_request_size = strtol(optarg, nullptr, 10);
+        break;
       case 'i':
         from_stdin = true;
         break;
@@ -171,7 +178,9 @@ void ProcessCmdLine(int argc, char** argv) {
             "Specify fields for freshly generated proto:\n"
             "  -s, --service_name name:  specify service name.\n"
             "  -o, --operation_name name:  specify operation name.\n"
-            "  -p, --producer_project_id id:  specify producer project id.\n");
+            "  -p, --producer_project_id id:  specify producer project id.\n"
+            "  --report_request_size size:  operations in ReportRequest will\n"
+            "    be duplicated to reach the size.\n");
         exit(1);
     }
   }
@@ -277,6 +286,16 @@ std::string UuidGen() {
     ::google::api_manager::service_control::Proto scp(logs);
     scp.FillReportRequest(info, &report_request);
     request = &report_request;
+
+    do {
+      std::string out;
+      report_request.SerializeToString(&out);
+      if (out.size() >= report_request_size) {
+        break;
+      }
+      // Duplicates operations to read this size
+      *report_request.add_operations() = report_request.operations(0);
+    } while (true);
   }
   return request;
 }

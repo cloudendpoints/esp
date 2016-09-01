@@ -34,6 +34,7 @@
 
 #include "test/grpc/grpc-test.grpc.pb.h"
 
+using ::google::api::servicecontrol::v1::ReportRequest;
 using ::grpc::InsecureServerCredentials;
 using ::grpc::Server;
 using ::grpc::ServerAsyncReaderWriter;
@@ -81,6 +82,7 @@ class TestServer final : public Test::AsyncService {
   void QueuePendingCall(CorkableCall *call);
 
   void StartEcho();
+  void StartEchoReport();
   void StartEchoStream();
   void StartCork();
 
@@ -114,6 +116,32 @@ class EchoCall final : public CorkableCall {
   EchoRequest request_;
   EchoResponse response_;
   ServerAsyncResponseWriter<EchoResponse> responder_;
+};
+
+class EchoReportCall final : public CorkableCall {
+ public:
+  EchoReportCall(TestServer *test_server)
+      : test_server_(test_server), context_(), responder_(&context_) {}
+
+  void Start(void *tag) {
+    test_server_->RequestEchoReport(&context_, &request_, &responder_,
+                                    test_server_->completion_queue(),
+                                    test_server_->completion_queue(), tag);
+  }
+
+  void RunToCompletion() override {
+    // Echo the data back.
+    response_ = request_;
+    responder_.Finish(response_, Status::OK,
+                      MakeTag([this](bool ok) { delete this; }));
+  }
+
+ private:
+  TestServer *test_server_;
+  ServerContext context_;
+  ReportRequest request_;
+  ReportRequest response_;
+  ServerAsyncResponseWriter<ReportRequest> responder_;
 };
 
 class EchoStreamCall final : public CorkableCall {
@@ -268,6 +296,22 @@ void TestServer::StartEcho() {
   }));
 }
 
+void TestServer::StartEchoReport() {
+  auto *call = new EchoReportCall(this);
+  call->Start(MakeTag([this, call](bool ok) {
+    StartEchoReport();
+    if (!ok) {
+      delete call;
+      return;
+    }
+    if (pending_cork_) {
+      QueuePendingCall(call);
+    } else {
+      call->RunToCompletion();
+    }
+  }));
+}
+
 void TestServer::StartEchoStream() {
   auto *call = new EchoStreamCall(this);
   call->Start(MakeTag([this, call](bool ok) {
@@ -310,6 +354,8 @@ void TestServer::Run(const char *addr) {
 
   StartEcho();
   StartEcho();
+  StartEchoReport();
+  StartEchoReport();
   StartEchoStream();
   StartEchoStream();
   StartCork();

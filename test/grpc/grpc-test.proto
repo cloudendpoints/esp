@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package test.grpc;
 
+import "google/api/servicecontrol/v1/service_controller.proto";
+
 // The test service definition.
 service Test {
   // A simple, non-streaming API call that echoes its input.
@@ -22,6 +24,11 @@ service Test {
   // indicating to the server that the cork is in progress.  To end
   // the cork, half-close the request.
   rpc Cork(stream CorkRequest) returns (stream CorkState) {
+  }
+
+  // Echo service control report request
+  rpc EchoReport(google.api.servicecontrol.v1.ReportRequest)
+      returns (google.api.servicecontrol.v1.ReportRequest) {
   }
 }
 
@@ -116,6 +123,17 @@ message EchoStreamResult {
   // The number of messages that were received by the client, as
   // echoed by the server.
   int32 count = 1;
+}
+
+// Describes an echo report test.
+message EchoReportTest {
+  // The request to use for the test.
+  google.api.servicecontrol.v1.ReportRequest request = 1;
+}
+
+message EchoReportResult {
+  // The response
+  google.api.servicecontrol.v1.ReportRequest response = 1;
 }
 
 // Describes a parallel test.
@@ -269,6 +287,7 @@ message TestPlan {
     ProbeCallLimitTest probe_call_limit = 4;
     ProbeDownstreamMessageLimitTest probe_downstream_message_limit = 5;
     ProbeUpstreamMessageLimitTest probe_upstream_message_limit = 6;
+    EchoReportTest echo_report = 7;
   }
 }
 
@@ -302,6 +321,7 @@ message TestResult {
     ProbeCallLimitResult probe_call_limit = 5;
     ProbeDownstreamMessageLimitResult probe_downstream_message_limit = 6;
     ProbeUpstreamMessageLimitResult probe_upstream_message_limit = 7;
+    EchoReportResult echo_report = 8;
   }
 }
 

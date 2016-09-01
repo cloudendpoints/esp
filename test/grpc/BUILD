@@ -37,6 +37,9 @@ cc_proto_library(
     default_runtime = "//external:protobuf",
     protoc = "//external:protoc",
     use_grpc_plugin = True,
+    deps = [
+        "//third_party/config:servicecontrol",
+    ],
 )
 
 cc_library(
@@ -98,3 +101,6 @@ cc_binary(
         "@grpc_git//:interop_client_main",
     ],
 )
+
+# Export service.json such that the tests can use it
+exports_files(["local/service.json"])

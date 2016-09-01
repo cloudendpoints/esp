@@ -264,6 +264,25 @@ sub get_transcoding_test_service_config {
   return $service_config;
 }
 
+sub get_grpc_echo_test_service_config {
+  my ($host_name, $service_control_address) = @_;
+  my $path = $ENV{TEST_SRCDIR} . '/test/grpc/local/service.json';
+  my $service_config = read_file_using_full_path($path);
+  # Replace the host name
+  $service_config =~ s/echo-dot-esp-grpc-load-test.appspot.com/$host_name/;
+  # Replace the service control address
+  $service_config =~ s/servicecontrol.googleapis.com/$service_control_address/;
+  return $service_config;
+}
+
+sub get_large_report_request {
+  my ($t, $size) = @_;
+  my $testdir = $t->testdir();
+  my $cmd = $ENV{TEST_SRCDIR} . '/src/tools/service_control_json_gen';
+  system "$cmd --report_request_size=$size --json > $testdir/large_data.json";
+  return $t->read_file('large_data.json');
+}
+
 sub get_metadata_response_body {
   return <<EOF;
 {
