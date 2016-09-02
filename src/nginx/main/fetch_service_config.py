@@ -114,7 +114,11 @@ def fetch_access_token(metadata):
 
 def fetch_service_json(service_mgmt_url, access_token):
     """Fetch service config."""
-    headers = {"Authorization": "Bearer {}".format(access_token)}
+    if access_token is None:
+        headers = {}
+    else:
+        headers = {"Authorization": "Bearer {}".format(access_token)}
+
     client = urllib3.PoolManager()
     try:
         response = client.request("GET", service_mgmt_url, headers=headers)

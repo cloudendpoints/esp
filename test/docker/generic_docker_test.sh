@@ -109,44 +109,48 @@ curl -v localhost:${MANAGEMENT_PORT}
 MANAGEMENT_RESULT=$?
 
 # The service name and version come from backend/README.md
-printf "\n -- Run docker test for http requests.\n"
+# We need to provide metadata for secret
+# Default port is 8080
+printf "\nRun docker test for http requests.\n"
 ${DIR}/run_generic_docker_test.sh \
-  -p 8080 \
   -a localhost:${APP_PORT} \
+  -m "http://127.0.0.1:${METADATA_PORT}" \
+  -c "http://127.0.0.1:${MANAGEMENT_PORT}/service_config" \
   -s bookstore-backend.endpointsv2.appspot.com \
   -v 2016-04-25R1 ||
   error_exit "Docker test for http requests failed."
 
-printf "\n -- Run docker test for https requests.\n"
+# Service name, version, and token are fetched from metadata
+printf "\nRun docker test for https requests.\n"
 ${DIR}/run_generic_docker_test.sh \
   -p 8080 \
-  -a localhost:${APP_PORT} -S 443 \
-  -s bookstore-backend.endpointsv2.appspot.com \
-  -v 2016-04-25R1 ||
+  -S 443 \
+  -m "http://127.0.0.1:${METADATA_PORT}" \
+  -c "http://127.0.0.1:${MANAGEMENT_PORT}/service_config" \
+  -a localhost:${APP_PORT} ||
   error_exit "Docker test for https requests failed."
 
-printf "\n -- Run docker test for custom nginx.conf.\n"
+# Still need to fetch service.json for custom nginx
+printf "\nRun docker test for custom nginx.conf.\n"
 ${DIR}/run_generic_docker_test.sh \
   -n /etc/nginx/custom/nginx.conf \
+  -m "http://127.0.0.1:${METADATA_PORT}" \
+  -c "http://127.0.0.1:${MANAGEMENT_PORT}/service_config" \
   -s bookstore-backend.endpointsv2.appspot.com \
   -v 2016-04-25R1 ||
   error_exit "Docker test for custom nginx.conf failed."
 
-printf "\n -- Run docker test for status port change.\n"
+printf "\nRun docker test for custom ports.\n"
 ${DIR}/run_generic_docker_test.sh \
-  -p 8080 \
-  -a localhost:${APP_PORT} -N 9050 \
-  -s bookstore-backend.endpointsv2.appspot.com \
-  -v 2016-04-25R1 ||
-  error_exit "Docker test for custom nginx.conf failed."
-
-printf "\n -- Run docker test for port change.\n"
-${DIR}/run_generic_docker_test.sh \
-  -p 9050 \
+  -p 9000 \
+  -P 9001 \
+  -N 9050 \
+  -m "http://127.0.0.1:${METADATA_PORT}" \
+  -c "http://127.0.0.1:${MANAGEMENT_PORT}/service_config" \
   -a localhost:${APP_PORT} \
   -s bookstore-backend.endpointsv2.appspot.com \
   -v 2016-04-25R1 ||
-  error_exit "Docker test for custom nginx.conf failed."
+  error_exit "Docker test for custom ports failed."
 
 printf "\nShutting down.\n"
 docker rmi esp-image

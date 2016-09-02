@@ -43,6 +43,7 @@ import os
 import sys
 import textwrap
 
+from collections import Counter
 from mako.template import Template
 
 # Location of NGINX binary
@@ -67,6 +68,9 @@ SERVICE_MGMT_URL_TEMPLATE = (
 
 # DNS resolver
 DNS_RESOLVER = "8.8.8.8"
+
+# Default HTTP/1.x port
+DEFAULT_PORT = 8080
 
 Port = collections.namedtuple('Port',
         ['port', 'proto'])
@@ -169,6 +173,23 @@ def fetch_service_config(args, service_config):
 def make_ingress(service_config, args):
     ports = []
 
+    # Set port by default
+    if (args.http_port is None and
+        args.http2_port is None and
+        args.ssl_port is None):
+        args.http_port = DEFAULT_PORT
+
+    # Check for port collisions
+    collisions = Counter([
+            args.http_port, args.http2_port,
+            args.ssl_port, args.status_port])
+    collisions.pop(None, 0)
+    if len(collisions) > 0:
+        shared_port, count = collisions.most_common(1)[0]
+        if count > 1:
+            print "ERROR: Port", shared_port, "is used more than once"
+            sys.exit(2)
+
     if not args.http_port is None:
         ports.append(Port(args.http_port, "http"))
     if not args.http2_port is None:
@@ -224,7 +245,7 @@ def make_argparser():
     parser.add_argument('-k', '--service_account_key', help='''
         Set the service account key JSON file.
         Used to access the service control and the service management.
-        If omitted, ESP contacts the metadata service to fetch an access token.
+        If the option is omitted, ESP contacts the metadata service to fetch an access token.
     ''')
 
     parser.add_argument('-s', '--service', help='''
@@ -243,7 +264,8 @@ def make_argparser():
 
     parser.add_argument('-p', '--http_port', default=None, type=int, help='''
         Expose a port to accept HTTP/1.x connections.
-    ''')
+        Note that if you do not specify -p, -P, and -S, then the default -p {port} is set.
+    '''.format(port=DEFAULT_PORT))
 
     parser.add_argument('-P', '--http2_port', default=None, type=int, help='''
         Expose a port to accept HTTP/2 connections.

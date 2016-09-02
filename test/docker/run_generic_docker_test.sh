@@ -30,61 +30,64 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # Load error handling utilities
 . ${ROOT}/script/all-utilities || { echo "Cannot load Bash utilities" ; exit 1 ; }
 
+DIR="${ROOT}/test/docker/esp_generic"
 PORT=''
+PORT2=''
 SSL_PORT=''
 NGINX_STATUS_PORT=''
 SERVER_ADDRESS=''
 NGINX_CONF_PATH=''
 PUBLISH='--publish-all'
-SERVICE_NAME=''
-SERVICE_VERSION=''
+ARGS=()
 
-while getopts 'a:n:N:p:S:s:v:' arg; do
+while getopts 'a:n:N:p:P:S:s:v:c:m:k:' arg; do
   case ${arg} in
     a) SERVER_ADDRESS="${OPTARG}";;
-    s) SERVICE_NAME="${OPTARG}";;
-    v) SERVICE_VERSION="${OPTARG}";;
     n) NGINX_CONF_PATH="${OPTARG}";;
     N) NGINX_STATUS_PORT="${OPTARG}";;
     p) PORT="${OPTARG}";;
+    P) PORT2="${OPTARG}";;
     S) SSL_PORT="${OPTARG}";;
+    s) ARGS+=(-s "${OPTARG}");;
+    v) ARGS+=(-v "${OPTARG}");;
+    c) ARGS+=(-c "${OPTARG}");;
+    m) ARGS+=(-m "${OPTARG}");;
+    k) ARGS+=(-k);;
   esac
 done
 
-if [[ -z "${SERVICE_NAME}" ]]; then
-  echo "-s SERVICE_NAME must be provided!"
-  exit 2
-fi
 
-if [[ -z "${SERVICE_VERSION}" ]]; then
-  echo "-v SERVICE_VERSION must be provided!"
-  exit 2
-fi
-
-ARGS=()
-DIR="${ROOT}/test/docker/esp_generic"
-ARGS+=(-m http://127.0.0.1:${METADATA_PORT})
-ARGS+=(-c "http://127.0.0.1:${MANAGEMENT_PORT}/service_config")
-ARGS+=(-s "${SERVICE_NAME}")
-ARGS+=(-v "${SERVICE_VERSION}")
 [[ -n "${SERVER_ADDRESS}" ]] && ARGS+=(-a "${SERVER_ADDRESS}")
 
-if [[ -n "${PORT}" ]]; then
-  ARGS+=(-p "${PORT}")
+if [[ -n "${PORT}" ]] || [[ -n "${SSL_PORT}" ]] || [[ -n "${PORT2}" ]]; then
+  if [[ -n "${PORT}" ]]; then
+    ARGS+=(-p "${PORT}")
+    PUBLISH+=" --expose=${PORT}";
+  fi
+
+  if [[ -n "${PORT2}" ]]; then
+    ARGS+=(-P "${PORT2}")
+    PUBLISH+=" --expose=${PORT2}";
+  fi
+
+  if [[ -n "${SSL_PORT}" ]]; then
+    ARGS+=(-S "${SSL_PORT}");
+    PUBLISH+=" --expose=${SSL_PORT}";
+    VOLUMES+=" --volume=${DIR}/nginx.key:/etc/nginx/ssl/nginx.key";
+    VOLUMES+=" --volume=${DIR}/nginx.crt:/etc/nginx/ssl/nginx.crt";
+  fi
 else
   PORT=8080
 fi
 
-[[ -n "${SSL_PORT}" ]]          && {
-  ARGS+=(-S "${SSL_PORT}");
-  PUBLISH+=" --expose=${SSL_PORT}";
-  VOLUMES+=" --volume=${DIR}/nginx.key:/etc/nginx/ssl/nginx.key";
-  VOLUMES+=" --volume=${DIR}/nginx.crt:/etc/nginx/ssl/nginx.crt";
-}
-[[ -n "${NGINX_STATUS_PORT}" ]] && {
-  ARGS+=(-N "${NGINX_STATUS_PORT}");
-  PUBLISH+=" --expose=${NGINX_STATUS_PORT}";
-}
+if [[ -n "${NGINX_STATUS_PORT}" ]]; then
+  ARGS+=(-N "${NGINX_STATUS_PORT}")
+  PUBLISH+=" --expose=${NGINX_STATUS_PORT}"
+else
+  NGINX_STATUS_PORT=8090
+fi
+
+
 [[ -n "${NGINX_CONF_PATH}" ]]   && {
   ARGS+=(-n "${NGINX_CONF_PATH}");
   VOLUMES+=" --volume=${DIR}/custom_nginx.conf:${NGINX_CONF_PATH}";
@@ -139,9 +142,6 @@ function start_esp_test() {
     || error_exit "Test failed."
 }
 
-# Default nginx status port is 8090.
-[[ -n "${NGINX_STATUS_PORT}" ]] || NGINX_STATUS_PORT=8090
-
 printf "\nCheck esp status port.\n"
 wait_for "localhost:${NGINX_STATUS_PORT}/nginx_status" \
   || error_exit "ESP container didn't come up."
@@ -154,15 +154,7 @@ if [[ "${SSL_PORT}" ]]; then
   start_esp_test "https://localhost:${SSL_PORT}"
 fi
 
-UUID="$(uuidgen)"
-ELOG=~/error-${UUID}.log
-ALOG=~/access-${UUID}.log
-docker cp esp:/var/log/nginx/error.log "${ELOG}"
-docker cp esp:/var/log/nginx/access.log "${ALOG}"
-echo "Logs saved into ${ELOG}, ${ALOG}"
-printf "\nNGINX error log:\n"
-cat ${ELOG}
-
 printf "\n\nShutting down esp.\n"
+docker logs esp
 docker stop esp
 docker rm esp
