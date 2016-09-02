@@ -119,6 +119,12 @@ def ensure(config_dir):
             sys.exit(3)
 
 
+def assert_file_exists(fl):
+    if not os.path.exists(fl):
+        print "ERROR: Cannot find the specified file.", fl
+        sys.exit(3)
+
+
 def start_nginx(nginx, nginx_conf):
     try:
         # Control is relinquished to nginx process after this line
@@ -292,16 +298,11 @@ def make_argparser():
         Specify the URL to fetch the service configuration.
     ''')
 
-    # These two flags enable or disable all fetching by the script
-    # (metadata server and service management service)
-    # This is useful with custom nginx config and custom service json
-    parser.add_argument('--fetch', dest='fetch', action='store_true',
+    # Specify a custom service.json path.
+    # If this is specified, service json will not be fetched.
+    parser.add_argument('--service_json_path',
+        default=None,
         help=argparse.SUPPRESS)
-
-    parser.add_argument('--no-fetch', dest='fetch', action='store_false',
-        help=argparse.SUPPRESS)
-
-    parser.set_defaults(fetch=True)
 
     # Customize metadata service url prefix.
     parser.add_argument('-m', '--metadata',
@@ -338,8 +339,11 @@ if __name__ == '__main__':
 
     service_config = args.config_dir + "/service.json"
 
-    # Fetch service config
-    if args.fetch:
+    if args.service_json_path:
+        service_config = args.service_json_path
+        assert_file_exists(service_config)
+    else:
+        # Fetch service config and place it in the standard location
         ensure(args.config_dir)
         fetch_service_config(args, service_config)
 
