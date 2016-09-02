@@ -35,6 +35,15 @@ namespace grpc {
 GrpcMessageSerializer::GrpcMessageSerializer()
     : delimiter_consumed_(false), current_slice_no_(0), byte_count_(0) {}
 
+GrpcMessageSerializer::~GrpcMessageSerializer() {
+  while (!messages_.empty()) {
+    if (messages_.front().second) {
+      grpc_byte_buffer_destroy(messages_.front().first);
+    }
+    messages_.pop_front();
+  }
+}
+
 void GrpcMessageSerializer::AddMessage(grpc_byte_buffer* message,
                                        bool take_ownership) {
   messages_.emplace_back(message, take_ownership);

@@ -41,6 +41,8 @@ class GrpcMessageSerializer {
  public:
   GrpcMessageSerializer();
 
+  virtual ~GrpcMessageSerializer();
+
   // Adds a gRPC message
   // take_ownership - determines whether the ownership of the message is passed
   //                  to the GrpcMessageSerializer or remains with the caller.
