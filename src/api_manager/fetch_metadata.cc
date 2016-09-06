@@ -55,7 +55,7 @@ const char kFetchingToken[] = "Fetching service account token";
 // External status message for token parse failure
 const char kFailedTokenParse[] = "Failed to parse access token response";
 // Time window (in seconds) before expiration to initiate re-fetch
-const char kTokenRefetchWindow = 10;
+const char kTokenRefetchWindow = 60;
 
 // Issues a HTTP request to fetch the metadata.
 void FetchMetadata(
@@ -196,10 +196,11 @@ void FetchServiceAccountToken(std::shared_ptr<context::RequestContext> context,
                     return;
                   }
 
-                  // Compute Engine returns tokens with at least 60 seconds life
-                  // left so
-                  // we need to wait a bit longer to refresh the token.
                   token->set_state(auth::ServiceAccountToken::FETCHED);
+                  // Set expiration time a little bit earlier to avoid rejection
+                  // of the actual service control requests.
+                  // Even there is a prefetch window of 60 seconds, but prefetch
+                  // window may not kick in if not on-going requests.
                   token->set_access_token(auth_token, expires - 50);
                   free(auth_token);
 
