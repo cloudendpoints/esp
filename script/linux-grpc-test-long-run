@@ -173,4 +173,7 @@ popd > /dev/null
 echo "Finished ${RUN_COUNT} test runs."
 echo "Failures: pass-through: ${GRPC_STRESS_FAILURES}, transcode: ${HTTP_STRESS_FAILURES}."
 
-exit $((GRPC_STRESS_FAILURES + HTTP_STRESS_FAILURES))
+# Only mark test as failed if any pass-through tests failed.
+# This is to be consistent with other http stress tests.
+# All failure will be analyzed by release-engineers.
+exit ${GRPC_STRESS_FAILURES}
