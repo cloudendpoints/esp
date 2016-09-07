@@ -106,12 +106,10 @@ function push_docker_image() {
   return 0;
 }
 
-for SUFFIX in '' '-grpc'; do
-  push_docker_image \
-      "gcr.io/endpoints-jenkins/endpoints-runtime${SUFFIX}:debian-git-${SHA}" \
-      "b.gcr.io/endpoints/endpoints-runtime${SUFFIX}:${VERSION}" \
-    || error_exit "Docker image push failed."
-done
+push_docker_image \
+  "gcr.io/endpoints-jenkins/endpoints-runtime:debian-git-${SHA}" \
+  "b.gcr.io/endpoints/endpoints-runtime:${VERSION}" \
+  || error_exit "Docker image push failed."
 
 SOURCE_PKG="gs://endpoints-jenkins.appspot.com/${SHA}/artifacts/endpoints-runtime-amd64.deb"
 TARGET_PKG="$(command mktemp -d)/endpoints-runtime-amd64.deb"
