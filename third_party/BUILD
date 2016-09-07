@@ -65,6 +65,7 @@ cc_proto_library(
         "googleapis/google/api/context.proto",
         "googleapis/google/api/control.proto",
         "googleapis/google/api/documentation.proto",
+        "googleapis/google/api/endpoint.proto",
         "googleapis/google/api/http.proto",
         "googleapis/google/api/label.proto",
         "googleapis/google/api/log.proto",
