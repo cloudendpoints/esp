@@ -23,22 +23,22 @@
 // SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-package cmd
+package cli
 
 import (
 	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
-	"k8s.io/kubernetes/pkg/client/restclient"
 
-	client "k8s.io/kubernetes/pkg/client/unversioned"
+	"k8s.io/client-go/1.4/kubernetes"
+	"k8s.io/client-go/1.4/rest"
 )
 
 var (
 	namespace string
 	control   int
-	kubectl   *client.Client
+	clientset *kubernetes.Clientset
 )
 
 // Prefix for ESP managed resources
@@ -64,12 +64,12 @@ var RootCmd = &cobra.Command{
 		fmt.Println("ESP deployment command line interface")
 	},
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		config := restclient.Config{
+		config := rest.Config{
 			Host: fmt.Sprintf("localhost:%d", control),
 		}
 
 		var err error
-		kubectl, err = client.New(&config)
+		clientset, err = kubernetes.NewForConfig(&config)
 		if err != nil {
 			fmt.Println("Cannot connect to Kubernetes API: ", err)
 			os.Exit(-2)

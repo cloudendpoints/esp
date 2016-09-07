@@ -23,15 +23,17 @@
 // SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-package cmd
+package cli
 
 import (
 	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
-	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/labels"
+
+	"k8s.io/client-go/1.4/pkg/api"
+	versioned "k8s.io/client-go/1.4/pkg/api/v1"
+	"k8s.io/client-go/1.4/pkg/labels"
 )
 
 func init() {
@@ -63,7 +65,7 @@ func GetESPPods(name string) []string {
 		ESPManagedService: name,
 	}))
 	options := api.ListOptions{LabelSelector: label}
-	list, err := kubectl.Pods(namespace).List(options)
+	list, err := clientset.Core().Pods(namespace).List(options)
 	if err != nil {
 		return nil
 	}
@@ -78,10 +80,10 @@ func GetESPPods(name string) []string {
 // PrintLogs from all pods and containers
 func PrintLogs(pod string) {
 	fmt.Printf("Logs for %s in %s", endpoints, pod)
-	logOptions := &api.PodLogOptions{
+	logOptions := &versioned.PodLogOptions{
 		Container: endpoints,
 	}
-	raw, err := kubectl.Pods(namespace).GetLogs(pod, logOptions).Do().Raw()
+	raw, err := clientset.Core().Pods(namespace).GetLogs(pod, logOptions).Do().Raw()
 	if err != nil {
 		fmt.Println("Request error", err)
 	} else {

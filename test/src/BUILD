@@ -33,7 +33,7 @@ load(
 )
 
 # Define an import prefix
-go_prefix("github.com/cloudendpoints/esp/test")
+go_prefix("github.com/cloudendpoints/esp/")
 
 # NOTE: Below we use a special "vendor/" keyword in target names to specify
 # custom import paths for go libraries. Otherwise, go_library() rule
@@ -145,6 +145,53 @@ go_library(
     deps = [
         "//test/src:vendor/google/api/servicecontrol/v1",
         "@github_com_golang_protobuf//:proto",
+    ],
+)
+
+go_library(
+    name = "vendor/deploy",
+    srcs = [
+        "deploy/api-compiler.go",
+        "deploy/gcloud.go",
+        "deploy/service.go",
+    ],
+    go_prefix = "//test/src:go_prefix",
+    deps = [
+        ":vendor/google/api",
+        "@github_com_golang_protobuf//:jsonpb",
+        "@github_com_golang_protobuf//:proto",
+    ],
+)
+
+go_library(
+    name = "vendor/cli",
+    srcs = glob([
+        "cli/*.go",
+    ]),
+    go_prefix = "//test/src:go_prefix",
+    deps = [
+        ":vendor/utils",
+        ":vendor/deploy",
+        "@github_com_spf13_cobra//:cobra",
+        "@github_com_kubernetes_client_go//:kubernetes",
+        "@github_com_kubernetes_client_go//:pkg/labels",
+        "@github_com_kubernetes_client_go//:rest",
+        "@github_com_kubernetes_client_go//:pkg/api",
+        "@github_com_kubernetes_client_go//:pkg/api/v1",
+        "@github_com_kubernetes_client_go//:pkg/util/intstr",
+        "@github_com_kubernetes_client_go//:pkg/apis/extensions/v1beta1",
+    ],
+)
+
+go_binary(
+    name = "espcli",
+    srcs = [
+        "espcli.go",
+    ],
+    go_prefix = "//test/src:go_prefix",
+    deps = [
+        ":vendor/cli",
+        "@github_com_spf13_cobra//:cobra",
     ],
 )
 

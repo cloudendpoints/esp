@@ -23,7 +23,7 @@
 // SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-package cmd
+package cli
 
 import (
 	"encoding/json"
@@ -33,10 +33,11 @@ import (
 	"strconv"
 	"utils"
 
-	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/labels"
-
 	"github.com/spf13/cobra"
+
+	"k8s.io/client-go/1.4/pkg/api"
+	versioned "k8s.io/client-go/1.4/pkg/api/v1"
+	"k8s.io/client-go/1.4/pkg/labels"
 )
 
 var (
@@ -97,7 +98,7 @@ func GetESPServices(name string) ([]string, error) {
 		ESPManagedService: name,
 	}))
 	options := api.ListOptions{LabelSelector: label}
-	list, err := kubectl.Services(namespace).List(options)
+	list, err := clientset.Core().Services(namespace).List(options)
 	if err != nil {
 		return nil, err
 	}
@@ -111,22 +112,22 @@ func GetESPServices(name string) ([]string, error) {
 
 // Endpoints retrieves endpoints for a service
 func GetEndpoints(name string) (map[string]string, error) {
-	svc, err := kubectl.Services(namespace).Get(name)
+	svc, err := clientset.Core().Services(namespace).Get(name)
 	if err != nil {
 		return nil, err
 	}
 
 	out := map[string]string{}
 
-	if svc.Spec.Type == api.ServiceTypeNodePort {
+	if svc.Spec.Type == versioned.ServiceTypeNodePort {
 		for _, port := range svc.Spec.Ports {
 			out[port.Name] = ip + ":" + strconv.Itoa(int(port.NodePort))
 		}
-	} else if svc.Spec.Type == api.ServiceTypeLoadBalancer {
+	} else if svc.Spec.Type == versioned.ServiceTypeLoadBalancer {
 		var address string
 		ok := utils.Repeat(func() bool {
 			fmt.Println("Retrieving address of the service")
-			svc, err = kubectl.Services(namespace).Get(name)
+			svc, err = clientset.Core().Services(namespace).Get(name)
 			if err != nil {
 				return false
 			}

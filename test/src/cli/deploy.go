@@ -23,7 +23,7 @@
 // SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-package cmd
+package cli
 
 import (
 	"deploy"
@@ -37,9 +37,10 @@ import (
 	"utils"
 
 	"github.com/spf13/cobra"
-	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/apis/extensions"
-	"k8s.io/kubernetes/pkg/util/intstr"
+
+	api "k8s.io/client-go/1.4/pkg/api/v1"
+	extensions "k8s.io/client-go/1.4/pkg/apis/extensions/v1beta1"
+	"k8s.io/client-go/1.4/pkg/util/intstr"
 )
 
 // Ports are named ports in use by ESP
@@ -60,7 +61,7 @@ var (
 )
 
 // Default number of replicas for ESP service
-const replicas = 1
+const defaultReplicas = 1
 
 var deployCmd = &cobra.Command{
 	Use:   "deploy [kubernetes service] [optional name for ESP service]",
@@ -75,7 +76,7 @@ var deployCmd = &cobra.Command{
 		// First argument is the service name
 		var err error
 		name := args[0]
-		svc, err = kubectl.Services(namespace).Get(name)
+		svc, err = clientset.Core().Services(namespace).Get(name)
 		if err != nil {
 			fmt.Println("Cannot find kubernetes service", err)
 			os.Exit(-1)
@@ -130,7 +131,8 @@ var deployCmd = &cobra.Command{
 func init() {
 	RootCmd.AddCommand(deployCmd)
 	deployCmd.PersistentFlags().StringVar(&image,
-		"image", "gcr.io/endpoints-jenkins/endpoints-runtime:debian-git-43d90baee55df3b9a4f80141fb28659ec17ba58c",
+		"image",
+		"b.gcr.io/endpoints/endpoints-runtime:0.3.6",
 		"URL to ESP docker image")
 
 	deployCmd.PersistentFlags().StringVarP(&config.Name,
@@ -211,7 +213,7 @@ func InjectService(ports Ports) error {
 	}
 
 	svc.Spec.Ports = append(CreateServicePorts(ports), svcPorts[0])
-	_, err := kubectl.Services(namespace).Update(svc)
+	_, err := clientset.Core().Services(namespace).Update(svc)
 	if err != nil {
 		return err
 	}
@@ -223,7 +225,7 @@ func InjectService(ports Ports) error {
 
 func InjectDeployment(ports Ports, backend string) error {
 	// find deployment by service name
-	dpl, err := kubectl.Extensions().Deployments(namespace).Get(svc.Name)
+	dpl, err := clientset.Extensions().Deployments(namespace).Get(svc.Name)
 	if err != nil {
 		return err
 	}
@@ -244,7 +246,7 @@ func InjectDeployment(ports Ports, backend string) error {
 	template.Labels[ESPManagedService] = svc.Name
 
 	// commit updates
-	_, err = kubectl.Extensions().Deployments(namespace).Update(dpl)
+	_, err = clientset.Extensions().Deployments(namespace).Update(dpl)
 	if err != nil {
 		return err
 	}
@@ -331,13 +333,15 @@ func CreateDeployment(app string, ports Ports, backend string) error {
 		return err
 	}
 
+	replicas := int32(defaultReplicas)
+
 	// Create replication controller
 	deployment := &extensions.Deployment{
 		ObjectMeta: api.ObjectMeta{
 			Name: app,
 		},
 		Spec: extensions.DeploymentSpec{
-			Replicas: int32(replicas),
+			Replicas: &replicas,
 			Template: api.PodTemplateSpec{
 				ObjectMeta: api.ObjectMeta{
 					Labels: map[string]string{
@@ -353,7 +357,7 @@ func CreateDeployment(app string, ports Ports, backend string) error {
 		},
 	}
 
-	deployment, err = kubectl.Deployments(namespace).Create(deployment)
+	deployment, err = clientset.Extensions().Deployments(namespace).Create(deployment)
 	if err != nil {
 		return err
 	}
@@ -397,7 +401,7 @@ func CreateService(app string, ports Ports, serviceType api.ServiceType) error {
 		},
 	}
 
-	svc, err := kubectl.Services(namespace).Create(svc)
+	svc, err := clientset.Core().Services(namespace).Create(svc)
 	if err != nil {
 		return err
 	}
@@ -424,7 +428,7 @@ func AddConfig(key string, files map[string]string) (string, error) {
 		Data: m,
 	}
 
-	configMaps := kubectl.ConfigMaps(namespace)
+	configMaps := clientset.Core().ConfigMaps(namespace)
 	configMap, err := configMaps.Create(config)
 	if err != nil {
 		return "", err
@@ -454,7 +458,7 @@ func AddSecret(key string, files map[string]string) (string, error) {
 		Data: m,
 	}
 
-	secrets := kubectl.Secrets(namespace)
+	secrets := clientset.Core().Secrets(namespace)
 	secret, err := secrets.Create(config)
 	if err != nil {
 		return "", err
