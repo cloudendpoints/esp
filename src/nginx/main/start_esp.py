@@ -139,9 +139,11 @@ def fetch_service_config(args, service_config):
         # Fetch service config
         if args.service_config_url is None:
             if args.service is None:
+                print "Fetching the service name from the metadata service"
                 args.service = fetch.fetch_service_name(args.metadata)
 
             if args.version is None:
+                print "Fetching the service version from the metadata service"
                 args.version = fetch.fetch_service_version(args.metadata)
 
             service_mgmt_url = SERVICE_MGMT_URL_TEMPLATE.format(args.service,
@@ -151,10 +153,12 @@ def fetch_service_config(args, service_config):
 
         # Get the access token
         if args.service_account_key is None:
+            print "Fetching an access token from the metadata service"
             token = fetch.fetch_access_token(args.metadata)
         else:
             token = fetch.make_access_token(args.service_account_key)
 
+        print "Fetching the service configuration from the service management service"
         config = fetch.fetch_service_json(service_mgmt_url, token)
 
         # Validate service config if we have service name version
