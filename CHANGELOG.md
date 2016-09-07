@@ -1,3 +1,15 @@
+# Release 0.3.6 07-09-2016
+
+- Fix a memory leak in grpc transcode
+- Add grpc large transcoding to stress test.
+- Add endpoints_resolver in nginx config for HTTP subrequests DNS
+- Upgrade to use GRPC to 1.0.0 GA and Protobuf to 3.0.0 GA
+- Propagate grpc metadata from downstream to upstream
+- Expose http and grpc ports when deploying grpc.
+- Add gprc interop tests
+- Switch to start_esp.py in docker generic image
+- Extract api key from header x-api-key by default.
+
 # Release 0.3.5 24-08-2016
 
 - Add bindings and body prefix test for transcoding
