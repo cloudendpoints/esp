@@ -44,8 +44,7 @@ GO="$(which go)" || GO="/usr/local/go/bin/go"
   sleep 1
 
   # Start driver script with the same arguments
-  echo Running test driver
-  $GO run $ROOT/test/src/driver.go --kubectl 9000 "$@"
+  $GO run $ROOT/test/src/espcli.go "$@"
   exit $?
 )
 

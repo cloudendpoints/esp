@@ -30,3 +30,5 @@ echo 'Installing go packages'
 GO="$(which go)" || GO="/usr/local/go/bin/go"
 $GO get -insecure k8s.io/kubernetes/pkg/client/unversioned
 $GO get -insecure github.com/golang/protobuf/jsonpb
+$GO get -insecure github.com/spf13/cobra
+$GO get -insecure github.com/spf13/pflag

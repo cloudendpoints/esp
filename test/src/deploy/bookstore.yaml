@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: bookstore
+  labels:
+    googleapis.com/api: testing-dot-endpoints-jenkins.appspot.com
+spec:
+  ports:
+  - port: 80
+    targetPort: 8081
+    protocol: TCP
+  selector:
+    app: bookstore
+  type: NodePort
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: bookstore
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: bookstore
+    spec:
+      containers:
+      - name: bookstore
+        image: gcr.io/endpoints-jenkins/bookstore:df2be5917f3cd0b39cc339d2ddedb67d32008e81
+        ports:
+          - containerPort: 8081
+        livenessProbe:
+          httpGet:
+            path: /shelves
+            port: 8081
+          initialDelaySeconds: 1
+          timeoutSeconds: 1

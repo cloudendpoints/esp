@@ -41,10 +41,10 @@ var (
 )
 
 type Service struct {
-	Name    string
-	Version string
-	Token   string
-	Key     string
+	Name            string
+	Version         string
+	CredentialsFile string
+	Key             string
 
 	// Creation parameters
 	Delete              bool

@@ -241,21 +241,6 @@ def performance(nodeLabel) {
 def e2eTest(nodeLabel) {
   // Please Update script/validate_release.py when adding or removing test.
   def branches = [
-      'go-gke-tight-http': {
-        node(nodeLabel) {
-          integration("-e gke")
-        }
-      },
-      'go-gke-tight-https': {
-        node(nodeLabel) {
-          integration("-e gke --ssl 8443")
-        }
-      },
-      'go-gke-tight-http-local': {
-        node(nodeLabel) {
-          integration("-e gke --cred client-secret-files/endpoints-jenkins-token.json")
-        }
-      },
       'gke-tight-coupling-https': {
         node(nodeLabel) {
           e2eGKE('tight', 'https')
@@ -337,20 +322,6 @@ Need to call checkoutSourceCode() for those to work.
 
 def fetchSecrets() {
   sh "gsutil cp -r gs://client-secret-files/ ."
-}
-
-def integration(params) {
-  setGCloud()
-  checkoutSourceCode()
-  fetchSecrets()
-  fastUnstash('auth_token_gen')
-  def espImage = espDockerImage()
-  def backendImage = bookstoreDockerImage()
-  def serviceName = "testing-dot-${PROJECT_ID}.appspot.com"
-  def key = readFile('client-secret-files/bookstore_key').trim()
-  sh "script/go-driver --backend ${backendImage} --esp ${espImage} " +
-     "--service ${serviceName} -k ${key} " +
-     params
 }
 
 def espGenericDockerImage(suffix = '') {
