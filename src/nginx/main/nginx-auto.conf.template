@@ -53,6 +53,7 @@ http {
       # Begin Endpoints v2 Support
       endpoints {
         on;
+        server_config /etc/nginx/server_config.pb.txt;
         api ${location.service_config};
 % if service_account:
         google_authentication_secret ${service_account};

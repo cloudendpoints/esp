@@ -233,7 +233,8 @@ pkg_tar(
 pkg_tar(
     name = "nginx-conf-template",
     files = [
-        "//src/nginx/main:nginx-auto.conf.template"
+        "//src/nginx/main:nginx-auto.conf.template",
+        "//src/nginx/main:server_config.pb.txt",
     ],
     mode = "0644",
     package_dir = "/etc/nginx",
