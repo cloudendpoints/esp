@@ -24,7 +24,7 @@
 #
 ################################################################################
 #
-load("/perl", "perl_library")
+load("@io_bazel_rules_perl//perl:perl.bzl", "perl_library")
 load("/nginx", "nginx_test", "nginx_suite")
 
 perl_library(
@@ -99,7 +99,7 @@ nginx_suite(
         "//test/grpc:grpc-test-server",
     ],
     env = {
-        "TSAN_OPTIONS": "suppressions=$TEST_SRCDIR/src/nginx/t/testdata/grpc_tsan_suppressions",
+        "TSAN_OPTIONS": "suppressions=./src/nginx/t/testdata/grpc_tsan_suppressions",
     },
     nginx = "//src/nginx/main:nginx-esp",
     tests = [
@@ -134,7 +134,7 @@ nginx_suite(
         "//test/grpc:interop-server",
     ],
     env = {
-        "TSAN_OPTIONS": "suppressions=$TEST_SRCDIR/src/nginx/t/testdata/grpc_tsan_suppressions",
+        "TSAN_OPTIONS": "suppressions=./src/nginx/t/testdata/grpc_tsan_suppressions",
     },
     nginx = "//src/nginx/main:nginx-esp",
     tests = [
@@ -156,7 +156,7 @@ nginx_suite(
         "//test/grpc:grpc-test-server",
     ],
     env = {
-        "TSAN_OPTIONS": "suppressions=$TEST_SRCDIR/src/nginx/t/testdata/grpc_tsan_suppressions",
+        "TSAN_OPTIONS": "suppressions=./src/nginx/t/testdata/grpc_tsan_suppressions",
     },
     nginx = "//src/nginx/main:nginx-esp",
     tests = [
@@ -278,7 +278,7 @@ nginx_suite(
         "//test/transcoding:service.json",
     ],
     env = {
-        "TSAN_OPTIONS": "suppressions=$TEST_SRCDIR/src/nginx/t/testdata/grpc_tsan_suppressions",
+        "TSAN_OPTIONS": "suppressions=./src/nginx/t/testdata/grpc_tsan_suppressions",
     },
     nginx = "//src/nginx/main:nginx-esp",
     tests = [

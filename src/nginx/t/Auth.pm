@@ -26,16 +26,16 @@
 #
 # A shared module for ESP auth end-to-end tests.
 
-package Auth;
-
 use strict;
 use warnings;
 
-use ApiManager;
+package Auth;
+
+use src::nginx::t::ApiManager;
 
 sub get_auth_token {
   my ($secret_file, $audience) = @_;
-  my $cmd = $ENV{TEST_SRCDIR}."/src/tools/auth_token_gen $secret_file ";
+  my $cmd = "./src/tools/auth_token_gen $secret_file ";
   if (!defined $audience) {
     # Defaults to service name.
     $audience = "endpoints-test.cloudendpointsapis.com";

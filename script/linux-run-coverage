@@ -97,7 +97,7 @@ while IFS=':' read package test; do
   # wants to write to the actual bazel-out directory where tools later
   # expect to find coverage data results.
   ln -s $(readlink "${ROOT}/bazel-out") \
-      "${ROOT}/bazel-bin/${package}/${test}.runfiles/${TEST_WORKSPACE}/${package}/bazel-out" \
+      "${ROOT}/bazel-bin/${package}/${test}.runfiles/${TEST_WORKSPACE}/bazel-out" \
     || error_exit "Cannot create a symlink."
 
   # Run the test.

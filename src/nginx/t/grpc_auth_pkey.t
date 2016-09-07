@@ -29,13 +29,11 @@ use warnings;
 
 ################################################################################
 
-BEGIN { use FindBin; chdir($FindBin::Bin); }
-
-use ApiManager;   # Must be first (sets up import path to the Nginx test module)
+use src::nginx::t::ApiManager;   # Must be first (sets up import path to the Nginx test module)
+use src::nginx::t::HttpServer;
+use src::nginx::t::Auth;
 use Test::Nginx;  # Imports Nginx's test module
 use Test::More;   # And the test framework
-use HttpServer;
-use Auth;
 
 ################################################################################
 
@@ -91,7 +89,7 @@ http {
 EOF
 
 my $pkey_jwk = Auth::get_public_key_jwk;
-my $auth_token = Auth::get_auth_token('./matching-client-secret.json', 'ok_audience_1');
+my $auth_token = Auth::get_auth_token('./src/nginx/t/matching-client-secret.json', 'ok_audience_1');
 
 $t->run_daemon(\&service_control, $t, $ServiceControlPort, 'requests.log');
 $t->run_daemon(\&pubkey, $t, $PubkeyPort, $pkey_jwk, 'pubkey.log');

@@ -29,13 +29,11 @@ use warnings;
 
 ################################################################################
 
-BEGIN { use FindBin; chdir($FindBin::Bin); }
-
-use ApiManager;   # Must be first (sets up import path to the Nginx test module)
+use src::nginx::t::ApiManager;   # Must be first (sets up import path to the Nginx test module)
+use src::nginx::t::HttpServer;
+use src::nginx::t::Auth;
 use Test::Nginx;  # Imports Nginx's test module
 use Test::More;   # And the test framework
-use HttpServer;
-use Auth;
 
 ################################################################################
 
@@ -141,7 +139,7 @@ like($response,
   qr/HTTP\/1\.1 401 Unauthorized/, 'Returned HTTP 401, missing creds.');
 
 # Successful authenticated call.
-my $token = Auth::get_auth_token('./matching-client-secret.json');
+my $token = Auth::get_auth_token('./src/nginx/t/matching-client-secret.json');
 $response = ApiManager::http($NginxPort,<<"EOF");
 GET /shelves/1 HTTP/1.0
 Authorization: Bearer $token

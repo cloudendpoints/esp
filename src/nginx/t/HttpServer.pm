@@ -29,14 +29,14 @@
 
 package HttpServer;
 
+use strict;
+use warnings;
+
 use Data::Dumper;
 use File::Basename;
 use IO::Select;
 use IO::Socket::SSL;
 use Socket qw/ CRLF /;
-
-use strict;
-use warnings;
 
 sub new {
     my (undef, $port, $file, $ssl) = @_;

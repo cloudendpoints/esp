@@ -26,7 +26,7 @@
 #
 # A simple Perl test to exercise /perl.bzl custom rules.
 
-load("/perl", "perl_library", "perl_test")
+load("@io_bazel_rules_perl//perl:perl.bzl", "perl_library", "perl_test")
 
 perl_library(
     name = "lib",

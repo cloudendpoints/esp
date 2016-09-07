@@ -29,13 +29,11 @@ use warnings;
 
 ################################################################################
 
-BEGIN { use FindBin; chdir($FindBin::Bin); }
-
-use ApiManager;   # Must be first (sets up import path to the Nginx test module)
+use src::nginx::t::ApiManager;   # Must be first (sets up import path to the Nginx test module)
+use src::nginx::t::HttpServer;
+use src::nginx::t::Auth;
 use Test::Nginx;  # Imports Nginx's test module
 use Test::More;   # And the test framework
-use HttpServer;
-use Auth;
 
 ################################################################################
 
@@ -131,7 +129,7 @@ EOF
   like($response, qr/JWT validation failed: BAD_FORMAT/i, "Error body contains 'invalid token'.");
 
   # Token generated from different issuer/key.
-  my $token = Auth::get_auth_token('./wrong-client-secret.json');
+  my $token = Auth::get_auth_token('./src/nginx/t/wrong-client-secret.json');
   $response = ApiManager::http($NginxPort,<<"EOF");
 GET /shelves HTTP/1.0
 Host: localhost
@@ -146,7 +144,7 @@ EOF
 
 
   # Audience not allowed.
-  $token = Auth::get_auth_token('./matching-client-secret.json', 'bad_audience');
+  $token = Auth::get_auth_token('./src/nginx/t/matching-client-secret.json', 'bad_audience');
   $response = ApiManager::http($NginxPort,<<"EOF");
 GET /shelves HTTP/1.0
 Host: localhost
@@ -166,7 +164,7 @@ EOF
   is($no_pubkey_requests, '', 'No pubkey fetch (bad token).');
 
   # Key is unreachable.
-  $token = Auth::get_auth_token('./matching-client-secret.json', 'ok_audience_1');
+  $token = Auth::get_auth_token('./src/nginx/t/matching-client-secret.json', 'ok_audience_1');
   $response = ApiManager::http($NginxPort,<<"EOF");
 GET /shelves?key=this-is-an-api-key HTTP/1.0
 Host: localhost
@@ -186,7 +184,7 @@ EOF
   is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control socket ready.');
   is($t->waitforsocket("127.0.0.1:${PubkeyPort}"), 1, 'Pubkey socket ready.');
 
-  $token = Auth::get_auth_token('./matching-client-secret.json', 'ok_audience_1');
+  $token = Auth::get_auth_token('./src/nginx/t/matching-client-secret.json', 'ok_audience_1');
   # OK requests need to use different api-keys to avoid service_control cache.
   $response = ApiManager::http($NginxPort,<<"EOF");
 GET /shelves?key=this-is-an-api-key1 HTTP/1.0
@@ -231,7 +229,7 @@ EOF
   is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control socket ready.');
   is($t->waitforsocket("127.0.0.1:${PubkeyPort}"), 1, 'Pubkey socket ready.');
 
-  $token = Auth::get_auth_token('./matching-client-secret.json');
+  $token = Auth::get_auth_token('./src/nginx/t/matching-client-secret.json');
   # OK requests need to use different api-keys to avoid service_control cache.
   $response = ApiManager::http($NginxPort,<<"EOF");
 GET /shelves?key=this-is-an-api-key2&access_token=$token HTTP/1.0

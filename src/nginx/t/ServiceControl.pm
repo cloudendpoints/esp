@@ -26,12 +26,14 @@
 #
 # A shared module to generate ServiceControl report Perl object for testing.
 
-package ServiceControl;
 
-use ApiManager;
 use strict;
 use warnings;
-use Status;
+
+package ServiceControl;
+
+use src::nginx::t::ApiManager;
+use src::nginx::t::Status;
 use IPC::Open2;
 
 use Data::Dumper;
@@ -326,7 +328,7 @@ sub service_agent {
 }
 
 sub get_version {
-  my $version_file = $ENV{TEST_SRCDIR} . "/include/version";
+  my $version_file = "./include/version";
   open F, '<', $version_file or die "Can't open ${version_file}: $!";
   my $content = <F>;
   close F;
@@ -343,7 +345,7 @@ sub get_version {
 #      binary, text, or json
 sub convert_proto {
   my ($proto_data, $proto_type, $out_format) = @_;
-  my $cmd = $ENV{TEST_SRCDIR}."/src/tools/service_control_json_gen";
+  my $cmd = './src/tools/service_control_json_gen';
   my ($sin, $sout);
   open2($sout, $sin, $cmd, "--stdin", "--$proto_type", "--$out_format") or die "Failed to open2";
   binmode $sin;

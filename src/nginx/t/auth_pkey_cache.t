@@ -29,13 +29,11 @@ use warnings;
 
 ################################################################################
 
-BEGIN { use FindBin; chdir($FindBin::Bin); }
-
-use ApiManager;   # Must be first (sets up import path to the Nginx test module)
+use src::nginx::t::ApiManager;   # Must be first (sets up import path to the Nginx test module)
+use src::nginx::t::HttpServer;
+use src::nginx::t::Auth;
 use Test::Nginx;  # Imports Nginx's test module
 use Test::More;   # And the test framework
-use HttpServer;
-use Auth;
 
 ################################################################################
 
@@ -93,7 +91,7 @@ http {
 EOF
 
 # TODO: refactor so nginx is only started once per test.
-my $token = Auth::get_auth_token('./matching-client-secret.json');
+my $token = Auth::get_auth_token('./src/nginx/t/matching-client-secret.json');
 my $pkey = Auth::get_public_key_jwk;
 
 # --------------------------------------------------------------------

@@ -29,14 +29,12 @@ use warnings;
 
 ################################################################################
 
-BEGIN { use FindBin; chdir($FindBin::Bin); }
-
-use ApiManager;   # Must be first (sets up import path to the Nginx test module)
+use src::nginx::t::ApiManager;   # Must be first (sets up import path to the Nginx test module)
+use src::nginx::t::HttpServer;
+use src::nginx::t::ServiceControl;
 use JSON::PP;
 use Test::Nginx;  # Imports Nginx's test module
 use Test::More;   # And the test framework
-use HttpServer;
-use ServiceControl;
 
 ################################################################################
 

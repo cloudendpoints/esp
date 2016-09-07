@@ -29,14 +29,12 @@ use warnings;
 
 ################################################################################
 
-BEGIN { use FindBin; chdir($FindBin::Bin); }
-
-use ApiManager;   # Must be first (sets up import path to the Nginx test module)
+use src::nginx::t::ApiManager;   # Must be first (sets up import path to the Nginx test module)
+use src::nginx::t::HttpServer;
+use src::nginx::t::Auth;
+use src::nginx::t::ServiceControl;
 use Test::Nginx;  # Imports Nginx's test module
 use Test::More;   # And the test framework
-use HttpServer;
-use Auth;
-use ServiceControl;
 use JSON::PP;
 
 ################################################################################
@@ -112,7 +110,7 @@ $t->run();
 
 ################################################################################
 
-my $token = Auth::get_auth_token('./matching-client-secret.json');
+my $token = Auth::get_auth_token('./src/nginx/t/matching-client-secret.json');
 my $response = ApiManager::http($NginxPort,<<"EOF");
 GET /shelves HTTP/1.0
 Authorization: Bearer $token

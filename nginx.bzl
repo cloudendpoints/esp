@@ -26,7 +26,7 @@
 #
 # Skylark macros for nginx tests.
 
-load("//:perl.bzl", "perl_test")
+load("@io_bazel_rules_perl//perl:perl.bzl", "perl_test")
 
 def nginx_test(name, nginx, data=None, env=None, config=None, **kwargs):
   if nginx == None or len(nginx) == 0:
@@ -51,9 +51,12 @@ def nginx_test(name, nginx, data=None, env=None, config=None, **kwargs):
   port = 9000 + len(native.existing_rules().values()) * 10
 
   l = Label(nginx)
-  env["TEST_NGINX_BINARY"] = "${TEST_SRCDIR}/" + l.package + "/" + l.name
-  env["TEST_PORT"] = "${TEST_PORT:-%s}" % port
-  perl_test(name=name, data=data, env=env, **kwargs)
+  env["TEST_PORT"] = "%s" % port
+
+  env_files = {
+      "TEST_NGINX_BINARY": "../__main__/" + l.package + "/" + l.name
+  }
+  perl_test(name=name, data=data, env=env, env_files=env_files, **kwargs)
 
 def nginx_suite(tests, deps, nginx, size="small", config_list=[], data=None, tags=[],
                 timeout="short", env=None):

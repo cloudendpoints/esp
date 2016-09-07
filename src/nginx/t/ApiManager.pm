@@ -29,10 +29,10 @@
 # to find ESP build of Nginx.
 # Adds Nginx test library (nginx-tests/lib) to the module search path.
 
-package ApiManager;
-
 use strict;
 use warnings;
+
+package ApiManager;
 
 use FindBin;
 use JSON::PP;
@@ -48,12 +48,8 @@ sub repo_root {
 
 BEGIN {
   our ($Root, $TestDir) = repo_root();
-  our $Nginx = $Root . "/third_party/nginx/objs/nginx";
   our $TestLib = $Root . "/third_party/nginx-tests/lib";
 
-  if (!defined $ENV{TEST_NGINX_BINARY}) {
-    $ENV{TEST_NGINX_BINARY} =  $Nginx;
-  }
   if (!defined $ENV{TEST_SRCDIR}) {
     $ENV{TEST_SRCDIR} = $Root;
   }
@@ -253,7 +249,7 @@ sub get_grpc_interop_service_config {
 
 sub get_transcoding_test_service_config {
   my ($host_name, $service_control_address) = @_;
-  my $path = $ENV{TEST_SRCDIR} . '/test/transcoding/service.json';
+  my $path = './test/transcoding/service.json';
   my $service_config = read_file_using_full_path($path);
   # Replace the host name
   $service_config =~ s/<YOUR_PROJECT_ID>.appspot.com/$host_name/;
@@ -266,7 +262,7 @@ sub get_transcoding_test_service_config {
 
 sub get_grpc_echo_test_service_config {
   my ($host_name, $service_control_address) = @_;
-  my $path = $ENV{TEST_SRCDIR} . '/test/grpc/local/service.json';
+  my $path = './test/grpc/local/service.json';
   my $service_config = read_file_using_full_path($path);
   # Replace the host name
   $service_config =~ s/echo-dot-esp-grpc-load-test.appspot.com/$host_name/;
@@ -278,7 +274,7 @@ sub get_grpc_echo_test_service_config {
 sub get_large_report_request {
   my ($t, $size) = @_;
   my $testdir = $t->testdir();
-  my $cmd = $ENV{TEST_SRCDIR} . '/src/tools/service_control_json_gen';
+  my $cmd = './src/tools/service_control_json_gen';
   system "$cmd --report_request_size=$size --json > $testdir/large_data.json";
   return $t->read_file('large_data.json');
 }
@@ -318,19 +314,19 @@ EOF
 
 sub grpc_test_server {
   my ($t, @args) = @_;
-  my $server = $ENV{TEST_SRCDIR} . '/test/grpc/grpc-test-server';
+  my $server = './test/grpc/grpc-test-server';
   exec $server, @args;
 }
 
 sub grpc_interop_server {
   my ($t, $port) = @_;
-  my $server = $ENV{TEST_SRCDIR} . '/test/grpc/interop-server';
+  my $server = './test/grpc/interop-server';
   exec $server, "--port", $port;
 }
 
 sub transcoding_test_server {
   my ($t, @args) = @_;
-  my $server = $ENV{TEST_SRCDIR} . '/test/transcoding/bookstore-server';
+  my $server = './test/transcoding/bookstore-server';
   exec $server, @args;
 }
 
@@ -349,7 +345,7 @@ sub run_transcoding_test_server {
 
 sub call_bookstore_client {
   my ($t, @args) = @_;
-  my $client = $ENV{TEST_SRCDIR} . '/test/transcoding/bookstore-client';
+  my $client = './test/transcoding/bookstore-client';
   my $output_file = $t->{_testdir} . '/bookstore-client.log';
 
   my $rc = system "$client " . join(' ', @args) . " > $output_file";
@@ -361,7 +357,7 @@ sub run_grpc_test {
   my ($t, $plans) = @_;
   $t->write_file('test_plans.txt', $plans);
   my $testdir = $t->testdir();
-  my $client = $ENV{TEST_SRCDIR} . '/test/grpc/grpc-test-client';
+  my $client = './test/grpc/grpc-test-client';
   system "$client < $testdir/test_plans.txt > $testdir/test_results.txt";
   return $t->read_file('test_results.txt');
 }
@@ -369,7 +365,7 @@ sub run_grpc_test {
 sub run_grpc_interop_test {
   my ($t, $port, $test_case, @args) = @_;
   my $testdir = $t->testdir();
-  my $client = $ENV{TEST_SRCDIR} . '/test/grpc/interop-client';
+  my $client = './test/grpc/interop-client';
   return system "$client --server_port $port --test_case $test_case " . join(' ', @args)
 }
 
