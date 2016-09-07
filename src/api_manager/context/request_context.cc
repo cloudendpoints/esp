@@ -201,7 +201,7 @@ void RequestContext::FillComputePlatform(
     cp = compute_platform::UNKNOWN;
   } else {
     if (!metadata->gae_server_software().empty()) {
-      cp = compute_platform::GAE;
+      cp = compute_platform::GAE_FLEX;
     } else if (!metadata->kube_env().empty()) {
       cp = compute_platform::GKE;
     } else {

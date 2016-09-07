@@ -142,7 +142,7 @@ my @test_cases = (
     name => 'gae',
     metadata_key => 'gae_server_software',
     metadata_value => 'Google App Engine/1.9.38',
-    platform => 'GAE',
+    platform => 'GAE Flex',
   },
   {
     name => 'gke',

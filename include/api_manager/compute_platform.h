@@ -31,12 +31,12 @@ namespace api_manager {
 
 namespace compute_platform {
 
-enum ComputePlatform { UNKNOWN = 0, GAE = 1, GCE = 2, GKE = 3 };
+enum ComputePlatform { UNKNOWN = 0, GAE_FLEX = 1, GCE = 2, GKE = 3 };
 
 inline const char *ToString(ComputePlatform p) {
   switch (p) {
-    case GAE:
-      return "GAE";
+    case GAE_FLEX:
+      return "GAE Flex";
     case GCE:
       return "GCE";
     case GKE:
