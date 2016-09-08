@@ -23,8 +23,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
+// includes should be ordered. This seems like a bug in clang-format?
 #include "src/api_manager/check_service_control.h"
+#include "google/protobuf/stubs/status.h"
 #include "src/api_manager/cloud_trace/cloud_trace.h"
 
 using ::google::api_manager::utils::Status;
@@ -40,9 +41,16 @@ void CheckServiceControl(std::shared_ptr<context::RequestContext> context,
   // If the method is not configured from the service config.
   // or if not need to check service control, skip it.
   if (!context->method()) {
-    TRACE(trace_span) << "Method is not configured in the service config";
-    continuation(Status(Code::NOT_FOUND, "Method does not exist.",
-                        Status::SERVICE_CONTROL));
+    if (context->request()->GetRequestHTTPMethod() == "OPTIONS") {
+      TRACE(trace_span) << "OPTIONS request is rejected";
+      continuation(Status(Code::PERMISSION_DENIED,
+                          "The service does not allow CORS traffic.",
+                          Status::SERVICE_CONTROL));
+    } else {
+      TRACE(trace_span) << "Method is not configured in the service config";
+      continuation(Status(Code::NOT_FOUND, "Method does not exist.",
+                          Status::SERVICE_CONTROL));
+    }
     return;
   } else if (!context->service_context()->service_control()) {
     TRACE(trace_span) << "Service control check is not needed";

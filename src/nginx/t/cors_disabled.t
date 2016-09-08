@@ -47,10 +47,6 @@ my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(15);
 # Save service name in the service configuration protocol buffer file.
 my $config = ApiManager::get_bookstore_service_config .
              ApiManager::read_test_file('testdata/logs_metrics.pb.txt') . <<"EOF";
-endpoints {
-  name: "endpoints-test.cloudendpointsapis.com"
-  allow_cors: true
-}
 producer_project_id: "esp-project-id"
 control {
   environment: "http://127.0.0.1:${ServiceControlPort}"
@@ -127,9 +123,8 @@ my ($response_headers2, $response_body2) = split /\r\n\r\n/, $response2, 2;
 like($response_headers1, qr/HTTP\/1\.1 204 OK/, 'Returned 204 in the response1');
 is($response_body1, <<'EOF', 'Empty body returned in the response body1.');
 EOF
-like($response_headers2, qr/HTTP\/1\.1 204 OK/, 'Returned 204 in the resposne2.');
-is($response_body2, <<'EOF', 'Empty body returned in the response body2.');
-EOF
+like($response_headers2, qr/HTTP\/1\.1 403 Forbidden/, 'Returned 403 in the response');
+like($response_body2, qr/The service does not allow CORS traffic/, 'CORS not allowed return in response body');
 
 my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
 is(scalar @servicecontrol_requests, 3, 'Service control was called 3 times');
@@ -190,12 +185,13 @@ my $expected_report_body2 = ServiceControl::gen_report_body({
   'no_consumer_data' => 1,
   'referer' => 'http://google.com/bookstore/root',
   'location' => 'us-central1',
-  'api_method' =>  'CORS',
   'http_method' => 'OPTIONS',
-  'log_message' => 'Method: CORS',
-  'response_code' => '204',
+  'log_message' => 'Endpoints management skipped for an unrecognized HTTP call: OPTIONS /shelves/1',
+  'response_code' => '403',
   'request_size' => 209,
-  'response_size' => 229,
+  'response_size' => 362,
+  'error_type' => '4xx',
+  'error_cause' => 'service_control',
   });
 ok(ServiceControl::compare_json($report_body2, $expected_report_body2), 'Report body 2 is received.');
 
@@ -240,19 +236,6 @@ sub bookstore {
   local $SIG{PIPE} = 'IGNORE';
 
   $server->on_sub('OPTIONS', '/shelves', sub {
-    my ($headers, $body, $client) = @_;
-    print $client <<'EOF';
-HTTP/1.1 204 OK
-Access-Control-Allow-Headers:authorization
-Access-Control-Allow-Methods:GET,HEAD,PUT,PATCH,POST,DELETE
-Access-Control-Allow-Origin:*
-Connection: close
-
-EOF
-
-  });
-
-  $server->on_sub('OPTIONS', '/shelves/1', sub {
     my ($headers, $body, $client) = @_;
     print $client <<'EOF';
 HTTP/1.1 204 OK
