@@ -500,6 +500,12 @@ operations {
       fields {
         key: "api_name"
         value {
+          string_value: "api-name"
+        }
+      }
+      fields {
+        key: "api_version"
+        value {
           string_value: "api-version"
         }
       }

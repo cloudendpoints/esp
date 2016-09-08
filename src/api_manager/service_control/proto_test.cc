@@ -91,7 +91,8 @@ void FillReportRequestInfo(ReportRequestInfo* request) {
   request->referer = "referer";
   request->response_code = 200;
   request->location = "us-central";
-  request->api_name = "api-version";
+  request->api_name = "api-name";
+  request->api_version = "api-version";
   request->api_method = "api-method";
   request->request_size = 100;
   request->response_size = 1024 * 1024;

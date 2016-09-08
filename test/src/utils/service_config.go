@@ -39,6 +39,7 @@ type BasicContext struct {
 
 const basicConfig = `
 name: "{{.ServiceName}}"
+id: "2016-08-25r1"
 producer_project_id: "endpoints-test"
 http {
   rules {

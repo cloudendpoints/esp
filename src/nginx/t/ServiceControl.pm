@@ -116,7 +116,6 @@ sub gen_report_labels {
   my $labels = {
     'servicecontrol.googleapis.com/service_agent' => service_agent(),
     'servicecontrol.googleapis.com/user_agent' => 'ESP',
-    'serviceruntime.googleapis.com/api_version' => $in->{api_name},
     'serviceruntime.googleapis.com/api_method' => $in->{api_method},
     'cloud.googleapis.com/location' => $in->{location},
     '/response_code' => $in->{response_code},
@@ -128,6 +127,7 @@ sub gen_report_labels {
   $labels->{'/status_code'} = $in->{status_code} if exists $in->{status_code};
   $labels->{'/error_type'} = $in->{error_type} if exists $in->{error_type};
   $labels->{'/protocol'} = $in->{protocol} if exists $in->{protocol};
+  $labels->{'serviceruntime.googleapis.com/api_version'} = $in->{api_version} if exists $in->{api_version};
 
   if (exists $in->{platform}) {
     $labels->{'servicecontrol.googleapis.com/platform'} = $in->{platform};
@@ -152,6 +152,7 @@ sub gen_log_entry {
     'http_response_code' => $in->{response_code},
   };
 
+  $payload->{api_version} = $in->{api_version} if exists $in->{api_version};
   $payload->{producer_project_id} = $in->{producer_project_id} if
     exists $in->{producer_project_id};
   $payload->{api_key} = $in->{api_key} if exists $in->{api_key};

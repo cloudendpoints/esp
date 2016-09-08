@@ -50,6 +50,7 @@ type ExpectedCheck struct {
 type ExpectedReport struct {
 	Version           string
 	ApiName           string
+	ApiVersion        string
 	ApiMethod         string
 	ApiKey            string
 	ProducerProjectID string
@@ -126,7 +127,6 @@ func createReportLabels(er *ExpectedReport) map[string]string {
 	labels := map[string]string{
 		"servicecontrol.googleapis.com/service_agent": "ESP/" + er.Version,
 		"servicecontrol.googleapis.com/user_agent":    "ESP",
-		"serviceruntime.googleapis.com/api_version":   er.ApiName,
 		"serviceruntime.googleapis.com/api_method":    er.ApiMethod,
 		"cloud.googleapis.com/location":               er.Location,
 		"/response_code":                              response,
@@ -142,6 +142,9 @@ func createReportLabels(er *ExpectedReport) map[string]string {
 	}
 	if er.Protocol != "" {
 		labels["/protocol"] = er.Protocol
+	}
+	if er.ApiVersion != "" {
+		labels["serviceruntime.googleapis.com/api_version"] = er.ApiVersion
 	}
 	if er.Platform != "" {
 		labels["servicecontrol.googleapis.com/platform"] = er.Platform
@@ -171,6 +174,9 @@ func createLogEntry(er *ExpectedReport) *servicecontrol.LogEntry {
 	pl["api_method"] = makeStringValue(er.ApiMethod)
 	pl["http_response_code"] = makeNumberValue(int64(er.ResponseCode))
 
+	if er.ApiVersion != "" {
+		pl["api_version"] = makeStringValue(er.ApiVersion)
+	}
 	if er.ProducerProjectID != "" {
 		pl["producer_project_id"] = makeStringValue(er.ProducerProjectID)
 	}

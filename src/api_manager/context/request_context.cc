@@ -242,6 +242,7 @@ void RequestContext::FillReportRequestInfo(
   info->url = request_->GetUnparsedRequestPath();
   info->method = request_->GetRequestHTTPMethod();
   info->api_name = info->service_name;
+  info->api_version = service_context_->config()->service().id();
 
   info->request_size = response->GetRequestSize();
   info->response_size = response->GetResponseSize();

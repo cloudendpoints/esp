@@ -250,6 +250,7 @@ func TestServiceControlRequests(t *testing.T) {
 		ApiKey:            "api-key-1",
 		URL:               "/shelves?api_key=api-key-1",
 		ApiName:           "SERVICENAME",
+		ApiVersion:        "2016-08-25r1",
 		ApiMethod:         "ListShelves",
 		Platform:          "GCE",
 		ProducerProjectID: "endpoints-app",

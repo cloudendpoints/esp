@@ -104,6 +104,7 @@ struct ReportRequestInfo : public OperationInfo {
   ::google::protobuf::StringPiece location;
   // API name and version.
   ::google::protobuf::StringPiece api_name;
+  ::google::protobuf::StringPiece api_version;
   // API full method name.
   ::google::protobuf::StringPiece api_method;
 

@@ -1,4 +1,5 @@
 name: "endpoints-test.cloudendpointsapis.com"
+id: "2016-08-25r1"
 http {
   rules {
     selector: "ListShelves"

@@ -472,8 +472,8 @@ Status set_api_method(const SupportedLabel& l, const ReportRequestInfo& info,
 // serviceruntime.googleapis.com/api_version
 Status set_api_version(const SupportedLabel& l, const ReportRequestInfo& info,
                        Map<std::string, std::string>* labels) {
-  if (!info.api_name.empty()) {
-    (*labels)[l.name] = info.api_name;
+  if (!info.api_version.empty()) {
+    (*labels)[l.name] = info.api_version;
   }
   return Status::OK;
 }
@@ -652,6 +652,7 @@ const char kConsumerIdProject[] = "project:";
 // Following names for for Log struct_playload field names:
 const char kLogFieldNameTimestamp[] = "timestamp";
 const char kLogFieldNameApiName[] = "api_name";
+const char kLogFieldNameApiVersion[] = "api_version";
 const char kLogFieldNameApiMethod[] = "api_method";
 const char kLogFieldNameApiKey[] = "api_key";
 const char kLogFieldNameProducerProjectId[] = "producer_project_id";
@@ -750,6 +751,9 @@ void FillLogEntry(const ReportRequestInfo& info, const std::string& name,
   }
   if (!info.api_name.empty()) {
     (*fields)[kLogFieldNameApiName].set_string_value(info.api_name);
+  }
+  if (!info.api_version.empty()) {
+    (*fields)[kLogFieldNameApiVersion].set_string_value(info.api_version);
   }
   if (!info.url.empty()) {
     (*fields)[kLogFieldNameUrl].set_string_value(info.url);
