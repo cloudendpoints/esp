@@ -981,7 +981,7 @@ def setGCloud() {
       sh "gcloud config set compute/zone ${ZONE}"
       sh "gcloud container clusters get-credentials ${CLUSTER}"
       if (getGcloudUrl() != '') {
-        sh 'gcloud components update -q'
+        sh 'sudo gcloud components update -q'
       }
     }
     sleep 5
