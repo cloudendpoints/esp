@@ -25,6 +25,7 @@
 # SUCH DAMAGE.
 
 import json
+import logging
 import urllib3
 
 from oauth2client.service_account import ServiceAccountCredentials
@@ -60,7 +61,7 @@ def fetch_service_name(metadata):
         raise FetchError(1, message_template.format(status_code))
 
     name = response.data
-    print "Service name:", name
+    logging.info("Service name: " + name)
     return name
 
 
@@ -80,7 +81,7 @@ def fetch_service_version(metadata):
         raise FetchError(1, message_template.format(status_code))
 
     version = response.data
-    print "Service version:", version
+    logging.info("Service version:" + version)
     return version
 
 
@@ -167,6 +168,6 @@ def validate_service_config(service_config, expected_service_name,
         raise FetchError(2, "Missing control environment")
 
     if environment == "endpoints-servicecontrol.sandbox.googleapis.com":
-        print "WARNING: Replacing sandbox control environment in the service config"
+        logging.warning("Replacing sandbox control environment in the service config")
         service_config["control"]["environment"] = (
             "servicecontrol.googleapis.com")

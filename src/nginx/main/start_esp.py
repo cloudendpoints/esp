@@ -39,6 +39,7 @@ import argparse
 import collections
 import fetch_service_config as fetch
 import json
+import logging
 import os
 import sys
 import textwrap
@@ -90,7 +91,7 @@ def write_template(template,
     try:
         template = Template(filename=template)
     except IOError as err:
-        print "ERROR: Failed to load NGINX config template.", err.strerror
+        logging.error("Failed to load NGINX config template." + err.strerror)
         sys.exit(3)
 
     conf = template.render(
@@ -106,7 +107,7 @@ def write_template(template,
         f.write(conf)
         f.close()
     except IOError as err:
-        print "ERROR: Failed to save NGINX config.", err.strerror
+        logging.error("Failed to save NGINX config." + err.strerror)
         sys.exit(3)
 
 
@@ -115,13 +116,13 @@ def ensure(config_dir):
         try:
             os.makedirs(config_dir)
         except OSError as exc:
-            print "ERROR: Cannot create config directory."
+            logging.error("Cannot create config directory.")
             sys.exit(3)
 
 
 def assert_file_exists(fl):
     if not os.path.exists(fl):
-        print "ERROR: Cannot find the specified file.", fl
+        logging.error("Cannot find the specified file " + fl)
         sys.exit(3)
 
 
@@ -130,7 +131,7 @@ def start_nginx(nginx, nginx_conf):
         # Control is relinquished to nginx process after this line
         os.execv(nginx, ['nginx', '-p', '/usr', '-c', nginx_conf])
     except OSError as err:
-        print "ERROR: Failed to launch NGINX", err.strerror
+        logging.error("Failed to launch NGINX." + err.strerror)
         sys.exit(3)
 
 
@@ -139,11 +140,11 @@ def fetch_service_config(args, service_config):
         # Fetch service config
         if args.service_config_url is None:
             if args.service is None:
-                print "Fetching the service name from the metadata service"
+                logging.info("Fetching the service name from the metadata service")
                 args.service = fetch.fetch_service_name(args.metadata)
 
             if args.version is None:
-                print "Fetching the service version from the metadata service"
+                logging.info("Fetching the service version from the metadata service")
                 args.version = fetch.fetch_service_version(args.metadata)
 
             service_mgmt_url = SERVICE_MGMT_URL_TEMPLATE.format(args.service,
@@ -153,12 +154,12 @@ def fetch_service_config(args, service_config):
 
         # Get the access token
         if args.service_account_key is None:
-            print "Fetching an access token from the metadata service"
+            logging.info("Fetching an access token from the metadata service")
             token = fetch.fetch_access_token(args.metadata)
         else:
             token = fetch.make_access_token(args.service_account_key)
 
-        print "Fetching the service configuration from the service management service"
+        logging.info("Fetching the service configuration from the service management service")
         config = fetch.fetch_service_json(service_mgmt_url, token)
 
         # Validate service config if we have service name version
@@ -172,11 +173,11 @@ def fetch_service_config(args, service_config):
                     separators=(',', ': '))
             f.close()
         except IOError as err:
-            print "ERROR: Cannot save service config.", err.strerror
+            logging.error("Cannot save service config." + err.strerror)
             sys.exit(3)
 
     except fetch.FetchError as err:
-        print "ERROR:", err.message
+        logging.error(err.message)
         sys.exit(err.code)
 
 
@@ -197,7 +198,7 @@ def make_ingress(service_config, args):
     if len(collisions) > 0:
         shared_port, count = collisions.most_common(1)[0]
         if count > 1:
-            print "ERROR: Port", shared_port, "is used more than once"
+            logging.error("Port " + str(shared_port) + " is used more than once.")
             sys.exit(2)
 
     if not args.http_port is None:
@@ -340,6 +341,7 @@ def make_argparser():
 if __name__ == '__main__':
     parser = make_argparser()
     args = parser.parse_args()
+    logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
     service_config = args.config_dir + "/service.json"
 
