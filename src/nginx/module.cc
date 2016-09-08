@@ -171,6 +171,12 @@ ngx_command_t ngx_esp_commands[] = {
         ngx_conf_set_str_slot, NGX_HTTP_MAIN_CONF_OFFSET,
         offsetof(ngx_esp_main_conf_t, upstream_resolver), nullptr,
     },
+    {
+        ngx_string("endpoints_certificates"),
+        NGX_HTTP_MAIN_CONF | NGX_CONF_TAKE1, ngx_conf_set_str_slot,
+        NGX_HTTP_MAIN_CONF_OFFSET, offsetof(ngx_esp_main_conf_t, cert_path),
+        nullptr,
+    },
     ngx_null_command  // last entry
 };
 
@@ -354,18 +360,31 @@ ngx_int_t ngx_esp_postconfiguration(ngx_conf_t *cf) {
 
   mc->remote_addr_variable_index =
       ngx_http_get_variable_index(cf, &remote_addr);
-  mc->cert_path = default_cert_name;
-  if (ngx_conf_full_name(cf->cycle, &mc->cert_path, 1) != NGX_OK ||
-      access((const char *)mc->cert_path.data, R_OK)) {
-    ngx_log_error(NGX_LOG_WARN, cf->log, 0,
-                  "Failed to open trusted CA certificates file: %V. "
-                  "Outgoing HTTPS requests from Endpoints will not check "
-                  "server certificates.",
-                  &mc->cert_path);
-    mc->cert_path = ngx_null_string;
-  } else {
-    ngx_log_error(NGX_LOG_WARN, cf->log, 0,
-                  "Using trusted CA certificates file: %V", &mc->cert_path);
+
+  // Resolve relative path in the configuration directory
+  if (mc->cert_path.data == nullptr) {
+    mc->cert_path = default_cert_name;
+    if (ngx_conf_full_name(cf->cycle, &mc->cert_path, 1) != NGX_OK) {
+      ngx_log_error(
+          NGX_LOG_WARN, cf->log, 0,
+          "Failed to resolve the default trusted CA certificate file.");
+      mc->cert_path = ngx_null_string;
+    }
+  }
+
+  // Check that file exists
+  if (mc->cert_path.data != nullptr) {
+    if (access((const char *)mc->cert_path.data, R_OK)) {
+      ngx_log_error(NGX_LOG_WARN, cf->log, 0,
+                    "Failed to open trusted CA certificates file: %V. "
+                    "Outgoing HTTPS requests from Endpoints will not check "
+                    "server certificates.",
+                    &mc->cert_path);
+      mc->cert_path = ngx_null_string;
+    } else {
+      ngx_log_error(NGX_LOG_WARN, cf->log, 0,
+                    "Using trusted CA certificates file: %V", &mc->cert_path);
+    }
   }
 
   // Use Google DNS by default

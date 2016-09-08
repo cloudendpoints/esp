@@ -16,8 +16,9 @@ http {
   client_max_body_size 32m;
   client_body_buffer_size 128k;
 
-  # DNS resolver for http side requests (e.g. service control)
+  # HTTP subrequests
   endpoints_resolver ${resolver};
+  endpoints_certificates /etc/nginx/trusted-ca-certificates.crt;
 
 % for i, location in enumerate(ingress.locations):
 % if not location.grpc:
