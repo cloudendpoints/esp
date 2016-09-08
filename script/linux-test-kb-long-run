@@ -29,17 +29,12 @@
 
 # This script runs a long-running test against it.
 
-if [[ "$(uname)" != "Linux" ]]; then
-  echo "Run on Linux only."
-  exit 1
-fi
-
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . ${ROOT}/script/all-utilities \
   || { echo "Cannot load Bash utilities" ; exit 1 ; }
 
 API_KEY=''
-SERVICE_NAME=''
+SERVICE_NAME='testing-dot-endpoints-jenkins.appspot.com'
 HOST=''
 DURATION_IN_HOUR=0
 
@@ -53,9 +48,12 @@ while getopts :a:h:l:s: arg; do
   esac
 done
 
-[[ -n "${API_KEY}" ]] || error_exit 'Please specify api key with -a option.'
-[[ -n "${SERVICE_NAME}" ]] || error_exit 'Please specify service name with -s option.'
 [[ -n "${HOST}" ]] || error_exit 'Please specify a host with -h option.'
+
+if ! [[ -n "${API_KEY}" ]]; then
+  set_api_keys;
+  API_KEY="${ENDPOINTS_JENKINS_API_KEY}"
+fi
 
 POST_FILE="${ROOT}/test/data/35k.json"
 
