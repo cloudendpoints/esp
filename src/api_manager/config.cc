@@ -27,6 +27,7 @@
 #include "src/api_manager/config.h"
 #include "src/api_manager/utils/marshalling.h"
 #include "src/api_manager/utils/stl_util.h"
+#include "src/api_manager/utils/url_util.h"
 
 #include <iostream>
 #include <map>
@@ -437,7 +438,8 @@ MethodCallInfo Config::GetMethodCallInfo(const std::string &http_method,
 }
 
 bool Config::GetJwksUri(const string &issuer, string *url) const {
-  auto it = issuer_jwks_uri_map_.find(issuer);
+  std::string iss = utils::GetUrlContent(issuer);
+  auto it = issuer_jwks_uri_map_.find(iss);
   if (it == issuer_jwks_uri_map_.end()) {
     // Unknown issuer.
     *url = string();
@@ -475,7 +477,10 @@ bool Config::GetJwksUri(const string &issuer, string *url) const {
 
 void Config::SetJwksUri(const string &issuer, const string &jwks_uri,
                         bool openid_valid) {
-  issuer_jwks_uri_map_[issuer] = std::make_pair(jwks_uri, openid_valid);
+  std::string iss = utils::GetUrlContent(issuer);
+  if (!iss.empty()) {
+    issuer_jwks_uri_map_[iss] = std::make_pair(jwks_uri, openid_valid);
+  }
 }
 
 }  // namespace api_manager
