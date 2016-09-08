@@ -88,7 +88,7 @@ cc_library(
         "//include:api_manager",
         "//src/api_manager/grpc",
         "//src/api_manager/grpc:zero_copy_stream",
-        "//third_party/config:servicecontrol",
+        "//external:servicecontrol",
         "//third_party/nginx:core",
         "//third_party/nginx:http",
     ],

@@ -38,7 +38,7 @@ cc_proto_library(
     protoc = "//external:protoc",
     use_grpc_plugin = True,
     deps = [
-        "//third_party/config:servicecontrol",
+        "//external:servicecontrol",
     ],
 )
 

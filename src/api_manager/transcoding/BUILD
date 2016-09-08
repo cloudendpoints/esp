@@ -170,7 +170,7 @@ cc_library(
         "//external:protobuf",
         "//include:headers_only",
         "//src/api_manager:method_call_info",
-        "//third_party:service_config",
+        "//external:service_config",
     ],
 )
 
@@ -211,7 +211,7 @@ cc_test(
         ":test_common",
         ":type_helper",
         "//external:googletest_main",
-        "//third_party:service_config",
+        "//external:service_config",
     ],
 )
 
@@ -234,7 +234,7 @@ cc_library(
     deps = [
         "//external:googletest",
         "//external:protobuf",
-        "//third_party:service_config",
+        "//external:service_config",
     ],
 )
 
@@ -256,7 +256,7 @@ cc_library(
         ":type_helper",
         "//external:googletest",
         "//external:protobuf",
-        "//third_party:service_config",
+        "//external:service_config",
     ],
 )
 

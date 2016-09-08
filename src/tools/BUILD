@@ -32,8 +32,8 @@ cc_binary(
     visibility = ["//visibility:public"],
     deps = [
         "//include:api_manager",
-        "//third_party:service_config",
-        "//third_party/config:servicecontrol",
+        "//external:service_config",
+        "//external:servicecontrol",
     ],
 )
 
@@ -56,7 +56,7 @@ cc_binary(
     visibility = ["//visibility:public"],
     deps = [
         "//include:api_manager",
-        "//third_party/config:servicecontrol",
+        "//external:servicecontrol",
     ],
 )
 

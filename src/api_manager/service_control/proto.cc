@@ -972,12 +972,6 @@ Status Proto::ConvertCheckResponse(const CheckResponse& check_response,
       return Status(Code::INVALID_ARGUMENT,
                     "Client project not valid. Please pass a valid project.",
                     Status::SERVICE_CONTROL);
-    case CheckError::VISIBILITY_DENIED:
-      return Status(
-          Code::PERMISSION_DENIED,
-          std::string("Client project has no visibility access to API ") +
-              service_name,
-          Status::SERVICE_CONTROL);
     case CheckError::BILLING_DISABLED:
       return Status(Code::PERMISSION_DENIED,
                     std::string("API ") + service_name +
@@ -986,7 +980,6 @@ Status Proto::ConvertCheckResponse(const CheckResponse& check_response,
     case CheckError::NAMESPACE_LOOKUP_UNAVAILABLE:
     case CheckError::SERVICE_STATUS_UNAVAILABLE:
     case CheckError::BILLING_STATUS_UNAVAILABLE:
-    case CheckError::QUOTA_CHECK_UNAVAILABLE:
       // Fail open for internal server errors per recommendation
       return Status::OK;
     default:

@@ -34,7 +34,7 @@ cc_library(
     ],
     deps = [
         "//src/api_manager/auth:service_account_token",
-        "//third_party:cloud_trace",
+        "//external:cloud_trace",
     ],
 )
 
@@ -49,7 +49,7 @@ cc_test(
         ":cloud_trace",
         "//external:googletest_main",
         "//src/api_manager:mock_api_manager_environment",
-        "//third_party:cloud_trace",
+        "//external:cloud_trace",
     ],
 )
 

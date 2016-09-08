@@ -147,6 +147,33 @@ bind(
     actual = "@googletest_git//:googletest_prod",
 )
 
+new_git_repository(
+    name = "googleapis_git",
+    commit = "2608c0a7a988c62ac1c5f38c7f1f0516430ad1de",
+    remote = "https://github.com/googleapis/googleapis.git",
+    build_file = "third_party/BUILD.googleapis",
+)
+
+bind(
+    name = "servicecontrol",
+    actual = "@googleapis_git//:servicecontrol",
+)
+
+bind(
+    name = "servicecontrol_genproto",
+    actual = "@googleapis_git//:servicecontrol_genproto",
+)
+
+bind(
+    name = "service_config",
+    actual = "@googleapis_git//:service_config",
+)
+
+bind(
+    name = "cloud_trace",
+    actual = "@googleapis_git//:cloud_trace",
+)
+
 git_repository(
     name = "gflags_git",
     commit = "fe57e5af4db74ab298523f06d2c43aa895ba9f98", # 2016-07-22

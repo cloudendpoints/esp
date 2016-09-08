@@ -128,12 +128,6 @@ TEST(CheckResponseTest,
 }
 
 TEST(CheckResponseTest,
-     AbortedWithPermissionDeniedWhenResponseIsBlockedWithVisibilityDenied) {
-  Status result = ConvertCheckErrorToStatus(CheckError::VISIBILITY_DENIED);
-  EXPECT_EQ(Code::PERMISSION_DENIED, result.code());
-}
-
-TEST(CheckResponseTest,
      AbortedWithPermissionDeniedWhenResponseIsBlockedWithBillingDisabled) {
   Status result = ConvertCheckErrorToStatus(CheckError::BILLING_DISABLED);
   EXPECT_EQ(Code::PERMISSION_DENIED, result.code());
@@ -152,11 +146,6 @@ TEST(CheckResponseTest, FailOpenWhenResponseIsUnknownBillingStatus) {
 TEST(CheckResponseTest, FailOpenWhenResponseIsUnknownServiceStatus) {
   EXPECT_TRUE(
       ConvertCheckErrorToStatus(CheckError::SERVICE_STATUS_UNAVAILABLE).ok());
-}
-
-TEST(CheckResponseTest, FailOpenWhenResponseIsQuotaCheckUnavailable) {
-  EXPECT_TRUE(
-      ConvertCheckErrorToStatus(CheckError::QUOTA_CHECK_UNAVAILABLE).ok());
 }
 
 }  // namespace service_control

@@ -138,9 +138,9 @@ cc_library(
         "//src/api_manager/service_control",
         "//src/api_manager/transcoding",
         "//src/api_manager/utils",
-        "//third_party:cloud_trace",
-        "//third_party:service_config",
-        "//third_party/config:servicecontrol",
+        "//external:cloud_trace",
+        "//external:service_config",
+        "//external:servicecontrol",
         "//third_party/service-control-client-cxx:service_control_client_lib",
     ],
 )
@@ -233,8 +233,8 @@ cc_test(
     ],
     deps = [
         "//external:googletest_main",
-        "//third_party:service_config",
-        "//third_party/config:servicecontrol",
+        "//external:service_config",
+        "//external:servicecontrol",
     ],
 )
 

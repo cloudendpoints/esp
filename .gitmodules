@@ -10,6 +10,3 @@
 	path = third_party/service-control-client-cxx
 	url = https://github.com/cloudendpoints/service-control-client-cxx.git
 	ignore = untracked
-[submodule "third_party/googleapis"]
-	path = third_party/googleapis
-	url = https://github.com/googleapis/googleapis.git

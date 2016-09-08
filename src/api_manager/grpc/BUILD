@@ -44,7 +44,7 @@ cc_library(
         "//external:grpc++",
         "//external:protobuf",
         "//src/api_manager",
-        "//third_party/config:servicecontrol",
+        "//external:servicecontrol",
     ],
 )
 

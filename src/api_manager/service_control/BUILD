@@ -60,8 +60,8 @@ cc_library(
         "//src/api_manager/auth/lib",
         "//src/api_manager/cloud_trace",
         "//src/api_manager/utils",
-        "//third_party:service_config",
-        "//third_party/config:servicecontrol",
+        "//external:service_config",
+        "//external:servicecontrol",
         "//third_party/service-control-client-cxx:service_control_client_lib",
     ],
 )
