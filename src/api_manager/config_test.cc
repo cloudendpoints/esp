@@ -762,6 +762,10 @@ TEST(Config, TestHttpOptions) {
 
   static const char config_text[] = R"(
  name: "Service.Name"
+ endpoints {
+   name: "Service.Name"
+   allow_cors: true
+ }
  http {
    rules {
      selector: "ListShelves"
@@ -825,6 +829,10 @@ TEST(Config, TestHttpOptionsSelector) {
 
   static const char config_text[] = R"(
  name: "Service.Name"
+ endpoints {
+   name: "Service.Name"
+   allow_cors: true
+ }
  http {
    rules {
      selector: "CORS"
@@ -846,6 +854,30 @@ TEST(Config, TestHttpOptionsSelector) {
   ASSERT_EQ("CORS.2", method1->name());
   ASSERT_FALSE(method1->auth());
   ASSERT_TRUE(method1->allow_unregistered_calls());
+}
+
+TEST(Config, TestCorsDisabled) {
+  MockApiManagerEnvironmentWithLog env;
+
+  static const char config_text[] = R"(
+ name: "Service.Name"
+ http {
+   rules {
+     selector: "CORS"
+     get: "/shelves"
+   }
+   rules {
+     selector: "CORS.1"
+     get: "/shelves/{shelf}"
+   }
+ }
+)";
+
+  std::unique_ptr<Config> config = Config::Create(&env, config_text, "");
+  ASSERT_TRUE(config);
+
+  auto method1 = config->GetMethodInfo("OPTIONS", "/shelves");
+  ASSERT_EQ(nullptr, method1);
 }
 
 }  // namespace

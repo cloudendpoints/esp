@@ -177,6 +177,7 @@ nginx_suite(
         "config_extra_field.t",
         "config_missing.t",
         "cors.t",
+        "cors_disabled.t",
         "failed_check.t",
         "metadata.t",
         "metadata_fail.t",

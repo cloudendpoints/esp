@@ -126,6 +126,18 @@ MethodInfoImpl *Config::GetOrCreateMethodInfoImpl(const string &name,
 bool Config::LoadHttpMethods(ApiManagerEnvInterface *env,
                              PathMatcherBuilder *pmb) {
   std::set<std::string> all_urls, urls_with_options;
+  // By default, allow_cors is false. This means that the default behavior
+  // of ESP is to reject all "OPTIONS" requests. If customers want to enable
+  // CORS, they need to set "allow_cors" to true in swagger config.
+  bool allow_cors = false;
+  for (const auto &endpoint : service_.endpoints()) {
+    if (endpoint.name() == service_.name() && endpoint.allow_cors()) {
+      allow_cors = true;
+      env->LogDebug("CORS is allowed.");
+      break;
+    }
+  }
+
   for (const auto &rule : service_.http().rules()) {
     const string &selector = rule.selector();
     const string *url = nullptr;
@@ -171,12 +183,16 @@ bool Config::LoadHttpMethods(ApiManagerEnvInterface *env,
       string error("Invalid HTTP template: ");
       error += *url;
       env->LogError(error.c_str());
-    } else {
+    } else if (allow_cors) {
       all_urls.insert(*url);
       if (strcmp(http_method, http_options) == 0) {
         urls_with_options.insert(*url);
       }
     }
+  }
+
+  if (!allow_cors) {
+    return true;
   }
 
   // Remove urls with options.
