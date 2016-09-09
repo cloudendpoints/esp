@@ -662,13 +662,11 @@ void SetOperationCommonFields(const OperationInfo& info, bool is_api_key_valid,
   if (!info.operation_name.empty()) {
     op->set_operation_name(info.operation_name);
   }
-  // TODO: info.producer_project_id currently refers to producer project
-  // id. Needs to clean this up.
+
   // Sets api_key for consumer_id if it exists and is valid. Otherwise use
   // info.producer_project_id as the consumer_id.
-  // info.is_api_key_valid is always true for the check request. If the check
-  // request failed with an invalid api key error, info.is_api_key_valid will
-  // be set false.
+  // "is_api_key_valid" is always true for the check request. Only if the check
+  // request failed with an invalid api key error, it will be false.
   if (!info.api_key.empty() && is_api_key_valid) {
     op->set_consumer_id(std::string(kConsumerIdApiKey) +
                         std::string(info.api_key));
@@ -836,12 +834,17 @@ Status Proto::FillReportRequest(const ReportRequestInfo& info,
       }
     }
 
-    // Populate all metrics.
+    // Not to send consumer metrics for following cases:
+    // 1) api_key is not provided, or
+    // 2) api_key is invalid, or
+    // 3) the service is not activated for the consumer project,
     bool send_consumer_metric = true;
-    if (info.check_response_info.valid &&
-        !info.check_response_info.service_is_activated) {
+    if (info.api_key.empty() || !is_api_key_valid ||
+        (info.check_response_info.valid &&
+         !info.check_response_info.service_is_activated)) {
       send_consumer_metric = false;
     }
+    // Populate all metrics.
     for (auto it = metrics_.begin(), end = metrics_.end(); it != end; it++) {
       const SupportedMetric* m = *it;
       if (send_consumer_metric || m->mark != SupportedMetric::CONSUMER) {

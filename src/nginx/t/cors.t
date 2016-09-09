@@ -209,6 +209,7 @@ my $report_body2 = ServiceControl::convert_proto($r->{body}, 'report_request', '
 my $expected_report_body2 = ServiceControl::gen_report_body({
   'url' => '/shelves/1',
   'producer_project_id' => 'esp-project-id',
+  'no_consumer_data' => 1,
   'referer' => 'http://google.com/bookstore/root',
   'location' => 'us-central1',
   'api_name' =>  'endpoints-test.cloudendpointsapis.com',
