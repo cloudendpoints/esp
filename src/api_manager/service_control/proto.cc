@@ -198,8 +198,6 @@ Status set_distribution_metric_to_overhead_time(const SupportedMetric& m,
 
 // Currently unsupported metrics:
 //
-//  "serviceruntime.googleapis.com/api/producer/by_consumer/quota_used_count"
-//
 const SupportedMetric supported_metrics[] = {
     {
         "serviceruntime.googleapis.com/api/consumer/request_count",
@@ -209,12 +207,6 @@ const SupportedMetric supported_metrics[] = {
     },
     {
         "serviceruntime.googleapis.com/api/producer/request_count",
-        ::google::api::MetricDescriptor_MetricKind_DELTA,
-        ::google::api::MetricDescriptor_ValueType_INT64,
-        SupportedMetric::PRODUCER, set_int64_metric_to_constant_1,
-    },
-    {
-        "serviceruntime.googleapis.com/api/producer/by_consumer/request_count",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_INT64,
         SupportedMetric::PRODUCER, set_int64_metric_to_constant_1,
@@ -232,12 +224,6 @@ const SupportedMetric supported_metrics[] = {
         SupportedMetric::PRODUCER, set_distribution_metric_to_request_size,
     },
     {
-        "serviceruntime.googleapis.com/api/producer/by_consumer/request_sizes",
-        ::google::api::MetricDescriptor_MetricKind_DELTA,
-        ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::PRODUCER, set_distribution_metric_to_request_size,
-    },
-    {
         "serviceruntime.googleapis.com/api/consumer/response_sizes",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
@@ -245,12 +231,6 @@ const SupportedMetric supported_metrics[] = {
     },
     {
         "serviceruntime.googleapis.com/api/producer/response_sizes",
-        ::google::api::MetricDescriptor_MetricKind_DELTA,
-        ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::PRODUCER, set_distribution_metric_to_response_size,
-    },
-    {
-        "serviceruntime.googleapis.com/api/producer/by_consumer/response_sizes",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
         SupportedMetric::PRODUCER, set_distribution_metric_to_response_size,
@@ -268,12 +248,6 @@ const SupportedMetric supported_metrics[] = {
         SupportedMetric::PRODUCER, set_int64_metric_to_constant_1_if_http_error,
     },
     {
-        "serviceruntime.googleapis.com/api/producer/by_consumer/error_count",
-        ::google::api::MetricDescriptor_MetricKind_DELTA,
-        ::google::api::MetricDescriptor_ValueType_INT64,
-        SupportedMetric::PRODUCER, set_int64_metric_to_constant_1_if_http_error,
-    },
-    {
         "serviceruntime.googleapis.com/api/consumer/total_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
@@ -281,13 +255,6 @@ const SupportedMetric supported_metrics[] = {
     },
     {
         "serviceruntime.googleapis.com/api/producer/total_latencies",
-        ::google::api::MetricDescriptor_MetricKind_DELTA,
-        ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::PRODUCER, set_distribution_metric_to_request_time,
-    },
-    {
-        "serviceruntime.googleapis.com/api/producer/by_consumer/"
-        "total_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
         SupportedMetric::PRODUCER, set_distribution_metric_to_request_time,
@@ -305,13 +272,6 @@ const SupportedMetric supported_metrics[] = {
         SupportedMetric::PRODUCER, set_distribution_metric_to_backend_time,
     },
     {
-        "serviceruntime.googleapis.com/api/producer/by_consumer/"
-        "backend_latencies",
-        ::google::api::MetricDescriptor_MetricKind_DELTA,
-        ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::PRODUCER, set_distribution_metric_to_backend_time,
-    },
-    {
         "serviceruntime.googleapis.com/api/consumer/request_overhead_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
@@ -319,13 +279,6 @@ const SupportedMetric supported_metrics[] = {
     },
     {
         "serviceruntime.googleapis.com/api/producer/request_overhead_latencies",
-        ::google::api::MetricDescriptor_MetricKind_DELTA,
-        ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::PRODUCER, set_distribution_metric_to_overhead_time,
-    },
-    {
-        "serviceruntime.googleapis.com/api/producer/by_consumer/"
-        "request_overhead_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
         SupportedMetric::PRODUCER, set_distribution_metric_to_overhead_time,
