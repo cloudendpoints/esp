@@ -64,7 +64,6 @@ func GcloudCommand(args ...string) (interface{}, error) {
 		log.Println("Error: ", err)
 		return nil, err
 	}
-	log.Printf("Gcloud Json Output:\n%s", o)
 	var f interface{}
 	if err := json.Unmarshal(o, &f); err != nil {
 		return nil, err

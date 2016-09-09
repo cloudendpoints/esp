@@ -132,7 +132,8 @@ func init() {
 	RootCmd.AddCommand(deployCmd)
 	deployCmd.PersistentFlags().StringVar(&image,
 		"image",
-		"b.gcr.io/endpoints/endpoints-runtime:0.3.6",
+		//"b.gcr.io/endpoints/endpoints-runtime:0.3.6",
+		"gcr.io/endpoints-jenkins/endpoints-runtime:debian-git-6e393cf6e95983455642142a1b8348fa36106632",
 		"URL to ESP docker image")
 
 	deployCmd.PersistentFlags().StringVarP(&config.Name,
@@ -143,7 +144,7 @@ func init() {
 		"creds", "k", "", "Service account key JSON file")
 
 	deployCmd.PersistentFlags().IntVarP(&ports.status,
-		"status", "N", 8090, "Status port for ESP")
+		"status", "N", 8090, "Status port for ESP (always enabled)")
 	deployCmd.PersistentFlags().IntVarP(&ports.http,
 		"http", "p", 8080, "HTTP/1.x port to use for ESP")
 	deployCmd.PersistentFlags().IntVarP(&ports.http2,
@@ -289,15 +290,16 @@ func MakeContainer(ports Ports, backend string) (*api.Container, []api.Volume, e
 			return nil, nil, err
 		}
 
-		volumeMounts = append(volumeMounts,
-			api.VolumeMount{Name: name, MountPath: "/etc/nginx/ssl", ReadOnly: true})
+		volumeMounts = append(volumeMounts, api.VolumeMount{
+			Name:      name,
+			MountPath: "/etc/nginx/ssl",
+			ReadOnly:  true,
+		})
 		volumes = append(volumes, makeSecretVolume(name))
 	}
 
-	if ports.status > 0 {
-		args = append(args, "-N", strconv.Itoa(ports.status))
-		published = append(published, api.ContainerPort{ContainerPort: int32(ports.status)})
-	}
+	args = append(args, "-N", strconv.Itoa(ports.status))
+	published = append(published, api.ContainerPort{ContainerPort: int32(ports.status)})
 
 	if config.CredentialsFile != "" {
 		args = append(args, "-k", "/etc/nginx/creds/secret.json")
@@ -310,8 +312,11 @@ func MakeContainer(ports Ports, backend string) (*api.Container, []api.Volume, e
 			return nil, nil, err
 		}
 
-		volumeMounts = append(volumeMounts,
-			api.VolumeMount{Name: name, MountPath: "/etc/nginx/creds", ReadOnly: true})
+		volumeMounts = append(volumeMounts, api.VolumeMount{
+			Name:      name,
+			MountPath: "/etc/nginx/creds",
+			ReadOnly:  true,
+		})
 		volumes = append(volumes, makeSecretVolume(name))
 	}
 
@@ -319,8 +324,18 @@ func MakeContainer(ports Ports, backend string) (*api.Container, []api.Volume, e
 		Name:         endpoints,
 		Image:        image,
 		Ports:        published,
-		VolumeMounts: volumeMounts,
 		Args:         args,
+		VolumeMounts: volumeMounts,
+		LivenessProbe: &api.Probe{
+			InitialDelaySeconds: 1,
+			TimeoutSeconds:      1,
+			Handler: api.Handler{
+				HTTPGet: &api.HTTPGetAction{
+					Path: "/endpoints_status",
+					Port: intstr.FromInt(ports.status),
+				},
+			},
+		},
 	}
 
 	return &esp, volumes, nil
@@ -428,8 +443,7 @@ func AddConfig(key string, files map[string]string) (string, error) {
 		Data: m,
 	}
 
-	configMaps := clientset.Core().ConfigMaps(namespace)
-	configMap, err := configMaps.Create(config)
+	configMap, err := clientset.Core().ConfigMaps(namespace).Create(config)
 	if err != nil {
 		return "", err
 	}
@@ -458,8 +472,7 @@ func AddSecret(key string, files map[string]string) (string, error) {
 		Data: m,
 	}
 
-	secrets := clientset.Core().Secrets(namespace)
-	secret, err := secrets.Create(config)
+	secret, err := clientset.Core().Secrets(namespace).Create(config)
 	if err != nil {
 		return "", err
 	}
