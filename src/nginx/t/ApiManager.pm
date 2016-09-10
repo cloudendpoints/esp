@@ -312,6 +312,19 @@ sub get_metadata_response_body {
 EOF
 }
 
+sub disable_service_control_cache {
+  return <<EOF;
+service_control_config {
+  check_aggregator_config {
+  cache_entries: 0
+  }
+  report_aggregator_config {
+  cache_entries: 0
+  }
+}
+EOF
+}
+
 sub grpc_test_server {
   my ($t, @args) = @_;
   my $server = './test/grpc/grpc-test-server';

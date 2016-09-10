@@ -43,14 +43,16 @@ my $NginxPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $GrpcServerPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(15);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(21);
 
 $t->write_file('service.json',
   ApiManager::get_transcoding_test_service_config(
     'endpoints-transcoding-test.cloudendpointsapis.com',
     "http://127.0.0.1:${ServiceControlPort}"));
 
-ApiManager::write_file_expand($t, 'nginx.conf', <<EOF);
+$t->write_file('server_config.pb.txt', ApiManager::disable_service_control_cache);
+
+$t->write_file_expand('nginx.conf', <<EOF);
 %%TEST_GLOBALS%%
 daemon off;
 events {
@@ -65,7 +67,7 @@ http {
     location / {
       endpoints {
         api service.json;
-        %%TEST_CONFIG%%
+        server_config server_config.pb.txt;
         on;
       }
       grpc_pass 127.0.0.1:${GrpcServerPort};
@@ -160,20 +162,17 @@ ok(ApiManager::verify_http_json_response($shelf2_response, $shelf2_response_expe
 ok(ApiManager::verify_http_json_response($final_shelves_response, $final_shelves_response_expected),
                                          "Final shelves response is good");
 
-# Check service control calls
-# We expect 3 service control calls:
-#   - 1 check call for both calls to ListShelves (as we are using the same API key the
-#     second time check response is in the cache)
-#   - 1 check call for both calls to CreateShelf,
-#   - 1 aggregated report call containing 2 operations - ListShelves and CreateShelf
+# Expect 8 service control calls for 4 requests.
 my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
-is(scalar @servicecontrol_requests, 3, 'Service control was called 3 times');
+is(scalar @servicecontrol_requests, 8, 'Service control was called 8 times');
 
-my $report_request = pop @servicecontrol_requests;
-like($report_request->{uri}, qr/:report$/, 'Report has correct uri');
-my $report_json = decode_json(ServiceControl::convert_proto($report_request->{body}, "report_request", "json"));
-my @operations = @{$report_json->{operations}};
-is(scalar @operations, 2, 'There are 2 operations');
+while (my ($i, $r) = each @servicecontrol_requests) {
+  if ($i % 2 == 0) {
+    like($r->{uri}, qr/:check$/, "Check has correct uri for ${i}");
+  } else {
+    like($r->{uri}, qr/:report$/, "Report has correct uri for ${i}");
+  }
+}
 
 ################################################################################
 
@@ -184,6 +183,7 @@ sub service_control {
     or die "Can't create test server socket: $!\n";
 
   local $SIG{PIPE} = 'IGNORE';
+  my $request_count = 0;
 
   $server->on_sub('POST', '/v1/services/endpoints-transcoding-test.cloudendpointsapis.com:check', sub {
     my ($headers, $body, $client) = @_;
@@ -203,7 +203,10 @@ Content-Type: application/json
 Connection: close
 
 EOF
-    $t->write_file($done, ":report done");
+    $request_count++;
+    if ($request_count == 4) {
+      $t->write_file($done, ":report done");
+    }
   });
 
   $server->run();

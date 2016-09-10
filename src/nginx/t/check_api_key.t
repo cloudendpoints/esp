@@ -43,7 +43,7 @@ my $NginxPort = ApiManager::pick_port();
 my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(26);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(28);
 
 # Save service name in the service configuration protocol buffer file.
 my $config = ApiManager::get_bookstore_service_config .
@@ -53,7 +53,10 @@ control {
 }
 EOF
 $t->write_file('service.pb.txt', $config);
-ApiManager::write_file_expand($t, 'nginx.conf', <<"EOF");
+
+$t->write_file('server_config.pb.txt', ApiManager::disable_service_control_cache);
+
+$t->write_file_expand('nginx.conf', <<"EOF");
 %%TEST_GLOBALS%%
 daemon off;
 events {
@@ -68,7 +71,7 @@ http {
     location / {
       endpoints {
         api service.pb.txt;
-        %%TEST_CONFIG%%
+        server_config server_config.pb.txt;
         on;
       }
       proxy_pass http://127.0.0.1:${BackendPort};
@@ -103,55 +106,37 @@ EOF
 is($t->waitforfile($report_done), 1, 'Report body file ready.');
 $t->stop_daemons();
 
-like($response1, qr/HTTP\/1\.1 200 OK/, 'Response for key-1 - 200 OK');
-like($response1, qr/List of shelves\.$/, 'Response for key-1 - body');
-like($response2, qr/HTTP\/1\.1 200 OK/, 'Response for api-key-1 - 200 OK');
-like($response2, qr/List of shelves\.$/, 'Response for api-key-1 - body');
-like($response3, qr/HTTP\/1\.1 200 OK/, 'Response for api-key-2&key-2 - 200 OK');
-like($response3, qr/List of shelves\.$/, 'Response for api-key-2&key-2 - body');
-like($response4, qr/HTTP\/1\.1 200 OK/, 'Response for x-api-key:key-4 - 200 OK');
-like($response4, qr/List of shelves\.$/, 'Response for x-api-key:key-4 - body');
+sub check_response {
+    my ($response, $msg) = @_;
+    like($response, qr/HTTP\/1\.1 200 OK/, "${msg}: 200 OK");
+    like($response, qr/List of shelves\.$/, "${msg}: body OK");
+}
+check_response($response1, 'Response1 for key-1');
+check_response($response2, 'Response2 for api-key-1');
+check_response($response3, 'Response3 for api-key-2&key-2');
+check_response($response4, 'Response4 for x-api-key:key-4');
 
-my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
-is(scalar @servicecontrol_requests, 5, 'Service control was called 5 times.');
+sub check_service_control {
+    my ($check, $report, $msg, $expected_key) = @_;
+    like($check->{uri}, qr/:check$/, "check uri ${msg}");
+    like($report->{uri}, qr/:report$/, "report uri ${msg}");
 
-my ($check1, $check2, $check3, $check4, $report) = @servicecontrol_requests;
-like($check1->{uri}, qr/:check$/, 'Check 1 uri');
-like($check2->{uri}, qr/:check$/, 'Check 2 uri');
-like($check3->{uri}, qr/:check$/, 'Check 3 uri');
-like($check4->{uri}, qr/:check$/, 'Check 4 uri');
-like($report->{uri}, qr/:report$/, 'Report uri');
+    my $check_body = decode_json(ServiceControl::convert_proto($check->{body}, 'check_request', 'json'));
+    my $report_body = decode_json(ServiceControl::convert_proto($report->{body}, 'report_request', 'json'));
 
-# Parse out operations from the report.
-my $report_json = decode_json(ServiceControl::convert_proto($report->{body}, 'report_request', 'json'));
-my $operations = $report_json->{operations};
-is(@{$operations}, 4, 'There are 4 report operations total');
-my ($report1, $report2, $report3, $report4) = @{$operations};
+    is($check_body->{operation}->{consumerId}, $expected_key,
+       "check body has correct consumer id for ${msg}");
+    is($report_body->{operations}->[0]->{consumerId}, $expected_key,
+       "report_body has correct consumerId for ${msg}");
+}
 
-# Match the report operations to checks.
-my $check1_body = decode_json(ServiceControl::convert_proto($check1->{body}, 'check_request', 'json'));
-is($check1_body->{operation}->{consumerId}, 'api_key:key-1',
-   'check body has correct consumer id for key-1.');
-is($report1->{consumerId}, 'api_key:key-1',
-   'report_body has correct consumerId for key-1');
+my @sc_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
+is(scalar @sc_requests, 8, 'Service control was called 8 times.');
 
-my $check2_body = decode_json(ServiceControl::convert_proto($check2->{body}, 'check_request', 'json'));
-is($check2_body->{operation}->{consumerId}, 'api_key:api-key-1',
-   'check body has correct consumer id for api-key-1.');
-is($report2->{consumerId}, 'api_key:api-key-1',
-   'report_body has correct consumerId for api-key-1');
-
-my $check3_body = decode_json(ServiceControl::convert_proto($check3->{body}, 'check_request', 'json'));
-is($check3_body->{operation}->{consumerId}, 'api_key:key-2',
-   'check body has correct consumer id for api-key-2&key-2.');
-is($report3->{consumerId}, 'api_key:key-2',
-   'report_body has correct consumerId for api-key-2&key-2');
-
-my $check4_body = decode_json(ServiceControl::convert_proto($check4->{body}, 'check_request', 'json'));
-is($check4_body->{operation}->{consumerId}, 'api_key:key-4',
-   'check body has correct consumer id for key-4.');
-is($report4->{consumerId}, 'api_key:key-4',
-   'report_body has correct consumerId for key-4');
+check_service_control(@sc_requests[0], @sc_requests[1], '1', 'api_key:key-1');
+check_service_control(@sc_requests[2], @sc_requests[3], '2', 'api_key:api-key-1');
+check_service_control(@sc_requests[4], @sc_requests[5], '3', 'api_key:key-2');
+check_service_control(@sc_requests[6], @sc_requests[7], '4', 'api_key:key-4');
 
 ################################################################################
 
@@ -160,6 +145,7 @@ sub servicecontrol {
   my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
+  my $request_count = 0;
 
   $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:check', sub {
     my ($headers, $body, $client) = @_;
@@ -177,7 +163,10 @@ HTTP/1.1 200 OK
 Connection: close
 
 EOF
-    ApiManager::write_binary_file($done, ':report done');
+    $request_count++;
+    if ($request_count == 4) {
+      ApiManager::write_binary_file($done, ':report done');
+    }
   });
 
   $server->run();

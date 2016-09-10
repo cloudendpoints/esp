@@ -44,7 +44,7 @@ my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $MetadataPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(13);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(16);
 
 my $config = ApiManager::get_bookstore_service_config . <<"EOF";
 control {
@@ -53,7 +53,10 @@ control {
 EOF
 
 $t->write_file('service.pb.txt', $config);
-ApiManager::write_file_expand($t, 'nginx.conf', <<"EOF");
+
+$t->write_file('server_config.pb.txt', ApiManager::disable_service_control_cache);
+
+$t->write_file_expand('nginx.conf', <<"EOF");
 %%TEST_GLOBALS%%
 daemon off;
 events { worker_connections 32; }
@@ -69,7 +72,7 @@ http {
     location / {
       endpoints {
         api service.pb.txt;
-        %%TEST_CONFIG%%
+        server_config server_config.pb.txt;
         on;
       }
       proxy_pass http://127.0.0.1:${BackendPort};
@@ -119,23 +122,15 @@ is($r->{uri}, '/computeMetadata/v1/?recursive=true', 'Metadata request was recur
 
 # Check service control requests...
 my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
-is(scalar @servicecontrol_requests, 1, 'Service control received 1 request (report).');
+is(scalar @servicecontrol_requests, 2, 'Service control received 2 requests (report).');
 
-# Request 1 :report
-$r = shift @servicecontrol_requests;
-is($r->{verb}, 'POST', ':report was POST');
-is($r->{path}, '/v1/services/endpoints-test.cloudendpointsapis.com:report', ':report path');
-
-# TODO: We shouldn't send unauthenticated requests to service control (if
-# metadata server is to be used).
-#
-# is($r->{headers}->{authorization},
-#    'Bearer ya29.7gFRTEGmovWacYDnQIpC9X9Qp8cH0sgQyWVrZaB1Eg1WoAhQMSG4L2rtaHk1',
-#    ':report was authenticated');
-
-my $report_json = decode_json(ServiceControl::convert_proto($r->{body}, 'report_request', 'json'));
-my $operations = $report_json->{operations};
-is(2, @{$operations}, 'There are 2 operations total');
+for my $r (@servicecontrol_requests) {
+  is($r->{verb}, 'POST', ':report was POST');
+  is($r->{path}, '/v1/services/endpoints-test.cloudendpointsapis.com:report', ':report path');
+  is($r->{headers}->{authorization},
+    'Bearer ya29.7gFRTEGmovWacYDnQIpC9X9Qp8cH0sgQyWVrZaB1Eg1WoAhQMSG4L2rtaHk1',
+    ':report was authenticated');
+}
 
 ################################################################################
 
@@ -172,6 +167,7 @@ sub servicecontrol {
   my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
+  my $request_count = 0;
 
   $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:check', sub {
     my ($headers, $body, $client) = @_;
@@ -191,7 +187,10 @@ Content-Type: application/json
 Connection: close
 
 EOF
-    $t->write_file($done, ':report called');
+    $request_count++;
+    if ($request_count == 2) {
+      $t->write_file($done, ':report called');
+    }
   });
 
   $server->run();

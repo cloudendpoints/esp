@@ -50,7 +50,9 @@ $t->write_file('service.json',
     'endpoints-transcoding-test.cloudendpointsapis.com',
     "http://127.0.0.1:${ServiceControlPort}"));
 
-ApiManager::write_file_expand($t, 'nginx.conf', <<EOF);
+$t->write_file('server_config.pb.txt', ApiManager::disable_service_control_cache);
+
+$t->write_file_expand('nginx.conf', <<EOF);
 %%TEST_GLOBALS%%
 daemon off;
 events {
@@ -65,7 +67,7 @@ http {
     location / {
       endpoints {
         api service.json;
-        %%TEST_CONFIG%%
+        server_config server_config.pb.txt;
         on;
       }
       grpc_pass 127.0.0.1:${GrpcServerPort};
@@ -98,7 +100,7 @@ ok(ApiManager::verify_http_json_response(
 # 2. Binding shelf=2 in ListBooksRequest
 #    HTTP template:
 #      GET /shelves/{shelf}/books
-my $response = ApiManager::http_get($NginxPort,'/shelves/2/books?key=api-key');
+$response = ApiManager::http_get($NginxPort,'/shelves/2/books?key=api-key');
 ok(ApiManager::verify_http_json_response(
     $response,
     { 'books' => [ {'id' => '2', 'author' => 'George R.R. Martin', 'title' => 'A Game of Thrones'} ] }),
@@ -140,7 +142,7 @@ ok(ApiManager::verify_http_json_response(
 # 5. Binding shelf=1 in ListBooksRequest
 #    HTTP template:
 #      GET /shelves/{shelf}/books
-my $response = ApiManager::http_get($NginxPort,'/shelves/1/books?key=api-key');
+$response = ApiManager::http_get($NginxPort,'/shelves/1/books?key=api-key');
 ok(ApiManager::verify_http_json_response(
     $response, { 'books' => [
         {'id' => '1', 'author' => 'Neal Stephenson', 'title' => 'Readme'},
@@ -152,7 +154,7 @@ ok(ApiManager::verify_http_json_response(
 # 6. Binding shelf=1 and book=3 in DeleteBookRequest
 #    HTTP template:
 #      DELETE /shelves/{shelf}/books/{book}
-my $response = ApiManager::http($NginxPort,<<EOF);
+$response = ApiManager::http($NginxPort,<<EOF);
 DELETE /shelves/1/books/3?key=api-key HTTP/1.0
 HOST: 127.0.0.1:${NginxPort}
 
@@ -162,7 +164,7 @@ ok(ApiManager::verify_http_json_response($response, {}), 'Got empty resonse for 
 # 7. Binding shelf=1 in ListBooksRequest
 #    HTTP template:
 #      GET /shelves/{shelf}/books
-my $response = ApiManager::http_get($NginxPort,'/shelves/1/books?key=api-key');
+$response = ApiManager::http_get($NginxPort,'/shelves/1/books?key=api-key');
 ok(ApiManager::verify_http_json_response(
     $response, { 'books' => [
         {'id' => '1', 'author' => 'Neal Stephenson', 'title' => 'Readme'},
@@ -210,15 +212,9 @@ ok(ApiManager::compare_json($translated_requests[5], {'shelf'=>'1', 'book'=>'3'}
 # 7. ListBooksRequest with shelf=1
 ok(ApiManager::compare_json($translated_requests[6], {'shelf'=>'1'}));
 
-# Check service control calls
-# We expect 4 service control calls:
-#   - 1 check call for all calls to ListBooks (as we are using the same API key the
-#     second time check response is in the cache)
-#   - 1 check call for all calls to CreateBook,
-#   - 1 check call for the call to DeleteBook,
-#   - 1 aggregated report call
+# Expect 14 service control calls for 7 requests.
 my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
-is(scalar @servicecontrol_requests, 4, 'Service control was called 2 times');
+is(scalar @servicecontrol_requests, 14, 'Service control was called 14 times');
 
 ################################################################################
 
@@ -229,6 +225,7 @@ sub service_control {
     or die "Can't create test server socket: $!\n";
 
   local $SIG{PIPE} = 'IGNORE';
+  my $request_count = 0;
 
   $server->on_sub('POST', '/v1/services/endpoints-transcoding-test.cloudendpointsapis.com:check', sub {
     my ($headers, $body, $client) = @_;
@@ -248,7 +245,10 @@ Content-Type: application/json
 Connection: close
 
 EOF
-    $t->write_file($done, ":report done");
+    $request_count++;
+    if ($request_count == 7) {
+      $t->write_file($done, ":report done");
+    }
   });
 
   $server->run();

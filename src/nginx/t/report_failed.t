@@ -56,16 +56,7 @@ $t->write_file('service.pb.txt', $config);
 
 # Disable service control caching to guarantee consistent sequence of requests
 # to service control server
-$t->write_file('service_control.pb.txt', <<"EOF");
-service_control_config {
-  check_aggregator_config {
-    cache_entries: 0
-  }
-  report_aggregator_config {
-    cache_entries: 0
-  }
-}
-EOF
+$t->write_file('server_config.pb.txt', ApiManager::disable_service_control_cache);
 
 ApiManager::write_file_expand($t, 'nginx.conf', <<"EOF");
 %%TEST_GLOBALS%%
@@ -82,7 +73,7 @@ http {
     location / {
       endpoints {
         api service.pb.txt;
-        server_config service_control.pb.txt;
+        server_config server_config.pb.txt;
         on;
       }
       proxy_pass http://127.0.0.1:${BackendPort};
