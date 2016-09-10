@@ -73,12 +73,24 @@ DNS_RESOLVER = "8.8.8.8"
 # Default HTTP/1.x port
 DEFAULT_PORT = 8080
 
+# PID file (for nginx as a daemon)
+PID_FILE = "/var/run/nginx.pid"
+
 Port = collections.namedtuple('Port',
         ['port', 'proto'])
 Location = collections.namedtuple('Location',
         ['path', 'backends', 'service_config', 'grpc'])
 Ingress = collections.namedtuple('Ingress',
         ['ports', 'host', 'locations'])
+
+def write_pid_file():
+    try:
+        f = open(PID_FILE, 'w+')
+        f.write(str(os.getpid()))
+        f.close()
+    except IOError as err:
+        logging.error("Failed to save PID." + err.strerror)
+        sys.exit(3)
 
 def write_template(template,
                    status,
@@ -99,7 +111,8 @@ def write_template(template,
             service_account=service_account,
             ingress=ingress,
             metadata=metadata,
-            resolver=resolver)
+            resolver=resolver,
+            pid_file=PID_FILE)
 
     # Save nginx conf
     try:
@@ -338,11 +351,17 @@ def make_argparser():
     return parser
 
 
+
+
 if __name__ == '__main__':
     parser = make_argparser()
     args = parser.parse_args()
     logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
+    # Write pid file for the supervising process
+    write_pid_file()
+
+    # Get service config
     service_config = args.config_dir + "/service.json"
 
     if args.service_json_path:

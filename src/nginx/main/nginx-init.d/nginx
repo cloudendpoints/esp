@@ -24,15 +24,15 @@ sysconfig=`/usr/bin/basename $SCRIPTNAME`
 
 DESC=${DESC-nginx}
 NAME=${NAME-nginx}
-CONFFILE=${CONFFILE-/etc/nginx/nginx.conf}
-DAEMON=${DAEMON-/usr/sbin/nginx}
+DAEMON=${DAEMON-/usr/sbin/start_esp.py}
 PIDFILE=${PIDFILE-/var/run/nginx.pid}
+PORT=${PORT-8080}
+STATUS_PORT=${STATUS_PORT-8090}
 SLEEPSEC=1
-UPGRADEWAITLOOPS=5
 
 [ -x $DAEMON ] || exit 0
 
-DAEMON_ARGS="-c $CONFFILE $DAEMON_ARGS"
+DAEMON_ARGS="-p $PORT -N $STATUS_PORT $DAEMON_ARGS"
 
 . /lib/init/vars.sh
 
@@ -40,9 +40,9 @@ DAEMON_ARGS="-c $CONFFILE $DAEMON_ARGS"
 
 do_start()
 {
-    /usr/sbin/fetch_service_config.sh || return $?
-    start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON -- \
-        $DAEMON_ARGS
+    start-stop-daemon --start --background --quiet --pidfile $PIDFILE \
+      --startas /bin/bash -- \
+      -c "exec $DAEMON $DAEMON_ARGS > /var/log/nginx/access.log 2> /var/log/nginx/error.log"
     RETVAL="$?"
     return "$RETVAL"
 }
@@ -67,43 +67,6 @@ do_reload() {
     return "$RETVAL"
 }
 
-do_configtest() {
-    if [ "$#" -ne 0 ]; then
-        case "$1" in
-            -q)
-                FLAG=$1
-                ;;
-            *)
-                ;;
-        esac
-        shift
-    fi
-    $DAEMON -t $FLAG -c $CONFFILE
-    RETVAL="$?"
-    return $RETVAL
-}
-
-do_upgrade() {
-    OLDBINPIDFILE=$PIDFILE.oldbin
-
-    do_configtest -q || return 6
-    start-stop-daemon --stop --signal USR2 --quiet --pidfile $PIDFILE
-    RETVAL="$?"
-
-    for i in `/usr/bin/seq  $UPGRADEWAITLOOPS`; do
-        sleep $SLEEPSEC
-        if [ -f $OLDBINPIDFILE -a -f $PIDFILE ]; then
-            start-stop-daemon --stop --signal QUIT --quiet --pidfile $OLDBINPIDFILE
-            RETVAL="$?"
-            return
-        fi
-    done
-
-    echo $"Upgrade failed!"
-    RETVAL=1
-    return $RETVAL
-}
-
 case "$1" in
     start)
         [ "$VERBOSE" != no ] && log_daemon_msg "Starting $DESC " "$NAME"
@@ -124,12 +87,6 @@ case "$1" in
   status)
         status_of_proc -p "$PIDFILE" "$DAEMON" "$NAME" && exit 0 || exit $?
         ;;
-  configtest)
-        do_configtest
-        ;;
-  upgrade)
-        do_upgrade
-        ;;
   reload|force-reload)
         log_daemon_msg "Reloading $DESC" "$NAME"
         do_reload
@@ -137,7 +94,6 @@ case "$1" in
         ;;
   restart|force-reload)
         log_daemon_msg "Restarting $DESC" "$NAME"
-        do_configtest -q || exit $RETVAL
         do_stop
         case "$?" in
             0|1)
@@ -155,7 +111,7 @@ case "$1" in
         esac
         ;;
     *)
-        echo "Usage: $SCRIPTNAME {start|stop|status|restart|reload|force-reload|upgrade|configtest}" >&2
+        echo "Usage: $SCRIPTNAME {start|stop|status|restart|reload|force-reload}" >&2
         exit 3
         ;;
 esac

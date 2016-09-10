@@ -81,6 +81,7 @@ function install_pkg_debian8() {
   # if failures are related to esp, apt-get install will fail.
   apt-get update --fix-missing
   # Install dependencies.
+  apt-get install python python-oauth2client python-mako python-urllib3
   apt-get install -y npm endpoints-runtime supervisor && return 0
   return 1
 }

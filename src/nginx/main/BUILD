@@ -214,20 +214,10 @@ pkg_tar(
 pkg_tar(
     name = "nginx-initd-override",
     files = [
-        "//third_party/nginx-init.d:nginx",
+        "nginx-init.d/nginx",
     ],
     mode = "0755",
     package_dir = "/etc/init.d",
-)
-
-pkg_tar(
-    name = "nginx-conf-override",
-    files = [
-        "//src/nginx/main:nginx.conf",
-    ],
-    mode = "0644",
-    package_dir = "/etc/nginx",
-    strip_prefix = ".",
 )
 
 pkg_tar(
@@ -259,7 +249,6 @@ pkg_tar(
         # The first occurrence of the duplicate file will be picked. In other
         # words, /etc/nginx/nginx.conf from ":nginx-conf-override" will
         # override that from "@nginx_pkgoss//:debian_overlay".
-        ":nginx-conf-override",
         ":nginx-conf-template",
         ":nginx-initd-override",
         "@nginx_pkgoss//:debian_overlay",

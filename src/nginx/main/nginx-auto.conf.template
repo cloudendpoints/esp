@@ -3,6 +3,8 @@ daemon off;
 
 user nginx nginx;
 
+pid ${pid_file};
+
 worker_processes 1;
 
 # Logging to stderr enables better integration with Docker and GKE/Kubernetes.
