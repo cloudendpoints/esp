@@ -26,7 +26,7 @@ spec:
     spec:
       containers:
       - name: bookstore
-        image: gcr.io/endpoints-jenkins/bookstore:df2be5917f3cd0b39cc339d2ddedb67d32008e81
+        image: gcr.io/endpoints-jenkins/bookstore:0.3
         ports:
           - containerPort: 8081
         livenessProbe:

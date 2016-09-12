@@ -497,6 +497,22 @@ go_library(
 )
 
 new_git_repository(
+    name = "imdario_mergo",
+    remote = "https://github.com/imdario/mergo.git",
+    commit = "6633656539c1639d9d78127b7d47c622b5d7b6dc",
+    build_file_content = """
+load("@io_bazel_rules_go//go:def.bzl", "go_prefix")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+go_prefix("github.com/imdario")
+go_library(
+    name = "mergo",
+    srcs = glob(include = ["*.go"], exclude = ["*_test.go"]),
+    visibility = ["//visibility:public"],
+)
+    """
+)
+
+new_git_repository(
     name = "go_restful",
     remote = "https://github.com/emicklei/go-restful.git",
     commit = "bf50d2be18145391aa3d4339b07195807b25a427",

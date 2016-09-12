@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: bookstore-grpc
+  labels:
+    googleapis.com/api: bookstore-grpc-dot-endpoints-jenkins.appspot.com
+spec:
+  ports:
+  - port: 80
+    targetPort: 8081
+    protocol: TCP
+  selector:
+    app: bookstore-grpc
+  type: NodePort
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: bookstore-grpc
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: bookstore-grpc
+    spec:
+      containers:
+      - name: bookstore-grpc
+        image: gcr.io/endpointsv2/bookstore-grpc:latest
+        ports:
+          - containerPort: 8081

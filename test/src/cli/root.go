@@ -32,12 +32,11 @@ import (
 	"github.com/spf13/cobra"
 
 	"k8s.io/client-go/1.4/kubernetes"
-	"k8s.io/client-go/1.4/rest"
+	"k8s.io/client-go/1.4/tools/clientcmd"
 )
 
 var (
 	namespace string
-	control   int
 	clientset *kubernetes.Clientset
 )
 
@@ -64,12 +63,16 @@ var RootCmd = &cobra.Command{
 		fmt.Println("ESP deployment command line interface")
 	},
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		config := rest.Config{
-			Host: fmt.Sprintf("localhost:%d", control),
+		loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+		configOverrides := &clientcmd.ConfigOverrides{}
+		kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
+		config, err := kubeConfig.ClientConfig()
+		if err != nil {
+			fmt.Println("Cannot retrieve kube configuration")
+			os.Exit(-2)
 		}
 
-		var err error
-		clientset, err = kubernetes.NewForConfig(&config)
+		clientset, err = kubernetes.NewForConfig(config)
 		if err != nil {
 			fmt.Println("Cannot connect to Kubernetes API: ", err)
 			os.Exit(-2)
@@ -80,6 +83,4 @@ var RootCmd = &cobra.Command{
 func init() {
 	RootCmd.PersistentFlags().StringVar(&namespace,
 		"namespace", "default", "kubernetes namespace")
-	RootCmd.PersistentFlags().IntVar(&control,
-		"control", 9000, "kubectl proxy port")
 }

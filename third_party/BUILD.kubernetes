@@ -52,6 +52,14 @@ go_library(
 )
 
 go_library(
+    name = "pkg/util/homedir",
+    srcs = glob(["1.4/pkg/util/homedir/*.go"]),
+    visibility = ["//visibility:public"],
+    deps = [
+    ],
+)
+
+go_library(
     name = "pkg/util/hash",
     srcs = glob(["1.4/pkg/util/hash/*.go"]),
     visibility = ["//visibility:public"],
@@ -803,12 +811,71 @@ go_library(
 )
 
 go_library(
+    name = "tools/clientcmd",
+    srcs = glob(["1.4/tools/clientcmd/*.go"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        ":tools/clientcmd/api",
+        ":tools/clientcmd/api/latest",
+        ":pkg/api",
+        ":pkg/api/unversioned",
+        ":pkg/runtime",
+        ":pkg/util/errors",
+        ":pkg/util/homedir",
+        ":pkg/util/validation",
+        ":rest",
+        ":tools/auth",
+        "@github_com_golang_glog//:glog",
+        "@imdario_mergo//:mergo",
+        "@ghodss_yaml//:yaml",
+        "@github_com_spf13_pflag//:pflag",
+    ],
+)
+
+go_library(
+    name = "tools/auth",
+    srcs = glob(include=["1.4/tools/auth/*.go"],exclude=["1.4/tools/auth/*_test.go"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        ":rest",
+    ],
+)
+
+go_library(
     name = "tools/clientcmd/api",
     srcs = glob(["1.4/tools/clientcmd/api/*.go"]),
     visibility = ["//visibility:public"],
     deps = [
         ":pkg/api/unversioned",
         ":pkg/runtime",
+        "@ghodss_yaml//:yaml",
+    ],
+)
+
+go_library(
+    name = "tools/clientcmd/api/v1",
+    srcs = glob(["1.4/tools/clientcmd/api/v1/*.go"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        ":tools/clientcmd/api",
+        ":pkg/api/unversioned",
+        ":pkg/runtime",
+        ":pkg/conversion",
+        "@ghodss_yaml//:yaml",
+    ],
+)
+
+go_library(
+    name = "tools/clientcmd/api/latest",
+    srcs = glob(["1.4/tools/clientcmd/api/latest/*.go"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        ":tools/clientcmd/api",
+        ":tools/clientcmd/api/v1",
+        ":pkg/api/unversioned",
+        ":pkg/runtime",
+        ":pkg/runtime/serializer/json",
+        ":pkg/runtime/serializer/versioning",
         "@ghodss_yaml//:yaml",
     ],
 )

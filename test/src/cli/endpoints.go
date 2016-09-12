@@ -77,7 +77,6 @@ func GetESPEndpoints(name string) (map[string]map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	list = append(list, name)
 
 	out := map[string]map[string]string{}
 
