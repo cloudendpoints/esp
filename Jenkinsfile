@@ -93,33 +93,39 @@ node('master') {
   def nodeLabel = getSlaveLabel(DEBIAN_JESSIE)
   try {
     if (runStage(CLEANUP_STAGE)) {
-      stage 'Test Cleanup'
-      cleanupOldTests(nodeLabel)
+      stage('Test Cleanup') {
+        cleanupOldTests(nodeLabel)
+      }
     }
     if (runStage(SLAVE_UPDATE_STAGE)) {
-      stage 'Slave Update'
-      // This needs to run on master as GKE uses a very old version of docker.
-      // Using a new workspace to checkout code in.
-      ws {
-        buildNewDockerSlave(nodeLabel)
+      stage('Slave Update') {
+        // This needs to run on master as GKE uses a very old version of docker.
+        // Using a new workspace to checkout code in.
+        ws {
+          buildNewDockerSlave(nodeLabel)
+        }
       }
     }
     if (runStage(PRESUBMIT)) {
-      stage 'Presubmit Tests'
-      presubmit(nodeLabel)
+      stage('Presubmit Tests') {
+        presubmit(nodeLabel)
+      }
     }
     if (runStage(PERFORMANCE_STAGE)) {
-      stage 'Build Artifacts'
-      buildArtifacts(nodeLabel, false, false)
-      stage 'Performance Test'
-      performance(nodeLabel)
-
+      stage('Build Artifacts') {
+        buildArtifacts(nodeLabel, false, false)
+      }
+      stage('Performance Test') {
+        performance(nodeLabel)
+      }
     }
     if (runStage(E2E_STAGE)) {
-      stage 'Build Artifacts'
-      buildArtifacts(nodeLabel)
-      stage 'E2E Tests'
-      e2eTest(nodeLabel)
+      stage('Build Artifacts') {
+        buildArtifacts(nodeLabel)
+      }
+      stage('E2E Tests') {
+        e2eTest(nodeLabel)
+      }
     }
   } catch (Exception e) {
     sendFailureNotification()
