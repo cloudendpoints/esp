@@ -55,9 +55,6 @@ echo 'Verifying that WRK is installed'
 echo 'Verifying that h2load is installed'
 run /nghttp2/src/h2load --version || error_exit 'h2load is not installed properly'
 
-echo 'Verifying that go is installed'
-run /usr/local/go/bin/go version || error_exit 'go is not installed properly'
-
 echo 'Verifying that the user is jenkins'
 THIS_USER="$(whoami)"
 [[ "${THIS_USER}" == 'jenkins' ]] || error_exit 'Slaves should be running as jenkins user'
