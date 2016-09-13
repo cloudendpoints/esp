@@ -52,16 +52,18 @@ var logCmd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
-		ExtractFromPods(name)
+		if active {
+			ExtractFromPods(name)
+		}
 		if project != "" {
 			ExtractFromGCP(name)
-
 		}
 	},
 }
 
 var (
 	project string
+	active  bool
 )
 
 func init() {
@@ -69,6 +71,9 @@ func init() {
 	logCmd.PersistentFlags().StringVarP(&project,
 		"project", "p", "",
 		"GCP project for Kubernetes Google Cloud Logging integration")
+	logCmd.PersistentFlags().BoolVarP(&active,
+		"active", "a", true,
+		"Query kubectl to fetch logs (both stdout and stderr)")
 }
 
 func ExtractFromGCP(name string) {

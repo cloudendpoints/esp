@@ -171,7 +171,15 @@ def buildArtifacts(nodeLabel, buildBookstore = true, buildGrpcTest = true) {
               'bazel-bin/src/tools/auth_token_gen',
               'auth_token_gen')
         }
-      }
+      },
+      'espcli': {
+        node(nodeLabel) {
+          buildAndStash(
+              '//test/src:espcli',
+              'bazel-bin/test/src/espcli',
+              'espcli')
+        }
+      },
   ]
   if (buildBookstore) {
     branches['bookstore'] = {
@@ -248,11 +256,6 @@ def e2eTest(nodeLabel) {
   // Please Update script/validate_release.py when adding or removing test.
   // Storing as [key, value] as Jenkins groovy cannot iterate over maps :(.
   def branches = [
-      ['gke-tight-coupling-https', {
-        node(nodeLabel) {
-          e2eGKE('tight', 'https')
-        }
-      }],
       ['gce-debian-8', {
         node(nodeLabel) {
           e2eGCE(DEBIAN_JESSIE)
@@ -268,24 +271,24 @@ def e2eTest(nodeLabel) {
           e2eGKE('tight', 'http')
         }
       }],
-      ['gke-tight-coupling-custom', {
-        node(nodeLabel) {
-          e2eGKE('tight', 'custom')
-        }
-      }],
       ['gke-loose-coupling-http', {
         node(nodeLabel) {
           e2eGKE('loose', 'http')
         }
       }],
+      ['gke-tight-coupling-custom', {
+        node(nodeLabel) {
+          e2eGKE('custom', 'http')
+        }
+      }],
+      ['gke-tight-coupling-https', {
+        node(nodeLabel) {
+          e2eGKE('tight', 'https')
+        }
+      }],
       ['gke-loose-coupling-https', {
         node(nodeLabel) {
           e2eGKE('loose', 'https')
-        }
-      }],
-      ['gke-loose-coupling-custom', {
-        node(nodeLabel) {
-          e2eGKE('loose', 'custom')
         }
       }],
       ['flex-off-endpoints-on', {
@@ -305,7 +308,7 @@ def e2eTest(nodeLabel) {
       }],
       ['gke-tight-coupling-grpc', {
         node(nodeLabel) {
-          e2eGKE('tight', 'grpc')
+          e2eGKE('tight', 'http2', true)
         }
       }],
   ]
@@ -530,29 +533,27 @@ def e2eCommonOptions(testId, prefix = '') {
       "${skipCleanup} "
 }
 
-def e2eGKE(coupling, testType) {
+def e2eGKE(coupling, proto, grpc = false) {
   setGCloud()
   checkoutSourceCode()
   fastUnstash('auth_token_gen')
-  def testId = "gke-${coupling}-${testType}"
-  def gRpc = testType == 'grpc'
-  def gRpcFlag = ''
-  def commonOptions = e2eCommonOptions(testId, gRpc ? 'grpc-' : '')
-  def espImage = espDockerImage()
-  def backendImage = bookstoreDockerImage()
-  if (gRpc) {
-    fastUnstash('grpc_test_client')
-    backendImage = gRpcTestServerImage()
-    gRpcFlag = '-g'
-  }
-  echo 'Running GKE test'
-  sh "test/bookstore/gke/e2e.sh " +
-      commonOptions +
-      "-b ${backendImage} " +
-      "-e ${espImage} " +
-      "-t ${testType} " +
-      "-c ${coupling} " +
-      "${gRpcFlag}"
+  fastUnstash('espcli')
+  fastUnstash('grpc_test_client')
+  def uniqueID = getUniqueID("gke-${coupling}-${proto}", true)
+  def serviceName = (grpc ?
+    "grpc-echo-dot-${PROJECT_ID}.appspot.com" :
+    generateServiceName(uniqueID)
+  )
+  sh "script/e2e-kube.sh " +
+      " -b " + (grpc ? gRpcTestServerImage() + " -g" : bookstoreDockerImage()) +
+      " -e " + espDockerImage() +
+      " -t ${proto}" +
+      " -c ${coupling}" +
+      " -a ${serviceName}" +
+      " -B ${BUCKET} " +
+      " -i ${uniqueID} " +
+      " -l " + getDurationHour() +
+      (getSkipCleanup() ? " -s" : "")
 }
 
 def e2eGCE(vmImage) {
@@ -1000,6 +1001,8 @@ def setGCloud() {
   retry(5) {
     timeout(1) {
       sh "gcloud config set compute/zone ${ZONE}"
+      // Do not use OAuth2 with GCP since client-go does not understand it
+      sh "gcloud config set container/use_client_certificate True"
       sh "gcloud container clusters get-credentials ${CLUSTER}"
       if (getGcloudUrl() != '') {
         sh 'sudo gcloud components update -q'

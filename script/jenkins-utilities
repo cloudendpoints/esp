@@ -41,20 +41,20 @@ GSUTIL=$(which gsutil) || GSUTIL=~/google-cloud-sdk/bin/gsutil
 API_KEY=''
 BOOKSTORE_IMAGE=''
 BUCKET=''
+COUPLING_OPTION='loose'
 DEBIAN_PKG=''
 DIRECT_REPO=''
 DURATION_IN_HOUR=0
 ENDPOINTS_RUNTIME_VERSION=''
-ESP_IMAGE=''
-ESP_SERVICE="${DEFAULT_ESP_SERVICE}"
+ESP_IMAGE='b.gcr.io/endpoints/endpoints-runtime:0.3'
 GRPC='false'
 INSTANCE_NAME=''
 NAMESPACE=''
 REMOTE_LOG_DIR=''
 SKIP_CLEANUP='false'
 SWAGGER_TMPL="${ESP_ROOT}/test/bookstore/swagger_template.json"
-TEST_TYPE=''
-UNIQUE_ID=''
+TEST_TYPE='http'
+UNIQUE_ID='test'
 VM_IMAGE=''
 ESP_SERVICE_VERSION=''
 
@@ -232,15 +232,16 @@ function long_running_test() {
   local http_code=200
 
   if [[ "${GRPC}" == 'true' ]]; then
-    local grpc_host="${host%:*}:8001"
-    echo "Checking grpc service ${grpc_host}"
-    retry -n 10 -t 90 check_grpc_service "${grpc_host}"
+    # We expect HTTP host to run at port 8080 for GRPC tests
+    local http_host="http://${host%:*}:8080"
+    echo "Checking grpc service ${http_host}, ${host}"
+    retry -n 10 -t 90 check_grpc_service "${host}"
     status=${?}
     if [[ ${status} -eq 0 ]]; then
       echo 'Running grpc long running test.'
       run_nonfatal "${ESP_ROOT}"/script/linux-grpc-test-long-run \
-        -h "http://${host}" \
-        -g "${grpc_host}" \
+        -h "${http_host}" \
+        -g "${host}" \
         -l "${duration_in_hour}" \
         -a "${api_key}" \
         -s "${esp_service}" 2>&1 | tee "${log_file}"
@@ -339,31 +340,6 @@ function save_gce_container_esp_logs() {
   echo "Done! Logs saved!"
 }
 
-# Save ESP logs from a GKE run
-function save_gke_esp_logs() {
-  local namespace="${1}"
-  local log_dir="${2}"
-
-  echo "Saving ESP logs from GKE namespace: ${namespace}..."
-
-  # Find the ESP pod and the node where it's running
-  local pod_with_node="$(kubectl get pods --namespace ${namespace} \
-    -o='custom-columns=NAME:.metadata.name,NODE:.spec.nodeName' | grep '^esp')"
-  [[ ${?} -eq 0 ]] || { echo 'Failed to find ESP pod'; return 1; }
-
-  local pod="$(echo ${pod_with_node} | awk '{print $1}')"
-  local node="$(echo ${pod_with_node} | awk '{print $2}')"
-  [[ -n "${pod}" ]] || { echo 'Failed to extract the pod'; return 1; }
-  [[ -n "${node}" ]] || { echo 'Failed to extract the node'; return 1; }
-
-  # We don't use "kubectl logs" as it is not able to differentiate between
-  # stderr and stdout (https://github.com/kubernetes/kubernetes/issues/28167).
-  # Instead we ssh to the VM and use "docker logs" as in the "GCE container"
-  # test case.
-  echo "Found ESP pod and its node: ${pod} - ${node}. Getting the logs from the node..."
-  save_gce_container_esp_logs "${node}" "${log_dir}" "${pod}"
-}
-
 # Upload logs remote directory
 function upload_logs() {
   local remote_dir="${1}"
@@ -406,9 +382,10 @@ function e2e_options() {
     [[ -n "${API_KEY}" ]] || error_exit 'Could not set api key.'
   fi
 
-  [[ -n "${BUCKET}" ]] || e2e_usage "Must provide Bucket via '-B' parameter."
-  local git_commit="$(git rev-parse --verify HEAD)"
-  REMOTE_LOG_DIR="gs://${BUCKET}/${git_commit}/logs/${UNIQUE_ID}"
+  if [[ -n "${BUCKET}" ]]; then
+    local git_commit="$(git rev-parse --verify HEAD)"
+    REMOTE_LOG_DIR="gs://${BUCKET}/${git_commit}/logs/${UNIQUE_ID}"
+  fi
 }
 
 function e2e_usage() {

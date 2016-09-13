@@ -29,6 +29,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"utils"
@@ -49,7 +50,7 @@ var endpointsCmd = &cobra.Command{
 	Short: "Describe ESP endpoints for a kubernetes service",
 	PreRun: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
-			fmt.Println("Please specify kubernetes service name")
+			log.Println("Please specify kubernetes service name")
 			os.Exit(-1)
 		}
 	},
@@ -57,7 +58,7 @@ var endpointsCmd = &cobra.Command{
 		name := args[0]
 		out, err := GetESPEndpoints(name)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			os.Exit(-1)
 		}
 		bytes, _ := json.MarshalIndent(out, "", "  ")
@@ -83,7 +84,7 @@ func GetESPEndpoints(name string) (map[string]map[string]string, error) {
 	for _, svc := range list {
 		ends, err := GetEndpoints(svc)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			os.Exit(-1)
 		}
 		out[svc] = ends
@@ -125,7 +126,7 @@ func GetEndpoints(name string) (map[string]string, error) {
 	} else if svc.Spec.Type == versioned.ServiceTypeLoadBalancer {
 		var address string
 		ok := utils.Repeat(func() bool {
-			fmt.Println("Retrieving address of the service")
+			log.Println("Retrieving address of the service")
 			svc, err = clientset.Core().Services(namespace).Get(name)
 			if err != nil {
 				return false

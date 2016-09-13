@@ -29,9 +29,3 @@ spec:
         image: gcr.io/endpoints-jenkins/bookstore:0.3
         ports:
           - containerPort: 8081
-        livenessProbe:
-          httpGet:
-            path: /shelves
-            port: 8081
-          initialDelaySeconds: 1
-          timeoutSeconds: 1

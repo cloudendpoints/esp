@@ -35,17 +35,17 @@ spec:
     - name: esp
       image: ${ESP_IMAGE}
       args: [
-        "-p", "8000",
-        "-P", "8001",
+        "-p", "8080",
+        "-P", "80",
         "-a", "grpc://127.0.0.1:8081",
         "-s", "${SERVICE_NAME}",
         "-v", "${SERVICE_VERSION}",
       ]
       ports:
-        - containerPort: 8000
+        - containerPort: 8080
+          hostPort: 8080
+        - containerPort: 80
           hostPort: 80
-        - containerPort: 8001
-          hostPort: 8001
         - containerPort: 8090
           hostPort: 8090
       volumeMounts:

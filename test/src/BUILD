@@ -178,7 +178,6 @@ go_library(
         "@github_com_spf13_cobra//:cobra",
         "@github_com_kubernetes_client_go//:kubernetes",
         "@github_com_kubernetes_client_go//:pkg/labels",
-        "@github_com_kubernetes_client_go//:rest",
         "@github_com_kubernetes_client_go//:tools/clientcmd",
         "@github_com_kubernetes_client_go//:pkg/api",
         "@github_com_kubernetes_client_go//:pkg/api/v1",

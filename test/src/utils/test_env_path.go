@@ -27,7 +27,6 @@
 package utils
 
 import (
-	"errors"
 	"io/ioutil"
 	"log"
 	"os"
@@ -46,9 +45,9 @@ func GetTestBinRootPath() (string, error) {
 	case os.Getenv("GOPATH") != "":
 		list := strings.Split(os.Getenv("GOPATH"), string(os.PathListSeparator))
 		return list[0] + "/../bazel-bin", nil
+	default:
+		return "bazel-bin", nil
 	}
-	log.Printf("ERROR: One of TEST_BIN_ROOT, TEST_SRCDIR, GO_PATH has to be set.")
-	return "", errors.New("One of TEST_BIN_ROOT, TEST_SRCDIR, GO_PATH has to be set.")
 }
 
 func GetTestDataRootPath() (string, error) {
@@ -63,9 +62,9 @@ func GetTestDataRootPath() (string, error) {
 	case os.Getenv("GOPATH") != "":
 		list := strings.Split(os.Getenv("GOPATH"), string(os.PathListSeparator))
 		return list[0] + "/..", nil
+	default:
+		return "test", nil
 	}
-	log.Printf("ERROR: One of TEST_BIN_ROOT, TEST_SRCDIR, GO_PATH has to be set.")
-	return "", errors.New("One of TEST_BIN_ROOT, TEST_SRCDIR, GO_PATH has to be set.")
 }
 
 func GetVersion() (string, error) {

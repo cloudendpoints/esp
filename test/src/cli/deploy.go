@@ -28,8 +28,8 @@ package cli
 import (
 	"deploy"
 	"errors"
-	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"reflect"
 	"strconv"
@@ -54,8 +54,9 @@ var (
 	image       string
 	serviceType string
 
-	sslKey   string
-	sslCerts string
+	sslKey          string
+	sslCert         string
+	customNginxConf string
 
 	cfg deploy.Service
 	svc *api.Service
@@ -73,7 +74,7 @@ var deployCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// Must take one parameter
 		if len(args) != 2 {
-			fmt.Println("Please specify kubernetes service name and ESP service name")
+			log.Println("Please specify kubernetes service name and ESP service name")
 			os.Exit(-1)
 		}
 
@@ -84,32 +85,32 @@ var deployCmd = &cobra.Command{
 		var err error
 		svc, err = clientset.Core().Services(namespace).Get(name)
 		if err != nil {
-			fmt.Println("Cannot find kubernetes service", err)
+			log.Println("Cannot find kubernetes service:", err)
 			os.Exit(-1)
 		}
 
 		err = setServiceConfig(&cfg)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			os.Exit(-1)
 		}
 
 		backend, err := GetBackend()
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			os.Exit(-2)
 		}
 
 		// selector for ESP pods
 		selector, err := CreateDeployment(app, ports, backend)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			os.Exit(-2)
 		}
 
 		err = CreateService(app, selector, ports, api.ServiceType(serviceType))
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			os.Exit(-2)
 		}
 	},
@@ -139,12 +140,14 @@ func init() {
 	deployCmd.PersistentFlags().IntVarP(&ports.http2,
 		"http2", "P", 0, "HTTP/2 port to use for ESP")
 	deployCmd.PersistentFlags().IntVarP(&ports.ssl,
-		"ssl", "S", 443, "HTTPS port to use for ESP")
+		"ssl", "S", 0, "HTTPS port to use for ESP")
+	deployCmd.PersistentFlags().StringVarP(&customNginxConf,
+		"nginx_config", "n", "", "Use a custom nginx config file")
 
 	deployCmd.PersistentFlags().StringVar(&sslKey,
 		"sslKey", utils.SSLKeyFile(), "SSL key file")
-	deployCmd.PersistentFlags().StringVar(&sslCerts,
-		"sslCerts", utils.SSLCertFile(), "SSL certs file")
+	deployCmd.PersistentFlags().StringVar(&sslCert,
+		"sslCert", utils.SSLCertFile(), "SSL certificate file")
 
 	deployCmd.PersistentFlags().BoolVarP(&grpc,
 		"grpc", "g", false,
@@ -221,12 +224,33 @@ func MakeContainer(serviceName string, ports Ports, backend string) (*api.Contai
 	// Create config volumes and push data
 	var volumeMounts = make([]api.VolumeMount, 0)
 	var volumes = make([]api.Volume, 0)
+	var published = make([]api.ContainerPort, 0)
+
 	var args = []string{
 		"-s", cfg.Name,
 		"-v", cfg.Version,
 		"-a", backend,
 	}
-	var published = make([]api.ContainerPort, 0)
+
+	if customNginxConf != "" {
+		// some parameters are ignored but ports must be published
+		args = append(args, "-n", "/etc/nginx/custom/nginx.conf")
+
+		name, err := AddConfig(endpointsPrefix+"custom-", map[string]string{
+			"nginx.conf": customNginxConf,
+		})
+
+		if err != nil {
+			return nil, nil, err
+		}
+
+		volumeMounts = append(volumeMounts, api.VolumeMount{
+			Name:      name,
+			MountPath: "/etc/nginx/custom",
+			ReadOnly:  true,
+		})
+		volumes = append(volumes, makeConfigVolume(name))
+	}
 
 	if ports.http > 0 {
 		args = append(args, "-p", strconv.Itoa(ports.http))
@@ -244,7 +268,7 @@ func MakeContainer(serviceName string, ports Ports, backend string) (*api.Contai
 
 		name, err := AddSecret(endpointsPrefix+"ssl-", map[string]string{
 			"nginx.key": sslKey,
-			"nginx.crt": sslCerts,
+			"nginx.crt": sslCert,
 		})
 
 		if err != nil {
@@ -288,7 +312,7 @@ func MakeContainer(serviceName string, ports Ports, backend string) (*api.Contai
 		Args:         args,
 		VolumeMounts: volumeMounts,
 		LivenessProbe: &api.Probe{
-			InitialDelaySeconds: 1,
+			InitialDelaySeconds: 30,
 			TimeoutSeconds:      1,
 			Handler: api.Handler{
 				HTTPGet: &api.HTTPGetAction{
@@ -332,7 +356,7 @@ func CreateDeployment(app string, ports Ports, backend string) (map[string]strin
 		if err != nil {
 			return nil, err
 		}
-		fmt.Println("Updated deployment", dpl.Name)
+		log.Println("Updated deployment", dpl.Name)
 
 		// retrieve selector from the original service
 		selector := svc.Spec.Selector
@@ -367,7 +391,7 @@ func CreateDeployment(app string, ports Ports, backend string) (map[string]strin
 		if err != nil {
 			return nil, err
 		}
-		fmt.Println("Created deployment", deployment.Name)
+		log.Println("Created deployment", deployment.Name)
 		return selector, nil
 	}
 }
@@ -414,7 +438,7 @@ func CreateService(
 	if err != nil {
 		return err
 	}
-	fmt.Println("Created service", svc.Name)
+	log.Println("Created service", svc.Name)
 	return nil
 }
 
@@ -424,7 +448,7 @@ func AddConfig(key string, files map[string]string) (string, error) {
 	for k, fileName := range files {
 		data, err := ioutil.ReadFile(fileName)
 		if err != nil {
-			fmt.Println("Cannot find config file", fileName)
+			log.Println("Cannot find config file", fileName)
 			return "", err
 		}
 		m[k] = string(data)
@@ -441,7 +465,7 @@ func AddConfig(key string, files map[string]string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	fmt.Printf("Created config map %s from %v\n", configMap.Name, files)
+	log.Printf("Created config map %s from %v\n", configMap.Name, files)
 	return configMap.Name, nil
 }
 
@@ -451,7 +475,7 @@ func AddSecret(key string, files map[string]string) (string, error) {
 	for k, fileName := range files {
 		data, err := ioutil.ReadFile(fileName)
 		if err != nil {
-			fmt.Println("Cannot find secret file", fileName)
+			log.Println("Cannot find secret file", fileName)
 			return "", err
 		}
 
@@ -470,7 +494,7 @@ func AddSecret(key string, files map[string]string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	fmt.Printf("Created secret %s from %v\n", secret.Name, files)
+	log.Printf("Created secret %s from %v\n", secret.Name, files)
 	return secret.Name, nil
 }
 
@@ -485,7 +509,7 @@ func makeSecretVolume(name string) api.Volume {
 	}
 }
 
-func makeVolume(name string) api.Volume {
+func makeConfigVolume(name string) api.Volume {
 	return api.Volume{
 		Name: name,
 		VolumeSource: api.VolumeSource{
