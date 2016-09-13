@@ -1,3 +1,19 @@
+# Release 0.3.7 13-09-2016
+
+- Do not send consumer metrics if api_key is not provided.
+- Remove /producer/by_consumer metrics.
+- Set api_version correctly in Report calls.
+- Update to use googleapis proto from Github.
+- Update googleapis submodule.
+- Update platform from GAE to GAE Flex.
+- Log fetching steps in the start script, disable status print outs.
+- Initial CLI for GKE deployment management using k8s Go client.
+- Cleanups, bug fixes and infrastructure improvements
+  - Use perl bazel rules from github
+  - Remove grpc in script/release-publish and script/release-stable.
+  - Fix flaky tests by disabling service control cache.
+  - Add configuration option for the subrequest certificate files
+
 # Release 0.3.6 07-09-2016
 
 - Fix a memory leak in grpc transcode
