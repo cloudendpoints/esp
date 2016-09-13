@@ -93,33 +93,39 @@ node('master') {
   def nodeLabel = getSlaveLabel(DEBIAN_JESSIE)
   try {
     if (runStage(CLEANUP_STAGE)) {
-      stage 'Test Cleanup'
-      cleanupOldTests(nodeLabel)
+      stage('Test Cleanup') {
+        cleanupOldTests(nodeLabel)
+      }
     }
     if (runStage(SLAVE_UPDATE_STAGE)) {
-      stage 'Slave Update'
-      // This needs to run on master as GKE uses a very old version of docker.
-      // Using a new workspace to checkout code in.
-      ws {
-        buildNewDockerSlave(nodeLabel)
+      stage('Slave Update') {
+        // This needs to run on master as GKE uses a very old version of docker.
+        // Using a new workspace to checkout code in.
+        ws {
+          buildNewDockerSlave(nodeLabel)
+        }
       }
     }
     if (runStage(PRESUBMIT)) {
-      stage 'Presubmit Tests'
-      presubmit(nodeLabel)
+      stage('Presubmit Tests') {
+        presubmit(nodeLabel)
+      }
     }
     if (runStage(PERFORMANCE_STAGE)) {
-      stage 'Build Artifacts'
-      buildArtifacts(nodeLabel, false, false)
-      stage 'Performance Test'
-      performance(nodeLabel)
-
+      stage('Build Artifacts') {
+        buildArtifacts(nodeLabel, false, false)
+      }
+      stage('Performance Test') {
+        performance(nodeLabel)
+      }
     }
     if (runStage(E2E_STAGE)) {
-      stage 'Build Artifacts'
-      buildArtifacts(nodeLabel)
-      stage 'E2E Tests'
-      e2eTest(nodeLabel)
+      stage('Build Artifacts') {
+        buildArtifacts(nodeLabel)
+      }
+      stage('E2E Tests') {
+        e2eTest(nodeLabel)
+      }
     }
   } catch (Exception e) {
     sendFailureNotification()
@@ -240,73 +246,75 @@ def performance(nodeLabel) {
 
 def e2eTest(nodeLabel) {
   // Please Update script/validate_release.py when adding or removing test.
+  // Storing as [key, value] as Jenkins groovy cannot iterate over maps :(.
   def branches = [
-      'gke-tight-coupling-https': {
+      ['gke-tight-coupling-https', {
         node(nodeLabel) {
           e2eGKE('tight', 'https')
         }
-      },
-      'gce-debian-8': {
+      }],
+      ['gce-debian-8', {
         node(nodeLabel) {
           e2eGCE(DEBIAN_JESSIE)
         }
-      },
-      'gce-container-vm': {
+      }],
+      ['gce-container-vm', {
         node(nodeLabel) {
           e2eGCEContainer(CONTAINER_VM)
         }
-      },
-      'gke-tight-coupling-http': {
+      }],
+      ['gke-tight-coupling-http', {
         node(nodeLabel) {
           e2eGKE('tight', 'http')
         }
-      },
-      'gke-tight-coupling-custom': {
+      }],
+      ['gke-tight-coupling-custom', {
         node(nodeLabel) {
           e2eGKE('tight', 'custom')
         }
-      },
-      'gke-loose-coupling-http': {
+      }],
+      ['gke-loose-coupling-http', {
         node(nodeLabel) {
           e2eGKE('loose', 'http')
         }
-      },
-      'gke-loose-coupling-https': {
+      }],
+      ['gke-loose-coupling-https', {
         node(nodeLabel) {
           e2eGKE('loose', 'https')
         }
-      },
-      'gke-loose-coupling-custom': {
+      }],
+      ['gke-loose-coupling-custom', {
         node(nodeLabel) {
           e2eGKE('loose', 'custom')
         }
-      },
-      'flex-off-endpoints-on': {
+      }],
+      ['flex-off-endpoints-on', {
         node(nodeLabel) {
           e2eFlex(true, false)
         }
-      },
-      'flex-off-endpoints-off': {
+      }],
+      ['flex-off-endpoints-off', {
         node(nodeLabel) {
           e2eFlex(false, false)
         }
-      },
-      'gce-container-vm-grpc': {
+      }],
+      ['gce-container-vm-grpc', {
         node(nodeLabel) {
           e2eGCEContainer(CONTAINER_VM, true)
         }
-      },
-      'gke-tight-coupling-grpc': {
+      }],
+      ['gke-tight-coupling-grpc', {
         node(nodeLabel) {
           e2eGKE('tight', 'grpc')
         }
-      },
+      }],
   ]
 
   branches = filterBranches(branches, getE2eFilters())
   if (isReleaseQualification()) {
     branches = filterBranches(branches, RELEASE_QUALIFICATION_BRANCHES.join('|'))
   }
+  branches = convertToMap(branches)
 
   withEnv([
       "LANG=C.UTF-8",
@@ -858,14 +866,27 @@ def generateServiceName(uniqueID, servicePrefix = '') {
   return "${servicePrefix}testing-dot-${PROJECT_ID}.appspot.com"
 }
 
+// Converts a list of [key, value] to a map
+def convertToMap(list) {
+  def map = [:]
+  for (int i = 0; i < list.size(); i++) {
+    def key = list.get(i).get(0)
+    def value = list.get(i).get(1)
+    map[key] = value
+  }
+  return map
+}
+
 def filterBranches(branches, regex) {
-  filtered_branch = [:]
-  for (branch in branches) {
-    if (branch.key ==~ regex) {
-      filtered_branch[branch.key] = branch.value
+  def filteredBranches = []
+  for (int i = 0; i < branches.size(); i++) {
+    def keyValue = branches.get(i)
+    def key = keyValue.get(0)
+    if (key ==~ regex) {
+      filteredBranches.add(keyValue)
     }
   }
-  return filtered_branch
+  return filteredBranches
 }
 
 /*
