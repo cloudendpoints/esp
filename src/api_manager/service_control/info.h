@@ -79,14 +79,14 @@ struct CheckRequestInfo : public OperationInfo {
 
 // Stores the information substracted from the check response.
 struct CheckResponseInfo {
-  // If the information of this struct is valid.
-  bool valid;
   // If the request have a valid api key.
   bool is_api_key_valid;
   // If service is activated.
   bool service_is_activated;
 
-  CheckResponseInfo() : valid(false) {}
+  // By default api_key is valid and service is activated.
+  // They only set to false by the check response from server.
+  CheckResponseInfo() : is_api_key_valid(true), service_is_activated(true) {}
 };
 
 // Information to fill Report request protobuf.

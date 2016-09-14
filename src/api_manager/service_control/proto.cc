@@ -654,7 +654,7 @@ Status VerifyRequiredReportFields(const OperationInfo& info) {
   return Status::OK;
 }
 
-void SetOperationCommonFields(const OperationInfo& info, bool is_api_key_valid,
+void SetOperationCommonFields(const OperationInfo& info,
                               const Timestamp& current_time, Operation* op) {
   if (!info.operation_id.empty()) {
     op->set_operation_id(info.operation_id);
@@ -665,9 +665,7 @@ void SetOperationCommonFields(const OperationInfo& info, bool is_api_key_valid,
 
   // Sets api_key for consumer_id if it exists and is valid. Otherwise use
   // info.producer_project_id as the consumer_id.
-  // "is_api_key_valid" is always true for the check request. Only if the check
-  // request failed with an invalid api key error, it will be false.
-  if (!info.api_key.empty() && is_api_key_valid) {
+  if (!info.api_key.empty()) {
     op->set_consumer_id(std::string(kConsumerIdApiKey) +
                         std::string(info.api_key));
   } else if (!info.producer_project_id.empty()) {
@@ -791,7 +789,7 @@ Status Proto::FillCheckRequest(const CheckRequestInfo& info,
 
   Timestamp current_time = GetCurrentTimestamp();
   Operation* op = request->mutable_operation();
-  SetOperationCommonFields(info, true, current_time, op);
+  SetOperationCommonFields(info, current_time, op);
 
   auto* labels = op->mutable_labels();
   if (!info.client_ip.empty()) {
@@ -815,12 +813,7 @@ Status Proto::FillReportRequest(const ReportRequestInfo& info,
 
   Timestamp current_time = GetCurrentTimestamp();
   Operation* op = request->add_operations();
-  bool is_api_key_valid = true;
-  if (info.check_response_info.valid &&
-      !info.check_response_info.is_api_key_valid) {
-    is_api_key_valid = false;
-  }
-  SetOperationCommonFields(info, is_api_key_valid, current_time, op);
+  SetOperationCommonFields(info, current_time, op);
 
   // Only populate metrics if we can associate them with a method/operation.
   if (!info.operation_id.empty() && !info.operation_name.empty()) {
@@ -836,12 +829,10 @@ Status Proto::FillReportRequest(const ReportRequestInfo& info,
 
     // Not to send consumer metrics for following cases:
     // 1) api_key is not provided, or
-    // 2) api_key is invalid, or
-    // 3) the service is not activated for the consumer project,
+    // 2) the service is not activated for the consumer project,
     bool send_consumer_metric = true;
-    if (info.api_key.empty() || !is_api_key_valid ||
-        (info.check_response_info.valid &&
-         !info.check_response_info.service_is_activated)) {
+    if (info.api_key.empty() ||
+        !info.check_response_info.service_is_activated) {
       send_consumer_metric = false;
     }
     // Populate all metrics.
@@ -866,11 +857,6 @@ Status Proto::FillReportRequest(const ReportRequestInfo& info,
 Status Proto::ConvertCheckResponse(const CheckResponse& check_response,
                                    const CheckRequestInfo& info,
                                    CheckResponseInfo* check_response_info) {
-  if (check_response_info) {
-    check_response_info->valid = true;
-    check_response_info->is_api_key_valid = true;
-    check_response_info->service_is_activated = true;
-  }
   if (check_response.check_errors().size() == 0) {
     return Status::OK;
   }

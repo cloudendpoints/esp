@@ -47,6 +47,7 @@ my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(9);
 # Save service name in the service configuration protocol buffer file.
 my $config = ApiManager::get_bookstore_service_config_allow_unregistered .
     ApiManager::read_test_file('testdata/logs_metrics.pb.txt') . <<"EOF";
+producer_project_id: "endpoints-test"
 control {
   environment: "http://127.0.0.1:${ServiceControlPort}"
 }
@@ -96,7 +97,7 @@ $t->stop_daemons();
 
 my ($response_headers, $response_body) = split /\r\n\r\n/, $response, 2;
 
-like($response, qr/HTTP\/1\.1 403 Forbidden/, 'Response1 returned HTTP 403.');
+like($response, qr/HTTP\/1\.1 400 Bad Request/, 'Response returned HTTP 400.');
 
 my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
 is(scalar @servicecontrol_requests, 2, 'Service control was called twice.');
@@ -125,20 +126,21 @@ $r = shift @servicecontrol_requests;
 like($r->{uri}, qr/:report$/, ':report was called');
 
 my $report_body = ServiceControl::convert_proto($r->{body}, 'report_request', 'json');
+print $report_body;
 my $expected_report_body = ServiceControl::gen_report_body({
         'url' => '/shelves?key=this-is-an-api-key',
         'location' => 'us-central1',
-        'api_key' => 'this-is-an-api-key',
+        'producer_project_id' => 'endpoints-test',
         'api_name' =>  'endpoints-test.cloudendpointsapis.com',
-	'api_version' =>  '2016-08-25r1',
+        'api_version' =>  '2016-08-25r1',
         'api_method' =>  'ListShelves',
         'http_method' => 'GET',
         'log_message' => 'Method: ListShelves',
-        'response_code' => '403',
+        'response_code' => '400',
         'error_cause' => 'service_control',
         'error_type' => '4xx',
         'request_size' => 62,
-        'response_size' => 395,
+        'response_size' => 345,
         'no_consumer_data' => 1,
     });
 
@@ -158,8 +160,8 @@ sub servicecontrol {
   "operationId": "ListShelves:7b3f4c4f-f29c-4391-b35e-0a676427fec8",
   "checkErrors": [
     {
-      "code": "SERVICE_NOT_ACTIVATED",
-      "detail": "Project has not activated the endpoints-test.cloudendpointsapis.com API."
+      "code": "API_KEY_INVALID",
+      "detail": "Invalid api key."
     }
   ]
 }

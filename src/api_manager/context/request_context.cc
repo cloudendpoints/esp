@@ -178,7 +178,9 @@ void RequestContext::FillOperationInfo(service_control::OperationInfo *info) {
     info->operation_name = kUnrecognizedOperation;
   }
   info->operation_id = operation_id_;
-  info->api_key = api_key_;
+  if (check_response_info_.is_api_key_valid) {
+    info->api_key = api_key_;
+  }
   info->producer_project_id = service_context()->project_id();
   info->referer = http_referer_;
 }

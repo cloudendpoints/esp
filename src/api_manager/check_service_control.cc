@@ -90,9 +90,8 @@ void CheckServiceControl(std::shared_ptr<context::RequestContext> context,
           Status status, const service_control::CheckResponseInfo &info) {
         TRACE(trace_span) << "Check service control request returned with "
                           << "status " << status.ToString();
-        if (status.ok()) {
-          context->set_check_response_info(info);
-        }
+        // info is valid regardless status.
+        context->set_check_response_info(info);
         continuation(status);
       });
 }
