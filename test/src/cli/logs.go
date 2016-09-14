@@ -27,7 +27,12 @@ package cli
 
 import (
 	"fmt"
+	"log"
 	"os"
+
+	"golang.org/x/net/context"
+	"golang.org/x/oauth2/google"
+	logging "google.golang.org/api/logging/v2beta1"
 
 	"github.com/spf13/cobra"
 
@@ -36,56 +41,114 @@ import (
 	"k8s.io/client-go/1.4/pkg/labels"
 )
 
-func init() {
-	RootCmd.AddCommand(logCmd)
-}
-
 var logCmd = &cobra.Command{
 	Use:   "logs [kubernetes service]",
 	Short: "Collect ESP logs for a service",
 	PreRun: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
-			fmt.Println("Please specify kubernetes service name")
+			log.Println("Please specify kubernetes service name")
 			os.Exit(-1)
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
-		pods := GetESPPods(name)
-		fmt.Println("Extracting logs from pods", pods)
-		for _, pod := range pods {
-			PrintLogs(pod)
+		ExtractFromPods(name)
+		if project != "" {
+			ExtractFromGCP(name)
+
 		}
 	},
 }
 
-// Pods running ESP managing services
-func GetESPPods(name string) []string {
+var (
+	project string
+)
+
+func init() {
+	RootCmd.AddCommand(logCmd)
+	logCmd.PersistentFlags().StringVarP(&project,
+		"project", "p", "",
+		"GCP project for Kubernetes Google Cloud Logging integration")
+}
+
+func ExtractFromGCP(name string) {
+	log.Println("Extracting logs from Google Cloud Logging:")
+	ctx := context.Background()
+	hc, err := google.DefaultClient(ctx, logging.CloudPlatformScope)
+	if err != nil {
+		log.Println(err)
+		os.Exit(-1)
+	}
+
+	client, err := logging.New(hc)
+	if err != nil {
+		log.Println(err)
+		os.Exit(-1)
+	}
+
+	// TODO: qualify by cluster_name using resource.labels.cluster_name
+	filter := fmt.Sprintf(`resource.type="container"
+		AND resource.labels.container_name="%s"
+		AND resource.labels.namespace_id="%s"
+		AND severity=ERROR`, MakeName(name), namespace)
+	log.Println("Filter: ", filter)
+	req := &logging.ListLogEntriesRequest{
+		OrderBy:    "timestamp asc",
+		Filter:     filter,
+		ProjectIds: []string{project},
+	}
+
+	resp, err := client.Entries.List(req).Fields(
+		"entries(resource/labels)",
+		"entries(severity,textPayload,timestamp)",
+	).Context(ctx).Do()
+	if err != nil {
+		log.Println(err)
+		os.Exit(-1)
+	}
+
+	log.Println(len(resp.Entries), "entries available")
+	for _, entry := range resp.Entries {
+		fmt.Printf("[%s,%s,%s]%s",
+			entry.Severity, entry.Timestamp, entry.Resource.Labels["pod_id"],
+			entry.TextPayload)
+	}
+}
+
+// ExtractFromPods fetches logs from pods running ESP container
+func ExtractFromPods(name string) {
+	log.Println("Extracting logs from existing pods:")
 	label := labels.SelectorFromSet(labels.Set(map[string]string{
 		ESPManagedService: name,
 	}))
 	options := api.ListOptions{LabelSelector: label}
 	list, err := clientset.Core().Pods(namespace).List(options)
 	if err != nil {
-		return nil
+		log.Println(err)
+		os.Exit(-1)
 	}
 
-	var out = make([]string, len(list.Items))
+	var pods = make([]string, len(list.Items))
 	for i := 0; i < len(list.Items); i++ {
-		out[i] = list.Items[i].Name
+		pods[i] = list.Items[i].Name
 	}
-	return out
+
+	log.Println(pods)
+	for _, pod := range pods {
+		PrintLogs(name, pod)
+	}
 }
 
 // PrintLogs from all pods and containers
-func PrintLogs(pod string) {
-	fmt.Printf("Logs for %s in %s", endpoints, pod)
+func PrintLogs(name, pod string) {
+	log.Printf("[pod_id=%s]", pod)
 	logOptions := &versioned.PodLogOptions{
-		Container: endpoints,
+		Container: MakeName(name),
 	}
 	raw, err := clientset.Core().Pods(namespace).GetLogs(pod, logOptions).Do().Raw()
 	if err != nil {
-		fmt.Println("Request error", err)
+		log.Println("Request error", err)
+		os.Exit(-1)
 	} else {
 		fmt.Println("\n" + string(raw))
 	}

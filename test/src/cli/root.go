@@ -41,7 +41,7 @@ var (
 )
 
 // Prefix for ESP managed resources
-const endpoints = "endpoints"
+const endpointsPrefix = "endpoints-"
 
 // Label to tag pods running ESP for a given k8s service
 // Label to tag services points to ESP pods for a given k8s service

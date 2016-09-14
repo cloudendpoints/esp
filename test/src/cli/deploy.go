@@ -119,7 +119,7 @@ func init() {
 	RootCmd.AddCommand(deployCmd)
 	deployCmd.PersistentFlags().StringVar(&image,
 		"image",
-		"gcr.io/endpoints-jenkins/endpoints-runtime:debian-git-6e393cf6e95983455642142a1b8348fa36106632",
+		"b.gcr.io/endpoints/endpoints-runtime:0.3.7",
 		"URL to ESP docker image")
 
 	deployCmd.PersistentFlags().StringVarP(&cfg.Name,
@@ -211,8 +211,13 @@ func GetBackend() (string, error) {
 	return backend, nil
 }
 
+// MakeName defines the name for the ESP container for a kubernetes service
+func MakeName(name string) string {
+	return endpointsPrefix + name
+}
+
 // MakeContainer from ESP image
-func MakeContainer(ports Ports, backend string) (*api.Container, []api.Volume, error) {
+func MakeContainer(serviceName string, ports Ports, backend string) (*api.Container, []api.Volume, error) {
 	// Create config volumes and push data
 	var volumeMounts = make([]api.VolumeMount, 0)
 	var volumes = make([]api.Volume, 0)
@@ -237,7 +242,7 @@ func MakeContainer(ports Ports, backend string) (*api.Container, []api.Volume, e
 		args = append(args, "-S", strconv.Itoa(ports.ssl))
 		published = append(published, api.ContainerPort{ContainerPort: int32(ports.ssl)})
 
-		name, err := AddSecret(endpoints+"-ssl-", map[string]string{
+		name, err := AddSecret(endpointsPrefix+"ssl-", map[string]string{
 			"nginx.key": sslKey,
 			"nginx.crt": sslCerts,
 		})
@@ -260,7 +265,7 @@ func MakeContainer(ports Ports, backend string) (*api.Container, []api.Volume, e
 	if cfg.CredentialsFile != "" {
 		args = append(args, "-k", "/etc/nginx/creds/secret.json")
 
-		name, err := AddSecret(endpoints+"-creds-", map[string]string{
+		name, err := AddSecret(endpointsPrefix+"creds-", map[string]string{
 			"secret.json": cfg.CredentialsFile,
 		})
 
@@ -277,7 +282,7 @@ func MakeContainer(ports Ports, backend string) (*api.Container, []api.Volume, e
 	}
 
 	esp := api.Container{
-		Name:         endpoints,
+		Name:         MakeName(serviceName),
 		Image:        image,
 		Ports:        published,
 		Args:         args,
@@ -299,7 +304,7 @@ func MakeContainer(ports Ports, backend string) (*api.Container, []api.Volume, e
 
 // CreateDeployment creates ESP pods
 func CreateDeployment(app string, ports Ports, backend string) (map[string]string, error) {
-	esp, volumes, err := MakeContainer(ports, backend)
+	esp, volumes, err := MakeContainer(svc.Name, ports, backend)
 	if err != nil {
 		return nil, err
 	}
@@ -375,7 +380,7 @@ func CreateServicePorts(ports Ports) []api.ServicePort {
 		port := int(v.Field(i).Int())
 		if port > 0 {
 			published = append(published, api.ServicePort{
-				Name:     endpoints + "-" + v.Type().Field(i).Name,
+				Name:     endpointsPrefix + v.Type().Field(i).Name,
 				Protocol: api.ProtocolTCP,
 				Port:     int32(port),
 			})
@@ -496,7 +501,7 @@ func makeVolume(name string) api.Volume {
 func filterVolumes(volumes []api.Volume) []api.Volume {
 	var out = make([]api.Volume, 0)
 	for _, v := range volumes {
-		if !strings.HasPrefix(v.Name, endpoints) {
+		if !strings.HasPrefix(v.Name, endpointsPrefix) {
 			out = append(out, v)
 		}
 	}
@@ -506,7 +511,7 @@ func filterVolumes(volumes []api.Volume) []api.Volume {
 func filterContainers(containers []api.Container) []api.Container {
 	var out = make([]api.Container, 0)
 	for _, v := range containers {
-		if !strings.HasPrefix(v.Name, endpoints) {
+		if !strings.HasPrefix(v.Name, endpointsPrefix) {
 			out = append(out, v)
 		}
 	}

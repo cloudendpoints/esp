@@ -405,6 +405,12 @@ go_library(
     visibility = ["//visibility:public"],
 )
 go_library(
+    name = "context/ctxhttp",
+    srcs = ["context/ctxhttp/ctxhttp.go"],
+    visibility = ["//visibility:public"],
+    deps = ["context"],
+)
+go_library(
     name = "lex/httplex",
     srcs = ["lex/httplex/httplex.go"],
     visibility = ["//visibility:public"],
@@ -544,4 +550,25 @@ new_git_repository(
     remote = "https://github.com/kubernetes/client-go.git",
     commit = "e1a6aa664414135c03f74bac140f30323bb49ce1",
     build_file = "third_party/BUILD.kubernetes",
+)
+
+new_git_repository(
+    name = "google_api_go_client",
+    remote = "https://github.com/google/google-api-go-client.git",
+    commit = "a69f0f19d246419bb931b0ac8f4f8d3f3e6d4feb",
+    build_file = "third_party/BUILD.google_api_go_client",
+)
+
+new_git_repository(
+    name = "golang_oauth2",
+    remote = "https://github.com/golang/oauth2.git",
+    commit = "3c3a985cb79f52a3190fbc056984415ca6763d",
+    build_file = "third_party/BUILD.golang_oauth2",
+)
+
+new_git_repository(
+    name = "google_cloud_go",
+    remote = "https://github.com/GoogleCloudPlatform/google-cloud-go.git",
+    commit = "290ed46a0684cc372f475ca8f36b63aa3066978e",
+    build_file = "third_party/BUILD.google_cloud_go",
 )

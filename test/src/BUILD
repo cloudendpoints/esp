@@ -172,6 +172,9 @@ go_library(
     deps = [
         ":vendor/utils",
         ":vendor/deploy",
+        "@google_api_go_client//:logging/v2beta1",
+        "@golang_oauth2//:oauth2/google",
+        "@github_com_x_net//:context",
         "@github_com_spf13_cobra//:cobra",
         "@github_com_kubernetes_client_go//:kubernetes",
         "@github_com_kubernetes_client_go//:pkg/labels",
