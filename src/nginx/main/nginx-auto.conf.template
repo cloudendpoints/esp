@@ -48,8 +48,7 @@ http {
   % endif
 % endfor
 
-    # Logging to stdout enables better integration with Docker and GKE/Kubernetes.
-    access_log /dev/stdout;
+    access_log ${access_log};
 
 % for i, location in enumerate(ingress.locations):
     location ${location.path} {

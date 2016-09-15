@@ -89,30 +89,26 @@ def write_pid_file():
         f.write(str(os.getpid()))
         f.close()
     except IOError as err:
-        logging.error("Failed to save PID." + err.strerror)
+        logging.error("Failed to save PID file: " + PID_FILE)
+        logging.error(err.strerror)
         sys.exit(3)
 
-def write_template(template,
-                   status,
-                   service_account,
-                   ingress,
-                   metadata,
-                   nginx_conf,
-                   resolver):
+def write_template(ingress, nginx_conf, args):
     # Load template
     try:
-        template = Template(filename=template)
+        template = Template(filename=args.template)
     except IOError as err:
-        logging.error("Failed to load NGINX config template." + err.strerror)
+        logging.error("Failed to load NGINX config template. " + err.strerror)
         sys.exit(3)
 
     conf = template.render(
-            status=status,
-            service_account=service_account,
             ingress=ingress,
-            metadata=metadata,
-            resolver=resolver,
-            pid_file=PID_FILE)
+            pid_file=PID_FILE,
+            status=args.status_port,
+            service_account=args.service_account_key,
+            metadata=args.metadata,
+            resolver=args.dns,
+            access_log=args.access_log)
 
     # Save nginx conf
     try:
@@ -144,7 +140,8 @@ def start_nginx(nginx, nginx_conf):
         # Control is relinquished to nginx process after this line
         os.execv(nginx, ['nginx', '-p', '/usr', '-c', nginx_conf])
     except OSError as err:
-        logging.error("Failed to launch NGINX." + err.strerror)
+        logging.error("Failed to launch NGINX: " + nginx)
+        logging.error(err.strerror)
         sys.exit(3)
 
 
@@ -348,9 +345,12 @@ def make_argparser():
         default=DNS_RESOLVER,
         help=argparse.SUPPRESS)
 
+    # Access log destination. Use special value 'off' to disable.
+    parser.add_argument('--access_log',
+        default='/dev/stdout',
+        help=argparse.SUPPRESS)
+
     return parser
-
-
 
 
 if __name__ == '__main__':
@@ -377,18 +377,8 @@ if __name__ == '__main__':
         start_nginx(args.nginx, args.nginx_config)
     else:
         ingress = make_ingress(service_config, args)
-
         nginx_conf = args.config_dir + "/nginx.conf"
-
         ensure(args.config_dir)
-        write_template(
-                template=args.template,
-                status=args.status_port,
-                service_account=args.service_account_key,
-                ingress=ingress,
-                metadata=args.metadata,
-                nginx_conf=nginx_conf,
-                resolver=args.dns)
-
+        write_template(ingress, nginx_conf, args)
         start_nginx(args.nginx, nginx_conf)
 

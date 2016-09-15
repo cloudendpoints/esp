@@ -57,6 +57,7 @@ var (
 	sslKey          string
 	sslCert         string
 	customNginxConf string
+	customAccessLog string
 
 	cfg deploy.Service
 	svc *api.Service
@@ -143,6 +144,8 @@ func init() {
 		"ssl", "S", 0, "HTTPS port to use for ESP")
 	deployCmd.PersistentFlags().StringVarP(&customNginxConf,
 		"nginx_config", "n", "", "Use a custom nginx config file")
+	deployCmd.PersistentFlags().StringVar(&customAccessLog,
+		"access_log", "", "Use a custom nginx access log file (or 'off' to disable)")
 
 	deployCmd.PersistentFlags().StringVar(&sslKey,
 		"sslKey", utils.SSLKeyFile(), "SSL key file")
@@ -250,6 +253,10 @@ func MakeContainer(serviceName string, ports Ports, backend string) (*api.Contai
 			ReadOnly:  true,
 		})
 		volumes = append(volumes, makeConfigVolume(name))
+	}
+
+	if customAccessLog != "" {
+		args = append(args, "--access_log", customAccessLog)
 	}
 
 	if ports.http > 0 {

@@ -60,6 +60,7 @@ CLI="$ESP_ROOT/bazel-bin/test/src/espcli"
 ARGS="\
   -N 8090 \
   -e LoadBalancer \
+  --access_log off \
   --service ${ESP_SERVICE} \
   --image ${ESP_IMAGE} \
   --sslCert ${ESP_ROOT}/test/src/utils/nginx.crt \
