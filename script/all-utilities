@@ -161,7 +161,7 @@ __EOF__
 function get_memory_usage() {
     local server=${1}
     local local_json=${2}
-    echo > "{local_json}"
+    echo > "${local_json}"
     curl "${server}/endpoints_status" > "${local_json}"
 
     python -c "import json, sys; obj = json.load(open(\"${local_json}\")); \
@@ -176,9 +176,9 @@ function detect_memory_leak() {
     [[ ${second_usage} -gt 0 ]] \
       || { echo "Only run test once."; return 0; }
 
-    local memory_increased=${3}
-    echo "Memory Increased (Bytes): ${memory_increased}."
-    (( threshold = 2 * (${second_usage} - ${start_usage}) / 1000000))
+    local memory_increased=$((${3} / (1024*1024) ))
+    echo "Memory Increased (MB): ${memory_increased} ."
+    (( threshold = 2 * (${second_usage} - ${start_usage}) / (1024*1024) ))
     if [[ ${threshold} -gt 40 ]]; then
         threshold=40
     fi
@@ -187,7 +187,7 @@ function detect_memory_leak() {
     fi
     echo "Memory Threshold (MB): ${threshold}."
 
-    if [[ $(( ${memory_increased} / 1000000 )) -gt ${threshold} ]]; then
+    if [[ ${memory_increased} -gt ${threshold} ]]; then
         echo "************ Memory leak is detected. *************"
         return 1
     else

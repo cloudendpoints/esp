@@ -136,7 +136,7 @@ done
 
 echo "Finished ${RUN_COUNT} test runs."
 echo "Failures: Stress: ${STRESS_FAILURES}, Bookstore: ${BOOKSTORE_FAILURES}."
-echo "Total Memory Increased (Bytes): ${INCREASED_MEMORY_USAGE}."
+echo "Total Memory Increased (MB): $(( ${INCREASED_MEMORY_USAGE} / (1024*1024) ))."
 rm "${local_json}"
 
 RESULT=0
