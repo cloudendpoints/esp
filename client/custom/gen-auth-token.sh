@@ -29,9 +29,10 @@
 # Script to generate auth token based on `src/tools/auth_token_gen`
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-BAZEL=bazel
 AUTH_TOKEN_GEN="${ROOT}/bazel-bin/src/tools/auth_token_gen"
 BUILD_AUTH_TOKEN_GEN=1
+
+. ${ROOT}/script/all-utilities || { echo 'Cannot load Bash utilities'; exit 1; }
 
 # By default, use jwk key. Can be switched to x509 or symmetric key.
 SECRET_FILE="${ROOT}/client/custom/esp-test-client-secret-jwk.json"
@@ -65,7 +66,7 @@ if [[ ! -x ${AUTH_TOKEN_GEN} ]]; then
   [[ ${BUILD_AUTH_TOKEN_GEN} -ne 0 ]] \
     || error_exit "Cannot find ${AUTH_TOKEN_GEN}"
 
-  ${BAZEL} build //src/tools:auth_token_gen \
+  ${BAZEL} build "${BAZEL_ARGS}" //src/tools:auth_token_gen \
     || error_exit "Failed to build //src/tools:auth_token_gen"
 fi
 

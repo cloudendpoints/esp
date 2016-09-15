@@ -29,6 +29,7 @@
 # Library of useful utilities.
 
 GCLOUD="$(which gcloud)" || GCLOUD="${HOME}/google-cloud-sdk/bin/gcloud"
+BAZEL="$(which bazel)" || error_exit "Bazel not installed"
 
 # Exit with a message and an exit code.
 # Arguments:
