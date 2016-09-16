@@ -190,7 +190,6 @@ pkg_tar(
     name = "esp-bin",
     files = [
         ":debug_nginx.sh",
-        ":fetch_service_config.sh",
         ":nginx",
         ":nginx-debug",
         ":fetch_service_config.py",
