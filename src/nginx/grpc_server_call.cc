@@ -122,6 +122,10 @@ NgxEspGrpcServerCall::~NgxEspGrpcServerCall() {
       }
     }
   }
+  for (auto &slice : downstream_slices_) {
+    gpr_slice_unref(slice);
+  }
+  downstream_slices_.clear();
 }
 
 void NgxEspGrpcServerCall::AddInitialMetadata(std::string key,
