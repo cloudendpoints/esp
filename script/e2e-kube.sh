@@ -57,6 +57,12 @@ if [[ -z ${ESP_SERVICE} ]]; then
 fi
 
 CLI="$ESP_ROOT/bazel-bin/test/src/espcli"
+
+if [[ ! -x ${CLI} ]]; then
+  ${BAZEL} build ${BAZEL_ARGS} //test/src:espcli \
+    || error_exit "Failed to build //test/src:espcli"
+fi
+
 ARGS="\
   -N 8090 \
   -e LoadBalancer \
