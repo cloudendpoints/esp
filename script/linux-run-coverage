@@ -57,13 +57,13 @@ function header() {
 }
 
 cd "${ROOT}"
-"${BAZEL}" clean
+bazel clean
 ${ROOT}/script/obliterate
 echo "Running code coverage build."
-"${BAZEL}" build "${BAZEL_ARGS}" --collect_code_coverage --instrumentation_filter '' //src/...
+bazel build --collect_code_coverage --instrumentation_filter '' //src/...
 
 # Run all unit tests. They are tests defined by query
-# "${BAZEL}" query 'tests(//src/...) - tests(//src/nginx/t/...)'
+# bazel query 'tests(//src/...) - tests(//src/nginx/t/...)'
 #
 # Bazel returns the test targets as, for example:
 #   //src/api_manager:http_template_test
@@ -74,7 +74,7 @@ while read test; do
   ${ROOT}/bazel-bin/${test} \
     || error_exit "${ROOT}/bazel-bin/${test} failed."
 done < <(
-    "${BAZEL}" query 'tests(//src/...) - tests(//src/nginx/t/...)' \
+    bazel query 'tests(//src/...) - tests(//src/nginx/t/...)' \
       | sed -e 's|^//||' -e 's|:|/|' \
       | sort
     )
@@ -105,7 +105,7 @@ while IFS=':' read package test; do
     "${ROOT}/bazel-bin/${package}/${test}" \
     || error_exit "${ROOT}/bazel-bin/${package}/${test} failed."
 done < <(
-    "${BAZEL}" query 'tests(//src/nginx/t/...)' \
+    bazel query 'tests(//src/nginx/t/...)' \
       | sort
     )
 

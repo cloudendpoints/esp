@@ -103,7 +103,7 @@ if ! [[ -e "${NGINX_BAZEL_BIN}" ]]; then
   (
     echo 'Building Endpoints Runtime.'
     cd "${ROOT}" \
-      && "${BAZEL}" build "${BAZEL_ARGS}" --config=release //src/nginx/main:nginx-esp
+      && bazel build --config=release //src/nginx/main:nginx-esp
   ) || error_exit 'Failed to build //src/nginx/main:nginx-esp'
 fi
 cp -f "${NGINX_BAZEL_BIN}" "${NGINX}" \

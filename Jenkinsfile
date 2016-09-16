@@ -30,6 +30,11 @@ SUCH DAMAGE.
 import static java.util.UUID.randomUUID
 import java.io.File;
 
+BUCKET = 'endpoints-jenkins.appspot.com'
+CLUSTER = 'jenkins-cluster-tmp'
+PROJECT_ID = 'endpoints-jenkins'
+ZONE = 'us-central1-f'
+SERVICE_MGMT_URL = 'https://servicemanagement.googleapis.com/'
 
 // Supported Stages.
 // ALL will run all stage but the one starting with '_'.
@@ -71,26 +76,15 @@ RELEASE_QUALIFICATION_BRANCHES = [
     'flex-off-endpoints-on',
     'gce-container-vm',
     'gce-debian-8',
-    'gke-tight-http2',
-    'gke-tight-https'
+    'gke-tight-coupling-grpc',
+    'gke-tight-coupling-https'
 ]
 
 // Source Code related variables. Set in stashSourceCode.
 GIT_SHA = ''
 ESP_RUNTIME_VERSION = ''
-// Global Variables defined in Jenkins
-BUCKET = ''
-BAZEL_ARGS = ''
-CLUSTER = ''
-PROJECT_ID = ''
-ZONE = ''
 
 node {
-  BUCKET = env.BUCKET
-  BAZEL_ARGS = env.BAZEL_ARGS
-  CLUSTER = env.GKE_CLUSTER
-  PROJECT_ID = env.PROJECT_ID
-  ZONE = env.ZONE
   stashSourceCode()
   setArtifactsLink()
 }
@@ -272,27 +266,27 @@ def e2eTest(nodeLabel) {
           e2eGCEContainer(CONTAINER_VM)
         }
       }],
-      ['gke-tight-http', {
+      ['gke-tight-coupling-http', {
         node(nodeLabel) {
           e2eGKE('tight', 'http')
         }
       }],
-      ['gke-loose-http', {
+      ['gke-loose-coupling-http', {
         node(nodeLabel) {
           e2eGKE('loose', 'http')
         }
       }],
-      ['gke-custom-http', {
+      ['gke-tight-coupling-custom', {
         node(nodeLabel) {
           e2eGKE('custom', 'http')
         }
       }],
-      ['gke-tight-https', {
+      ['gke-tight-coupling-https', {
         node(nodeLabel) {
           e2eGKE('tight', 'https')
         }
       }],
-      ['gke-loose-https', {
+      ['gke-loose-coupling-https', {
         node(nodeLabel) {
           e2eGKE('loose', 'https')
         }
@@ -312,7 +306,7 @@ def e2eTest(nodeLabel) {
           e2eGCEContainer(CONTAINER_VM, true)
         }
       }],
-      ['gke-tight-http2', {
+      ['gke-tight-coupling-grpc', {
         node(nodeLabel) {
           e2eGKE('tight', 'http2', true)
         }
@@ -427,6 +421,10 @@ def buildPackages() {
     def espDebianPackage = espDebianPackage()
     def espImgFlex = espFlexDockerImage()
     def serviceManagementUrl = getServiceManagementUrl()
+    if (serviceManagementUrl != '') {
+      sh "sed -i s,${SERVICE_MGMT_URL},${serviceManagementUrl},g " +
+          "src/nginx/main/fetch_service_config.sh"
+    }
 
     sh "script/robot-release " +
         "-m ${espImgFlex} " +
@@ -474,7 +472,7 @@ def buildAndStash(buildTarget, stashTarget, name) {
   // Timing out after 40 minutes.
   timeout(40) {
     retry(2) {
-      sh "bazel build ${BAZEL_ARGS} --config=release ${buildTarget}"
+      sh "bazel build --config=release ${buildTarget}"
     }
   }
   fastStash(name, stashTarget)
