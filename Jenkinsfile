@@ -87,7 +87,7 @@ ZONE = ''
 
 node {
   BUCKET = env.BUCKET
-  BAZEL_ARGS = env.BAZEL_ARGS
+  BAZEL_ARGS = env.BAZEL_ARGS == '' ? '' : env.BAZEL_ARGS
   CLUSTER = env.GKE_CLUSTER
   PROJECT_ID = env.PROJECT_ID
   ZONE = env.ZONE
@@ -97,6 +97,7 @@ node {
 
 node('master') {
   def nodeLabel = getSlaveLabel(DEBIAN_JESSIE)
+  def buildNodeLabel = getBuildSlaveLabel(DEBIAN_JESSIE)
   try {
     if (runStage(CLEANUP_STAGE)) {
       stage('Test Cleanup') {
@@ -105,21 +106,19 @@ node('master') {
     }
     if (runStage(SLAVE_UPDATE_STAGE)) {
       stage('Slave Update') {
-        // This needs to run on master as GKE uses a very old version of docker.
-        // Using a new workspace to checkout code in.
-        ws {
+        node(nodeLabel) {
           buildNewDockerSlave(nodeLabel)
         }
       }
     }
     if (runStage(PRESUBMIT)) {
       stage('Presubmit Tests') {
-        presubmit(nodeLabel)
+        presubmit(buildNodeLabel)
       }
     }
     if (runStage(PERFORMANCE_STAGE)) {
       stage('Build Artifacts') {
-        buildArtifacts(nodeLabel, false, false)
+        buildArtifacts(buildNodeLabel, false, false)
       }
       stage('Performance Test') {
         performance(nodeLabel)
@@ -127,7 +126,7 @@ node('master') {
     }
     if (runStage(E2E_STAGE)) {
       stage('Build Artifacts') {
-        buildArtifacts(nodeLabel)
+        buildArtifacts(buildNodeLabel)
       }
       stage('E2E Tests') {
         e2eTest(nodeLabel)
@@ -165,27 +164,11 @@ def cleanupOldTests(nodeLabel) {
 
 def buildArtifacts(nodeLabel, buildBookstore = true, buildGrpcTest = true) {
   def branches = [
-      'esp_debian': {
+      'packages': {
         node(nodeLabel) {
           buildPackages()
         }
-      },
-      'auth_token_gen': {
-        node(nodeLabel) {
-          buildAndStash(
-              '//src/tools:auth_token_gen',
-              'bazel-bin/src/tools/auth_token_gen',
-              'auth_token_gen')
-        }
-      },
-      'espcli': {
-        node(nodeLabel) {
-          buildAndStash(
-              '//test/src:espcli',
-              'bazel-bin/test/src/espcli',
-              'espcli')
-        }
-      },
+      }
   ]
   if (buildBookstore) {
     branches['bookstore'] = {
@@ -213,23 +196,14 @@ def presubmit(nodeLabel) {
       },
       'build-and-test': {
         node(nodeLabel) {
-          presubmitTests('build-and-test')
-        }
-      },
-      'validation': {
-        node(nodeLabel) {
-          presubmitTests('check-files')
           presubmitTests('service-control')
-        }
-      },
-      'docker-tests': {
-        node(nodeLabel) {
-          presubmitTests('docker-tests')
+          presubmitTests('build-and-test', false)
         }
       },
       'release': {
         node(nodeLabel) {
           presubmitTests('release')
+          presubmitTests('docker-tests', false)
         }
       },
       'tsan': {
@@ -238,6 +212,10 @@ def presubmit(nodeLabel) {
         }
       },
   ]
+  // Do validation and
+  node(nodeLabel) {
+    presubmitTests('check-files')
+  }
   parallel branches
 }
 
@@ -443,6 +421,21 @@ def buildPackages() {
       }
     }
   }
+  // Building tools
+  def tools = [
+      '//src/tools:auth_token_gen',
+      '//test/src:espcli',
+      '//test/grpc:grpc-test-client'
+  ]
+  def stashPaths = [
+      'bazel-bin/src/tools/auth_token_gen',
+      'bazel-bin/test/src/espcli',
+      'bazel-bin/test/grpc/grpc-test-client',
+  ]
+  buildAndStash(
+      tools.join(' '),
+      stashPaths.join(' '),
+      'tools')
 }
 
 def buildBookstoreImage() {
@@ -454,15 +447,8 @@ def buildBookstoreImage() {
 
 def buildGrcpTest() {
   def gRpcServerImg = gRpcTestServerImage()
-  buildAndStash(
-      '//test/grpc:grpc-test-client //test/grpc:grpc-test-server',
-      'bazel-bin/test/grpc/grpc-test-client',
-      'grpc_test_client')
-  def codeCheckedOut = fileExists 'test/grpc/linux-build-grpc-docker'
-  if (!codeCheckedOut) {
-    setGCloud()
-    checkoutSourceCode()
-  }
+  setGCloud()
+  checkoutSourceCode()
   sh "test/grpc/linux-build-grpc-docker -i ${gRpcServerImg}"
 }
 
@@ -538,13 +524,11 @@ def e2eCommonOptions(testId, prefix = '') {
 def e2eGKE(coupling, proto, grpc = false) {
   setGCloud()
   checkoutSourceCode()
-  fastUnstash('auth_token_gen')
-  fastUnstash('espcli')
-  fastUnstash('grpc_test_client')
+  fastUnstash('tools')
   def uniqueID = getUniqueID("gke-${coupling}-${proto}", true)
   def serviceName = (grpc ?
-    "grpc-echo-dot-${PROJECT_ID}.appspot.com" :
-    generateServiceName(uniqueID)
+      "grpc-echo-dot-${PROJECT_ID}.appspot.com" :
+      generateServiceName(uniqueID)
   )
   sh "script/e2e-kube.sh " +
       " -b " + (grpc ? gRpcTestServerImage() + " -g" : bookstoreDockerImage()) +
@@ -561,7 +545,7 @@ def e2eGKE(coupling, proto, grpc = false) {
 def e2eGCE(vmImage) {
   setGCloud()
   checkoutSourceCode()
-  fastUnstash('auth_token_gen')
+  fastUnstash('tools')
   def commonOptions = e2eCommonOptions('gce-raw')
   def espDebianPkg = espDebianPackage()
   def debianPackageRepo = getDebianPackageRepo()
@@ -577,13 +561,12 @@ def e2eGCE(vmImage) {
 def e2eGCEContainer(vmImage, gRpc = false) {
   setGCloud()
   checkoutSourceCode()
-  fastUnstash('auth_token_gen')
+  fastUnstash('tools')
   def testType = 'gce-container'
   def espImage = espDockerImage()
   def backendImage = bookstoreDockerImage()
   def gRpcFlag = ''
   if (gRpc) {
-    fastUnstash('grpc_test_client')
     backendImage = gRpcTestServerImage()
     gRpcFlag = '-g'
     testType = "${testType}-grpc"
@@ -606,7 +589,7 @@ def localPerformanceTest() {
   checkoutSourceCode()
   if (pathExistsCloudStorage(stashArchivePath('nginx-esp'))) {
     // Using binary build by buildArtifacts()
-    fastUnstash('auth_token_gen')
+    fastUnstash('tools')
     fastUnstash('nginx-esp')
   }
   def testId = 'jenkins-post-submit-perf-test'
@@ -625,7 +608,7 @@ def localPerformanceTest() {
 def flexPerformance() {
   setGCloud()
   checkoutSourceCode()
-  fastUnstash('auth_token_gen')
+  fastUnstash('tools')
   def testId = 'jenkins-perf-test-vm-esp'
   def uniqueId = getUniqueID('flex-perf', false)
   sh "script/create-test-env-json " +
@@ -643,7 +626,7 @@ def flexPerformance() {
 def e2eFlex(endpoints, flex) {
   setGCloud()
   checkoutSourceCode()
-  fastUnstash('auth_token_gen')
+  fastUnstash('tools')
   def espImgFlex = espFlexDockerImage()
   def rcTestVersion = getUniqueID('', false)
   def skipCleanup = getSkipCleanup() ? '-k' : ''
@@ -664,9 +647,11 @@ def e2eFlex(endpoints, flex) {
       "${skipCleanup}"
 }
 
-def presubmitTests(scenario) {
-  setGCloud()
-  checkoutSourceCode()
+def presubmitTests(scenario, checkoutCode = true) {
+  if (checkoutCode) {
+    setGCloud()
+    checkoutSourceCode()
+  }
   def logBucket = "gs://${BUCKET}/${GIT_SHA}/logs"
   def uniqueId = getUniqueID(scenario, true)
   sh "script/run-presubmit " +
@@ -833,6 +818,10 @@ def getSlaveLabel(label) {
   return label
 }
 
+def getBuildSlaveLabel(label) {
+  return "${label}-build"
+}
+
 def createServerConfigTag() {
   def serverConfig = getServerConfig()
   if (serverConfig != '') {
@@ -926,13 +915,13 @@ def stashArchivePath(name) {
   return "gs://${BUCKET}/${GIT_SHA}/tmp/${name}.tar.gz"
 }
 
-def fastStash(name, stashPath) {
+def fastStash(name, stashPaths) {
   // Checking if archive already exists
   def archivePath = stashArchivePath(name)
   if (!pathExistsCloudStorage(archivePath)) {
-    echo "Stashing ${stashPath} to ${archivePath}"
+    echo "Stashing ${stashPaths} to ${archivePath}"
     retry(5) {
-      sh "tar czf - ${stashPath} | gsutil " +
+      sh "tar czf - ${stashPaths} | gsutil " +
           "-h Content-Type:application/x-gtar cp - ${archivePath}"
       sleep 5
     }

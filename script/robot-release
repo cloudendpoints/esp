@@ -73,7 +73,11 @@ done
 
 if [[ "${SKIP_TESTS}" == 'false' ]]; then
   echo 'Running pre-release tests.'
-  "${BAZEL}" test ${BAZEL_ARGS} --config=release \
+  "${BAZEL}" build ${BAZEL_ARGS} --config=release \
+      //src/... \
+      //third_party:all \
+    || error_exit 'Failed release tests.'
+  "${BAZEL}" test --config=release \
       //src/... \
       //third_party:all \
     || error_exit 'Failed release tests.'

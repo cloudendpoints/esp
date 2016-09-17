@@ -79,6 +79,7 @@ function install_packages() {
     pkg-config \
     unzip \
     uuid-dev \
+    uuid-runtime \
     wget \
     zip \
     zlib1g-dev \
