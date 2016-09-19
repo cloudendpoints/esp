@@ -46,3 +46,15 @@ go_library(
         "@github_com_x_net//:context/ctxhttp",
     ],
 )
+
+go_library(
+    name = "servicemanagement/v1",
+    srcs = glob(["servicemanagement/v1/*.go"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "gensupport",
+        "googleapi",
+        "@github_com_x_net//:context",
+        "@github_com_x_net//:context/ctxhttp",
+    ],
+)

@@ -27,59 +27,82 @@ package cli
 
 import (
 	"deploy"
-	"fmt"
+	"log"
 	"os"
 
 	"github.com/spf13/cobra"
-
-	"k8s.io/client-go/1.4/kubernetes"
-	"k8s.io/client-go/1.4/tools/clientcmd"
 )
 
-var (
-	namespace string
-	clientset *kubernetes.Clientset
-	cfg       deploy.Service
-)
-
-// Prefix for ESP managed resources
-const endpointsPrefix = "endpoints-"
-
-// Label to tag pods running ESP for a given k8s service
-// Label to tag services points to ESP pods for a given k8s service
-const ESPManagedService = "googleapis.com/service"
-
-// Label to tag pods with loosely coupled ESP services
-// (to support multiple ESP deployments for a service)
-const ESPEndpoints = "googleapis.com/endpoints"
-
-// RootCmd for CLI
-var RootCmd = &cobra.Command{
-	Use:   "espcli",
-	Short: "ESP deployment manager for Kubernetes",
-	Long:  "A script to deploy ESP and monitor ESP deployments in Kubernetes",
+var submitCmd = &cobra.Command{
+	Use:   "submit",
+	Short: "Submit service configuration files. Creates an API service if necessary.",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("ESP deployment command line interface")
-	},
-	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
-		configOverrides := &clientcmd.ConfigOverrides{}
-		kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
-		config, err := kubeConfig.ClientConfig()
+		files, err := deploy.MakeConfigFiles(serviceAPI, serviceConfig, serviceProto)
 		if err != nil {
-			fmt.Println("Cannot retrieve kube configuration")
-			os.Exit(-2)
+			log.Println(err)
+			os.Exit(-1)
 		}
 
-		clientset, err = kubernetes.NewForConfig(config)
+		err = cfg.Init()
 		if err != nil {
-			fmt.Println("Cannot connect to Kubernetes API: ", err)
-			os.Exit(-2)
+			log.Println(err)
+			os.Exit(-1)
 		}
+
+		if !cfg.Exists() {
+			err = cfg.Create()
+			if err != nil {
+				log.Println(err)
+				os.Exit(-1)
+			}
+		}
+
+		_, err = cfg.Submit(files)
+		if err != nil {
+			log.Println(err)
+			os.Exit(-1)
+		}
+
+		err = cfg.Enable(cfg.ProducerProject)
+		if err != nil {
+			log.Println(err)
+			os.Exit(-1)
+		}
+
+		err = cfg.Rollout()
+		if err != nil {
+			log.Println(err)
+			os.Exit(-1)
+		}
+
+		log.Println("Finished service config submission")
 	},
 }
 
+var (
+	serviceAPI    []string
+	serviceConfig []string
+	serviceProto  []string
+)
+
 func init() {
-	RootCmd.PersistentFlags().StringVar(&namespace,
-		"namespace", "default", "kubernetes namespace")
+	RootCmd.AddCommand(submitCmd)
+	submitCmd.PersistentFlags().StringArrayVar(&serviceAPI,
+		"openapi", nil,
+		"OpenAPI specification file(s)")
+	submitCmd.PersistentFlags().StringArrayVar(&serviceConfig,
+		"config", nil,
+		"Service config specification file(s)")
+	submitCmd.PersistentFlags().StringArrayVar(&serviceProto,
+		"proto", nil,
+		"Proto descriptor file(s)")
+	submitCmd.PersistentFlags().StringVarP(&cfg.Name,
+		"service", "s", "",
+		"Service API name")
+	submitCmd.PersistentFlags().StringVarP(&cfg.ProducerProject,
+		"project", "p", "",
+		"Producer project ID")
+	submitCmd.PersistentFlags().StringVarP(&cfg.CredentialsFile,
+		"creds", "k", "",
+		"Service account private key JSON file")
 }

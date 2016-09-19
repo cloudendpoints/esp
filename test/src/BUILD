@@ -151,13 +151,14 @@ go_library(
 go_library(
     name = "vendor/deploy",
     srcs = [
-        "deploy/api-compiler.go",
-        "deploy/gcloud.go",
         "deploy/service.go",
     ],
     go_prefix = "//test/src:go_prefix",
     deps = [
         ":vendor/google/api",
+        "@golang_oauth2//:oauth2/google",
+        "@github_com_x_net//:context",
+        "@google_api_go_client//:servicemanagement/v1",
         "@github_com_golang_protobuf//:jsonpb",
         "@github_com_golang_protobuf//:proto",
     ],

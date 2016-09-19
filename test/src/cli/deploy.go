@@ -26,7 +26,6 @@
 package cli
 
 import (
-	"deploy"
 	"errors"
 	"io/ioutil"
 	"log"
@@ -59,7 +58,6 @@ var (
 	customNginxConf string
 	customAccessLog string
 
-	cfg deploy.Service
 	svc *api.Service
 
 	grpc  bool
@@ -90,10 +88,18 @@ var deployCmd = &cobra.Command{
 			os.Exit(-1)
 		}
 
-		err = setServiceConfig(&cfg)
-		if err != nil {
-			log.Println(err)
-			os.Exit(-1)
+		// Fetch latest service config version
+		if cfg.Version == "" {
+			err = cfg.Init()
+			if err != nil {
+				log.Println(err)
+				os.Exit(-1)
+			}
+			_, err = cfg.Fetch()
+			if err != nil {
+				log.Println(err)
+				os.Exit(-1)
+			}
 		}
 
 		backend, err := GetBackend()
@@ -126,7 +132,7 @@ func init() {
 
 	deployCmd.PersistentFlags().StringVarP(&cfg.Name,
 		"service", "s", "",
-		"API service name, empty to use the service label")
+		"API service name")
 	deployCmd.PersistentFlags().StringVarP(&cfg.Version,
 		"version", "v", "",
 		"API service config version, empty to use the latest")
@@ -163,26 +169,6 @@ func init() {
 		"Expose ESP service as the provided service type")
 }
 
-func setServiceConfig(config *deploy.Service) (err error) {
-	if config.Name == "" {
-		name, ok := svc.Labels[ESPConfig]
-		if !ok {
-			return errors.New("Missing service name")
-		}
-		config.Name = name
-	}
-
-	// Fetch latest service config version
-	if config.Version == "" {
-		config.Version, err = config.GetVersion()
-		if err != nil {
-			return
-		}
-	}
-
-	return nil
-}
-
 // GetBackend returns the backend address for ESP service
 func GetBackend() (string, error) {
 	svcPorts := svc.Spec.Ports
@@ -196,15 +182,7 @@ func GetBackend() (string, error) {
 		if svcPort.TargetPort.Type != intstr.Int {
 			return "", errors.New("Service target port should not be a named port")
 		}
-
-		// Check for collisions on the service pods with the port
 		port := int(svcPort.TargetPort.IntVal)
-		if port == ports.http || port == ports.http2 ||
-			port == ports.ssl || port == ports.status {
-			return "", errors.New("Service target port should be distinct from ESP ports: " +
-				strconv.Itoa(port))
-		}
-
 		backend = "127.0.0.1:" + strconv.Itoa(port)
 	} else {
 		backend = svc.Name + ":" + strconv.Itoa(int(svcPort.Port))

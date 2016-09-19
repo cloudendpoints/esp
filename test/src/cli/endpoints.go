@@ -126,7 +126,7 @@ func GetEndpoints(name string) (map[string]string, error) {
 	} else if svc.Spec.Type == versioned.ServiceTypeLoadBalancer {
 		var address string
 		ok := utils.Repeat(func() bool {
-			log.Println("Retrieving address of the service")
+			log.Println("Retrieving address of the service " + name)
 			svc, err = clientset.Core().Services(namespace).Get(name)
 			if err != nil {
 				return false
