@@ -488,16 +488,22 @@ def testCleanup(daysOld, project, flags) {
   sh "script/jenkins-tests-cleanup.sh -d ${daysOld} -p ${project} -f ${flags}"
 }
 
-def updateGerrit(verified) {
-  setGCloud()
-  checkoutSourceCode()
-  def verifiedFlag = verified ? '-v' : ''
-  sh "script/update-presubmit " +
-      "-b ${BUILD_URL}" +
-      "-c ${CHANGE_ID} " +
-      "-r ${REPO_URL} " +
-      "-s ${GIT_SHA} " +
-      "${verifiedFlag}"
+// flow can be run or verify
+def updateGerrit(flow, scenario, success = false) {
+  def gerritUrl = getGerritUrl()
+  if (gerritUrl == '') {
+    return
+  }
+  setGitAuthDaemon()
+  def successFlag = success ? '--success' : ''
+  sh "script/update-gerrit.py " +
+      "--build_url=\"${env.BUILD_URL}\" " +
+      "--change_id=\"${CHANGE_ID}\" " +
+      "--gerrit_url=\"${gerritUrl}\" " +
+      "--commit=\"${GIT_SHA}\" " +
+      "--flow=\"${flow}\" " +
+      "--scenario=\"${scenario}\" " +
+      "${successFlag}"
 }
 
 def buildNewDockerSlave(nodeLabel) {
@@ -677,12 +683,22 @@ def presubmitTests(scenario, checkoutCode = true) {
     setGCloud()
     checkoutSourceCode()
   }
+  updateGerrit('run', scenario)
   def logBucket = "gs://${BUCKET}/${GIT_SHA}/logs"
   def uniqueId = getUniqueID(scenario, true)
-  sh "script/run-presubmit " +
-      "-b ${logBucket} " +
-      "-s ${scenario} " +
-      "-r ${uniqueId}"
+  try {
+    timeout(time: 1, unit: 'HOURS') {
+      sh "script/run-presubmit " +
+          "-b ${logBucket} " +
+          "-s ${scenario} " +
+          "-r ${uniqueId}"
+    }
+    updateGerrit('verify', scenario, true)
+  } catch (Exception e) {
+    updateGerrit('verify', scenario, false)
+    throw e
+  }
+
 }
 
 /*
@@ -758,6 +774,15 @@ def getDurationHour() {
     return "${DURATION_HOUR}".toInteger()
   } catch (MissingPropertyException e) {
     return 0
+  }
+}
+
+def getGerritUrl() {
+  // Using a parameterized build with GERRIT_URL env variable
+  try {
+    return "${GERRIT_URL}"
+  } catch (MissingPropertyException e) {
+    return '';
   }
 }
 
