@@ -43,6 +43,7 @@ extern "C" {
 #include "src/nginx/grpc.h"
 #include "src/nginx/grpc_queue.h"
 #include "src/nginx/grpc_server_call.h"
+#include "src/nginx/http.h"
 #include "src/nginx/request.h"
 
 namespace google {
@@ -236,6 +237,9 @@ struct ngx_esp_request_ctx_s {
 
   // The backend request time in milliseconds. -1 if not available.
   int64_t backend_time;
+
+  // HTTP upstream subrequest connection
+  ngx_esp_http_connection *http_subrequest;
 };
 
 static_assert(std::is_standard_layout<ngx_esp_request_ctx_t>::value,

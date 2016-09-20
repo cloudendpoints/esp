@@ -230,7 +230,7 @@ void NgxEspTranscodedGrpcServerCall::HandleError(const utils::Status &error) {
   if (ctx) {
     ctx->status = error;
   }
-  return ngx_http_finalize_request(r_, ngx_esp_return_json_error(r_));
+  return ngx_http_finalize_request(r_, ngx_esp_return_error(r_));
 }
 
 }  // namespace nginx

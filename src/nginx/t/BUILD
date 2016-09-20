@@ -205,6 +205,7 @@ nginx_suite(
         "unregistered.t",
         "unregistered_no_project.t",
         "unspecified_service_control.t",
+        "uri_rewrite.t",
     ],
     deps = [
         ":perl_library",

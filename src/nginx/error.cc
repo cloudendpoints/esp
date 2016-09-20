@@ -61,20 +61,21 @@ ngx_http_output_body_filter_pt ngx_http_next_body_filter;
  * before generating HTML response body in ngx_http_special_response_handler.
  *
  * We rely on this exclusive use to change response body with ESP payload.
+ *
+ * We check that the context belongs to ESP module, not http subrequest
+ * (http.cc).
  */
-bool ngx_esp_is_error_response(ngx_http_request_t *r) {
-  return !r->internal                     // Skip internal requests
-         && r->err_status                 // NGX error response
-         && r->err_status != NGX_HTTP_OK  // Error code (not MSIE refresh)
-         && r == r->main;                 // Not a sub-request
+bool ngx_esp_is_error_response(ngx_http_request_t *r,
+                               ngx_esp_request_ctx_t *ctx) {
+  return r->err_status && r == r->main && ctx &&
+         ctx->http_subrequest == nullptr;
 }
 
 ngx_int_t ngx_esp_error_header_filter(ngx_http_request_t *r) {
   ngx_esp_request_ctx_t *ctx = reinterpret_cast<ngx_esp_request_ctx_t *>(
       ngx_http_get_module_ctx(r, ngx_esp_module));
 
-  if (ngx_esp_is_error_response(r)  // Error response
-      && ctx) {                     // ESP context available
+  if (ngx_esp_is_error_response(r, ctx)) {
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "ESP error header code: %d", r->err_status);
 
@@ -136,9 +137,8 @@ ngx_int_t ngx_esp_error_header_filter(ngx_http_request_t *r) {
 ngx_int_t ngx_esp_error_body_filter(ngx_http_request_t *r, ngx_chain_t *in) {
   ngx_esp_request_ctx_t *ctx = reinterpret_cast<ngx_esp_request_ctx_t *>(
       ngx_http_get_module_ctx(r, ngx_esp_module));
-  if (ngx_esp_is_error_response(r)  // Error response
-      && !r->header_only            // Request requires body
-      && ctx) {                     // ESP context available
+
+  if (ngx_esp_is_error_response(r, ctx)) {
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "ESP error message: %s", ctx->status.message().c_str());
 
@@ -148,40 +148,32 @@ ngx_int_t ngx_esp_error_body_filter(ngx_http_request_t *r, ngx_chain_t *in) {
                            Status::APPLICATION);
     }
 
-    if (IsGrpcRequest(r)) {
-      // discard the body
-      ngx_int_t rc = ngx_http_next_body_filter(r, nullptr);
-      if (rc != NGX_OK) {
-        return rc;
+    if (!r->header_only) {
+      if (!IsGrpcRequest(r)) {
+        // TODO: consider sending constant payload
+
+        // Serialize error as JSON
+        ngx_buf_t *body = nullptr;
+        ngx_str_t json_error;
+        if (ngx_str_copy_from_std(r->pool, ctx->status.ToJson(), &json_error) !=
+            NGX_OK) {
+          return NGX_ERROR;
+        }
+
+        // Create temporary buffer to hold data, discard "in"
+        body = reinterpret_cast<ngx_buf_t *>(ngx_calloc_buf(r->pool));
+        if (body == nullptr) {
+          return NGX_ERROR;
+        }
+
+        body->temporary = 1;
+        body->pos = json_error.data;
+        body->last = json_error.data + json_error.len;
+        body->last_in_chain = 1;
+        body->last_buf = 1;
+        ngx_chain_t out = {body, nullptr};
+        return ngx_http_next_body_filter(r, &out);
       }
-
-      // send header frame with status
-      GrpcFinish(r, ctx->status, {});
-      return NGX_OK;
-    } else {
-      // TODO: consider sending constant payload
-
-      // Serialize error as JSON
-      ngx_buf_t *body = nullptr;
-      ngx_str_t json_error;
-      if (ngx_str_copy_from_std(r->pool, ctx->status.ToJson(), &json_error) !=
-          NGX_OK) {
-        return NGX_ERROR;
-      }
-
-      // Create temporary buffer to hold data, discard "in"
-      body = reinterpret_cast<ngx_buf_t *>(ngx_calloc_buf(r->pool));
-      if (body == nullptr) {
-        return NGX_ERROR;
-      }
-
-      body->temporary = 1;
-      body->pos = json_error.data;
-      body->last = json_error.data + json_error.len;
-      body->last_in_chain = 1;
-      body->last_buf = 1;
-      ngx_chain_t out = {body, nullptr};
-      return ngx_http_next_body_filter(r, &out);
     }
   }
 
@@ -205,7 +197,7 @@ ngx_http_module_t ngx_esp_error_module_ctx = {
     nullptr, nullptr};
 }  // namespace
 
-ngx_int_t ngx_esp_return_json_error(ngx_http_request_t *r) {
+ngx_int_t ngx_esp_return_error(ngx_http_request_t *r) {
   ngx_esp_request_ctx_t *ctx = reinterpret_cast<ngx_esp_request_ctx_t *>(
       ngx_http_get_module_ctx(r, ngx_esp_module));
   if (ctx == nullptr) {
@@ -240,42 +232,13 @@ ngx_int_t ngx_esp_return_json_error(ngx_http_request_t *r) {
   }
 
   // kick in the filter chain that includes the error filter
-  return ngx_http_output_filter(r, nullptr);
-}
+  ngx_int_t rc = ngx_http_output_filter(r, nullptr);
 
-ngx_int_t ngx_esp_return_grpc_error(ngx_http_request_t *r,
-                                    utils::Status status) {
-  ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                 "Return GRPC error: Status code: %d message: %s",
-                 status.code(), status.message().c_str());
-
-  if (status.code() == NGX_HTTP_CLOSE) {
-    return status.code();
+  if (IsGrpcRequest(r)) {
+    return GrpcFinish(r, ctx->status, {});
+  } else {
+    return rc;
   }
-
-  if (ngx_http_discard_request_body(r) != NGX_OK) {
-    r->keepalive = 0;
-  }
-
-  // GRPC always use 200 OK as HTTP status
-  r->headers_out.status = NGX_HTTP_OK;
-  r->headers_out.content_type = application_grpc;
-  r->headers_out.content_type_len = application_grpc.len;
-  r->headers_out.content_type_lowcase = nullptr;
-
-  ngx_http_clear_content_length(r);
-  ngx_http_clear_accept_ranges(r);
-  ngx_http_clear_last_modified(r);
-  ngx_http_clear_etag(r);
-
-  ngx_int_t rc = ngx_http_send_header(r);
-  if (rc == NGX_ERROR) {
-    return NGX_DONE;
-  }
-
-  ngx_http_output_filter(r, nullptr);
-
-  return GrpcFinish(r, status, {});
 }
 }  // namespace nginx
 }  // namespace api_manager

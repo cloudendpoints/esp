@@ -63,7 +63,7 @@ ngx_esp_request_ctx_s::ngx_esp_request_ctx_s(ngx_http_request_t *r,
       grpc_server_call(nullptr),
       backend_time(-1) {
   ngx_memzero(&wakeup_event, sizeof(wakeup_event));
-  if (lc->esp) {
+  if (lc && lc->esp) {
     request_handler = lc->esp->CreateRequestHandler(
         std::unique_ptr<Request>(new NgxEspRequest(r)));
   }
@@ -634,13 +634,7 @@ ngx_int_t ngx_http_esp_access_wrapper(ngx_http_request_t *r) {
                      "esp: access wrapper finalizing r=%p", r);
 
       // status is passed by context
-      ngx_int_t rc;
-      if (IsGrpcRequest(r)) {
-        rc = ngx_esp_return_grpc_error(r, status);
-      } else {
-        rc = ngx_esp_return_json_error(r);
-      }
-      ngx_http_finalize_request(r, rc);
+      ngx_http_finalize_request(r, ngx_esp_return_error(r));
       return NGX_DONE;
     }
   } else {

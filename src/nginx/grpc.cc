@@ -46,17 +46,6 @@ const ngx_str_t kContentTypeApplicationGrpc = ngx_string("application/grpc");
 const ngx_str_t kContentTypeApplicationGrpcProto =
     ngx_string("application/grpc+proto");
 
-ngx_int_t GrpcRejectNonGrpcTraffic(ngx_http_request_t *r) {
-  ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
-                "GrpcRejectNonGrpcTraffic: Rejecting non-GRPC traffic");
-
-  // Returning 404 - NOT FOUND
-  ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r);
-  ctx->status =
-      Status(NGX_HTTP_NOT_FOUND, "No HTTP backend defined for this location.");
-  return ngx_esp_return_json_error(r);
-}
-
 std::pair<Status, std::string> GrpcGetBackendAddress(
     ngx_log_t *log, ngx_esp_loc_conf_t *espcf, ngx_esp_request_ctx_t *ctx) {
   if (espcf->grpc_backend_address_override.data &&
@@ -137,6 +126,7 @@ ngx_int_t GrpcBackendHandler(ngx_http_request_t *r) {
       ngx_http_get_module_loc_conf(r, ngx_esp_module));
   ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r);
 
+  Status status = Status::OK;
   if (IsGrpcRequest(r)) {
     // Check whether there's a GRPC backend defined for this request;
     // if there is, we can use it for GRPC traffic.  Otherwise, we'll
@@ -144,7 +134,6 @@ ngx_int_t GrpcBackendHandler(ngx_http_request_t *r) {
     // request to the handler defined by the grpc_pass block's
     // synthetic location.
 
-    Status status = Status::OK;
     std::shared_ptr<::grpc::GenericStub> stub;
     std::tie(status, stub) = GrpcGetStub(r, espcf, ctx);
 
@@ -169,12 +158,10 @@ ngx_int_t GrpcBackendHandler(ngx_http_request_t *r) {
         return NGX_DONE;
       }
     }
-    return ngx_esp_return_grpc_error(r, status);
   } else if (ctx && ctx->request_handler &&
              ctx->request_handler->CanBeTranscoded()) {
     // Same as the gRPC case. Check whether there's a GRPC backend defined for
     // this request to use.
-    Status status = Status::OK;
     std::shared_ptr<::grpc::GenericStub> stub;
     std::tie(status, stub) = GrpcGetStub(r, espcf, ctx);
 
@@ -196,11 +183,17 @@ ngx_int_t GrpcBackendHandler(ngx_http_request_t *r) {
         return NGX_DONE;
       }
     }
-    ctx->status = status;
-    return ngx_esp_return_json_error(r);
+  } else {
+    ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
+                  "GrpcRejectNonGrpcTraffic: Rejecting non-GRPC traffic");
+
+    // Returning 404 - NOT FOUND
+    status = Status(NGX_HTTP_NOT_FOUND,
+                    "No HTTP backend defined for this location.");
   }
-  // Reject non-gRPC traffic
-  return GrpcRejectNonGrpcTraffic(r);
+
+  ctx->status = status;
+  return ngx_esp_return_error(r);
 }
 
 }  // namespace

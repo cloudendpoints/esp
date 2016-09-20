@@ -28,7 +28,6 @@
 
 #include <core/ngx_string.h>
 #include <memory>
-#include <sstream>
 
 #include "include/api_manager/http_request.h"
 #include "src/nginx/alloc.h"
@@ -54,80 +53,6 @@ const size_t kRequestPoolSize = 4096;
 // Default HTTP timeout, in milliseconds.
 const int kDefaultTimeoutMilliseconds = 60000;
 
-// ngx_esp_http_connection contains all of the connection data necessary
-// to issue an HTTP request using NGINX's upstream module.
-//
-// Even though all of the data structures are allocated from the NGINX
-// connection pool, we additionally contain them all in this single
-// data structure so that they can be allocated in one go. The pool size
-// is calculated exactly to fit any NGINX pool structures, this struct,
-// and pool cleanup callback (which will call the destructor).
-struct ngx_esp_http_connection {
-  // A 'fake' client NGINX connection object.
-  //
-  // Because NGINX is primarily a proxy, it usually has two connections:
-  // one from the client (downstream), the other to the server (upstream).
-  // To use NGINX as an HTTP client, we create a fake client connection
-  // and a request (below), and use NGINX upstream module to create the
-  // upstream connection to do the actual communication.
-  ngx_connection_t connection;
-
-  // Event structures referenced by the connection.
-  ngx_event_t read_event;
-  ngx_event_t write_event;
-
-  // Local socket address for the fake connection.
-  sockaddr_in local_sockaddr;
-
-  // Log and its context.
-  // The log context connection will be the fake connection, and the
-  // log context request will be the request (below, field `request`).
-  ngx_log_t log;
-  ngx_http_log_ctx_t log_ctx;
-
-  // Upstream connection configuration, timeouts etc.
-  ngx_http_upstream_conf_t upstream_conf;
-
-  // Request information.
-
-  // The nginx_http_request_t used to handle the HTTP request.
-  ngx_http_request_t *request;
-
-  // Target URL path and host. Host will be used to send 'Host' header.
-  ngx_str_t url_path;
-  ngx_str_t host_header;
-
-  // A unique pointer to the HTTP request object created by the caller
-  // (contains headers, body, HTTP verb, URL, timeout, and completion
-  // continuation).
-  std::unique_ptr<HTTPRequest> esp_request;
-
-  // Response information.
-
-  // Parsed HTTP response status.
-  ngx_http_status_t response_status;
-
-  // Stream in which we accumulate response body as it is streamed to us
-  // by the NGINX upstream module.
-  std::ostringstream response_body;
-
-  // Response headers captured in a map.
-  std::map<std::string, std::string> response_headers;
-
-  // Wake up information.
-
-  // An event pre-allocated for the tear-down of the request.
-  //
-  // Because NGINX calls the event handlers in the context of a connection
-  // or a request, the memory pools allocated to handle the HTTP request
-  // can be accessed when the event handler has returned. Therefore, once
-  // the request is complete, we schedule a single top-level event and
-  // destroy the memory pools there.
-  //
-  // see wakeup_event_handler for details.
-  ngx_event_t wakeup_event;
-};
-
 // http:// and https:// prefixes used to parse target URL of the HTTP
 // request and identify the protocol.
 ngx_str_t http = ngx_string("http://");
@@ -139,20 +64,14 @@ ngx_str_t https = ngx_string("https://");
 ngx_int_t ngx_esp_upstream_process_status_line(ngx_http_request_t *r);
 ngx_int_t ngx_esp_upstream_process_header(ngx_http_request_t *r);
 
-// The HTTP request logic stores request data directly in the
-// ngx_esp_module slot of the ngx_http_request_t.
-//
-// A cleaner approach may be to still allocate ngx_esp_request_ctx_s
-// and store a pointer there. This single point will allow for that
-// change to happen easily.
-//
 // Alternatively, we could inherit both ngx_esp_http_connection and
 // ngx_esp_request_ctx_s from a common base and store the base pointer
 // in the per-request module context.
 inline ngx_esp_http_connection *get_esp_connection(ngx_http_request_t *r) {
   if (r != nullptr) {
-    ngx_esp_http_connection *ehc = reinterpret_cast<ngx_esp_http_connection *>(
+    ngx_esp_request_ctx_t *dummy = reinterpret_cast<ngx_esp_request_ctx_t *>(
         ngx_http_get_module_ctx(r, ngx_esp_module));
+    ngx_esp_http_connection *ehc = dummy->http_subrequest;
 
     ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "get_esp_connection(%p) -> %p", r, ehc);
@@ -996,18 +915,17 @@ Status initialize_request(ngx_pool_t *request_pool,
   // will ignore it.
   r->internal = 1;
 
+  // Allocate a dummy ESP module context and set its field to http_connection
+  ngx_esp_request_ctx_t *dummy = RegisterPoolCleanup(
+      r->pool, new (r->pool) ngx_esp_request_ctx_t(r, nullptr));
+  if (dummy == nullptr) {
+    return Status(NGX_ERROR, "Out of memory");
+  }
+
+  dummy->http_subrequest = http_connection;
+
   // Set the request's ESP module context.
-  //
-  // At the moment we set the ngx_esp_http_connection object directly.
-  //
-  // TODO: this may be not ideal because the main request flow uses
-  // ngx_esp_request_ctx_t for the per-request module context. Even though
-  // the code paths do not overlap on the same request, there is risk to this
-  // approach.
-  // Alternatively, we can always add a pointer to http_connection to
-  // ngx_esp_request_ctx_t and store such dummy ngx_esp_request_ctx_t module
-  // request context.
-  ngx_http_set_ctx(r, http_connection, ngx_esp_module);
+  ngx_http_set_ctx(r, dummy, ngx_esp_module);
 
   return Status::OK;
 }
