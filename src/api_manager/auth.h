@@ -48,6 +48,9 @@ struct UserInfo {
   // Audience of the incoming JWT.
   // See https://tools.ietf.org/html/rfc7519.
   std::set<std::string> audiences;
+  // Authorized party of the incoming JWT.
+  // See http://openid.net/specs/openid-connect-core-1_0.html#IDToken
+  std::string authorized_party;
 
   // Returns audiences as a comma separated strings.
   std::string AudiencesAsString() const {

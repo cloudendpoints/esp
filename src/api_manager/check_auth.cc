@@ -251,6 +251,7 @@ void AuthChecker::CheckAudience(bool cache_hit) {
                              : user_info_.AudiencesAsString();
   context_->set_auth_issuer(user_info_.issuer);
   context_->set_auth_audience(audience);
+  context_->set_auth_authorized_party(user_info_.authorized_party);
 
   // Remove http/s header and trailing '/' for issuer.
   std::string issuer = utils::GetUrlContent(user_info_.issuer);

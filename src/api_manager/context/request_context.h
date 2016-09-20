@@ -90,6 +90,12 @@ class RequestContext {
     auth_audience_ = audience;
   }
 
+  // Sets authorized party to request context. The authorized party is read
+  // from the "azp" claim in the auth token.
+  void set_auth_authorized_party(const std::string &authorized_party) {
+    auth_authorized_party_ = authorized_party;
+  }
+
   // Get CloudTrace object.
   cloud_trace::CloudTrace *cloud_trace() { return cloud_trace_.get(); }
 
@@ -146,6 +152,10 @@ class RequestContext {
 
   // auth_audience. It will be used in service control Report().
   std::string auth_audience_;
+
+  // auth_authorized_party. It will be used in service control Check() and
+  // Report().
+  std::string auth_authorized_party_;
 
   // Used by cloud tracing.
   std::unique_ptr<cloud_trace::CloudTrace> cloud_trace_;

@@ -42,6 +42,7 @@ const char kUserId[] =
     "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount."
     "com";
 const char kAudience[] = "http://myservice.com/myapi";
+const char kAuthorizedParty[] = "authorized@party.com";
 
 // Generated via service account, and immediately revoked.
 const char kWrongPrivateKey[] =
@@ -294,6 +295,28 @@ const char kTokenMultiAud[] =
     "qGuAjFES_t6LmmSgi31nI5R6frO98k0DQgAv2m16qC2CidhzStwFIaFVYWBaOwkoB-RQaH8Zr"
     "wgOlvF_7CgLuva1bhuYfDDc8jjgqU-vGKdctc87KK4tkc_OQiwe-RLH6o8sF5vw==";
 
+// Token with the "azp" claim.
+// Payload:
+// {
+//   "iss": "628645741881-"
+//     "noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com",
+//   "sub": "628645741881-"
+//     "noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com",
+//   "aud": "http://myservice.com/myapi",
+//   "azp": "authorized@party.com"
+// }
+const char kTokenWithAzp[] =
+    "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiI2Mjg2NDU3NDE4ODEtbm9hYml1"
+    "MjNmNWE4bThvdmQ4dWN2Njk4bGo3OHZ2MGxAZGV2ZWxvcGVyLmdzZXJ2aWNlYWNjb3VudC5jb"
+    "20iLCJzdWIiOiI2Mjg2NDU3NDE4ODEtbm9hYml1MjNmNWE4bThvdmQ4dWN2Njk4bGo3OHZ2MG"
+    "xAZGV2ZWxvcGVyLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJhdWQiOiJodHRwOi8vbXlzZXJ2aWN"
+    "lLmNvbS9teWFwaSIsImF6cCI6ImF1dGhvcml6ZWRAcGFydHkuY29tIn0.I48qxD87l2k6UBw-"
+    "1NiP-JgBAyelOFSs3_dUlEeyvdwkeahcgyHBu7W8lOdESHci88uBof-6DjLgIJGQv0-9xGRuY"
+    "EfnBDtUkPjVDk_9NCipoi2X2HVrcLYY0AJFQnd57UL3bqDudY8-lx4QXxsczNMba6eyInibdw"
+    "B3VAsgcZZAqMGu91i-d12ayNodrKurCGY7tH_9bf7kxhtcB-YDAepLnaLZ4pOjTZe4Ap20G2p"
+    "Z_Wbu2Pc9Pq0kPHQo-e9gKCt403cI8MaVxDQkSolpjiVg29rul5m7k359q_XVexvsboHRVP2-"
+    "no5Y_Ge3KbA7XosymMYlal0J0iYHQuV_sw";
+
 class JwtValidatorTest : public ::testing::Test {
  public:
   void SetUp() {}
@@ -459,6 +482,23 @@ TEST_F(JwtValidatorTest, WrongKey) {
   status = validator->VerifySignature(kPublicKeyJwk, strlen(kPublicKeyJwk));
   ASSERT_FALSE(status.ok());
   ASSERT_EQ(status.message(), "KEY_RETRIEVAL_ERROR") << status.message();
+}
+
+TEST_F(JwtValidatorTest, TokenWithAuthorizedParty) {
+  UserInfo user_info;
+
+  // Token without "azp" claim.
+  std::unique_ptr<JwtValidator> validator =
+      JwtValidator::Create(kTokenNoKid, strlen(kTokenNoKid));
+  Status status = validator->Parse(&user_info);
+  ASSERT_TRUE(status.ok());
+  ASSERT_TRUE(user_info.authorized_party.empty());
+
+  // Token with "azp" claim.
+  validator = JwtValidator::Create(kTokenWithAzp, strlen(kTokenWithAzp));
+  status = validator->Parse(&user_info);
+  ASSERT_TRUE(status.ok());
+  ASSERT_EQ(user_info.authorized_party, kAuthorizedParty);
 }
 
 }  // namespace
