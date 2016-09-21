@@ -92,6 +92,22 @@ cc_binary(
 )
 
 cc_binary(
+    name = "interop-stress-client",
+    testonly = 1,
+    deps = [
+        "@grpc_git//:stress_test",
+    ],
+)
+
+cc_binary(
+    name = "interop-metrics-client",
+    testonly = 1,
+    deps = [
+        "@grpc_git//:metrics_client",
+    ],
+)
+
+cc_binary(
     name = "interop-client",
     testonly = 1,
     srcs = [

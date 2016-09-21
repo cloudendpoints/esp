@@ -72,7 +72,8 @@ RELEASE_QUALIFICATION_BRANCHES = [
     'gce-container-vm',
     'gce-debian-8',
     'gke-tight-http2',
-    'gke-tight-https'
+    'gke-tight-https',
+    'gke-tight-http2-interop',
 ]
 
 // Source Code related variables. Set in stashSourceCode.
@@ -287,12 +288,17 @@ def e2eTest(nodeLabel) {
       }],
       ['gce-container-vm-grpc', {
         node(nodeLabel) {
-          e2eGCEContainer(CONTAINER_VM, true)
+          e2eGCEContainer(CONTAINER_VM, 'echo')
         }
       }],
       ['gke-tight-http2', {
         node(nodeLabel) {
-          e2eGKE('tight', 'http2', true)
+          e2eGKE('tight', 'http2', 'echo')
+        }
+      }],
+      ['gke-tight-http2-interop', {
+        node(nodeLabel) {
+          e2eGKE('tight', 'http2', 'interop')
         }
       }],
   ]
@@ -366,8 +372,8 @@ def bookstoreDockerImage() {
   return "gcr.io/${PROJECT_ID}/bookstore:${GIT_SHA}"
 }
 
-def gRpcTestServerImage() {
-  return "gcr.io/${PROJECT_ID}/grpc-test-server:${GIT_SHA}"
+def gRpcTestServerImage(grpc) {
+  return "gcr.io/${PROJECT_ID}/grpc-${grpc}-server:${GIT_SHA}"
 }
 
 def espDebianPackage() {
@@ -425,12 +431,20 @@ def buildPackages() {
   def tools = [
       '//src/tools:auth_token_gen',
       '//test/src:espcli',
-      '//test/grpc:grpc-test-client'
+      '//test/grpc:grpc-test-client',
+      '//test/grpc:interop-client',
+      '//test/grpc:interop-metrics-client',
+      '//test/grpc:interop-server',
+      '//test/grpc:interop-stress-client',
   ]
   def stashPaths = [
       'bazel-bin/src/tools/auth_token_gen',
       'bazel-bin/test/src/espcli',
       'bazel-bin/test/grpc/grpc-test-client',
+      'bazel-bin/test/grpc/interop-client',
+      'bazel-bin/test/grpc/interop-metrics-client',
+      'bazel-bin/test/grpc/interop-server',
+      'bazel-bin/test/grpc/interop-stress-client',
   ]
   buildAndStash(
       tools.join(' '),
@@ -446,10 +460,12 @@ def buildBookstoreImage() {
 }
 
 def buildGrcpTest() {
-  def gRpcServerImg = gRpcTestServerImage()
+  def gRpcEchoServerImg = gRpcTestServerImage('echo')
+  def gRpcInteropServerImg = gRpcTestServerImage('interop')
   setGCloud()
   checkoutSourceCode()
-  sh "test/grpc/linux-build-grpc-docker -i ${gRpcServerImg}"
+  sh "test/grpc/linux-build-grpc-docker -i ${gRpcEchoServerImg}"
+  sh "test/grpc/linux-build-grpc-docker -o -i ${gRpcInteropServerImg}"
 }
 
 def buildAndStash(buildTarget, stashTarget, name) {
@@ -521,17 +537,24 @@ def e2eCommonOptions(testId, prefix = '') {
       "${skipCleanup} "
 }
 
-def e2eGKE(coupling, proto, grpc = false) {
+// grpc is a string; one of
+//  'off': not use grpc
+//  'echo': run grpc echo pass_through and transcoding tests
+//  'interop': run grpc interop pass_through test.
+def e2eGKE(coupling, proto, grpc = 'off') {
   setGCloud()
   checkoutSourceCode()
   fastUnstash('tools')
   def uniqueID = getUniqueID("gke-${coupling}-${proto}", true)
-  def serviceName = (grpc ?
-      "grpc-echo-dot-${PROJECT_ID}.appspot.com" :
-      generateServiceName(uniqueID)
-  )
+  def serviceName = generateServiceName(uniqueID)
+  def backendDockerImage = bookstoreDockerImage())
+  if (grpc != 'off') {
+     serviceName = "grpc-${grpc}-dot-${PROJECT_ID}.appspot.com"
+     backendDockerImage = gRpcTestServerImage(grpc)
+  }
   sh "script/e2e-kube.sh " +
-      " -b " + (grpc ? gRpcTestServerImage() + " -g" : bookstoreDockerImage()) +
+      " -b ${backendDockerImage}" +
+      " -g ${grpc}" +
       " -e " + espDockerImage() +
       " -t ${proto}" +
       " -c ${coupling}" +
@@ -558,7 +581,7 @@ def e2eGCE(vmImage) {
       "-r \"${debianPackageRepo}\""
 }
 
-def e2eGCEContainer(vmImage, gRpc = false) {
+def e2eGCEContainer(vmImage, grpc = 'off') {
   setGCloud()
   checkoutSourceCode()
   fastUnstash('tools')
@@ -566,12 +589,14 @@ def e2eGCEContainer(vmImage, gRpc = false) {
   def espImage = espDockerImage()
   def backendImage = bookstoreDockerImage()
   def gRpcFlag = ''
-  if (gRpc) {
-    backendImage = gRpcTestServerImage()
-    gRpcFlag = '-g'
+  def prefix = ''
+  if (grpc != 'off') {
+    backendImage = gRpcTestServerImage(grpc)
+    gRpcFlag = "-g ${grpc}"
     testType = "${testType}-grpc"
+    prefix = 'grpc-'
   }
-  def commonOptions = e2eCommonOptions(testType, gRpc ? 'grpc-' : '')
+  def commonOptions = e2eCommonOptions(testType, prefix)
   echo 'Running GCE container test'
   sh "test/bookstore/gce-container/e2e.sh " +
       commonOptions +

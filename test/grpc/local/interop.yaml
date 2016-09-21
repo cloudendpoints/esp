@@ -1,0 +1,13 @@
+type: google.api.Service
+config_version: 3
+name: interop-dot-esp-grpc-load-test.appspot.com
+title: Grpc Interop test API
+producer_project_id: esp-grpc-load-test
+apis:
+- name: grpc.testing.TestService
+usage:
+  rules:
+    - selector: grpc.testing.TestService.*
+      allow_unregistered_calls: true
+control:
+    environment:  servicecontrol.googleapis.com

@@ -41,16 +41,16 @@ function cleanup {
 e2e_options "${@}"
 
 if [[ -z ${BOOKSTORE_IMAGE} ]]; then
-  if [[ ${GRPC} == 'true' ]]; then
-    BOOKSTORE_IMAGE='gcr.io/endpointsv2/bookstore-grpc:latest'
+  if [[ ${GRPC} != 'off' ]]; then
+    BOOKSTORE_IMAGE="gcr.io/endpointsv2/grpc-${GRPC}-server:latest"
   else
     BOOKSTORE_IMAGE='gcr.io/endpoints-jenkins/bookstore:0.3'
   fi
 fi
 
 if [[ -z ${ESP_SERVICE} ]]; then
-  if [[ ${GRPC} == 'true' ]]; then
-    ESP_SERVICE="grpc-echo-dot-endpoints-jenkins.appspot.com"
+  if [[ ${GRPC} != 'off' ]]; then
+    ESP_SERVICE="grpc-${GRPC}-dot-endpoints-jenkins.appspot.com"
   else
     ESP_SERVICE=${DEFAULT_ESP_SERVICE}
   fi
@@ -73,7 +73,7 @@ ARGS="\
   --sslKey ${ESP_ROOT}/test/src/utils/nginx.key \
 "
 
-if [[ $GRPC == 'true' ]]; then
+if [[ $GRPC != 'off' ]]; then
   ARGS="$ARGS -g"
 fi
 

@@ -16,7 +16,7 @@ This file is used for testing grpc and transcoding in local environment.
    bazel-bin/test/grpc/grpc-test-server 0.0.0.0:8081
 
 
-## Service Config
+## Service Config: service.json
 
 The `service.json` service config file is generated from
 `grpc-test.proto` and `grpc-test.yaml` using
@@ -43,3 +43,20 @@ The `service.json` service config file is generated from
  - Push it to service-managment.
 
    gcloud alpha service-management deploy service.json
+
+
+## Service Config: interop_service.json
+
+The `interop_service.json` service config file is generated from
+grpc interop test proto and `interop.yaml` using
+
+ - Downdload the grpc from https://github.com/grpc/grpc. It is better
+   to use the same version as ESP. You can find its version in WORKSPACE file.
+
+ - At grpc folder, run
+
+   protoc src/proto/grpc/testing/test.proto -I. --include_imports --descriptor_set_out=out.descriptors
+
+ - At api-compiler folder, run
+
+   ./run.sh --configs $ESP/test/grpc/local/interop.yaml --configs endpoints.yaml --descriptor $GRPC/out.descriptors --json_out interop_service.json

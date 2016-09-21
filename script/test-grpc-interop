@@ -1,0 +1,94 @@
+#!/bin/bash
+#
+# Copyright (C) Endpoints Server Proxy Authors
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+################################################################################
+#
+
+# This script runs a grpc interop long-running test.
+# It requires bazel build //test/grpc:all
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+. ${ROOT}/script/all-utilities \
+  || { echo "Cannot load Bash utilities" ; exit 1 ; }
+
+HOST=''
+DURATION_IN_HOUR=0
+TEST_CASES='empty_unary:10,large_unary:10,'
+TEST_CASES+='empty_stream:10,client_streaming:10,half_duplex:10,ping_pong:20,server_streaming:10,'
+TEST_CASES+='status_code_and_message:10,custom_metadata:10'
+
+while getopts :h:l:t: arg; do
+  case ${arg} in
+    h) HOST="${OPTARG}";;
+    l) DURATION_IN_HOUR="${OPTARG}";;
+    t) TEST_CASES="${OPTARG}";;
+    *) echo "Invalid option: -${OPTARG}";;
+  esac
+done
+
+[[ -n "${HOST}" ]] || error_exit 'Please specify a host with -h option.'
+
+function print_test_metrics() {
+  local start_time=$(date +"%s")
+  while true; do
+    sleep 5
+    local curr_time=$(date +"%s")
+    echo -n "QPS report at $(((curr_time - start_time) / 60)) minutes:"
+    $ROOT/bazel-bin/test/grpc/interop-metrics-client --total_only
+  done
+}
+
+DURATION_IN_SECONDS=$((DURATION_IN_HOUR * 60 * 60))
+# Minimum run 2 minutes
+if [[ ${DURATION_IN_SECONDS} -lt 120 ]]; then
+  DURATION_IN_SECONDS=120
+fi
+
+# Waits for the proxy and backend to start.
+HOST_IP=${HOST%:*}
+HOST_PORT=${HOST#*:}
+echo "HOST_IP: ${HOST_IP}, HOST_PORT: ${HOST_PORT}"
+retry $ROOT/bazel-bin/test/grpc/interop-client --server_port "${HOST_PORT}" \
+          --server_host "${HOST_IP}" \
+  || error_exit 'Failed to send one request, the proxy did not start properly.'
+
+echo "Starts interop stress test at $(date)."
+echo "Test during is: $((DURATION_IN_SECONDS / 60)) minutes."
+echo "Test cases are: ${TEST_CASES}"
+
+# Start a background print job.
+print_test_metrics&
+PRINT_JOB=$!
+trap "kill ${PRINT_JOB}" EXIT
+
+$ROOT/bazel-bin/test/grpc/interop-stress-client \
+  --server_addresses "${HOST}" \
+  --test_duration_secs "${DURATION_IN_SECONDS}" \
+  --num_channels_per_server 200 \
+  --num_stubs_per_channel 1 \
+  --test_cases "${TEST_CASES}"
+
+echo "Done interop stress test at $(date)."

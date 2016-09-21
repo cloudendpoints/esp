@@ -35,7 +35,7 @@ REMOTE_ESP_LOG_DIR='/var/log/esp'
 
 function cleanup {
   if [[ "${SKIP_CLEANUP}" == 'false' ]]; then
-    if [[ "${GRPC}" != 'true' ]]; then
+    if [[ "${GRPC}" == 'off' ]]; then
       # Deactivating and deleting service
       delete_service "${ESP_SERVICE}"
     fi
@@ -56,7 +56,7 @@ e2e_options "${@}"
 [[ -n "${ESP_IMAGE}" ]] || e2e_usage "Must provide esp docker image via '-e' parameter."
 [[ -n "${INSTANCE_NAME}" ]] || e2e_usage "Must provide Instance name via 'i' parameter."
 
-if [[ "${GRPC}" == 'true' ]]; then
+if [[ "${GRPC}" == 'echo' ]]; then
   HOST="${INSTANCE_NAME}:80"
   YAML_TMPL="${SCRIPT_PATH}/esp_grpc_template.yaml"
   # grpc service config could not come from swagger.
@@ -94,7 +94,7 @@ run retry -n 3 gcloud compute instances create "${INSTANCE_NAME}" \
 
 LOG_DIR="$(mktemp -d /tmp/log.XXXX)"
 TEST_ID="gce-${VM_IMAGE}"
-[[ "${GRPC}" == 'true' ]] && TEST_ID="${TEST_ID}-grpc"
+[[ "${GRPC}" != 'off' ]] && TEST_ID="${TEST_ID}-grpc"
 
 # Running Test
 run_nonfatal long_running_test \

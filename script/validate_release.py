@@ -63,6 +63,7 @@ RUN_TESTS = [
     'gke-tight-http2',
     'gke-tight-http',
     'gke-tight-https',
+    'gke-tight-http2-interop',
     'jenkins-perf-test-vm-esp',
     'jenkins-post-submit-perf-test',
     'long-run-test_flex-off-endpoints-on',

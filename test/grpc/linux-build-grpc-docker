@@ -26,16 +26,28 @@
 #
 ################################################################################
 #
+# This script builds docker image for grpc test server.
+# It can build either grpc-echo-server or grpc-interop-server.
+# Its usage:
+#   linux-build-grpc-docker -i grpc-echo-server-docker-image
+#   linux-build-grpc-docker -o -i grpc-interop-server-docker-image
+
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 GRPC_ROOT="${ROOT}/test/grpc"
-GRPC_TEST_SERVER_TARGET="${ROOT}/bazel-bin/test/grpc/grpc-test-server"
 
 . "${ROOT}/script/all-utilities" || { echo "Cannot load Bash utilities"; exit 1; }
 
-while getopts :i: arg; do
+TEST_SERVER_BIN='grpc-test-server'
+TEST_SERVER_ARGS='0.0.0.0:8081'
+
+while getopts :i:o arg; do
   case ${arg} in
     i) IMAGE="${OPTARG}";;
+    o)
+      TEST_SERVER_BIN='interop-server'
+      TEST_SERVER_ARGS='--port=8081'
+      ;;
     *) error_exit "Unrecognized argument -${OPTARG}";;
   esac
 done
@@ -46,14 +58,19 @@ echo "Checking if docker image ${IMAGE} exists.."
 gcloud docker pull "${IMAGE}" \
   && { echo "Image ${IMAGE} already exists; skipping"; exit 0; }
 
-if ! [[ -e "${GRPC_TEST_SERVER_TARGET}" ]]; then
-  echo "Building grpc-test-server"
-  bazel build --config=release //test/grpc:grpc-test-server \
-    || error_exit 'Could not build grpc-test-server'
+BAZEL_TARGET="${ROOT}/bazel-bin/test/grpc/${TEST_SERVER_BIN}"
+if ! [[ -e "${BAZEL_TARGET}" ]]; then
+  echo "Building ${TEST_SERVER_BIN}"
+  bazel build --config=release "//test/grpc:${TEST_SERVER_BIN}" \
+    || error_exit 'Could not build ${TEST_SERVER_BIN}'
 fi
 
-cp "${GRPC_TEST_SERVER_TARGET}" "${GRPC_ROOT}" \
-  || error_exit "Could not copy ${GRPC_TEST_SERVER_TARGET} to ${GRPC_ROOT}"
+cp -f "${BAZEL_TARGET}" "${GRPC_ROOT}" \
+  || error_exit "Could not copy ${BAZEL_TARGET} to ${GRPC_ROOT}"
+
+sed -e "s|TEST_SERVER_BIN|${TEST_SERVER_BIN}|g" \
+    -e "s|TEST_SERVER_ARGS|${TEST_SERVER_ARGS}|g" \
+    "${GRPC_ROOT}/Dockerfile.temp" > "${GRPC_ROOT}/Dockerfile"
 
 echo "Building Endpoints Runtime grpc docker image."
 retry -n 3 docker build --no-cache -t "${IMAGE}" \

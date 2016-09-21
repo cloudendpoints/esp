@@ -21,9 +21,9 @@ RUN apt-get update && \
     libc6 libgcc1 libstdc++6 libuuid1 && \
     apt-get clean && rm /var/lib/apt/lists/*_*
 
-# Copy grpc-test-server binary to the same director as this Dockerfile
-ADD grpc-test-server grpc-test-server
+# Copy TEST_SERVER_BIN binary to the same director as this Dockerfile
+ADD TEST_SERVER_BIN TEST_SERVER_BIN
 
 EXPOSE 8081
 
-ENTRYPOINT ["./grpc-test-server", "0.0.0.0:8081"]
+ENTRYPOINT ["./TEST_SERVER_BIN", "TEST_SERVER_ARGS"]

@@ -47,7 +47,7 @@ DIRECT_REPO=''
 DURATION_IN_HOUR=0
 ENDPOINTS_RUNTIME_VERSION=''
 ESP_IMAGE='b.gcr.io/endpoints/endpoints-runtime:0.3'
-GRPC='false'
+GRPC='off'
 INSTANCE_NAME=''
 NAMESPACE=''
 REMOTE_LOG_DIR=''
@@ -231,7 +231,7 @@ function long_running_test() {
   local status
   local http_code=200
 
-  if [[ "${GRPC}" == 'true' ]]; then
+  if [[ "${GRPC}" == 'echo' ]]; then
     # We expect HTTP host to run at port 8080 for GRPC tests
     local http_host="http://${host%:*}:8080"
     echo "Checking grpc service ${http_host}, ${host}"
@@ -247,6 +247,13 @@ function long_running_test() {
         -s "${esp_service}" 2>&1 | tee "${log_file}"
         status=${PIPESTATUS[0]}
     fi
+  elif [[ "${GRPC}" == 'interop' ]]; then
+    echo 'Running grpc interop long running test.'
+    run_nonfatal "${ESP_ROOT}"/script/test-grpc-interop \
+        -h "${host}" \
+        -l "${duration_in_hour}" \
+        -s "${esp_service}" 2>&1 | tee "${log_file}"
+    status=${PIPESTATUS[0]}
   else
     # Checking Service before starting the test.
     echo "Checking service: ${host}"
@@ -354,7 +361,7 @@ function upload_logs() {
 # End to End tests common options
 function e2e_options() {
   local OPTIND OPTARG arg
-  while getopts :a:b:B:c:d:e:gi:k:l:r:st:v:V: arg; do
+  while getopts :a:b:B:c:d:e:g:i:k:l:r:st:v:V: arg; do
     case ${arg} in
       a) ESP_SERVICE="${OPTARG}";;
       b) BOOKSTORE_IMAGE="${OPTARG}";;
@@ -362,7 +369,7 @@ function e2e_options() {
       c) COUPLING_OPTION="$(echo ${OPTARG} | tr '[A-Z]' '[a-z]')";;
       d) DEBIAN_PKG="${OPTARG}";;
       e) ESP_IMAGE="${OPTARG}";;
-      g) GRPC='true';;
+      g) GRPC="${OPTARG}";;
       i) UNIQUE_ID="${OPTARG}";;
       k) API_KEY="${OPTARG}";;
       l) DURATION_IN_HOUR="${OPTARG}";;

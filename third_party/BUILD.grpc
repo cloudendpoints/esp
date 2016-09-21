@@ -56,6 +56,7 @@ cc_proto_library(
   name = "interop_proto",
   srcs = [
     "src/proto/grpc/testing/empty.proto",
+    "src/proto/grpc/testing/metrics.proto",
     "src/proto/grpc/testing/test.proto",
   ],
   deps = [
@@ -2044,6 +2045,54 @@ cc_library(
 )
 
 
+cc_library(
+  name = "stress_test",
+  srcs = [
+    "test/cpp/interop/interop_client.cc",
+    "test/cpp/interop/stress_interop_client.cc",
+    "test/cpp/interop/stress_test.cc",
+    "test/cpp/util/metrics_server.cc",
+  ],
+  hdrs = [
+    "test/cpp/interop/client_helper.h",
+    "test/cpp/interop/interop_client.h",
+    "test/cpp/interop/stress_interop_client.h",
+    "test/cpp/util/metrics_server.h",
+  ],
+  includes = [
+    "include",
+  ],
+  deps = [
+    ":interop_proto",
+    "//external:gflags",
+    ":interop_client_helper",
+    ":grpc++_test_util",
+    ":grpc_test_util",
+    ":grpc++",
+    ":grpc",
+    ":gpr_test_util",
+    ":gpr",
+    ":grpc++_test_config",
+  ],
+)
+
+cc_library(
+  name = "metrics_client",
+  srcs = [
+    "test/cpp/interop/metrics_client.cc",
+    "test/cpp/util/metrics_server.h",
+  ],
+  includes = [
+    "include",
+  ],
+  deps = [
+    ":interop_proto",
+    ":grpc++",
+    ":grpc",
+    ":gpr",
+    ":grpc++_test_config",
+  ],
+)
 
 cc_library(
   name = "interop_server_helper",
