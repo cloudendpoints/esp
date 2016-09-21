@@ -95,7 +95,7 @@ remote "sudo docker run -d --name=grpc-test-server gcr.io/endpointsv2/grpc-test-
 
 # GCE needs to allow port 8001 by creating this rule
 # gcloud compute firewall-rules create grpc-port-8001 --allow tcp:8001 --description="grpc http2 port"
-remote "sudo docker run -d -p 80:8000 -p 8001:8001 --link=grpc-test-server:grpc-test-server ${IMAGE} \
+remote "sudo docker run -d -p 80:8000 -p 8001:8001 -p 8090:8090 --link=grpc-test-server:grpc-test-server ${IMAGE} \
   -s ${SERVICE_NAME} -v ${SERVICE_VERSION} -p 8000 -P 8001 -a grpc://grpc-test-server:8081"
 
 echo "GCE vm "${INSTANCE}" was created successfully. Its external IP:"

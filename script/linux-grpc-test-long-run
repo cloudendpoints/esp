@@ -34,7 +34,7 @@
 
 if [[ "$(uname)" != "Linux" ]]; then
   echo "Run on Linux only."
-  exit 1
+#  exit 1
 fi
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -145,8 +145,7 @@ SECOND_MEMORY_USAGE=0
 INCREASED_MEMORY_USAGE=0
 
 echo "GRPC_HOST: ${GRPC_HOST}"
-STATUS_SERVER=${GRPC_HOST/%:80/:8090}
-STATUS_SERVER=${STATUS_SERVER/%:8080/:8090}
+STATUS_SERVER=${GRPC_HOST/%:*/:8090}
 STATUS_SERVER="http://${STATUS_SERVER}"
 echo "STATUS_SERVER: ${STATUS_SERVER}"
 
