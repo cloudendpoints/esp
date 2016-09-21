@@ -193,9 +193,9 @@ ngx_http_module_t ngx_esp_module_ctx = {
     // char *(*init_main_conf)(ngx_conf_t *cf, void *conf);
     ngx_esp_init_main_conf,
     // void *(*create_srv_conf)(ngx_conf_t *cf);
-    ngx_esp_create_srv_conf,
+    nullptr,
     // char *(*merge_srv_conf)(ngx_conf_t *cf, void *prev, void *conf);
-    ngx_esp_merge_srv_conf,
+    nullptr,
     // void *(*create_loc_conf)(ngx_conf_t *cf);
     ngx_esp_create_loc_conf,
     // char *(*merge_loc_conf)(ngx_conf_t *cf, void *prev, void *conf);
@@ -225,28 +225,6 @@ void *ngx_esp_create_main_conf(ngx_conf_t *cf) {
 char *ngx_esp_init_main_conf(ngx_conf_t *cf, void *conf) {
   // noop
   return NGX_CONF_OK;
-}
-
-// Create server context configuration.
-void *ngx_esp_create_srv_conf(ngx_conf_t *cf) {
-  auto *conf = new (cf->pool) ngx_esp_srv_conf_t;
-  if (conf == nullptr) {
-    return nullptr;
-  }
-  conf->esp_main_conf = reinterpret_cast<ngx_esp_main_conf_t *>(
-      ngx_http_conf_get_module_main_conf(cf, ngx_esp_module));
-  return conf;
-}
-
-// Merges in parent server configuration.
-char *ngx_esp_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child) {
-  ngx_esp_srv_conf_t *conf = reinterpret_cast<ngx_esp_srv_conf_t *>(child);
-  ngx_esp_main_conf_t *mc = reinterpret_cast<ngx_esp_main_conf_t *>(
-      ngx_http_conf_get_module_main_conf(cf, ngx_esp_module));
-
-  conf->esp_main_conf = mc;
-
-  return reinterpret_cast<char *>(NGX_CONF_OK);
 }
 
 //
@@ -303,8 +281,6 @@ char *ngx_esp_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child) {
     *ploc = conf;
   }
 
-  conf->esp_srv_conf = reinterpret_cast<ngx_esp_srv_conf_t *>(
-      ngx_http_conf_get_module_srv_conf(cf, ngx_esp_module));
   conf->http_core_loc_conf = reinterpret_cast<ngx_http_core_loc_conf_t *>(
       ngx_http_conf_get_module_loc_conf(cf, ngx_http_core_module));
 

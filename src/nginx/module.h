@@ -106,17 +106,6 @@ typedef struct {
 
 } ngx_esp_main_conf_t;
 
-//
-// ESP Module Configuration - server context.
-//
-typedef struct ngx_esp_srv_conf_s ngx_esp_srv_conf_t;
-struct ngx_esp_srv_conf_s {
-  ngx_esp_srv_conf_s() : esp_main_conf(nullptr) {}
-
-  // Pointer to the main context configuration.
-  ngx_esp_main_conf_t *esp_main_conf;
-};
-
 typedef std::map<std::string, std::shared_ptr<::grpc::GenericStub>>
     ngx_esp_grpc_stub_map_t;
 
@@ -126,9 +115,6 @@ typedef std::map<std::string, std::shared_ptr<::grpc::GenericStub>>
 typedef struct {
   // Core module configuration - used to access logs.
   ngx_http_core_loc_conf_t *http_core_loc_conf;
-
-  // Parent context pointer.
-  ngx_esp_srv_conf_t *esp_srv_conf;
 
   ngx_str_t endpoints_config;  // API Configuration file name.
   ngx_flag_t endpoints_api;    // Does this location host an Endpoints API?

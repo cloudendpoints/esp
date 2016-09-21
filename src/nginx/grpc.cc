@@ -124,6 +124,8 @@ ngx_int_t GrpcBackendHandler(ngx_http_request_t *r) {
 
   ngx_esp_loc_conf_t *espcf = reinterpret_cast<ngx_esp_loc_conf_t *>(
       ngx_http_get_module_loc_conf(r, ngx_esp_module));
+  ngx_esp_main_conf_t *espmf = reinterpret_cast<ngx_esp_main_conf_t *>(
+      ngx_http_get_module_main_conf(r, ngx_esp_module));
   ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r);
 
   Status status = Status::OK;
@@ -152,9 +154,8 @@ ngx_int_t GrpcBackendHandler(ngx_http_request_t *r) {
                        "GrpcBackendHandler: gRPC pass-through - method %s",
                        method.c_str());
 
-        grpc::ProxyFlow::Start(
-            espcf->esp_srv_conf->esp_main_conf->grpc_queue.get(),
-            std::move(server_call), std::move(stub), method, headers);
+        grpc::ProxyFlow::Start(espmf->grpc_queue.get(), std::move(server_call),
+                               std::move(stub), method, headers);
         return NGX_DONE;
       }
     }
@@ -177,9 +178,8 @@ ngx_int_t GrpcBackendHandler(ngx_http_request_t *r) {
 
         const std::multimap<std::string, std::string> &headers =
             ExtractMetadata(r);
-        grpc::ProxyFlow::Start(
-            espcf->esp_srv_conf->esp_main_conf->grpc_queue.get(),
-            std::move(server_call), std::move(stub), method, headers);
+        grpc::ProxyFlow::Start(espmf->grpc_queue.get(), std::move(server_call),
+                               std::move(stub), method, headers);
         return NGX_DONE;
       }
     }
