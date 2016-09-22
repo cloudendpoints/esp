@@ -53,6 +53,19 @@ gcloud docker pull "${IMAGE}" \
 
 echo "Building Endpoints Runtime docker image."
 DOCKERFILE_PATH="./docker/${PLATFORM}"
+
+# Use same Dockerfile as Flex team to build Flex docker image.
+if [[ "${PLATFORM}" == "flex" ]]; then
+  FLEX_DIR=$(mktemp -d /tmp/flex_XXXXX)
+  git clone https://github.com/GoogleCloudPlatform/appengine-sidecars-docker $FLEX_DIR
+  # Update the Dockerfile to use local deb image
+  DIMG="endpoints-runtime.deb"
+  sed -i -e "s|endpoints-runtime||" \
+      -e "s|EXPOSE 8080|\nADD ${DIMG} ${DIMG}\nRUN dpkg -i /${DIMG}\n&|" \
+      "$FLEX_DIR/nginx_proxy/Dockerfile"
+  DOCKERFILE_PATH="$FLEX_DIR/nginx_proxy"
+fi
+
 cp "${DEB}" "${DOCKERFILE_PATH}/endpoints-runtime.deb"
 retry -n 3 docker build --no-cache -t "${IMAGE}" \
   -f "${DOCKERFILE_PATH}/${DOCKERFILE}" \
