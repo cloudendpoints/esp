@@ -205,7 +205,7 @@ func GetBackend() (string, error) {
 				strconv.Itoa(port))
 		}
 
-		backend = "localhost:" + strconv.Itoa(port)
+		backend = "127.0.0.1:" + strconv.Itoa(port)
 	} else {
 		backend = svc.Name + ":" + strconv.Itoa(int(svcPort.Port))
 	}
