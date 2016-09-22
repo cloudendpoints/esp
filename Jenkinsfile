@@ -291,7 +291,7 @@ def e2eTest(nodeLabel) {
           e2eGCEContainer(CONTAINER_VM, 'echo')
         }
       }],
-      ['gke-tight-http2', {
+      ['gke-tight-http2-echo', {
         node(nodeLabel) {
           e2eGKE('tight', 'http2', 'echo')
         }

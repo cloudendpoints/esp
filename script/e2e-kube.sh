@@ -118,6 +118,7 @@ echo "Service is available at: ${HOST}"
 
 LOG_DIR="$(mktemp -d /tmp/log.XXXX)"
 TEST_ID="gke-${COUPLING_OPTION}-${TEST_TYPE}"
+[ "${GRPC}" != 'off' ] && TEST_ID="${TEST_ID}-${GRPC}"
 # Running Test
 run_nonfatal long_running_test \
   "${HOST}" \
