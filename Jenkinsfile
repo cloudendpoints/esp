@@ -547,10 +547,10 @@ def e2eGKE(coupling, proto, grpc = 'off') {
   fastUnstash('tools')
   def uniqueID = getUniqueID("gke-${coupling}-${proto}", true)
   def serviceName = generateServiceName(uniqueID)
-  def backendDockerImage = bookstoreDockerImage())
+  def backendDockerImage = bookstoreDockerImage()
   if (grpc != 'off') {
-     serviceName = "grpc-${grpc}-dot-${PROJECT_ID}.appspot.com"
-     backendDockerImage = gRpcTestServerImage(grpc)
+    serviceName = "grpc-${grpc}-dot-${PROJECT_ID}.appspot.com"
+    backendDockerImage = gRpcTestServerImage(grpc)
   }
   sh "script/e2e-kube.sh " +
       " -b ${backendDockerImage}" +
