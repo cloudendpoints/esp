@@ -252,6 +252,9 @@ std::string UuidGen() {
 
 ::google::protobuf::Message* generate_proto() {
   const std::set<std::string> logs = {"local_test_log"};
+  struct timeval tv;
+  struct timezone tz;
+  gettimeofday(&tv, &tz);
   std::string uuid = UuidGen();
   ::google::protobuf::Message* request = nullptr;
   if (proto_type == CHECK_REQUEST) {
@@ -262,6 +265,7 @@ std::string UuidGen() {
     info.producer_project_id = producer_project_id;
     info.client_ip = "1.2.3.4";
     info.referer = "referer";
+    info.request_start_time = tv;
 
     ::google::api_manager::service_control::Proto scp(logs);
     scp.FillCheckRequest(info, &check_request);
@@ -275,6 +279,7 @@ std::string UuidGen() {
     info.producer_project_id = producer_project_id;
 
     info.referer = "referer";
+    info.request_start_time = tv;
     info.response_code = 200;
     info.location = "us-central";
     info.api_name = "api-version";

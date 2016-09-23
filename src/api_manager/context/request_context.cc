@@ -80,6 +80,8 @@ using context::ServiceContext;
 RequestContext::RequestContext(std::shared_ptr<ServiceContext> service_context,
                                std::unique_ptr<Request> request)
     : service_context_(service_context), request_(std::move(request)) {
+  struct timezone tz;
+  gettimeofday(&start_time_, &tz);
   operation_id_ = GenerateUUID();
   const std::string &method = request_->GetRequestHTTPMethod();
   const std::string &path = request_->GetRequestPath();
@@ -183,6 +185,7 @@ void RequestContext::FillOperationInfo(service_control::OperationInfo *info) {
   }
   info->producer_project_id = service_context()->project_id();
   info->referer = http_referer_;
+  info->request_start_time = start_time_;
 }
 
 void RequestContext::FillLocation(service_control::ReportRequestInfo *info) {

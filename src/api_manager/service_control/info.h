@@ -29,6 +29,8 @@
 #include "google/protobuf/stubs/stringpiece.h"
 
 #include <string.h>
+#include <sys/time.h>
+#include <time.h>
 #include <memory>
 #include <string>
 
@@ -67,6 +69,10 @@ struct OperationInfo {
   // Uses Referer header, if the Referer header doesn't present, use the
   // Origin header. If both of them not present, it's empty.
   ::google::protobuf::StringPiece referer;
+
+  // The start time of the call. Used to set operation.start_time for both Check
+  // and Report.
+  struct timeval request_start_time;
 
   OperationInfo() {}
 };

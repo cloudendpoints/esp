@@ -620,14 +620,19 @@ const char kLogFieldNameRequestLatency[] = "request_latency_in_ms";
 const char kLogFieldNameUrl[] = "url";
 const char kLogFieldNameErrorCause[] = "error_cause";
 
+// Convert timestamp from struct timeval to Timestamp
+Timestamp CreateTimestamp(const struct timeval& tv) {
+  Timestamp time_stamp;
+  time_stamp.set_seconds(tv.tv_sec);
+  time_stamp.set_nanos(tv.tv_usec * 1000);
+  return time_stamp;
+}
+
 Timestamp GetCurrentTimestamp() {
   struct timeval tv;
   struct timezone tz;
   gettimeofday(&tv, &tz);
-  Timestamp current_time;
-  current_time.set_seconds(tv.tv_sec);
-  current_time.set_nanos(tv.tv_usec * 1000);
-  return current_time;
+  return CreateTimestamp(tv);
 }
 
 Status VerifyRequiredCheckFields(const OperationInfo& info) {
@@ -672,7 +677,7 @@ void SetOperationCommonFields(const OperationInfo& info,
     op->set_consumer_id(std::string(kConsumerIdProject) +
                         std::string(info.producer_project_id));
   }
-  *op->mutable_start_time() = current_time;
+  *op->mutable_start_time() = CreateTimestamp(info.request_start_time);
   *op->mutable_end_time() = current_time;
 }
 
