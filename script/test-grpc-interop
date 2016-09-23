@@ -36,6 +36,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 HOST=''
 DURATION_IN_HOUR=0
+RUN_LENGTH=120
 TEST_CASES='empty_unary:10,large_unary:10,'
 TEST_CASES+='empty_stream:10,client_streaming:10,half_duplex:10,ping_pong:20,server_streaming:10,'
 TEST_CASES+='status_code_and_message:10,custom_metadata:10'
@@ -54,18 +55,20 @@ done
 function print_test_metrics() {
   local start_time=$(date +"%s")
   while true; do
-    sleep 5
+    sleep 10
     local curr_time=$(date +"%s")
-    echo -n "QPS report at $(((curr_time - start_time) / 60)) minutes:"
+    echo -n "QPS report at $((curr_time - start_time)) seconds:"
     $ROOT/bazel-bin/test/grpc/interop-metrics-client --total_only
   done
 }
 
-DURATION_IN_SECONDS=$((DURATION_IN_HOUR * 60 * 60))
-# Minimum run 2 minutes
-if [[ ${DURATION_IN_SECONDS} -lt 120 ]]; then
-  DURATION_IN_SECONDS=120
-fi
+START_MEMORY_USAGE=0
+SECOND_MEMORY_USAGE=0
+INCREASED_MEMORY_USAGE=0
+STATUS_SERVER=${HOST/%:*/:8090}
+STATUS_SERVER="http://${STATUS_SERVER}"
+echo "STATUS_SERVER: ${STATUS_SERVER}"
+local_json="$(mktemp /tmp/XXXXXX.json)"
 
 # Waits for the proxy and backend to start.
 HOST_IP=${HOST%:*}
@@ -84,11 +87,62 @@ print_test_metrics&
 PRINT_JOB=$!
 trap "kill ${PRINT_JOB}" EXIT
 
-$ROOT/bazel-bin/test/grpc/interop-stress-client \
-  --server_addresses "${HOST}" \
-  --test_duration_secs "${DURATION_IN_SECONDS}" \
-  --num_channels_per_server 200 \
-  --num_stubs_per_channel 1 \
-  --test_cases "${TEST_CASES}"
+START_TIME=$(date +"%s")
+END_TIME=$((START_TIME + DURATION_IN_HOUR * 60 * 60))
+RUN_COUNT=0
+SUCCESS_TIME=0
+while true; do
+  CURR_TIME=$(date +"%s")
+  echo "Test time: $((CURR_TIME - START_TIME)) seconds, success time: ${SUCCESS_TIME} seconds."
 
-echo "Done interop stress test at $(date)."
+  ((RUN_COUNT++))
+  curr_usage=$(get_memory_usage "${STATUS_SERVER}" "${local_json}") \
+    || error_exit "Could not extract memory usage from ${STATUS_SERVER}"
+  # Record the memory usage for each test run
+  # There is a big memory usage jump at first iteration.
+  # Use the delta between 2nd and 3rd iteration for calculating threshold.
+  if [[ ${RUN_COUNT} -eq 2 ]]; then
+    START_MEMORY_USAGE=${curr_usage}
+    echo "Start Memory Usage (Bytes): ${START_MEMORY_USAGE}."
+  else
+    INCREASED_MEMORY_USAGE=$((${curr_usage} - ${START_MEMORY_USAGE}))
+    echo "Memory Increased in Test ${RUN_COUNT} (Bytes): ${INCREASED_MEMORY_USAGE}"
+    if [[ ${RUN_COUNT} -eq 3 ]]; then
+      SECOND_MEMORY_USAGE=${curr_usage}
+      echo "Second Memory Usage (Bytes): ${SECOND_MEMORY_USAGE}."
+    fi
+  fi
+  python -m json.tool "${local_json}"
+
+  timeout $((RUN_LENGTH + 10)) $ROOT/bazel-bin/test/grpc/interop-stress-client \
+    --server_addresses "${HOST}" \
+    --test_duration_secs "${RUN_LENGTH}" \
+    --num_channels_per_server 200 \
+    --num_stubs_per_channel 1 \
+    --do_not_abort_on_transient_failures false \
+    --test_cases "${TEST_CASES}" \
+  && ((SUCCESS_TIME += RUN_LENGTH))
+
+  # Break if test has run long enough.
+  [[ $(date +"%s") -lt ${END_TIME} ]] || break
+done
+
+END_TIME=$(date +"%s")
+echo "Total test time: $((END_TIME - START_TIME)) seconds, success time: ${SUCCESS_TIME} seconds at $(date)."
+
+TOTAL_TIME=$((END_TIME - START_TIME))
+FAILURE_TIME=$((TOTAL_TIME - SUCCESS_TIME))
+# If failure time is more than %5 of total test time, mark failed.
+RESULT=0
+[[ ${FAILURE_TIME} -gt $((TOTAL_TIME / 20)) ]] && RESULT=1
+
+echo "Total Memory Increased (MB): $(( ${INCREASED_MEMORY_USAGE} / (1024*1024) ))."
+rm "${local_json}"
+# We fail the test if memory increase is large.
+detect_memory_leak "${START_MEMORY_USAGE}" "${SECOND_MEMORY_USAGE}" "${INCREASED_MEMORY_USAGE}"
+HAS_MEMORY_LEAK=$?
+echo "memory leak detect: ${HAS_MEMORY_LEAK}"
+
+# TODO: enable memory leak checking.
+#exit $((RESULT + HAS_MEMORY_LEAK))
+exit ${RESULT}
