@@ -4,3 +4,5 @@ sb|lo|do" matches "lo"
 signal process started$
 Using trusted CA certificates file: /etc/nginx/trusted-ca-certificates.crt$
 Print endpoints status
+a client request body is buffered to a temporary file.*rc-test.*dot-esp-long-run.appspot.com
+INFO:
