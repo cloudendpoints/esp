@@ -94,3 +94,11 @@ func SSLCertFile() string {
 	}
 	return path + "/test/src/utils/nginx.crt"
 }
+
+func CredentialsFile() string {
+	path, err := GetTestDataRootPath()
+	if err != nil {
+		log.Fatalln("Cannot find data root path")
+	}
+	return path + "/test/src/utils/credentials.json"
+}

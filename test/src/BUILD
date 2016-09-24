@@ -187,6 +187,21 @@ go_library(
     ],
 )
 
+go_library(
+    name = "vendor/controller",
+    srcs = [
+        "controller/config.go",
+        "controller/controller.go",
+    ],
+    go_prefix = "//test/src:go_prefix",
+    deps = [
+    ],
+    data = [
+        "controller/nginx.tmpl",
+    ],
+
+)
+
 go_binary(
     name = "espcli",
     srcs = [
@@ -233,6 +248,9 @@ go_library(
         "//include:version",
         "//src/nginx/t:testdata/logs_metrics.pb.txt",
         "//src/tools:auth_token_gen",
+        "utils/nginx.crt",
+        "utils/nginx.key",
+        "utils/credentials.json",
     ],
     go_prefix = "//test/src:go_prefix",
     deps = [
@@ -240,6 +258,20 @@ go_library(
         ":vendor/google/logging/type",
         "@github_com_golang_protobuf//:proto",
         "@github_com_golang_protobuf//:ptypes/struct",
+    ],
+)
+
+go_test(
+    name = "config_test",
+    tags = ["exclusive"],
+    srcs = ["controller/config_test.go"],
+    data = [
+        "//src/nginx/main:nginx-esp",
+    ],
+    go_prefix = "//test/src:go_prefix",
+    deps = [
+        ":vendor/controller",
+        ":vendor/utils",
     ],
 )
 

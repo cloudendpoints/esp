@@ -33,6 +33,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"k8s.io/client-go/1.4/kubernetes"
+	api "k8s.io/client-go/1.4/pkg/api/v1"
 	"k8s.io/client-go/1.4/tools/clientcmd"
 )
 
@@ -81,5 +82,5 @@ var RootCmd = &cobra.Command{
 
 func init() {
 	RootCmd.PersistentFlags().StringVar(&namespace,
-		"namespace", "default", "kubernetes namespace")
+		"namespace", api.NamespaceAll, "kubernetes namespace")
 }

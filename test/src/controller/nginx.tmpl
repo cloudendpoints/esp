@@ -1,0 +1,145 @@
+{{ $cfg := . }}
+daemon off;
+
+worker_processes {{ .NumWorkerProcesses }};
+
+pid {{ .PID }};
+
+worker_rlimit_nofile 131072;
+
+error_log {{ .ErrorLog }} warn;
+
+pcre_jit on;
+
+events {
+    multi_accept        on;
+    worker_connections  4096;
+    {{- if eq .Platform "linux" }}
+    use                 epoll;
+    {{- else if eq .Platform "darwin" }}
+    use                 kqueue;
+    {{- end }}
+}
+
+http {
+    sendfile            on;
+    tcp_nopush          on;
+    tcp_nodelay         on;
+
+    log_subrequest      on;
+
+    reset_timedout_connection on;
+
+    access_log {{ .AccessLog }};
+
+    {{- if not (eq .MimeTypes "") }}
+    include {{ .MimeTypes }};
+    {{- end }}
+
+    {{- if not (eq .TempDir "") }}
+    client_body_temp_path {{ .TempDir }}/client_body_temp;
+    proxy_temp_path {{ .TempDir }}/proxy_temp;
+    {{- end }}
+
+    client_max_body_size 32m;
+    client_body_buffer_size 128k;
+
+    endpoints_certificates /etc/nginx/trusted-ca-certificates.crt;
+    endpoints_resolver {{ .DNSResolver }};
+    {{- if .UseUpstreamResolver }}
+    resolver           {{ .DNSResolver }} valid=30s;
+    {{- end }}
+
+    proxy_next_upstream error timeout invalid_header http_502 http_503 http_504;
+    {{- range .Upstreams }}
+    {{- if not (eq .Protocol "grpc") }}
+    upstream {{ .Name }} {
+        least_conn;
+        {{- range .Endpoints }}
+        server {{ .Address }}:{{ .Port }} max_fails={{ .MaxFails }} fail_timeout={{ .FailTimeout }};
+        {{- end }}
+        keepalive 128;
+    }
+    {{- end }}
+    {{- end }}
+
+    {{- range $server := .Servers }}
+    server {
+        server_name {{ $server.Name }};
+        {{- if gt $server.Ports.HTTP 0 }}
+        listen {{ $server.Ports.HTTP }};
+        {{- end }}
+        {{- if gt $server.Ports.HTTP2 0 }}
+        listen {{ $server.Ports.HTTP2 }} http2;
+        {{- end }}
+        {{- if gt $server.Ports.SSL 0 }}
+        listen {{ $server.Ports.SSL }} ssl http2;
+        ssl_certificate {{ $server.SSLCertificate }};
+        ssl_certificate_key {{ $server.SSLCertificateKey }};
+        {{- end }}
+
+        {{- range $location := $server.Locations }}
+        location {{ $location.Path }} {
+          endpoints {
+            on;
+            api {{ $location.ServiceConfigFile }};
+            {{- if not (eq $location.CredentialsFile "") }}
+            google_authentication_secret {{ $location.CredentialsFile }};
+            {{- else }}
+            metadata_server {{ $cfg.MetadataServer }};
+            {{- end }}
+          }
+
+          {{- if $location.StripPrefix }}
+          rewrite ^{{ $location.Path }}(.*)$ /$1 break;
+          {{- end }}
+
+          {{- if eq $location.Upstream.Protocol "grpc" }}
+          grpc_pass {{ $location.Upstream.Name }}:{{ $location.Upstream.Port }} override;
+          {{- else }}
+          proxy_pass  {{ $location.Upstream.Protocol }}://{{ $location.Upstream.Name }};
+          proxy_redirect                        off;
+          proxy_buffering                       off;
+          proxy_buffer_size                     4k;
+
+          proxy_set_header Host                 $host;
+          proxy_set_header X-Real-IP            $remote_addr;
+          proxy_set_header X-Google-Real-IP     $remote_addr;
+          proxy_set_header X-Forwarded-For      $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Host     $host;
+          proxy_set_header X-Forwarded-Port     $server_port;
+          proxy_set_header X-Forwarded-Proto    $scheme;
+
+          # Enable the upstream persistent connection
+          proxy_http_version                    1.1;
+          proxy_set_header Connection           "";
+          proxy_set_header Proxy                "";
+
+          proxy_connect_timeout                 5s;
+          proxy_send_timeout                    60s;
+          proxy_read_timeout                    60s;
+          {{- end }}
+        }
+        {{- end }}
+    }
+    {{- end }}
+
+    server {
+        listen {{ .StatusPort }} default_server;
+
+        location /nginx_status {
+          stub_status on;
+          access_log off;
+        }
+
+        location /endpoints_status {
+          endpoints_status;
+          access_log off;
+        }
+
+        location / {
+          root /dev/null;
+          access_log off;
+        }
+    }
+}
