@@ -164,10 +164,12 @@ fi
 
 if [[ "${CLANG_VERSION}" != "${CLANG_CURRENT}" ]]; then
   echo "Downloading clang ${CLANG_VERSION}."
-  mkdir "${CLANG_DIRECTORY}"
-  curl --silent --show-error --retry 10 \
+  mkdir "${CLANG_DIRECTORY}" \
+  && curl --silent --show-error --retry 10 \
       "http://llvm.org/releases/${CLANG_VERSION}/clang+llvm-${CLANG_VERSION}-x86_64-linux-gnu-debian8.tar.xz" \
-      | tar Jx -C "${CLANG_DIRECTORY}" --strip=1
+      | tar Jx -C "${CLANG_DIRECTORY}" --strip=1 \
+  && cp "${CLANG_DIRECTORY}/bin/clang-format" /usr/local/bin/clang-format \
+  || error_exit 'Could not install clang-format'
 else
   echo "Clang up-to-date."
 fi

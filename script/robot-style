@@ -29,10 +29,13 @@
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . ${ROOT}/script/all-utilities || { echo "Cannot load Bash utilities" ; exit 1 ; }
 
+CLANG_FORMAT="$(which clang-format)" || CLANG_FORMAT="${HOME}/clang/bin/clang-format"
+
 pushd ${ROOT} > /dev/null
 
 SOURCE_FILES=($(git ls-tree -r HEAD --name-only | grep -E '\.(h|c|cc|proto)$'))
-"${HOME}/clang/bin/clang-format" -style=Google -i "${SOURCE_FILES[@]}"
+"${CLANG_FORMAT}" -style=Google -i "${SOURCE_FILES[@]}" \
+  || error_exit 'Could not run clang-format.'
 
 CHANGED_FILES=($(git diff HEAD --name-only | grep -E '\.(h|c|cc|proto)$'))
 

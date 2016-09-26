@@ -496,14 +496,18 @@ def updateGerrit(flow, scenario, success = false) {
   }
   setGitAuthDaemon()
   def successFlag = success ? '--success' : ''
-  sh "script/update-gerrit.py " +
-      "--build_url=\"${env.BUILD_URL}\" " +
-      "--change_id=\"${CHANGE_ID}\" " +
-      "--gerrit_url=\"${gerritUrl}\" " +
-      "--commit=\"${GIT_SHA}\" " +
-      "--flow=\"${flow}\" " +
-      "--scenario=\"${scenario}\" " +
-      "${successFlag}"
+  retry(3) {
+    sh "script/update-gerrit.py " +
+        "--build_url=\"${env.BUILD_URL}\" " +
+        "--change_id=\"${CHANGE_ID}\" " +
+        "--gerrit_url=\"${gerritUrl}\" " +
+        "--commit=\"${GIT_SHA}\" " +
+        "--flow=\"${flow}\" " +
+        "--scenario=\"${scenario}\" " +
+        "${successFlag}"
+    sleep 5
+  }
+
 }
 
 def buildNewDockerSlave(nodeLabel) {
