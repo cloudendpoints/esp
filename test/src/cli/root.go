@@ -26,14 +26,14 @@
 package cli
 
 import (
-	"fmt"
+	"log"
 	"os"
 
 	"github.com/spf13/cobra"
 
-	"k8s.io/client-go/1.4/kubernetes"
-	api "k8s.io/client-go/1.4/pkg/api/v1"
-	"k8s.io/client-go/1.4/tools/clientcmd"
+	"k8s.io/client-go/1.5/kubernetes"
+	api "k8s.io/client-go/1.5/pkg/api/v1"
+	"k8s.io/client-go/1.5/tools/clientcmd"
 )
 
 var (
@@ -58,7 +58,7 @@ var RootCmd = &cobra.Command{
 	Short: "ESP deployment manager for Kubernetes",
 	Long:  "A script to deploy ESP and monitor ESP deployments in Kubernetes",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("ESP deployment command line interface")
+		log.Println("ESP deployment command line interface")
 	},
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
@@ -66,13 +66,13 @@ var RootCmd = &cobra.Command{
 		kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
 		config, err := kubeConfig.ClientConfig()
 		if err != nil {
-			fmt.Println("Cannot retrieve kube configuration")
+			log.Println("Cannot retrieve kube configuration")
 			os.Exit(-2)
 		}
 
 		clientset, err = kubernetes.NewForConfig(config)
 		if err != nil {
-			fmt.Println("Cannot connect to Kubernetes API: ", err)
+			log.Println("Cannot connect to Kubernetes API: ", err)
 			os.Exit(-2)
 		}
 	},

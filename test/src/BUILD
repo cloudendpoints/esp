@@ -195,6 +195,10 @@ go_library(
     ],
     go_prefix = "//test/src:go_prefix",
     deps = [
+        "@github_com_kubernetes_client_go//:kubernetes",
+        "@github_com_kubernetes_client_go//:pkg/api",
+        "@github_com_kubernetes_client_go//:pkg/apis/extensions/v1beta1",
+        "@github_com_kubernetes_client_go//:pkg/util/flowcontrol",
     ],
     data = [
         "controller/nginx.tmpl",

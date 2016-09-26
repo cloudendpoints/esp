@@ -206,7 +206,7 @@ go_repositories()
 new_git_repository(
     name = "github_com_golang_protobuf",
     remote = "https://github.com/golang/protobuf.git",
-    commit = "c3cefd437628a0b7d31b34fe44b3a7a540e98527",
+    commit = "8616e8ee5e20a1704615e6c8d7afcdac06087a67",
     build_file = "third_party/BUILD.golang_protobuf",
 )
 
@@ -218,15 +218,8 @@ new_git_repository(
 load("@io_bazel_rules_go//go:def.bzl", "go_prefix")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_prefix("github.com/spf13")
-go_library(
-    name = "pflag",
-    srcs = glob(include = ["*.go"], exclude = ["*_test.go"]),
-    visibility = [
-        "//visibility:public",
-    ]
-)
-    """
-)
+go_library(name="pflag", srcs=glob(include=["*.go"], exclude=["*_test.go"]),
+    visibility = ["//visibility:public"])""")
 
 new_git_repository(
     name = "github_com_spf13_cobra",
@@ -257,7 +250,7 @@ go_library(
 new_git_repository(
     name = "github_com_golang_glog",
     remote = "https://github.com/golang/glog.git",
-    commit = "23def4e6c14b4da8ac2ed8007337bc5eb5007998",
+    commit = "44145f04b68cf362d9c4df2182967c2275eaefed",
     build_file_content = """
 load("@io_bazel_rules_go//go:def.bzl", "go_prefix")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
@@ -340,7 +333,7 @@ go_library(
 new_git_repository(
     name = "go_yaml",
     remote = "https://github.com/go-yaml/yaml.git",
-    commit = "e4d366fc3c7938e2958e662b4258c7a89e1f0e3e",
+    commit = "53feefa2559fb8dfa8d81baad31be332c97d6c77",
     build_file_content = """
 load("@io_bazel_rules_go//go:def.bzl", "go_prefix")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
@@ -392,6 +385,130 @@ go_library(
 )
 
 new_git_repository(
+    name = "github_com_x_crypto",
+    remote = "https://github.com/golang/crypto.git",
+    commit = "1f22c0103821b9390939b6776727195525381532",
+    build_file_content = """
+load("@io_bazel_rules_go//go:def.bzl", "go_prefix")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+go_prefix("golang.org/x/crypto")
+go_library(
+    name = "ssh/terminal",
+    visibility = ["//visibility:public"],
+    srcs = ["ssh/terminal/terminal.go", "ssh/terminal/util.go", "ssh/terminal/util_linux.go"],
+)
+    """
+)
+
+new_git_repository(
+    name = "github_com_x_text",
+    remote = "https://github.com/golang/text.git",
+    commit = "2910a502d2bf9e43193af9d68ca516529614eed3",
+    build_file_content = """
+load("@io_bazel_rules_go//go:def.bzl", "go_prefix")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+go_prefix("golang.org/x/text")
+go_library(
+    name = "unicode/cldr",
+    visibility = ["//visibility:public"],
+    srcs = glob(include = ["unicode/cldr/*.go"], exclude = ["unicode/cldr/*_test.go", "unicode/cldr/makexml.go"]),
+)
+go_library(
+    name = "transform",
+    visibility = ["//visibility:public"],
+    srcs = ["transform/transform.go"],
+)
+go_library(
+    name = "unicode/norm",
+    visibility = ["//visibility:public"],
+    srcs = glob(include = ["unicode/norm/*.go"], exclude = [
+        "unicode/norm/*_test.go",
+        "unicode/norm/triegen.go",
+        "unicode/norm/maketables.go"
+    ]),
+    deps = [":transform"],
+)
+go_library(
+    name = "internal/gen",
+    visibility = ["//visibility:public"],
+    srcs = ["internal/gen/gen.go", "internal/gen/code.go"],
+    deps = [
+        ":unicode/cldr",
+    ],
+)
+go_library(
+    name = "internal/tag",
+    visibility = ["//visibility:public"],
+    srcs = ["internal/tag/tag.go"],
+)
+go_library(
+    name = "language",
+    visibility = ["//visibility:public"],
+    srcs = glob(include=["language/*.go"],exclude=[
+        "language/*_test.go",
+        "language/go1_2.go",
+        "language/gen_common.go",
+        "language/gen_index.go",
+        "language/maketables.go",
+    ]),
+    deps = [":internal/tag", ":internal/gen", ":unicode/cldr"],
+)
+go_library(
+    name = "cases",
+    visibility = ["//visibility:public"],
+    srcs = glob(include=["cases/*.go"],exclude=[
+        "cases/*_test.go",
+        "cases/gen.go",
+        "cases/gen_trieval.go",
+    ]),
+    deps = [":language", ":transform", ":unicode/norm"],
+)
+go_library(
+    name = "runes",
+    visibility = ["//visibility:public"],
+    srcs = ["runes/cond.go", "runes/runes.go"],
+    deps = [":transform"],
+)
+go_library(
+    name = "width",
+    visibility = ["//visibility:public"],
+    srcs = ["width/kind_string.go", "width/tables.go", "width/transform.go", "width/trieval.go", "width/width.go"],
+    deps = [":transform"],
+)
+go_library(
+    name = "unicode/bidi",
+    visibility = ["//visibility:public"],
+    srcs = ["unicode/bidi/bidi.go", "unicode/bidi/core.go", "unicode/bidi/prop.go", "unicode/bidi/tables.go",
+        "unicode/bidi/trieval.go", "unicode/bidi/bracket.go"],
+)
+go_library(
+    name = "secure/bidirule",
+    visibility = ["//visibility:public"],
+    srcs = ["secure/bidirule/bidirule.go"],
+    deps = [":transform", ":unicode/bidi"],
+)
+go_library(
+    name = "secure/precis",
+    visibility = ["//visibility:public"],
+    srcs = glob(include = ["secure/precis/*.go"], exclude = [
+        "secure/precis/*_test.go",
+        "secure/precis/gen.go",
+        "secure/precis/gen_trieval.go",
+    ]),
+    deps = [
+        ":cases",
+        ":internal/gen",
+        ":runes",
+        ":transform",
+        ":unicode/norm",
+        ":width",
+        ":secure/bidirule",
+    ],
+)
+"""
+)
+
+new_git_repository(
     name = "github_com_x_net",
     remote = "https://github.com/golang/net.git",
     commit = "e90d6d0afc4c315a0d87a568ae68577cc15149a0",
@@ -409,6 +526,11 @@ go_library(
     srcs = ["context/ctxhttp/ctxhttp.go"],
     visibility = ["//visibility:public"],
     deps = ["context"],
+)
+go_library(
+    name = "idna",
+    srcs = ["idna/idna.go", "idna/punycode.go"],
+    visibility = ["//visibility:public"],
 )
 go_library(
     name = "lex/httplex",
@@ -487,6 +609,17 @@ go_library(
 )
 
 new_git_repository(
+    name = "jonboulle_clockwork",
+    remote = "https://github.com/jonboulle/clockwork.git",
+    commit = "72f9bd7c4e0c2a40055ab3d0f09654f730cce982",
+    build_file_content = """
+load("@io_bazel_rules_go//go:def.bzl", "go_prefix")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+go_prefix("github.com/jonboulle")
+go_library(name="clockwork", srcs=["clockwork.go"], visibility=["//visibility:public"])
+""")
+
+new_git_repository(
     name = "go_inf",
     remote = "https://github.com/go-inf/inf.git",
     tag = "v0.9.0",
@@ -519,9 +652,268 @@ go_library(
 )
 
 new_git_repository(
+    name = "groupcache_lru",
+    remote = "https://github.com/golang/groupcache.git",
+    commit = "02826c3e79038b59d737d3b1c0a1d937f71a4433",
+    build_file_content = """
+load("@io_bazel_rules_go//go:def.bzl", "go_prefix")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+go_prefix("github.com/golang/groupcache")
+go_library(
+    name = "lru",
+    srcs = ["lru/lru.go"],
+    visibility = ["//visibility:public"],
+)
+    """
+)
+
+new_git_repository(
+    name = "puerkitobio_purell",
+    remote = "https://github.com/PuerkitoBio/purell.git",
+    commit = "8a290539e2e8629dbc4e6bad948158f790ec31f4",
+    build_file_content = """
+load("@io_bazel_rules_go//go:def.bzl", "go_prefix")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+go_prefix("github.com/PuerkitoBio")
+go_library(
+    name = "purell",
+    srcs = glob(include = ["*.go"], exclude = ["*_test.go"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "@puerkitobio_urlesc//:urlesc",
+        "@github_com_x_net//:idna",
+        "@github_com_x_text//:secure/precis",
+        "@github_com_x_text//:unicode/norm",
+    ]
+)
+    """
+)
+
+new_git_repository(
+    name = "puerkitobio_urlesc",
+    remote = "https://github.com/PuerkitoBio/urlesc.git",
+    commit = "5bd2802263f21d8788851d5305584c82a5c75d7e",
+    build_file_content = """
+load("@io_bazel_rules_go//go:def.bzl", "go_prefix")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+go_prefix("github.com/PuerkitoBio")
+go_library(
+    name = "urlesc",
+    srcs = glob(include = ["*.go"], exclude = ["*_test.go"]),
+    visibility = ["//visibility:public"],
+)
+    """
+)
+
+new_git_repository(
+    name = "mailru_easyjson",
+    remote = "https://github.com/mailru/easyjson.git",
+    commit = "d5b7844b561a7bc640052f1b935f7b800330d7e0",
+    build_file_content = """
+load("@io_bazel_rules_go//go:def.bzl", "go_prefix")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+go_prefix("github.com/mailru/easyjson")
+go_library(
+    name = "buffer",
+    srcs = glob(include = ["buffer/*.go"], exclude = ["buffer/*_test.go"]),
+    visibility = ["//visibility:public"],
+    deps = [
+    ]
+)
+go_library(
+    name = "jlexer",
+    srcs = glob(include = ["jlexer/*.go"], exclude = ["jlexer/*_test.go"]),
+    visibility = ["//visibility:public"],
+    deps = [
+    ]
+)
+go_library(
+    name = "jwriter",
+    srcs = glob(include = ["jwriter/*.go"], exclude = ["jwriter/*_test.go"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        ":buffer",
+    ]
+)
+    """
+)
+
+new_git_repository(
+    name = "go_openapi_swag",
+    remote = "https://github.com/go-openapi/swag.git",
+    commit = "1d0bd113de87027671077d3c71eb3ac5d7dbba72",
+    build_file_content = """
+load("@io_bazel_rules_go//go:def.bzl", "go_prefix")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+go_prefix("github.com/go-openapi")
+go_library(
+    name = "swag",
+    srcs = glob(include = ["*.go"], exclude = ["*_test.go"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "@mailru_easyjson//:jlexer",
+        "@mailru_easyjson//:jwriter",
+    ]
+)
+    """
+)
+
+new_git_repository(
+    name = "go_openapi_jsonpointer",
+    remote = "https://github.com/go-openapi/jsonpointer.git",
+    commit = "46af16f9f7b149af66e5d1bd010e3574dc06de98",
+    build_file_content = """
+load("@io_bazel_rules_go//go:def.bzl", "go_prefix")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+go_prefix("github.com/go-openapi")
+go_library(
+    name = "jsonpointer",
+    srcs = glob(include = ["*.go"], exclude = ["*_test.go"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "@go_openapi_swag//:swag",
+    ]
+)
+    """
+)
+
+new_git_repository(
+    name = "go_openapi_jsonreference",
+    remote = "https://github.com/go-openapi/jsonreference.git",
+    commit = "13c6e3589ad90f49bd3e3bbe2c2cb3d7a4142272",
+    build_file_content = """
+load("@io_bazel_rules_go//go:def.bzl", "go_prefix")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+go_prefix("github.com/go-openapi")
+go_library(
+    name = "jsonreference",
+    srcs = glob(include = ["*.go"], exclude = ["*_test.go"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "@go_openapi_swag//:swag",
+        "@puerkitobio_purell//:purell",
+        "@go_openapi_jsonpointer//:jsonpointer",
+    ]
+)
+    """
+)
+
+new_git_repository(
+    name = "go_openapi_spec",
+    remote = "https://github.com/go-openapi/spec.git",
+    commit = "6aced65f8501fe1217321abf0749d354824ba2ff",
+    build_file_content = """
+load("@io_bazel_rules_go//go:def.bzl", "go_prefix")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+go_prefix("github.com/go-openapi")
+go_library(
+    name = "spec",
+    srcs = glob(include = ["*.go"], exclude = ["*_test.go"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "@go_openapi_swag//:swag",
+        "@go_openapi_jsonpointer//:jsonpointer",
+        "@go_openapi_jsonreference//:jsonreference",
+    ],
+)
+    """
+)
+
+new_git_repository(
+    name = "howeyc_gopass",
+    remote = "https://github.com/howeyc/gopass.git",
+    commit = "3ca23474a7c7203e0a0a070fd33508f6efdb9b3d",
+    build_file_content = """
+load("@io_bazel_rules_go//go:def.bzl", "go_prefix")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+go_prefix("github.com/howeyc")
+go_library(
+    name = "gopass",
+    srcs = ["pass.go", "terminal.go"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@github_com_x_crypto//:ssh/terminal",
+    ]
+)
+    """
+)
+
+new_git_repository(
+    name = "coreos_pkg",
+    remote = "https://github.com/coreos/pkg.git",
+    commit = "fa29b1d70f0beaddd4c7021607cc3c3be8ce94b8",
+    build_file_content = """
+load("@io_bazel_rules_go//go:def.bzl", "go_prefix")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+go_prefix("github.com/coreos/pkg")
+go_library(
+    name = "httputil",
+    srcs = glob(include = ["httputil/*.go"], exclude = ["httputil/*_test.go"]),
+    visibility = ["//visibility:public"],
+)
+go_library(
+    name = "timeutil",
+    srcs = glob(include = ["timeutil/*.go"], exclude = ["timeutil/*_test.go"]),
+    visibility = ["//visibility:public"],
+)
+go_library(
+    name = "health",
+    srcs = glob(include = ["health/*.go"], exclude = ["health/*_test.go"]),
+    visibility = ["//visibility:public"],
+    deps = [":httputil"],
+)
+""")
+
+new_git_repository(
+    name = "coreos_go_oidc",
+    remote = "https://github.com/coreos/go-oidc.git",
+    commit = "5644a2f50e2d2d5ba0b474bc5bc55fea1925936d",
+    build_file_content = """
+load("@io_bazel_rules_go//go:def.bzl", "go_prefix")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+go_prefix("github.com/coreos/go-oidc")
+go_library(
+    name = "jose",
+    srcs = glob(include = ["jose/*.go"], exclude = ["jose/*_test.go"]),
+    visibility = ["//visibility:public"],
+)
+go_library(
+    name = "key",
+    srcs = glob(include = ["key/*.go"], exclude = ["key/*_test.go"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        ":jose",
+        "@jonboulle_clockwork//:clockwork",
+        "@coreos_pkg//:health",
+        "@coreos_pkg//:timeutil",
+    ],
+)
+go_library(
+    name = "http",
+    srcs = glob(include = ["http/*.go"], exclude = ["http/*_test.go"]),
+    visibility = ["//visibility:public"],
+)
+go_library(
+    name = "oauth2",
+    srcs = glob(include = ["oauth2/*.go"], exclude = ["oauth2/*_test.go"]),
+    visibility = ["//visibility:public"],
+    deps = [":http"],
+)
+go_library(
+    name = "oidc",
+    srcs = glob(include = ["oidc/*.go"], exclude = ["oidc/*_test.go"]),
+    visibility = ["//visibility:public"],
+    deps = [":http", ":jose", ":key", ":oauth2", "@coreos_pkg//:timeutil",
+        "@jonboulle_clockwork//:clockwork",
+    ],
+)
+"""
+)
+
+new_git_repository(
     name = "go_restful",
     remote = "https://github.com/emicklei/go-restful.git",
-    commit = "bf50d2be18145391aa3d4339b07195807b25a427",
+    commit = "89ef8af493ab468a45a42bb0d89a06fccdd2fb22",
     build_file_content = """
 load("@io_bazel_rules_go//go:def.bzl", "go_prefix")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
@@ -548,7 +940,7 @@ go_library(
 new_git_repository(
     name = "github_com_kubernetes_client_go",
     remote = "https://github.com/kubernetes/client-go.git",
-    commit = "e1a6aa664414135c03f74bac140f30323bb49ce1",
+    commit = "c589d0c9f0d81640c518354c7bcae77d99820aa3",
     build_file = "third_party/BUILD.kubernetes",
 )
 

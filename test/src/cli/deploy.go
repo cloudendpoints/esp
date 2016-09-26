@@ -38,9 +38,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	api "k8s.io/client-go/1.4/pkg/api/v1"
-	extensions "k8s.io/client-go/1.4/pkg/apis/extensions/v1beta1"
-	"k8s.io/client-go/1.4/pkg/util/intstr"
+	api "k8s.io/client-go/1.5/pkg/api/v1"
+	extensions "k8s.io/client-go/1.5/pkg/apis/extensions/v1beta1"
+	"k8s.io/client-go/1.5/pkg/util/intstr"
 )
 
 // Ports are named ports in use by ESP

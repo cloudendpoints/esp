@@ -36,9 +36,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"k8s.io/client-go/1.4/pkg/api"
-	versioned "k8s.io/client-go/1.4/pkg/api/v1"
-	"k8s.io/client-go/1.4/pkg/labels"
+	"k8s.io/client-go/1.5/pkg/api"
+	versioned "k8s.io/client-go/1.5/pkg/api/v1"
+	"k8s.io/client-go/1.5/pkg/labels"
 )
 
 var (
