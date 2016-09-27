@@ -27,15 +27,12 @@
 cc_library(
     name = "grpc",
     srcs = [
-        "call_info.cc",
-        "call_info.h",
         "proxy_flow.cc",
         "proxy_flow.h",
         "stub_map.cc",
         "stub_map.h",
     ],
     hdrs = [
-        "call_handler.h",
         "server_call.h",
     ],
     visibility = ["//visibility:public"],
@@ -43,8 +40,8 @@ cc_library(
         "//external:grpc",
         "//external:grpc++",
         "//external:protobuf",
-        "//src/api_manager",
         "//external:servicecontrol",
+        "//src/api_manager",
     ],
 )
 
