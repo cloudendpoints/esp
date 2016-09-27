@@ -68,10 +68,6 @@ gflags.DEFINE_boolean(
     'success', False,
     'Whether presbumit passed or failed.'
 )
-gflags.DEFINE_string(
-    'scenario', '',
-    'Testing Scenario.'
-)
 
 
 class SimpleGerrit(object):
@@ -97,7 +93,7 @@ class SimpleGerrit(object):
       logging.exception("Could not reach %s", url)
       raise
 
-  def SetReview(self, tag, message):
+  def SetReview(self, tag, message, labels=None):
     logging.info(
         'Setting review on change %s, commit %s',
         self._change_id, self._commit)
@@ -109,6 +105,8 @@ class SimpleGerrit(object):
         'tag': tag,
         'message': message
     }
+    if labels:
+      data['labels'] = labels
     self._SendRequest(url, data)
 
 
@@ -117,24 +115,26 @@ class JenkinsGerrit(object):
   def __init__(self, base_url, change_id, commit):
     self._gerrit = SimpleGerrit(base_url, change_id, commit)
 
-  def RunPresubmit(self, scenario):
+  def RunPresubmit(self):
     self._gerrit.SetReview(
         tag='jenkins',
-        message='Running %s presubmit scenario' % scenario)
+        message='Running presubmits')
 
-  def VerifyPresubmit(self, scenario, success, build_url):
+  def VerifyPresubmit(self, success, build_url):
     status = 'Successful' if success else 'Failed'
-    code_review = '+1' if success else '-1'
+    verified = '+1' if success else '-1'
     message = (
-        'Verified{code_review} {status} {scenario} presubmit scenario. '
+        '{status} presubmits. '
         'For More info at {build_url}').format(
       status=status,
-      code_review=code_review,
-      scenario=scenario,
       build_url=build_url)
+    labels = {
+        'Verified': verified
+    }
     self._gerrit.SetReview(
         tag='jenkins',
-        message=message)
+        message=message,
+        labels=labels)
 
 if __name__ == '__main__':
   logging.basicConfig(stream=sys.stdout, level=logging.INFO)
@@ -149,8 +149,6 @@ if __name__ == '__main__':
     sys.exit('Flag change_id is required')
   if not FLAGS.gerrit_url:
     sys.exit('Flag gerrit_url is required')
-  if not FLAGS.scenario:
-    sys.exit('Flag scenario is required')
 
   client = JenkinsGerrit(
       base_url=FLAGS.gerrit_url,
@@ -159,13 +157,12 @@ if __name__ == '__main__':
 
   try:
     if FLAGS.flow == _RUN_FLOW:
-      client.RunPresubmit(FLAGS.scenario)
+      client.RunPresubmit()
     elif FLAGS.flow == _VERIFY_FLOW:
       if not FLAGS.build_url:
         sys.exit('Flag build_url is required')
         build_url = FLAGS.build_url
       client.VerifyPresubmit(
-          scenario=FLAGS.scenario,
           success=FLAGS.success,
           build_url=FLAGS.build_url)
     else:

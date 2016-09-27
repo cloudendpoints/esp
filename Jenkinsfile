@@ -36,12 +36,12 @@ import java.io.File;
 // By default all ALL stages will run.
 ALL_STAGES = 'ALL'
 E2E_STAGE = 'E2E'
+PERFORMANCE_STAGE = 'PERFORMANCE'
+PRESUBMIT = 'PRESUBMIT'
 // If stage starts with '_' it should be called explicitly.
 // To do so, add a String Build Parameter in your project and call it 'STAGE'
 // Set that build parameter to the stage that you want to start.
 CLEANUP_STAGE = '_CLEANUP'
-PERFORMANCE_STAGE = '_PERFORMANCE'
-PRESUBMIT = '_PRESUBMIT'
 SLAVE_UPDATE_STAGE = '_SLAVE_UPDATE'
 
 SUPPORTED_STAGES = [
@@ -99,6 +99,7 @@ node {
 node('master') {
   def nodeLabel = getSlaveLabel(DEBIAN_JESSIE)
   def buildNodeLabel = getBuildSlaveLabel(DEBIAN_JESSIE)
+  def builtArtifacts = false
   try {
     if (runStage(CLEANUP_STAGE)) {
       stage('Test Cleanup') {
@@ -113,29 +114,59 @@ node('master') {
       }
     }
     if (runStage(PRESUBMIT)) {
-      stage('Presubmit Tests') {
-        presubmit(buildNodeLabel)
-      }
-    }
-    if (runStage(PERFORMANCE_STAGE)) {
-      stage('Build Artifacts') {
-        buildArtifacts(buildNodeLabel, false, false)
-      }
-      stage('Performance Test') {
-        performance(nodeLabel)
+      stage('Unit / Integration Tests') {
+        ws {
+          def success = true
+          checkoutSourceCode()
+          updateGerrit('run')
+          try {
+            presubmit(buildNodeLabel)
+          } catch (Exception e) {
+            success = false
+            throw e
+          } finally {
+            updateGerrit('verify', success)
+          }
+        }
       }
     }
     if (runStage(E2E_STAGE)) {
       stage('Build Artifacts') {
         buildArtifacts(buildNodeLabel)
+        builtArtifacts = true
       }
       stage('E2E Tests') {
         e2eTest(nodeLabel)
       }
     }
+    if (runStage(PERFORMANCE_STAGE)) {
+      if (!builtArtifacts) {
+        stage('Build Artifacts') {
+          buildArtifacts(buildNodeLabel, false, false)
+        }
+      }
+      stage('Performance Test') {
+        performance(nodeLabel)
+      }
+    }
+    if (runStage(ALL_STAGES)) {
+      // If all stages passed, queue up a release qualification.
+      build(
+          job: 'esp/esp-release-qual',
+          parameters: [[$class: 'StringParameterValue', name: 'GIT_COMMIT', value: GIT_SHA],
+                       [$class: 'StringParameterValue', name: 'DURATION_HOUR', value: '10'],
+                       [$class: 'BooleanParameterValue', name: 'RELEASE_QUAL', value: true]],
+          wait: false)
+    }
   } catch (Exception e) {
-    sendFailureNotification()
-    error(e.getMessage())
+    currentBuild.result = 'FAILURE'
+    throw e
+  } finally {
+    step([
+        $class: 'Mailer',
+        notifyEveryUnstableBuild: false,
+        recipients: '',
+        sendToIndividuals: true])
   }
 }
 
@@ -489,12 +520,11 @@ def testCleanup(daysOld, project, flags) {
 }
 
 // flow can be run or verify
-def updateGerrit(flow, scenario, success = false) {
+def updateGerrit(flow, success = false) {
   def gerritUrl = getGerritUrl()
   if (gerritUrl == '') {
     return
   }
-  setGitAuthDaemon()
   def successFlag = success ? '--success' : ''
   retry(3) {
     sh "script/update-gerrit.py " +
@@ -503,7 +533,6 @@ def updateGerrit(flow, scenario, success = false) {
         "--gerrit_url=\"${gerritUrl}\" " +
         "--commit=\"${GIT_SHA}\" " +
         "--flow=\"${flow}\" " +
-        "--scenario=\"${scenario}\" " +
         "${successFlag}"
     sleep 5
   }
@@ -687,22 +716,14 @@ def presubmitTests(scenario, checkoutCode = true) {
     setGCloud()
     checkoutSourceCode()
   }
-  updateGerrit('run', scenario)
   def logBucket = "gs://${BUCKET}/${GIT_SHA}/logs"
   def uniqueId = getUniqueID(scenario, true)
-  try {
-    timeout(time: 1, unit: 'HOURS') {
-      sh "script/run-presubmit " +
-          "-b ${logBucket} " +
-          "-s ${scenario} " +
-          "-r ${uniqueId}"
-    }
-    updateGerrit('verify', scenario, true)
-  } catch (Exception e) {
-    updateGerrit('verify', scenario, false)
-    throw e
+  timeout(time: 1, unit: 'HOURS') {
+    sh "script/run-presubmit " +
+        "-b ${logBucket} " +
+        "-s ${scenario} " +
+        "-r ${uniqueId}"
   }
-
 }
 
 /*
