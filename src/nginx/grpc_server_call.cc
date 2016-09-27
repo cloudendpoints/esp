@@ -347,9 +347,7 @@ void NgxEspGrpcServerCall::RunPendingRead() {
     if (!ConvertRequestBody(&downstream_slices_)) {
       // Error occurred, ConvertRequestBody() has finalized the request and
       // Cleanup() has called the pending read continuation with ok=false.
-      // Nothing to do anymore.
-      ngx_log_error(NGX_LOG_DEBUG, r_->connection->log, 0,
-                    "Failed to convert the request body for a gRPC call.");
+      // Nothing to do anymore. Can't even log as the request has been freed.
       return;
     }
     // Attempt to read and complete a message from downstream.  Note

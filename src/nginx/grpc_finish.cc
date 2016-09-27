@@ -93,12 +93,16 @@ ngx_int_t GrpcFinish(
   if (SerializeStatusCode(r->pool, status, &code) != NGX_OK) {
     ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
                   "Failed to serialize the gRPC status code.");
-    return NGX_HTTP_INTERNAL_SERVER_ERROR;
+    // Returning NGX_DONE in error cases to make sure that the request is being
+    // cleaned-up. If we are unable to send the trailer, we don't have a way to
+    // notify the client about the error. So we just log the error and return
+    // NGX_DONE to make sure that the request is closed.
+    return NGX_DONE;
   }
   if (AddTrailer(r, kGrpcStatusHeaderKey, code) != NGX_OK) {
     ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
                   "Failed to add the grpc-status trailer.");
-    return NGX_HTTP_INTERNAL_SERVER_ERROR;
+    return NGX_DONE;
   }
 
   // Status-Message
@@ -107,12 +111,12 @@ ngx_int_t GrpcFinish(
     if (ngx_str_copy_from_std(r->pool, status.message(), &message) != NGX_OK) {
       ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
                     "Failed to convert gRPC status message.");
-      return NGX_HTTP_INTERNAL_SERVER_ERROR;
+      return NGX_DONE;
     };
     if (AddTrailer(r, kGrpcMessageHeaderKey, message) != NGX_OK) {
       ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
                     "Failed to add the grpc-message trailer.");
-      return NGX_HTTP_INTERNAL_SERVER_ERROR;
+      return NGX_DONE;
     }
   }
 
@@ -123,17 +127,24 @@ ngx_int_t GrpcFinish(
         ngx_str_copy_from_std(r->pool, md.second, &value) != NGX_OK) {
       ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
                     "Failed to convert gRPC custom metadata.");
-      return NGX_HTTP_INTERNAL_SERVER_ERROR;
+      return NGX_DONE;
     }
 
     if (AddTrailer(r, key, value) != NGX_OK) {
       ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
                     "Failed to add a gRPC custom metadata trailer.");
-      return NGX_HTTP_INTERNAL_SERVER_ERROR;
+      return NGX_DONE;
     }
   }
 
-  return ngx_http_send_special(r, NGX_HTTP_LAST);
+  ngx_int_t rc = ngx_http_send_special(r, NGX_HTTP_LAST);
+  if (rc == NGX_ERROR) {
+    ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
+                  "Failed to send the trailers - rc=%d", rc);
+    return NGX_DONE;
+  }
+
+  return rc;
 }
 
 }  // namespace nginx

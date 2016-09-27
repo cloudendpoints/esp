@@ -136,6 +136,13 @@ void NgxEspTranscodedGrpcServerCall::Finish(
 
   // Send the final buffer and finalize the request
   ngx_int_t rc = ngx_http_output_filter(r_, &out);
+  if (rc == NGX_ERROR) {
+    ngx_log_error(NGX_LOG_DEBUG, r_->connection->log, 0,
+                  "Failed to send the last buffer - rc=%d", rc);
+    // Converting NGX_ERROR to NGX_DONE to make ngx_http_finalize_request()
+    // close the request.
+    rc = NGX_DONE;
+  }
   ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r_->connection->log, 0,
                  "NgxEspTranscodedGrpcServerCall::Finish: the final message "
                  "sent. Finalizing the request with status %d.",

@@ -201,7 +201,9 @@ ngx_int_t ngx_esp_return_error(ngx_http_request_t *r) {
   ngx_esp_request_ctx_t *ctx = reinterpret_cast<ngx_esp_request_ctx_t *>(
       ngx_http_get_module_ctx(r, ngx_esp_module));
   if (ctx == nullptr) {
-    return NGX_ERROR;
+    ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
+                  "ESP context is NULL, cannot return the error.");
+    return NGX_DONE;
   }
 
   if (ctx->status.code() == NGX_HTTP_CLOSE) {
@@ -236,6 +238,10 @@ ngx_int_t ngx_esp_return_error(ngx_http_request_t *r) {
 
   if (IsGrpcRequest(r)) {
     return GrpcFinish(r, ctx->status, {});
+  } else if (rc == NGX_ERROR) {
+    ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
+                  "Failed to write the error output.");
+    return NGX_DONE;
   } else {
     return rc;
   }
