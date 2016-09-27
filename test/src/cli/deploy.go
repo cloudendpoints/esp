@@ -26,6 +26,7 @@
 package cli
 
 import (
+	"deploy"
 	"errors"
 	"io/ioutil"
 	"log"
@@ -60,6 +61,11 @@ var (
 
 	svc *api.Service
 
+	cfg           deploy.Service
+	serviceAPI    []string
+	serviceConfig []string
+	serviceProto  []string
+
 	grpc  bool
 	tight bool
 )
@@ -88,18 +94,10 @@ var deployCmd = &cobra.Command{
 			os.Exit(-1)
 		}
 
-		// Fetch latest service config version
-		if cfg.Version == "" {
-			err = cfg.Init()
-			if err != nil {
-				log.Println(err)
-				os.Exit(-1)
-			}
-			_, err = cfg.Fetch()
-			if err != nil {
-				log.Println(err)
-				os.Exit(-1)
-			}
+		err = CreateServiceConfig(name, namespace)
+		if err != nil {
+			log.Println("Failed to create service config", err)
+			os.Exit(-1)
 		}
 
 		backend, err := GetBackend()
@@ -167,6 +165,52 @@ func init() {
 	deployCmd.PersistentFlags().StringVarP(&serviceType,
 		"serviceType", "e", "NodePort",
 		"Expose ESP service as the provided service type")
+
+	deployCmd.PersistentFlags().StringArrayVar(&serviceAPI,
+		"openapi", nil,
+		"OpenAPI specification file(s)")
+	deployCmd.PersistentFlags().StringArrayVar(&serviceConfig,
+		"config", nil,
+		"Service config specification file(s)")
+	deployCmd.PersistentFlags().StringArrayVar(&serviceProto,
+		"proto", nil,
+		"Proto descriptor file(s)")
+	deployCmd.PersistentFlags().StringVar(&cfg.ProducerProject,
+		"project", "",
+		"Service producer project")
+}
+
+// CreateServiceConfig creates/enables/submits configuration for the service
+func CreateServiceConfig(name, namespace string) error {
+	if cfg.Name == "" {
+		cfg.Name = name + "." + namespace + "." + cfg.ProducerProject + ".appspot.com"
+	}
+
+	err := cfg.Connect()
+	if err != nil {
+		return err
+	}
+
+	if len(serviceAPI) == 0 && len(serviceConfig) == 0 && len(serviceProto) == 0 {
+		// nothing to submit: fetch latest service config version
+		if cfg.Version == "" {
+			_, err := cfg.Fetch()
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		if cfg.Version != "" {
+			return errors.New("Cannot submit config sources for a specific version")
+		}
+		// create config
+		_, err := cfg.Deploy(serviceAPI, serviceConfig, serviceProto)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // GetBackend returns the backend address for ESP service

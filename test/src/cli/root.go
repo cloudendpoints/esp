@@ -26,7 +26,6 @@
 package cli
 
 import (
-	"deploy"
 	"fmt"
 	"os"
 
@@ -40,7 +39,6 @@ import (
 var (
 	namespace string
 	clientset *kubernetes.Clientset
-	cfg       deploy.Service
 )
 
 // Prefix for ESP managed resources

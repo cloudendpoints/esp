@@ -215,6 +215,19 @@ go_binary(
 )
 
 go_binary(
+    name = "service_config",
+    srcs = [
+        "service_config.go",
+    ],
+    go_prefix = "//test/src:go_prefix",
+    deps = [
+        ":vendor/deploy",
+        "@google_api_go_client//:servicemanagement/v1",
+        "@github_com_spf13_cobra//:cobra",
+    ],
+)
+
+go_binary(
     name = "fakes_server",
     srcs = [
         "fakes/server/main.go",

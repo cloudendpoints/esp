@@ -46,7 +46,6 @@ type Service struct {
 	Name            string
 	Version         string
 	CredentialsFile string
-
 	ProducerProject string
 
 	hc  *http.Client
@@ -62,9 +61,9 @@ const (
 	FileDescriptorSetProto ConfigType = 4
 )
 
-func (s *Service) Init() (err error) {
+/** Connect to service management service */
+func (s *Service) Connect() (err error) {
 	ctx := context.Background()
-
 	if s.CredentialsFile != "" {
 		json, err := ioutil.ReadFile(s.CredentialsFile)
 		if err != nil {
@@ -96,7 +95,7 @@ func (s *Service) Fetch() (svc *mgmt.Service, err error) {
 	} else if s.Version == "" {
 		svc, err = s.api.Services.GetConfig(s.Name).Do()
 		if err == nil {
-			log.Println("Service version is", svc.Id)
+			log.Println("Service config version is", svc.Id)
 			s.Version = svc.Id
 		}
 	} else {
@@ -105,7 +104,7 @@ func (s *Service) Fetch() (svc *mgmt.Service, err error) {
 	return
 }
 
-// Wait for completion of the operation
+// Await for completion of the operation
 func (s *Service) Await(op *mgmt.Operation) *mgmt.Operation {
 	try := 0
 	delay := time.Second
@@ -177,8 +176,7 @@ func (s *Service) Delete() error {
 	return s.AwaitDone(op)
 }
 
-func MakeConfigFiles(serviceAPI,
-	serviceConfig, serviceProto []string) (map[string]ConfigType, error) {
+func MakeConfigFiles(serviceAPI, serviceConfig, serviceProto []string) (map[string]ConfigType, error) {
 	out := make(map[string]ConfigType)
 	for _, f := range serviceAPI {
 		if strings.HasSuffix(strings.ToUpper(f), ".YAML") {
@@ -199,6 +197,45 @@ func MakeConfigFiles(serviceAPI,
 	}
 
 	return out, nil
+}
+
+/** Deploy source configuration files and create/enable service */
+func (s *Service) Deploy(serviceAPI, serviceConfig, serviceProto []string) (*mgmt.Service, error) {
+	if len(serviceAPI) == 0 && len(serviceConfig) == 0 && len(serviceProto) == 0 {
+		return nil, errors.New("Must provide at least one configuration source file.")
+	}
+
+	if !s.Exists() {
+		err := s.Create()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	files, err := MakeConfigFiles(serviceAPI, serviceConfig, serviceProto)
+	if err != nil {
+		return nil, err
+	}
+
+	cfg, err := s.Submit(files)
+	if err != nil {
+		return nil, err
+	}
+
+	// Must be called after submit
+	if s.ProducerProject != "" {
+		err = s.Enable(s.ProducerProject)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = s.Rollout()
+	if err != nil {
+		return nil, err
+	}
+
+	return cfg, nil
 }
 
 /** Submit creates a service config from the interface descriptions */
@@ -259,43 +296,35 @@ func (s *Service) Submit(files map[string]ConfigType) (*mgmt.Service, error) {
 }
 
 func (s *Service) GenerateConfigReport() (*mgmt.GenerateConfigReportResponse, error) {
-	return s.api.Services.GenerateConfigReport(&mgmt.GenerateConfigReportRequest{
-		NewConfig: mgmt.GenerateConfigReportRequestNewConfig(&mgmt.ConfigRef{
-			Name: "services/" + s.Name + "/configs/" + s.Version,
-		}),
-	}).Do()
+	// TODO: Union type for newConfig requires @type field
+	body := "{" +
+		"  \"newConfig\": {" +
+		"		 \"@type\": \"type.googleapis.com/google.api.servicemanagement.v1.ConfigRef\"," +
+		"	   \"name\": \"services/" + s.Name + "/configs/" + s.Version + "\"" +
+		"  }" +
+		"}"
+
+	resp, err := s.hc.Post(
+		"https://servicemanagement.googleapis.com/v1/services:generateConfigReport",
+		"application/json", strings.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	op := &mgmt.GenerateConfigReportResponse{}
+	err = json.NewDecoder(resp.Body).Decode(op)
+	return op, err
 }
 
 func (s *Service) Rollout() error {
 	log.Println("Rollout service " + s.Name + " config " + s.Version)
 
-	// API is broken upstream. This code simulates the following using raw
-	// HTTP Client:
+	op, err := s.api.Services.Rollouts.Create(s.Name, &mgmt.Rollout{
+		TrafficPercentStrategy: &mgmt.TrafficPercentStrategy{
+			Percentages: map[string]float64{s.Version: 100.},
+		},
+	}).Do()
 
-	// req := s.api.Services.Rollouts.Create(s.Name, &mgmt.Rollout{
-	//	TrafficPercentStrategy: &mgmt.TrafficPercentStrategy{
-	//		Percentages: map[string]int{s.Version: 100} ,
-	//	},
-	// })
-
-	body := "{" +
-		"\"serviceName\": \"" + s.Name + "\"," +
-		"\"trafficPercentStrategy\": {" +
-		"  \"percentages\": {" +
-		"    \"" + s.Version + "\": 100," +
-		"}}}"
-
-	resp, err := s.hc.Post(
-		"https://servicemanagement.googleapis.com/v1/services/"+s.Name+"/rollouts",
-		"application/json", strings.NewReader(body))
-
-	if err != nil {
-		return err
-	}
-
-	defer resp.Body.Close()
-	op := &mgmt.Operation{}
-	err = json.NewDecoder(resp.Body).Decode(op)
 	if err != nil {
 		return err
 	}

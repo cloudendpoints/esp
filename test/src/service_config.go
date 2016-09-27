@@ -21,88 +21,92 @@
 // LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 // OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 // SUCH DAMAGE.
+//
 ////////////////////////////////////////////////////////////////////////////////
-
-package cli
+//
+// ESP CLI
+//
+package main
 
 import (
 	"deploy"
+	"fmt"
 	"log"
 	"os"
 
 	"github.com/spf13/cobra"
 )
 
-var submitCmd = &cobra.Command{
-	Use:   "submit",
-	Short: "Submit service configuration files. Creates an API service if necessary.",
-	Run: func(cmd *cobra.Command, args []string) {
-		files, err := deploy.MakeConfigFiles(serviceAPI, serviceConfig, serviceProto)
-		if err != nil {
-			log.Println(err)
-			os.Exit(-1)
-		}
-
-		err = cfg.Init()
-		if err != nil {
-			log.Println(err)
-			os.Exit(-1)
-		}
-
-		if !cfg.Exists() {
-			err = cfg.Create()
-			if err != nil {
-				log.Println(err)
-				os.Exit(-1)
-			}
-		}
-
-		_, err = cfg.Submit(files)
-		if err != nil {
-			log.Println(err)
-			os.Exit(-1)
-		}
-
-		err = cfg.Enable(cfg.ProducerProject)
-		if err != nil {
-			log.Println(err)
-			os.Exit(-1)
-		}
-
-		err = cfg.Rollout()
-		if err != nil {
-			log.Println(err)
-			os.Exit(-1)
-		}
-
-		log.Println("Finished service config submission")
-	},
-}
-
 var (
+	cfg           deploy.Service
 	serviceAPI    []string
 	serviceConfig []string
 	serviceProto  []string
 )
 
-func init() {
-	RootCmd.AddCommand(submitCmd)
-	submitCmd.PersistentFlags().StringArrayVar(&serviceAPI,
+func check(err error) {
+	if err != nil {
+		log.Println(err)
+		os.Exit(-1)
+	}
+}
+
+func main() {
+	var deployCmd = &cobra.Command{
+		Use: "deploy",
+		Run: func(cmd *cobra.Command, args []string) {
+			check(cfg.Connect())
+			out, err := cfg.Deploy(serviceAPI, serviceConfig, serviceProto)
+			check(err)
+			bytes, err := out.MarshalJSON()
+			check(err)
+			fmt.Print(string(bytes))
+		},
+	}
+
+	deployCmd.PersistentFlags().StringArrayVar(&serviceAPI,
 		"openapi", nil,
 		"OpenAPI specification file(s)")
-	submitCmd.PersistentFlags().StringArrayVar(&serviceConfig,
+	deployCmd.PersistentFlags().StringArrayVar(&serviceConfig,
 		"config", nil,
 		"Service config specification file(s)")
-	submitCmd.PersistentFlags().StringArrayVar(&serviceProto,
+	deployCmd.PersistentFlags().StringArrayVar(&serviceProto,
 		"proto", nil,
 		"Proto descriptor file(s)")
-	submitCmd.PersistentFlags().StringVarP(&cfg.Name,
+
+	var fetchCmd = &cobra.Command{
+		Use: "fetch",
+		Run: func(cmd *cobra.Command, args []string) {
+			check(cfg.Connect())
+			out, err := cfg.Fetch()
+			check(err)
+			report, err := cfg.GenerateConfigReport()
+			check(err)
+			for _, d := range report.Diagnostics {
+				log.Println("[" + d.Kind + "] " +
+					d.Location + ": " + d.Message)
+			}
+			bytes, err := out.MarshalJSON()
+			check(err)
+			fmt.Print(string(bytes))
+		},
+	}
+
+	fetchCmd.PersistentFlags().StringVarP(&cfg.Version,
+		"version", "v", "",
+		"API service config version, empty to use the latest")
+
+	var rootCmd = &cobra.Command{}
+	rootCmd.PersistentFlags().StringVarP(&cfg.Name,
 		"service", "s", "",
-		"Service API name")
-	submitCmd.PersistentFlags().StringVarP(&cfg.ProducerProject,
-		"project", "p", "",
-		"Producer project ID")
-	submitCmd.PersistentFlags().StringVarP(&cfg.CredentialsFile,
+		"API service name")
+	rootCmd.PersistentFlags().StringVarP(&cfg.CredentialsFile,
 		"creds", "k", "",
 		"Service account private key JSON file")
+	rootCmd.PersistentFlags().StringVarP(&cfg.ProducerProject,
+		"project", "p", "",
+		"Service producer project")
+
+	rootCmd.AddCommand(deployCmd, fetchCmd)
+	rootCmd.Execute()
 }

@@ -153,7 +153,6 @@ func PrintLogs(name, pod string) {
 	raw, err := clientset.Core().Pods(namespace).GetLogs(pod, logOptions).Do().Raw()
 	if err != nil {
 		log.Println("Request error", err)
-		os.Exit(-1)
 	} else {
 		fmt.Println("\n" + string(raw))
 	}

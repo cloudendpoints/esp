@@ -555,7 +555,7 @@ new_git_repository(
 new_git_repository(
     name = "google_api_go_client",
     remote = "https://github.com/google/google-api-go-client.git",
-    commit = "a69f0f19d246419bb931b0ac8f4f8d3f3e6d4feb",
+    commit = "adba394bac5800ff2e620d040e9401528f5b7615",
     build_file = "third_party/BUILD.google_api_go_client",
 )
 
