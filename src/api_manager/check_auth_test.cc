@@ -257,6 +257,19 @@ const char kTokenHttpSlashAud[] =
     "dmcp0lLhUa2OYrpyyipD5hv0eZIj4Yxlt962Qb6ZhewJULKULueIsWFXq3QZ-FPHXO8-B-"
     "ZBDv5_INzDpTaUK0htgVMMvcbqCcr2DdAlloaZXUnnEINy-d57SBsw1w";
 
+// kTokenWithNbf is the same as kToken but has an additional "nbf" claim set to
+// 2461782921.
+const char kTokenWithNbf[] =
+    "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImIzMzE5YTE0NzUxNGRmN2VlNWU0Ym"
+    "NkZWU1MTM1MGNjODkwY2M4OWUifQ.eyJpc3MiOiJodHRwczovL2lzc3VlcjEuY29tIiwic3ViI"
+    "joiZW5kLXVzZXItaWQiLCJhdWQiOiJlbmRwb2ludHMtdGVzdHMuY2xvdWRlbmRwb2ludHNhcGl"
+    "zLmNvbSIsImlhdCI6MTQ2MTc3OTMyMSwiZXhwIjoyNDYxNzgyOTIxLCJuYmYiOjI0NjE3ODI5M"
+    "jF9.eG8k_YeXPrmzkpu88PvvL_sP2FiG_VVsqG6zMxYleBKytGS1cUELVQzzlYNWeUh_w3q6EV"
+    "r_VeyrhbeUtQEsiDbeqWrz8fSaeUvgg0q1ndMo30YZxGx7gnFq5PKsDyyd_gi20J0P40y5ig5K"
+    "g4hXKlxpdJkUxwljmzkVvvy5N69EGvfIap474hHGKa1rpMZC2hfxAP0damJBShyGkr9qCnmBKn"
+    "5X-tA-XrqQjByzcdwu8D9jZSAdXsue285glUwPCpAYlRbrtrlhxHPS2pR2malTcR1PNXYEQD2G"
+    "x7n57Rg31-DuEoZAqWT5Tsr-cY8rn0cALm0AkFPyyC4OwI0O7w";
+
 const char kOpenIdContent[] = "{\"jwks_uri\": \"https://issuer1.com/pubkey\"}";
 
 const char kPubkey[] =
@@ -544,6 +557,25 @@ TEST_F(CheckAuthTest, TestInvalidToken) {
         return true;
       }));
   EXPECT_CALL(*raw_request_, SetAuthToken(kTokenExpired)).Times(1);
+  EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_)).Times(0);
+
+  CheckAuth(context_, [](Status status) {
+    ASSERT_EQ(status.code(), Code::UNAUTHENTICATED);
+    ASSERT_EQ(status.message(),
+              "JWT validation failed: TIME_CONSTRAINT_FAILURE");
+  });
+
+  EXPECT_TRUE(Mock::VerifyAndClearExpectations(raw_request_));
+  EXPECT_TRUE(Mock::VerifyAndClearExpectations(raw_env_));
+
+  // Token that is not ready to be used (i.e., current time is less than the
+  // "nbf" claim).
+  EXPECT_CALL(*raw_request_, FindHeader(kAuthHeader, _))
+      .WillOnce(Invoke([](const std::string &, std::string *token) {
+        *token = std::string(kBearer) + std::string(kTokenWithNbf);
+        return true;
+      }));
+  EXPECT_CALL(*raw_request_, SetAuthToken(kTokenWithNbf)).Times(1);
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_)).Times(0);
 
   CheckAuth(context_, [](Status status) {
