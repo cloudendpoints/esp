@@ -155,6 +155,7 @@ node('master') {
           job: 'esp/esp-release-qual',
           parameters: [[$class: 'StringParameterValue', name: 'GIT_COMMIT', value: GIT_SHA],
                        [$class: 'StringParameterValue', name: 'DURATION_HOUR', value: '10'],
+                       [$class: 'StringParameterValue', name: 'STAGE', value: 'E2E'],
                        [$class: 'BooleanParameterValue', name: 'RELEASE_QUAL', value: true]],
           wait: false)
     }
