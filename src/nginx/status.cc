@@ -27,6 +27,7 @@
 #include "src/nginx/status.h"
 
 #include <unistd.h>
+#include <fstream>
 
 #include "include/api_manager/version.h"
 #include "src/api_manager/utils/marshalling.h"
@@ -111,7 +112,9 @@ void fill_process_stats(const ngx_esp_process_stats_t &stat,
   process_status->set_process_id(stat.pid);
   process_status->mutable_started_at()->set_seconds(
       system_clock::to_time_t(stat.start_time));
-  process_status->set_memory_usage(stat.maxrss * kMemoryUnit);
+  process_status->set_memory_usage(stat.current_rss);
+  process_status->set_peak_memory_usage(stat.maxrss * kMemoryUnit);
+  process_status->set_virtual_size(stat.virtual_size);
   process_status->set_system_cpu_time_us(stat.sys_time.count());
   process_status->set_user_cpu_time_us(stat.user_time.count());
 
@@ -147,6 +150,20 @@ Status create_status_json(ngx_http_request_t *r, std::string *json) {
   return utils::ProtoToJson(
       status, json,
       utils::JsonOptions::PRETTY_PRINT | utils::JsonOptions::OUTPUT_DEFAULTS);
+}
+
+void get_current_memory_usage(long *virtual_size, long *current_rss) {
+  // Initialize with -1 to indicate an empty value
+  *virtual_size = -1;
+  *current_rss = -1;
+#if (NGX_LINUX)
+  std::ifstream statm("/proc/self/statm");
+  if (statm) {
+    statm >> *virtual_size >> *current_rss;
+    *virtual_size *= getpagesize();
+    *current_rss *= getpagesize();
+  }
+#endif
 }
 
 }  // namespace
@@ -298,6 +315,8 @@ ngx_int_t ngx_esp_init_process_stats(ngx_cycle_t *cycle) {
     process_stat->sys_time = std::chrono::seconds(r.ru_stime.tv_sec) +
                              std::chrono::microseconds(r.ru_stime.tv_usec);
     process_stat->maxrss = r.ru_maxrss;
+    get_current_memory_usage(&process_stat->virtual_size,
+                             &process_stat->current_rss);
 
     int esp_idx = 0;
     ngx_esp_loc_conf_t **endpoints =

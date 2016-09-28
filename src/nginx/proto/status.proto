@@ -84,8 +84,17 @@ message ProcessStatus {
   // The timestamp that the process started
   google.protobuf.Timestamp started_at = 2;
 
-  // Memory footprint of the process (unit: bytes)
+  // Current resident set size (RSS), i.e., how much physical memory is used by
+  // the
+  // process at this moment (unit: bytes)
   uint64 memory_usage = 3;
+
+  // Peak resident set size, i.e., the peak physical memory usage during the
+  // life of the process (unit: bytes)
+  uint64 peak_memory_usage = 7;
+
+  // Virtual size of the process (unit: bytes)
+  uint64 virtual_size = 8;
 
   // User CPU time used (unit: microseconds)
   uint64 user_cpu_time_us = 4;

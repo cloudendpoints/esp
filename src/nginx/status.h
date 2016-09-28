@@ -49,8 +49,14 @@ typedef struct {
   // process start time
   std::chrono::system_clock::time_point start_time;
 
-  // maximum resident set size of process (memory usage)
+  // maximum resident set size of process (peak memory usage)
   long maxrss;
+
+  // current resident set size of process (current memory usage)
+  long current_rss;
+
+  // virtual size of the process (current memory usage)
+  long virtual_size;
 
   // user CPU time used
   std::chrono::microseconds user_time;
