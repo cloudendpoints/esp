@@ -73,6 +73,36 @@ void TrimFront(std::vector<gpr_slice> *slices, size_t count) {
   }
 }
 
+// Calls ngx_http_output_filter() to call the output filter chain and sets up
+// the write event handler and the write event if ngx_http_output_filter()
+// returns NGX_AGAIN.
+ngx_int_t ngx_esp_write_output(ngx_http_request_t *r, ngx_chain_t *out,
+                               ngx_http_event_handler_pt write_event_handler) {
+  ngx_int_t rc = ngx_http_output_filter(r, out);
+
+  if (rc == NGX_OK) {
+    return NGX_OK;
+  }
+
+  if (rc != NGX_AGAIN) {
+    return rc;
+  }
+
+  ngx_http_core_loc_conf_t *clcf = reinterpret_cast<ngx_http_core_loc_conf_t *>(
+      ngx_http_get_module_loc_conf(r, ngx_http_core_module));
+
+  // Set the r->write_event_handler and call ngx_handle_write_event() to listen
+  // for write events. When the socket is ready for writing again, NGINX will
+  // call r->write_event_handler.
+  r->write_event_handler = write_event_handler;
+  rc = ngx_handle_write_event(r->connection->write, clcf->send_lowat);
+  if (rc != NGX_OK) {
+    return rc;
+  }
+
+  return NGX_AGAIN;
+}
+
 }  // namespace
 
 NgxEspGrpcServerCall::NgxEspGrpcServerCall(ngx_http_request_t *r,
@@ -221,7 +251,8 @@ void NgxEspGrpcServerCall::OnDownstreamWriteable(ngx_http_request_t *r) {
   ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                  "NgxEspGrpcServerCall::OnDownstreamWriteable");
 
-  ngx_int_t rc = ngx_http_output_filter(r, nullptr);
+  ngx_int_t rc = ngx_esp_write_output(
+      r, nullptr, &NgxEspGrpcServerCall::OnDownstreamWriteable);
 
   if (rc == NGX_AGAIN) {
     ngx_log_debug0(
@@ -566,7 +597,8 @@ void NgxEspGrpcServerCall::Write(const ::grpc::ByteBuffer &msg,
     return;
   }
 
-  ngx_int_t rc = ngx_http_output_filter(r_, &out);
+  ngx_int_t rc = ngx_esp_write_output(
+      r_, &out, &NgxEspGrpcServerCall::OnDownstreamWriteable);
 
   if (rc == NGX_OK) {
     // We were immediately able to send the message downstream.
@@ -588,11 +620,6 @@ void NgxEspGrpcServerCall::Write(const ::grpc::ByteBuffer &msg,
   write_continuation_ = continuation;
   ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r_->connection->log, 0,
                  "NgxEspGrpcServerCall::Write: blocked");
-
-  // Establish the write handler to call the continuation when write is
-  // unblocked. It's safer to set it every time we write as NGINX might
-  // overwrite it (e.g. ngx_http_read_client_request_body() does).
-  r_->write_event_handler = &NgxEspGrpcServerCall::OnDownstreamWriteable;
 }
 
 void NgxEspGrpcServerCall::RecordBackendTime(int64_t backend_time) {
