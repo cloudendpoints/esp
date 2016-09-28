@@ -93,14 +93,22 @@ trap cleanup EXIT
 
 HOST="https://${GAE_VERSION}-dot-${PROJECT_ID}.appspot.com"
 
-echo "Verify \"${APP_VERSION}\" version is deployed on host: ${HOST}".
-DEPLOYED_VERSION="$(curl ${HOST}/version)"
+function check_deployed_version() {
+  echo "Verify \"${APP_VERSION}\" version is deployed on host: ${HOST}".
+  local deployed_version="$(curl ${HOST}/version)"
+  echo "Expected version: ${APP_VERSION}"
+  echo "Deployed version: ${deployed_version}"
+  if [[ "${deployed_version}" =~ .*${APP_VERSION}.* ]]; then
+    return 0
+  else
+    echo "Version from ${HOST}: ${deployed_version} doesn't contain ${APP_VERSION}"
+    return 1
+  fi
+}
 
-echo "Expected version: ${APP_VERSION}"
-echo "Deployed version: ${DEPLOYED_VERSION}"
-
-[[ "${DEPLOYED_VERSION}" =~ .*${APP_VERSION}.* ]] \
-  || error_exit "DEPLOYED_VERSION: ${DEPLOYED_VERSION} not matched with ${APP_VERSION}"
+# appengine deploy may take a while to come up
+retry -n 30 -s 60 -t 60 check_deployed_version \
+  || error_exit "Timeout: could not match the version from ${HOST} with ${APP_VERSION}"
 
 echo 'Verify that endpoints is enabled'
 EXPECTED_RESPONSE=".*Method doesn't allow unregistered callers.*STATUS_CODE:401"
