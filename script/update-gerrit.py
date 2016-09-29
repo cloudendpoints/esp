@@ -115,17 +115,18 @@ class JenkinsGerrit(object):
   def __init__(self, base_url, change_id, commit):
     self._gerrit = SimpleGerrit(base_url, change_id, commit)
 
-  def RunPresubmit(self):
+  def RunPresubmit(self, build_url):
     self._gerrit.SetReview(
         tag='jenkins',
-        message='Running presubmits')
+        message='Running presubmits at {build_url} ...'.format(
+            build_url=build_url))
 
   def VerifyPresubmit(self, success, build_url):
     status = 'Successful' if success else 'Failed'
     verified = '+1' if success else '-1'
     message = (
         '{status} presubmits. '
-        'For More info at {build_url}').format(
+        'Details at {build_url}').format(
       status=status,
       build_url=build_url)
     labels = {
@@ -149,6 +150,8 @@ if __name__ == '__main__':
     sys.exit('Flag change_id is required')
   if not FLAGS.gerrit_url:
     sys.exit('Flag gerrit_url is required')
+  if not FLAGS.build_url:
+    sys.exit('Flag build_url is required')
 
   client = JenkinsGerrit(
       base_url=FLAGS.gerrit_url,
@@ -157,11 +160,9 @@ if __name__ == '__main__':
 
   try:
     if FLAGS.flow == _RUN_FLOW:
-      client.RunPresubmit()
+      client.RunPresubmit(
+          build_url=FLAGS.build_url)
     elif FLAGS.flow == _VERIFY_FLOW:
-      if not FLAGS.build_url:
-        sys.exit('Flag build_url is required')
-        build_url = FLAGS.build_url
       client.VerifyPresubmit(
           success=FLAGS.success,
           build_url=FLAGS.build_url)
