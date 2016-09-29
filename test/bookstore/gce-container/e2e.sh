@@ -57,16 +57,14 @@ e2e_options "${@}"
 [[ -n "${INSTANCE_NAME}" ]] || e2e_usage "Must provide Instance name via 'i' parameter."
 
 if [[ "${GRPC}" == 'echo' ]]; then
-  HOST="${INSTANCE_NAME}:80"
   YAML_TMPL="${SCRIPT_PATH}/esp_grpc_template.yaml"
   # grpc service config could not come from swagger.
   # It has to use api-compoiler to compile from yaml config.
   # For now, it is pushed manually.
   ESP_SERVICE="grpc-echo-dot-endpoints-jenkins.appspot.com"
   echo "grpc service name is: ${ESP_SERVICE}"
-else
-  HOST="http://${INSTANCE_NAME}:8080"
 fi
+
 # Creating swagger template
 # TODO: refactor to reuse with raw GCE scripts
 run cp -f ${SWAGGER_TMPL} swagger.json
@@ -91,6 +89,13 @@ run retry -n 3 gcloud compute instances create "${INSTANCE_NAME}" \
   --machine-type "custom-2-3840" \
   --image "${VM_IMAGE}" \
   --metadata-from-file google-container-manifest="${YAML_FILE}",startup-script="${VM_STARTUP_SCRIPT}"
+
+run retry -n 3 get_host_ip "${INSTANCE_NAME}"
+if [[ "${GRPC}" == 'echo' ]]; then
+  HOST="${HOST_INTERNAL_IP}:80"
+else
+  HOST="http://${HOST_INTERNAL_IP}:8080"
+fi
 
 LOG_DIR="$(mktemp -d /tmp/log.XXXX)"
 TEST_ID="gce-${VM_IMAGE}"

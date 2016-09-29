@@ -88,7 +88,7 @@ ZONE = ''
 
 node {
   BUCKET = env.BUCKET
-  BAZEL_ARGS = env.BAZEL_ARGS == '' ? '' : env.BAZEL_ARGS
+  BAZEL_ARGS = env.BAZEL_ARGS == null ? '' : env.BAZEL_ARGS
   CLUSTER = env.GKE_CLUSTER
   PROJECT_ID = env.PROJECT_ID
   ZONE = env.ZONE

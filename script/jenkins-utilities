@@ -395,6 +395,15 @@ function e2e_options() {
   fi
 }
 
+function get_host_ip() {
+  local hostname="${1}"
+  local ip=''
+  ip="$(gcloud compute instances describe "${hostname}" \
+    --format='value(networkInterfaces.networkIP)')" || { ip=''; return 1; }
+  export HOST_INTERNAL_IP="${ip}"
+  return 0
+}
+
 function e2e_usage() {
   local error_message="${1}"
   [[ -n "${error_message}" ]] && echo "${error_message}"
