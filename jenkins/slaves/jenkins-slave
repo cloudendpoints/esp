@@ -39,8 +39,15 @@ fi
 if [[ -n "${JENKINS_URL}" ]]; then
   URL="-url ${JENKINS_URL}"
 fi
+
+if [ -z "${JNLP_PROTOCOL_OPTS}" ]; then
+  echo "Warning: JnlpProtocol3 is disabled by default, use JNLP_PROTOCOL_OPTS to alter the behavior"
+  JNLP_PROTOCOL_OPTS="-Dorg.jenkinsci.remoting.engine.JnlpProtocol3.disabled=true"
+fi
+
 # Start docker
 ${SUDO} service docker start
-exec java ${JAVA_OPTS} -cp /usr/share/jenkins/slave.jar \
+exec java ${JAVA_OPTS} ${JNLP_PROTOCOL_OPTS} \
+  -cp /usr/share/jenkins/slave.jar \
   hudson.remoting.jnlp.Main \
   -headless ${TUNNEL} ${URL} "${@}"

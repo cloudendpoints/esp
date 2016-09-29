@@ -3,7 +3,7 @@ FROM debian:jessie-backports
 
 # Please make sure that you update script/linux-install-software as well.
 ENV JAVA_VERSION 1.8
-ENV JENKINS_SLAVE_VERSION 2.60
+ENV JENKINS_SLAVE_VERSION 2.62
 
 # Installing necessary packages
 RUN rm -rf /var/lib/apt/lists/* \
