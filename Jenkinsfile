@@ -71,8 +71,8 @@ RELEASE_QUALIFICATION_BRANCHES = [
     'flex-off-endpoints-on',
     'gce-container-vm',
     'gce-debian-8',
-    'gke-tight-http2',
     'gke-tight-https',
+    'gke-tight-http2-echo',
     'gke-tight-http2-interop',
 ]
 

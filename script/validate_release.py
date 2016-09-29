@@ -67,6 +67,7 @@ RUN_TESTS = [
     'long-run-test_gce-container-vm',
     'long-run-test_gce-debian-8',
     'long-run-test_gke-tight-http2-echo',
+    'long-run-test_gke-tight-http2-interop',
     'long-run-test_gke-tight-https',
     'release',
     'service-control',
