@@ -87,11 +87,11 @@ PROJECT_ID = ''
 ZONE = ''
 
 node {
-  BUCKET = env.BUCKET
-  BAZEL_ARGS = env.BAZEL_ARGS == null ? '' : env.BAZEL_ARGS
-  CLUSTER = env.GKE_CLUSTER
-  PROJECT_ID = env.PROJECT_ID
-  ZONE = env.ZONE
+  BUCKET = failIfNullOrEmpty(env.BUCKET, 'BUCKET must be set.')
+  BAZEL_ARGS = getWithDefault(env.BAZEL_ARGS)
+  CLUSTER = failIfNullOrEmpty(env.GKE_CLUSTER, 'GKE_CLUSTER must be set')
+  PROJECT_ID = failIfNullOrEmpty(env.PROJECT_ID, 'PROJECT_ID must be set')
+  ZONE = failIfNullOrEmpty(env.ZONE, 'ZONE must be set')
   stashSourceCode()
   setArtifactsLink()
 }
@@ -192,7 +192,7 @@ def cleanupOldTests(nodeLabel) {
         }
       }
   ]
-  parallel branches
+  parallel(branches)
 }
 
 def buildArtifacts(nodeLabel, buildBookstore = true, buildGrpcTest = true) {
@@ -217,7 +217,7 @@ def buildArtifacts(nodeLabel, buildBookstore = true, buildGrpcTest = true) {
       }
     }
   }
-  parallel branches
+  parallel(branches)
 }
 
 def presubmit(nodeLabel) {
@@ -249,7 +249,7 @@ def presubmit(nodeLabel) {
   node(nodeLabel) {
     presubmitTests('check-files')
   }
-  parallel branches
+  parallel(branches)
 }
 
 
@@ -266,7 +266,7 @@ def performance(nodeLabel) {
         }
       }
   ]
-  parallel branches
+  parallel(branches)
 }
 
 def e2eTest(nodeLabel) {
@@ -335,7 +335,7 @@ def e2eTest(nodeLabel) {
       }],
   ]
 
-  branches = filterBranches(branches, getE2eFilters())
+  branches = filterBranches(branches, getParam('E2E_FILTERS', '.*'))
   if (isReleaseQualification()) {
     branches = filterBranches(branches, RELEASE_QUALIFICATION_BRANCHES.join('|'))
   }
@@ -343,9 +343,9 @@ def e2eTest(nodeLabel) {
 
   withEnv([
       "LANG=C.UTF-8",
-      "CLOUDSDK_API_ENDPOINT_OVERRIDES_SERVICEMANAGEMENT=${getServiceManagementUrl()}",
-      "CLOUDSDK_COMPONENT_MANAGER_SNAPSHOT_URL=${getGcloudUrl()}"]) {
-    parallel branches
+      "CLOUDSDK_API_ENDPOINT_OVERRIDES_SERVICEMANAGEMENT=${getParam('SERVICE_MANAGEMENT_URL')}",
+      "CLOUDSDK_COMPONENT_MANAGER_SNAPSHOT_URL=${getParam('GCLOUD_URL')}"]) {
+    parallel(branches)
   }
 }
 /*
@@ -353,16 +353,12 @@ Esp code related method.
 Need to call checkoutSourceCode() for those to work.
  */
 
-def fetchSecrets() {
-  sh "gsutil cp -r gs://client-secret-files/ ."
-}
-
 def espGenericDockerImage(suffix = '') {
   def serverConfigTag = createServerConfigTag()
   if (serverConfigTag != '') {
     suffix = "${suffix}-${serverConfigTag}"
   }
-  if (getServiceManagementUrl() != '') {
+  if (getParam('SERVICE_MANAGEMENT_URL') != '') {
     suffix = "${suffix}-staging"
   }
   return "gcr.io/${PROJECT_ID}/endpoints-runtime${suffix}:debian-git-${GIT_SHA}"
@@ -370,7 +366,7 @@ def espGenericDockerImage(suffix = '') {
 
 def espDockerImage(suffix = '') {
   if (isRelease()) {
-    if (getUseLatestRelease()) {
+    if (getParam('USE_LATEST_RELEASE', false)) {
       return "b.gcr.io/endpoints/endpoints-runtime${suffix}:latest"
     }
     return "b.gcr.io/endpoints/endpoints-runtime${suffix}:${ESP_RUNTIME_VERSION}"
@@ -386,18 +382,18 @@ def espFlexDockerImage() {
 }
 
 def isRelease() {
-  return getDebianPackageRepo() != '' || getUseLatestRelease()
+  return getDebianPackageRepo() != '' || getParam('USE_LATEST_RELEASE', false)
 }
 
 def isReleaseQualification() {
   if (isRelease()) {
     return true
   }
-  return getReleaseQualification()
+  return getParam('RELEASE_QUAL', false)
 }
 
 def isDefaultCleanNginxBinary() {
-  return (getServiceManagementUrl() == '' && serverConfig == '')
+  return (getParam('SERVICE_MANAGEMENT_URL') == '' && serverConfig == '')
 }
 
 def bookstoreDockerImage() {
@@ -409,11 +405,11 @@ def gRpcTestServerImage(grpc) {
 }
 
 def espDebianPackage() {
-  if (getUseLatestRelease()) {
+  if (getParam('USE_LATEST_RELEASE', false)) {
     return ''
   }
   def suffix = ''
-  if (getServiceManagementUrl() != '') {
+  if (getParam('SERVICE_MANAGEMENT_URL') != '') {
     suffix = "${suffix}-staging"
   }
   return "gs://${BUCKET}/${GIT_SHA}/artifacts/endpoints-runtime-amd64${suffix}.deb"
@@ -431,30 +427,28 @@ Stages
 def buildPackages() {
   checkoutSourceCode()
   def espImgGeneric = espDockerImage()
-  def serverConfig = getServerConfig()
+  def serverConfig = getParam('SERVER_CONFIG')
   def serverConfigFlag = ''
   if (serverConfig != '') {
     serverConfigFlag = "-c ${serverConfig}"
   }
   if (isRelease()) {
     // Release Docker and debian package should already be built.
-    sh "docker pull ${espImgGeneric} || { echo 'Cannot find ${espImgGeneric}'; exit 1; }"
+    sh("docker pull ${espImgGeneric} || { echo 'Cannot find ${espImgGeneric}'; exit 1; }")
   } else {
     def espDebianPackage = espDebianPackage()
     def espImgFlex = espFlexDockerImage()
-    def serviceManagementUrl = getServiceManagementUrl()
 
-    sh "script/robot-release " +
+    sh("script/robot-release " +
         "-m ${espImgFlex} " +
         "-g ${espImgGeneric} " +
         "-d ${espDebianPackage} " +
-        "${serverConfigFlag} -s"
+        "${serverConfigFlag} -s")
     // local perf builds its own esp binary package.
     // Using the one built here instead if it exists.
     if (isDefaultCleanNginxBinary()) {
       // We only want to stash for the clean default binary.
-      def binaryExists = fileExists 'bazel-bin/src/nginx/main/nginx-esp'
-      if (binaryExists) {
+      if (fileExists('bazel-bin/src/nginx/main/nginx-esp')) {
         fastStash('nginx-esp', 'bazel-bin/src/nginx/main/nginx-esp')
       }
     }
@@ -488,7 +482,7 @@ def buildBookstoreImage() {
   setGCloud()
   checkoutSourceCode()
   def bookstoreImg = bookstoreDockerImage()
-  sh "test/bookstore/linux-build-bookstore-docker -i ${bookstoreImg}"
+  sh("test/bookstore/linux-build-bookstore-docker -i ${bookstoreImg}")
 }
 
 def buildGrcpTest() {
@@ -496,8 +490,8 @@ def buildGrcpTest() {
   def gRpcInteropServerImg = gRpcTestServerImage('interop')
   setGCloud()
   checkoutSourceCode()
-  sh "test/grpc/linux-build-grpc-docker -i ${gRpcEchoServerImg}"
-  sh "test/grpc/linux-build-grpc-docker -o -i ${gRpcInteropServerImg}"
+  sh("test/grpc/linux-build-grpc-docker -i ${gRpcEchoServerImg}")
+  sh("test/grpc/linux-build-grpc-docker -o -i ${gRpcInteropServerImg}")
 }
 
 def buildAndStash(buildTarget, stashTarget, name) {
@@ -507,8 +501,9 @@ def buildAndStash(buildTarget, stashTarget, name) {
   // Turns out Bazel does not like to be terminated.
   // Timing out after 40 minutes.
   timeout(40) {
-    retry(2) {
-      sh "bazel build ${BAZEL_ARGS} --config=release ${buildTarget}"
+    retry(3) {
+      sh("bazel build ${BAZEL_ARGS} --config=release ${buildTarget}")
+      sleep(5)
     }
   }
   fastStash(name, stashTarget)
@@ -517,25 +512,25 @@ def buildAndStash(buildTarget, stashTarget, name) {
 def testCleanup(daysOld, project, flags) {
   setGCloud()
   checkoutSourceCode()
-  sh "script/jenkins-tests-cleanup.sh -d ${daysOld} -p ${project} -f ${flags}"
+  sh("script/jenkins-tests-cleanup.sh -d ${daysOld} -p ${project} -f ${flags}")
 }
 
 // flow can be run or verify
 def updateGerrit(flow, success = false) {
-  def gerritUrl = getGerritUrl()
+  def gerritUrl = getParam('GERRIT_URL')
   if (gerritUrl == '') {
     return
   }
   def successFlag = success ? '--success' : ''
   retry(3) {
-    sh "script/update-gerrit.py " +
+    sh("script/update-gerrit.py " +
         "--build_url=\"${env.BUILD_URL}\" " +
         "--change_id=\"${CHANGE_ID}\" " +
         "--gerrit_url=\"${gerritUrl}\" " +
         "--commit=\"${GIT_SHA}\" " +
         "--flow=\"${flow}\" " +
-        "${successFlag}"
-    sleep 5
+        "${successFlag}")
+    sleep(5)
   }
 
 }
@@ -548,28 +543,28 @@ def buildNewDockerSlave(nodeLabel) {
   def testDockerImage = "${DOCKER_SLAVES[nodeLabel]}:test"
   // Slave image setup in Jenkins
   def finalDockerImage = "${DOCKER_SLAVES[nodeLabel]}:latest"
-  echo "Building ${testDockerImage}"
-  sh "script/jenkins-build-docker-slave -b " +
+  echo("Building ${testDockerImage}")
+  sh("script/jenkins-build-docker-slave -b " +
       "-i ${dockerImage} " +
       "-t ${testDockerImage} " +
-      "-s ${nodeLabel}"
-  echo "Testing ${testDockerImage}"
+      "-s ${nodeLabel}")
+  echo("Testing ${testDockerImage}")
   node(getTestSlaveLabel(nodeLabel)) {
     setGCloud()
     checkoutSourceCode()
-    sh "jenkins/slaves/slave-test"
+    sh('jenkins/slaves/slave-test')
   }
-  echo "Retagging ${testDockerImage} to ${dockerImage}"
-  sh "script/jenkins-build-docker-slave " +
+  echo("Retagging ${testDockerImage} to ${dockerImage}")
+  sh("script/jenkins-build-docker-slave " +
       "-i ${testDockerImage} " +
-      "-t ${finalDockerImage}"
+      "-t ${finalDockerImage}")
 }
 
 def e2eCommonOptions(testId, prefix = '') {
   def uniqueID = getUniqueID(testId, true)
-  def skipCleanup = getSkipCleanup() ? "-s" : ""
+  def skipCleanup = getParam('SKIP_CLEANUP', false) ? "-s" : ""
   def serviceName = generateServiceName(uniqueID, prefix)
-  def durationHour = getDurationHour()
+  def durationHour = getParam('DURATION_HOUR', 0)
   return "-a ${serviceName} " +
       "-B ${BUCKET} " +
       "-i ${uniqueID} " +
@@ -592,7 +587,7 @@ def e2eGKE(coupling, proto, grpc = 'off') {
     serviceName = "grpc-${grpc}-dot-${PROJECT_ID}.appspot.com"
     backendDockerImage = gRpcTestServerImage(grpc)
   }
-  sh "script/e2e-kube.sh " +
+  sh("script/e2e-kube.sh " +
       " -b ${backendDockerImage}" +
       " -g ${grpc}" +
       " -e " + espDockerImage() +
@@ -601,8 +596,8 @@ def e2eGKE(coupling, proto, grpc = 'off') {
       " -a ${serviceName}" +
       " -B ${BUCKET} " +
       " -i ${uniqueID} " +
-      " -l " + getDurationHour() +
-      (getSkipCleanup() ? " -s" : "")
+      " -l " + getParam('DURATION_HOUR', 0) +
+      (getParam('SKIP_CLEANUP', false) ? " -s" : ""))
 }
 
 def e2eGCE(vmImage) {
@@ -612,13 +607,13 @@ def e2eGCE(vmImage) {
   def commonOptions = e2eCommonOptions('gce-raw')
   def espDebianPkg = espDebianPackage()
   def debianPackageRepo = getDebianPackageRepo()
-  echo 'Running GCE test'
-  sh "test/bookstore/gce/e2e.sh " +
+  echo('Running GCE test')
+  sh("test/bookstore/gce/e2e.sh " +
       commonOptions +
       "-V ${ESP_RUNTIME_VERSION} " +
       "-v ${vmImage} " +
       "-d \"${espDebianPkg}\" " +
-      "-r \"${debianPackageRepo}\""
+      "-r \"${debianPackageRepo}\"")
 }
 
 def e2eGCEContainer(vmImage, grpc = 'off') {
@@ -637,13 +632,13 @@ def e2eGCEContainer(vmImage, grpc = 'off') {
     prefix = 'grpc-'
   }
   def commonOptions = e2eCommonOptions(testType, prefix)
-  echo 'Running GCE container test'
-  sh "test/bookstore/gce-container/e2e.sh " +
+  echo('Running GCE container test')
+  sh("test/bookstore/gce-container/e2e.sh " +
       commonOptions +
       "-b ${backendImage} " +
       "-e ${espImage} " +
       "-v ${vmImage} " +
-      "${gRpcFlag}"
+      "${gRpcFlag}")
 }
 
 def localPerformanceTest() {
@@ -660,14 +655,15 @@ def localPerformanceTest() {
   def testId = 'jenkins-post-submit-perf-test'
   def uniqueId = getUniqueID('local-perf', false)
   def logBucket = "gs://${BUCKET}/${GIT_SHA}/logs"
-  sh "script/create-test-env-json " +
-      "-t ${testId} " +
-      "-i ${uniqueId} > TEST_ENV"
-  def testEnv = readFile('TEST_ENV').trim()
-  sh 'script/linux-prep-machine'
-  sh "script/linux-start-local-test " +
+  def testEnv = sh(
+      returnStdout: true,
+      script: "script/create-test-env-json " +
+          "-t ${testId} " +
+          "-i ${uniqueId}").trim()
+  sh('script/linux-prep-machine')
+  sh("script/linux-start-local-test " +
       "-t ${testEnv} " +
-      "-b ${logBucket}"
+      "-b ${logBucket}")
 }
 
 def flexPerformance() {
@@ -676,16 +672,17 @@ def flexPerformance() {
   fastUnstash('tools')
   def testId = 'jenkins-perf-test-vm-esp'
   def uniqueId = getUniqueID('flex-perf', false)
-  sh "script/create-test-env-json " +
-      "-t ${testId} " +
-      "-i ${uniqueId} > TEST_ENV"
-  def testEnv = readFile('TEST_ENV').trim()
+  def testEnv = sh(
+      returnStdout: true,
+      script: "script/create-test-env-json " +
+          "-t ${testId} " +
+          "-i ${uniqueId}").trim()
   def logBucket = "gs://${BUCKET}/${GIT_SHA}/logs"
   def espImgFlex = espFlexDockerImage()
-  sh "script/linux-test-vm-echo " +
+  sh("script/linux-test-vm-echo " +
       "-i ${espImgFlex} " +
       "-t ${testEnv} " +
-      "-b ${logBucket}"
+      "-b ${logBucket}")
 }
 
 def e2eFlex(endpoints, flex) {
@@ -694,14 +691,14 @@ def e2eFlex(endpoints, flex) {
   fastUnstash('tools')
   def espImgFlex = espFlexDockerImage()
   def rcTestVersion = getUniqueID('', false)
-  def skipCleanup = getSkipCleanup() ? '-k' : ''
+  def skipCleanup = getParam('SKIP_CLEANUP', false) ? '-k' : ''
   def logBucket = "gs://${BUCKET}/${GIT_SHA}/logs"
-  def durationHour = getDurationHour()
+  def durationHour = getParam('DURATION_HOUR', 0)
   def endpointsFlag = endpoints ? '-e ' : ''
   def flexFlag = flex ? '-f ' : ''
-  def useLatestVersion = getUseLatestRelease() ? '-L ' : ''
+  def useLatestVersion = getParam('USE_LATEST_RELEASE', false) ? '-L ' : ''
 
-  sh "script/linux-test-vm-bookstore " +
+  sh("script/linux-test-vm-bookstore " +
       "${endpointsFlag}" +
       "${flexFlag}" +
       "-v ${rcTestVersion} " +
@@ -709,7 +706,7 @@ def e2eFlex(endpoints, flex) {
       "-l ${durationHour} " +
       "-b ${logBucket} " +
       "${useLatestVersion} " +
-      "${skipCleanup}"
+      "${skipCleanup}")
 }
 
 def presubmitTests(scenario, checkoutCode = true) {
@@ -720,141 +717,47 @@ def presubmitTests(scenario, checkoutCode = true) {
   def logBucket = "gs://${BUCKET}/${GIT_SHA}/logs"
   def uniqueId = getUniqueID(scenario, true)
   timeout(time: 1, unit: 'HOURS') {
-    sh "script/run-presubmit " +
+    sh("script/run-presubmit " +
         "-b ${logBucket} " +
         "-s ${scenario} " +
-        "-r ${uniqueId}"
+        "-r ${uniqueId}")
   }
 }
 
 /*
 Build Parameters
  */
-
-def getSkipCleanup() {
-  // Using a parameterized build with SKIP_CLEANUP env variable
-  try {
-    return "${SKIP_CLEANUP}" == "true"
-  } catch (MissingPropertyException e) {
-    return false
+def failIfNullOrEmpty(value, message) {
+  if (value == null || value == '') {
+    error(message)
   }
+  return value
+}
+
+def getWithDefault(value, defaultValue='') {
+  return value == null ? defaultValue : value
+}
+
+def getParam(name, defaultValue = '') {
+  return getWithDefault(params.get(name), defaultValue)
 }
 
 def getGitCommit() {
   // Using a parameterized build with GIT_COMMIT env variable
-  try {
-    def gitCommit = "${GIT_COMMIT}"
-    if (gitCommit == 'INVALID') {
-      failBranch('You must specify a valid GIT_COMMIT.')
-    }
-    return gitCommit
-  } catch (MissingPropertyException e) {
-    return 'HEAD'
+  def gitCommit = getParam('GIT_COMMIT', 'HEAD')
+  if (gitCommit == 'INVALID') {
+    failBranch('You must specify a valid GIT_COMMIT.')
   }
-}
-
-def getServiceManagementUrl() {
-  // Using a parameterized build with SERVICE_MANAGEMENT_URL env variable
-  try {
-    return "${SERVICE_MANAGEMENT_URL}"
-  } catch (MissingPropertyException e) {
-    return ''
-  }
-}
-
-def getGcloudUrl() {
-  // Using a parameterized build with GCLOUD_URL env variable
-  try {
-    return "${GCLOUD_URL}"
-  } catch (MissingPropertyException e) {
-    return ''
-  }
-}
-
-
-def getServerConfig() {
-  // Using a parameterized build with SERVER_CONFIG env variable
-  try {
-    return "${SERVER_CONFIG}"
-  } catch (MissingPropertyException e) {
-    return '';
-  }
+  return gitCommit
 }
 
 def getDebianPackageRepo() {
   // Using a parameterized build with DEBIAN_PACKAGE_REPO env variable
-  try {
-    def debianPackageRepo = "${DEBIAN_PACKAGE_REPO}"
-    if (debianPackageRepo == 'INVALID') {
-      failBranch('You must specify a valid DEBIAN_PACKAGE_REPO.')
-    }
-    return debianPackageRepo
-  } catch (MissingPropertyException e) {
-    return ''
+  debianPackageRepo = getParam('DEBIAN_PACKAGE_REPO')
+  if (debianPackageRepo == 'INVALID') {
+    failBranch('You must specify a valid DEBIAN_PACKAGE_REPO.')
   }
-}
-
-def getDurationHour() {
-  // Using a parameterized build with DURATION_HOUR env variable
-  try {
-    return "${DURATION_HOUR}".toInteger()
-  } catch (MissingPropertyException e) {
-    return 0
-  }
-}
-
-def getGerritUrl() {
-  // Using a parameterized build with GERRIT_URL env variable
-  try {
-    return "${GERRIT_URL}"
-  } catch (MissingPropertyException e) {
-    return '';
-  }
-}
-
-def getUseLatestRelease() {
-  try {
-    return "${USE_LATEST_RELEASE}" == 'true'
-  } catch (MissingPropertyException e) {
-    return false
-  }
-}
-
-def getUseTestSlave() {
-  try {
-    return "${USE_TEST_SLAVE}" == 'true'
-  } catch (MissingPropertyException e) {
-    return false
-  }
-}
-
-def getReleaseQualification() {
-  // Using a parameterized build with RELEASE_QUAL env variable
-  try {
-    return "${RELEASE_QUAL}" == 'true'
-  } catch (MissingPropertyException e) {
-    return false
-  }
-}
-
-def getStage() {
-  // Using a parameterized build with STAGE env variable
-  try {
-    def stage = "${STAGE}".toString().trim()
-    if (stage != '') return stage
-  } catch (MissingPropertyException e) {
-  }
-  return ALL_STAGES
-}
-
-def getE2eFilters() {
-  // Using a parameterized build with E2E_FILTERS env variable
-  try {
-    def filters = "${E2E_FILTERS}".toString().trim()
-    if (filters != '') return filters
-  } catch (MissingPropertyException e) {
-  }
-  return '.*'
+  return debianPackageRepo
 }
 
 /*
@@ -862,7 +765,7 @@ Convenience methods
  */
 
 def runStage(stage) {
-  def stageToRun = getStage()
+  def stageToRun = getParam('STAGE', ALL_STAGES)
   assert stageToRun in SUPPORTED_STAGES,
       "Stage ${stageToRun} is not supported."
   if (stageToRun == ALL_STAGES) {
@@ -888,7 +791,7 @@ def getTestSlaveLabel(label) {
 }
 
 def getSlaveLabel(label) {
-  if (getUseTestSlave()) {
+  if (getParam('USE_LATEST_RELEASE', false)) {
     return getTestSlaveLabel(label)
   }
   return label
@@ -899,7 +802,7 @@ def getBuildSlaveLabel(label) {
 }
 
 def createServerConfigTag() {
-  def serverConfig = getServerConfig()
+  def serverConfig = getParam('SERVER_CONFIG')
   if (serverConfig != '') {
     def f = new File(serverConfig)
     return f.name.tokenize('.').first()
@@ -908,8 +811,8 @@ def createServerConfigTag() {
 }
 
 def failBranch(errorMessage) {
-  echo errorMessage
-  error errorMessage
+  echo(errorMessage)
+  error(errorMessage)
 }
 
 def getUniqueID(testId, useSha) {
@@ -924,11 +827,11 @@ def getUniqueID(testId, useSha) {
 
 def generateServiceName(uniqueID, servicePrefix = '') {
   //TODO: Use uniqueID when it becomes possible.
-  def serviceUrl = getServiceManagementUrl()
+  def serviceUrl = getParam('SERVICE_MANAGEMENT_URL')
   if (serviceUrl != '') {
     servicePrefix = 'staging-${servicePrefix}'
   }
-  if (getUseLatestRelease() || getGcloudUrl()) {
+  if (getParam('USE_LATEST_RELEASE', false) || getParam('GCLOUD_URL')) {
     return "${uniqueID}-dot-${PROJECT_ID}.appspot.com"
   }
   return "${servicePrefix}testing-dot-${PROJECT_ID}.appspot.com"
@@ -966,24 +869,23 @@ Git Helper Methods
 def stashSourceCode() {
   initialize(true)
   // Setting source code related global variable once so it can be reused.
-  GIT_SHA = getRevision()
-  ESP_RUNTIME_VERSION = getEndpointsRuntimeVersion()
-  CHANGE_ID = getChangeId()
-  echo 'Stashing source code'
+  GIT_SHA = failIfNullOrEmpty(getRevision(), 'GIT_SHA must be set')
+  ESP_RUNTIME_VERSION = failIfNullOrEmpty(getEndpointsRuntimeVersion(), 'ESP_RUNTIME_VERSION must be set')
+  CHANGE_ID = failIfNullOrEmpty(getChangeId(), 'CHANGE_ID must be set')
+  echo('Stashing source code')
   fastStash('src-code', '.')
 }
 
 def checkoutSourceCode() {
   deleteDir()
-  echo 'Unstashing source code'
+  echo('Unstashing source code')
   fastUnstash('src-code')
-  sh "git diff"
+  sh("git diff")
 }
 
 def pathExistsCloudStorage(filePath) {
-  sh "echo '0' > STATUS; gsutil stat ${filePath} || echo \$? > STATUS"
-  def status = readFile 'STATUS'
-  return status.toInteger() == 0
+  def status = sh(returnStatus: true, script: "gsutil stat ${filePath}")
+  return status == 0
 }
 
 
@@ -995,11 +897,11 @@ def fastStash(name, stashPaths) {
   // Checking if archive already exists
   def archivePath = stashArchivePath(name)
   if (!pathExistsCloudStorage(archivePath)) {
-    echo "Stashing ${stashPaths} to ${archivePath}"
+    echo("Stashing ${stashPaths} to ${archivePath}")
     retry(5) {
-      sh "tar czf - ${stashPaths} | gsutil " +
-          "-h Content-Type:application/x-gtar cp - ${archivePath}"
-      sleep 5
+      sh("tar czf - ${stashPaths} | gsutil " +
+          "-h Content-Type:application/x-gtar cp - ${archivePath}")
+      sleep(5)
     }
   }
 }
@@ -1007,21 +909,21 @@ def fastStash(name, stashPaths) {
 def fastUnstash(name) {
   def archivePath = stashArchivePath(name)
   retry(5) {
-    sh "gsutil cp ${archivePath} - | tar zxf - "
-    sleep 5
+    sh("gsutil cp ${archivePath} - | tar zxf - ")
+    sleep(5)
   }
 }
 
 def getRevision() {
   // Code needs to be checked out for this.
-  sh 'git rev-parse --verify HEAD > GIT_COMMIT'
-  return readFile('GIT_COMMIT').trim()
+  return sh(returnStdout: true, script: 'git rev-parse --verify HEAD').trim()
 }
 
 def getChangeId() {
   // Code needs to be checked out for this.
-  sh "git log --format=%B -n 1 HEAD | awk '/^Change-Id: / {print \$2}' > CHANGE_ID"
-  return readFile('CHANGE_ID').trim()
+  return sh(
+      returnStdout: true,
+      script: "git log --format=%B -n 1 HEAD | awk '/^Change-Id: / {print \$2}'").trim()
 }
 
 def setArtifactsLink() {
@@ -1043,44 +945,42 @@ def initialize(setup = false, authDaemon = true) {
       timeout(1) {
         setGitAuthDaemon()
       }
-      sleep 5
+      sleep(5)
     }
   }
   retry(10) {
     // Timeout after 5 minute
     timeout(5) {
-      checkout scm
+      checkout(scm)
     }
-    sleep 5
+    sleep(5)
   }
   def gitCommit = getGitCommit()
   if (gitCommit != 'HEAD') {
-    sh "git fetch origin ${gitCommit} && git checkout -f ${gitCommit}"
+    sh("git fetch origin ${gitCommit} && git checkout -f ${gitCommit}")
 
   }
   // Updating submodules and cleaning files.
   if (setup) {
-    sh 'script/setup && script/obliterate'
+    sh('script/setup && script/obliterate')
   }
 }
 
 def setGCloud() {
   retry(5) {
     timeout(1) {
-      sh "gcloud config set compute/zone ${ZONE}"
-      // Do not use OAuth2 with GCP since client-go does not understand it
-      sh "gcloud config set container/use_client_certificate True"
-      sh "gcloud container clusters get-credentials ${CLUSTER}"
-      if (getGcloudUrl() != '') {
-        sh 'sudo gcloud components update -q'
+      sh("gcloud config set compute/zone ${ZONE}")
+      sh("gcloud container clusters get-credentials ${CLUSTER}")
+      if (getParam('GCLOUD_URL') != '') {
+        sh('sudo gcloud components update -q')
       }
     }
-    sleep 5
+    sleep(5)
   }
 }
 
 def setGitAuthDaemon() {
-  sh '''#!/bin/bash
+  sh('''#!/bin/bash
 echo "Installing Git Auth Daemon."
 rm -rf ./gcompute-tools .git-credential-cache/cookie
 git clone https://gerrit.googlesource.com/gcompute-tools
@@ -1091,7 +991,7 @@ echo "Waiting on authentication to googlesource: PID=${AUTH_DAEMON}."
 sleep 5
 [[ -s ${HOME}/.git-credential-cache/cookie ]] || \
   { echo 'Failed to authenticate on google'; exit 1; }
-trap \'kill %gcompute-tools/git-cookie-authdaemon\' EXIT'''
+trap \'kill %gcompute-tools/git-cookie-authdaemon\' EXIT''')
 }
 
 def setGit() {
