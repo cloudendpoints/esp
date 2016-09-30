@@ -21,64 +21,88 @@
 // LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 // OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 // SUCH DAMAGE.
+//
 ////////////////////////////////////////////////////////////////////////////////
-
-package cli
+//
+// ESP Ingress controller
+//
+package main
 
 import (
-	"log"
+	"controller"
+	"flag"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
-	"github.com/spf13/cobra"
+	"github.com/golang/glog"
 
 	"k8s.io/client-go/1.5/kubernetes"
-	api "k8s.io/client-go/1.5/pkg/api/v1"
+	"k8s.io/client-go/1.5/pkg/api"
+	"k8s.io/client-go/1.5/rest"
 	"k8s.io/client-go/1.5/tools/clientcmd"
 )
 
 var (
-	namespace string
-	clientset *kubernetes.Clientset
+	namespace     string
+	inCluster     bool
+	resyncSeconds int
 )
 
-// Prefix for ESP managed resources
-const endpointsPrefix = "endpoints-"
+func check(err error) {
+	if err != nil {
+		glog.Errorf("Error at startup: %v", err)
+		os.Exit(-1)
+	}
+}
 
-// Label to tag pods running ESP for a given k8s service
-// Label to tag services points to ESP pods for a given k8s service
-const ESPManagedService = "googleapis.com/service"
+func main() {
+	flag.StringVar(&namespace, "namespace", api.NamespaceAll, "Specify namespace to watch for ingresses")
+	flag.BoolVar(&inCluster, "cluster", true, "True if run inside the cluster")
+	flag.IntVar(&resyncSeconds, "resync", 5, "Resync period for controllers")
+	flag.Parse()
 
-// Label to tag pods with loosely coupled ESP services
-// (to support multiple ESP deployments for a service)
-const ESPEndpoints = "googleapis.com/endpoints"
+	var (
+		config *rest.Config
+		err    error
+	)
 
-// RootCmd for CLI
-var RootCmd = &cobra.Command{
-	Use:   "espcli",
-	Short: "ESP deployment manager for Kubernetes",
-	Long:  "A script to deploy ESP and monitor ESP deployments in Kubernetes",
-	Run: func(cmd *cobra.Command, args []string) {
-		log.Println("ESP deployment command line interface")
-	},
-	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		config, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
+	if inCluster {
+		config, err = rest.InClusterConfig()
+	} else {
+		config, err = clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
 			clientcmd.NewDefaultClientConfigLoadingRules(),
 			&clientcmd.ConfigOverrides{},
 		).ClientConfig()
-		if err != nil {
-			log.Println("Cannot retrieve kube configuration")
-			os.Exit(-2)
-		}
+	}
+	check(err)
+	clientset, err := kubernetes.NewForConfig(config)
+	check(err)
 
-		clientset, err = kubernetes.NewForConfig(config)
-		if err != nil {
-			log.Println("Cannot connect to Kubernetes API: ", err)
-			os.Exit(-2)
-		}
-	},
+	nginx, err := controller.MakeNginx(
+		"/usr/sbin/nginx",
+		"/etc/nginx/nginx.conf",
+		"/etc/nginx/nginx.tmpl",
+		"/etc/nginx/endpoints")
+	nginx.Conf.PID = "/var/run/nginx.pid"
+	// TODO remove after the fix to multiple worker issue
+	nginx.Conf.NumWorkerProcesses = 1
+	check(err)
+
+	ctl, _ := controller.NewController(nginx, clientset, namespace,
+		time.Duration(resyncSeconds)*time.Second)
+	stop := make(chan struct{})
+	go handleSignals(stop)
+	ctl.Run(stop)
 }
 
-func init() {
-	RootCmd.PersistentFlags().StringVar(&namespace,
-		"namespace", api.NamespaceDefault, "kubernetes namespace")
+func handleSignals(stop chan struct{}) {
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGTERM)
+	signal.Notify(signalChan, syscall.SIGINT)
+	<-signalChan
+	glog.Info("Caught signal, terminating")
+	close(stop)
+	glog.Flush()
 }

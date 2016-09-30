@@ -33,7 +33,7 @@ load(
 )
 
 # Define an import prefix
-go_prefix("github.com/cloudendpoints/esp/")
+go_prefix("github.com/cloudendpoints/esp")
 
 # NOTE: Below we use a special "vendor/" keyword in target names to specify
 # custom import paths for go libraries. Otherwise, go_library() rule
@@ -190,20 +190,32 @@ go_library(
 go_library(
     name = "vendor/controller",
     srcs = [
+        "controller/annotations.go",
         "controller/config.go",
+        "controller/config_store.go",
         "controller/controller.go",
+        "controller/nginx.go",
+        "controller/queue.go",
+        "controller/utils.go",
     ],
     go_prefix = "//test/src:go_prefix",
     deps = [
+        ":vendor/deploy",
+        ":vendor/utils",
         "@github_com_kubernetes_client_go//:kubernetes",
+        "@github_com_kubernetes_client_go//:tools/cache",
         "@github_com_kubernetes_client_go//:pkg/api",
+        "@github_com_kubernetes_client_go//:pkg/api/v1",
         "@github_com_kubernetes_client_go//:pkg/apis/extensions/v1beta1",
+        "@github_com_kubernetes_client_go//:pkg/watch",
+        "@github_com_kubernetes_client_go//:pkg/runtime",
         "@github_com_kubernetes_client_go//:pkg/util/flowcontrol",
+        "@github_com_kubernetes_client_go//:pkg/util/intstr",
+        "@github_com_golang_glog//:glog",
     ],
     data = [
         "controller/nginx.tmpl",
     ],
-
 )
 
 go_binary(
@@ -230,6 +242,26 @@ go_binary(
         "@github_com_spf13_cobra//:cobra",
     ],
 )
+
+go_binary(
+    name = "ingress",
+    srcs = [
+        "ingress.go",
+    ],
+    data = [
+        "//src/nginx/main:nginx-esp",
+    ],
+    go_prefix = "//test/src:go_prefix",
+    deps = [
+        ":vendor/controller",
+        "@github_com_kubernetes_client_go//:kubernetes",
+        "@github_com_kubernetes_client_go//:pkg/api",
+        "@github_com_kubernetes_client_go//:rest",
+        "@github_com_kubernetes_client_go//:tools/clientcmd",
+        "@github_com_golang_glog//:glog",
+    ],
+)
+
 
 go_binary(
     name = "fakes_server",

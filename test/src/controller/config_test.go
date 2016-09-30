@@ -23,14 +23,14 @@
 // SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
-package controller_test
+package testing
 
 import (
-	"controller"
 	"io/ioutil"
-	"log"
 	"os"
 	"testing"
+
+	"controller"
 	"utils"
 )
 
@@ -42,9 +42,10 @@ func check(t *testing.T, err error) {
 
 func TestConfig(t *testing.T) {
 	up1 := &controller.Upstream{
-		Name:     "bookstore-http",
-		Protocol: "http",
-		Port:     80,
+		Name:      "bookstore-http",
+		Namespace: "rc-test",
+		Protocol:  "http",
+		Port:      80,
 		Endpoints: []*controller.Backend{
 			&controller.Backend{
 				Address:     "127.0.0.1",
@@ -61,9 +62,10 @@ func TestConfig(t *testing.T) {
 		},
 	}
 	up2 := &controller.Upstream{
-		Name:     "bookstore-https",
-		Protocol: "https",
-		Port:     80,
+		Name:      "bookstore-https",
+		Namespace: "rc-test",
+		Protocol:  "https",
+		Port:      80,
 		Endpoints: []*controller.Backend{
 			&controller.Backend{
 				Address:     "127.0.0.1",
@@ -74,9 +76,10 @@ func TestConfig(t *testing.T) {
 		},
 	}
 	up3 := &controller.Upstream{
-		Name:     "bookstore-grpc",
-		Protocol: "grpc",
-		Port:     80,
+		Name:      "bookstore-grpc",
+		Namespace: "default",
+		Protocol:  "grpc",
+		Port:      80,
 		Endpoints: []*controller.Backend{
 			&controller.Backend{
 				Address:     "127.0.0.1",
@@ -95,7 +98,7 @@ func TestConfig(t *testing.T) {
 	check(t, err)
 
 	tmpl := data + "/test/src/controller/nginx.tmpl"
-	out := pwd + "/nginx.conf"
+	nginxConf := pwd + "/nginx.conf"
 	tmp := pwd + "/tmp"
 	os.Mkdir(tmp, 0700)
 	esp := bin + "/src/nginx/main/nginx-esp"
@@ -105,66 +108,64 @@ func TestConfig(t *testing.T) {
 	err = ioutil.WriteFile(serviceJson, []byte(serviceConfig), 0644)
 	check(t, err)
 
-	conf := controller.Configuration{
-		Upstreams: []*controller.Upstream{up1, up2, up3},
-		Servers: []*controller.Server{
-			&controller.Server{
-				Name: "web.bookstore.org",
-				Locations: []*controller.Location{
-					&controller.Location{
-						Path:              "/",
-						Upstream:          up1,
-						StripPrefix:       false,
-						ServiceConfigFile: serviceJson,
-						CredentialsFile:   utils.CredentialsFile(),
-					},
-					&controller.Location{
-						Path:              "/https/",
-						Upstream:          up2,
-						StripPrefix:       false,
-						ServiceConfigFile: serviceJson,
-					},
+	conf := controller.NewConfig()
+	conf.Upstreams = []*controller.Upstream{up1, up2, up3}
+	conf.Servers = []*controller.Server{
+		&controller.Server{
+			Name: "web.bookstore.org",
+			Locations: []*controller.Location{
+				&controller.Location{
+					Path:              "",
+					Upstream:          up1,
+					StripPrefix:       false,
+					ServiceConfigFile: serviceJson,
+					CredentialsFile:   utils.CredentialsFile(),
 				},
-				Ports: &controller.Ports{
-					SSL:   8443,
-					HTTP:  9000,
-					HTTP2: 9001,
+				&controller.Location{
+					Path:              "/https",
+					Upstream:          up2,
+					StripPrefix:       false,
+					ServiceConfigFile: serviceJson,
 				},
-				SSLCertificate:    utils.SSLCertFile(),
-				SSLCertificateKey: utils.SSLKeyFile(),
 			},
-			&controller.Server{
-				Name: "api.bookstore.org",
-				Locations: []*controller.Location{
-					&controller.Location{
-						Path:              "/grpc/",
-						Upstream:          up3,
-						StripPrefix:       true,
-						ServiceConfigFile: serviceJson,
-					},
+			Ports: &controller.Ports{
+				SSL:   8443,
+				HTTP:  9000,
+				HTTP2: 9001,
+			},
+			SSLCertificate:    utils.SSLCertFile(),
+			SSLCertificateKey: utils.SSLKeyFile(),
+		},
+		&controller.Server{
+			Name: "",
+			Locations: []*controller.Location{
+				&controller.Location{
+					Path:              "/grpc/",
+					Upstream:          up3,
+					StripPrefix:       true,
+					ServiceConfigFile: serviceJson,
 				},
-				Ports: &controller.Ports{
-					HTTP: 9000,
-				},
+			},
+			Ports: &controller.Ports{
+				HTTP: 9000,
 			},
 		},
-		UseUpstreamResolver: true,
 	}
 
-	conf.Init()
+	conf.UseUpstreamResolver = true
 	conf.PID = pwd + "/nginx.pid"
 	conf.MimeTypes = ""
 	conf.TempDir = tmp
 
+	out, err := os.Create(nginxConf)
+	check(t, err)
 	err = conf.WriteTemplate(tmpl, out)
 	check(t, err)
-	content, err := ioutil.ReadFile(out)
-	check(t, err)
-	log.Println(string(content))
-	_, err = utils.Run(esp, "-c", out, "-t")
+	out.Close()
+	_, err = utils.Run(esp, "-c", nginxConf, "-t")
 	check(t, err)
 
-	os.Remove(out)
+	os.Remove(nginxConf)
 	os.Remove(serviceJson)
 	os.Remove(conf.PID)
 }

@@ -26,20 +26,23 @@
 package controller
 
 import (
-	"os"
+	"fmt"
+	"io"
 	"runtime"
 	"text/template"
+
+	"github.com/golang/glog"
 )
 
 type Configuration struct {
-	Upstreams      []*Upstream
-	Servers        []*Server
-	StatusPort     int
-	MetadataServer string
-	DNSResolver    string
-	AccessLog      string
-	ErrorLog       string
+	Upstreams []*Upstream
+	Servers   []*Server
 
+	StatusPort          int
+	MetadataServer      string
+	DNSResolver         string
+	AccessLog           string
+	ErrorLog            string
 	UseUpstreamResolver bool
 
 	PID                string
@@ -50,26 +53,31 @@ type Configuration struct {
 }
 
 // Set default values
-func (conf *Configuration) Init() {
-	conf.PID = "/var/run/nginx.pid"
-	conf.MimeTypes = "/etc/nginx/mime.types"
-	conf.NumWorkerProcesses = runtime.NumCPU()
-	conf.Platform = runtime.GOOS
+func NewConfig() *Configuration {
+	return &Configuration{
+		StatusPort:          8090,
+		MetadataServer:      "http://169.254.169.254",
+		DNSResolver:         "8.8.8.8",
+		AccessLog:           "/dev/stdout",
+		ErrorLog:            "stderr",
+		UseUpstreamResolver: false,
 
-	conf.MetadataServer = "http://169.254.169.254"
-	conf.DNSResolver = "8.8.8.8"
-	conf.StatusPort = 8090
-	conf.AccessLog = "/dev/stdout"
-	conf.ErrorLog = "stderr"
+		PID:                "/var/run/nginx.pid",
+		MimeTypes:          "/etc/nginx/mime.types",
+		NumWorkerProcesses: runtime.NumCPU(),
+		Platform:           runtime.GOOS,
+		// use default values for temp dir
+		TempDir: "",
+	}
 }
 
 type Upstream struct {
-	// Service name and port
-	Name string
-	Port int
-	// Valid values are: https, http, grpc
-	Protocol string
-	// Endpoints
+	// Service name, namespace, port, and protocl
+	Name      string
+	Namespace string
+	Port      int
+	Protocol  string
+
 	Endpoints []*Backend
 }
 
@@ -103,17 +111,75 @@ type Location struct {
 	CredentialsFile   string
 }
 
-func (conf *Configuration) WriteTemplate(tmplPath string, destPath string) error {
+func IsValidProtocol(proto string) bool {
+	return proto == "http" || proto == "https" || proto == "grpc"
+}
+
+// Label uniquely identifies upstream
+func (up *Upstream) Label() string {
+	return fmt.Sprintf("%s_%s_%s_%d", up.Protocol, up.Name, up.Namespace, up.Port)
+}
+
+func (up *Upstream) Address() string {
+	return fmt.Sprintf("%s.%s", up.Name, up.Namespace)
+}
+
+func (conf *Configuration) WriteTemplate(tmplPath string, out io.Writer) error {
 	t, err := template.ParseFiles(tmplPath)
 	if err != nil {
 		return err
 	}
 
-	dest, err := os.Create(destPath)
-	if err != nil {
-		return err
-	}
-	defer dest.Close()
+	return t.Execute(out, conf)
+}
 
-	return t.Execute(dest, conf)
+func (conf *Configuration) DeduplicateUpstreams() {
+	upstreams := make([]*Upstream, 0)
+	set := map[string]bool{}
+	for _, upstream := range conf.Upstreams {
+		if _, exists := set[upstream.Label()]; exists {
+			continue
+		}
+		upstreams = append(upstreams, upstream)
+		set[upstream.Label()] = true
+	}
+	conf.Upstreams = upstreams
+}
+
+func (conf *Configuration) RemoveEmptyUpstreams() {
+	upstreams := make([]*Upstream, 0)
+	for _, upstream := range conf.Upstreams {
+		if len(upstream.Endpoints) > 0 {
+			upstreams = append(upstreams, upstream)
+		} else {
+			glog.Warningf("Upstream %v does not have any active endpoints", upstream.Label())
+		}
+	}
+	conf.Upstreams = upstreams
+}
+
+func (conf *Configuration) RemoveStaleLocations() {
+	set := map[string]bool{}
+	for _, upstream := range conf.Upstreams {
+		set[upstream.Label()] = true
+	}
+
+	servers := make([]*Server, 0)
+	for _, server := range conf.Servers {
+		locations := make([]*Location, 0)
+		for _, location := range server.Locations {
+			if _, exists := set[location.Upstream.Label()]; exists {
+				locations = append(locations, location)
+			} else {
+				glog.Warningf("Missing upstream %s for location %s",
+					location.Upstream.Label(), location.Path)
+			}
+		}
+
+		if len(locations) > 0 {
+			server.Locations = locations
+			servers = append(servers, server)
+		}
+	}
+	conf.Servers = servers
 }

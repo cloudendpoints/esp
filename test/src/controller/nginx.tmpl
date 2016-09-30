@@ -53,7 +53,7 @@ http {
     proxy_next_upstream error timeout invalid_header http_502 http_503 http_504;
     {{- range .Upstreams }}
     {{- if not (eq .Protocol "grpc") }}
-    upstream {{ .Name }} {
+    upstream {{ .Label }} {
         least_conn;
         {{- range .Endpoints }}
         server {{ .Address }}:{{ .Port }} max_fails={{ .MaxFails }} fail_timeout={{ .FailTimeout }};
@@ -65,7 +65,9 @@ http {
 
     {{- range $server := .Servers }}
     server {
+        {{- if not (eq $server.Name "") }}
         server_name {{ $server.Name }};
+        {{- end }}
         {{- if gt $server.Ports.HTTP 0 }}
         listen {{ $server.Ports.HTTP }};
         {{- end }}
@@ -79,7 +81,7 @@ http {
         {{- end }}
 
         {{- range $location := $server.Locations }}
-        location {{ $location.Path }} {
+        location {{ $location.Path }}/ {
           endpoints {
             on;
             api {{ $location.ServiceConfigFile }};
@@ -91,13 +93,13 @@ http {
           }
 
           {{- if $location.StripPrefix }}
-          rewrite ^{{ $location.Path }}(.*)$ /$1 break;
+          rewrite ^{{ $location.Path }}(.*)$ $1 break;
           {{- end }}
 
           {{- if eq $location.Upstream.Protocol "grpc" }}
-          grpc_pass {{ $location.Upstream.Name }}:{{ $location.Upstream.Port }} override;
+          grpc_pass {{ $location.Upstream.Address }}:{{ $location.Upstream.Port }} override;
           {{- else }}
-          proxy_pass  {{ $location.Upstream.Protocol }}://{{ $location.Upstream.Name }};
+          proxy_pass  {{ $location.Upstream.Protocol }}://{{ $location.Upstream.Label }};
           proxy_redirect                        off;
           proxy_buffering                       off;
           proxy_buffer_size                     4k;
@@ -134,6 +136,11 @@ http {
 
         location /endpoints_status {
           endpoints_status;
+          access_log off;
+        }
+
+        location /healthz {
+          return 200;
           access_log off;
         }
 

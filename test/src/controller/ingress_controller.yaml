@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: endpoints-ingress
+spec:
+  ports:
+  - port: 80
+    name: http
+    protocol: TCP
+  - port: 443
+    name: https
+    protocol: TCP
+  - port: 8080
+    name: grpc
+    protocol: TCP
+  - port: 8090
+    name: status
+    protocol: TCP
+  selector:
+    app: endpoints-ingress
+  type: LoadBalancer
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: endpoints-ingress
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: endpoints-ingress
+    spec:
+      containers:
+      - name: ingress
+        image: gcr.io/endpoints-jenkins/endpoints-ingress
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8090
+            scheme: HTTP
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+        env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+        args:
+          - -namespace=$(POD_NAMESPACE)
+          - -logtostderr=true
+        ports:
+          - containerPort: 80
+            hostPort: 80
+          - containerPort: 443
+            hostPort: 443
+          - containerPort: 8080
+            hostPort: 8080
+          - containerPort: 8090
+            hostPort: 8090

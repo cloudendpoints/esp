@@ -1,0 +1,32 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: default-backend
+  annotations:
+    kubernetes.io/ingress.class: esp
+    googleapis.com/service-name: testing-dot-endpoints-jenkins.appspot.com
+    googleapis.com/service-config-id: 2016-07-19r1244
+spec:
+  backend:
+    serviceName: bookstore
+    servicePort: 80
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: rule
+  annotations:
+    kubernetes.io/ingress.class: esp
+    googleapis.com/service-name: testing-dot-endpoints-jenkins.appspot.com
+    googleapis.com/service-config-id: 2016-07-19r1244
+    googleapis.com/backend-protocol: http
+    googleapis.com/strip-prefix: "true"
+spec:
+  rules:
+  - host: bookstore.org
+    http:
+      paths:
+      - path: /v1
+        backend:
+          serviceName: bookstore
+          servicePort: 80
