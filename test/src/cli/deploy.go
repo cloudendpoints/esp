@@ -340,16 +340,6 @@ func MakeContainer(serviceName string, ports Ports, backend string) (*api.Contai
 		Ports:        published,
 		Args:         args,
 		VolumeMounts: volumeMounts,
-		LivenessProbe: &api.Probe{
-			InitialDelaySeconds: 30,
-			TimeoutSeconds:      1,
-			Handler: api.Handler{
-				HTTPGet: &api.HTTPGetAction{
-					Path: "/endpoints_status",
-					Port: intstr.FromInt(ports.status),
-				},
-			},
-		},
 	}
 
 	return &esp, volumes, nil
