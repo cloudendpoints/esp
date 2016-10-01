@@ -152,26 +152,29 @@ NgxEspGrpcQueue::~NgxEspGrpcQueue() {
   // synchronized with the shutdown and are no longer enqueueing new
   // events.
   //
-  // It would actually be a little surprising to see pending callback
-  // tags at this point in the shutdown sequence, but in case this
-  // happens, this code handles them correctly, by:
+  // There might be rare cases when there are pending callback
+  // tags at this point in the shutdown sequence. E.g., the request
+  // was finalized due to an error (e.g. transcoding error due to
+  // invalid JSON) so NGINX thinks it has processed all requests,
+  // but the call to the backend was still in flight and it has
+  // returned just now.
+  //
+  // If this happens, this code handles them correctly, by:
   //
   //   * Shutting down the queue
   //
   //   * Waiting for the queue to drain (i.e. waiting for the event
   //     worker thread to dequeue all pending tags and exit)
   //
-  //   * Synchronously processing any outstanding event tags (since
-  //     NgxEspGrpcQueue::NginxTagHandler cannot, as that routine can no
-  //     longer access the global NgxEspGrpcQueue instance once
-  //     destruction has begun).
+  //   * Ignoring the outstanding events as they may try to enqueue
+  //     new events, which is dangerous as the completion queue
+  //     has been shut down.
 
   cq_->Shutdown();
 
   // N.B. Joining on the worker thread is essential, as that thread
   // maintains a raw pointer to this datastructure.
   worker_thread_.join();
-  DrainPending();
 }
 
 void NgxEspGrpcQueue::DrainPending() {
