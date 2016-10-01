@@ -82,7 +82,7 @@ fi
 # Tag
 if [[ -n "${TAG}" ]]; then
   echo "Tagging image ${IMAGE} to tag ${TAG}."
-  retry -n 3 docker_tag_f "${IMAGE}" ${TAG}
+  retry -n 3 docker tag "${IMAGE}" ${TAG}
 
   echo "Pushing Docker image: ${TAG}"
   retry -n 3 gcloud docker push "${TAG}" \
