@@ -1,3 +1,28 @@
+# Release 0.3.8 01-10-2016
+
+* Fix handling large responses in gRPC handler.
+* Fix memory leak caused by aborted client calls and report more detailed memory usage.
+* Test presubmits in Jenkins and test improvement.
+* Use instance internal ip instead of hostname.
+* Add a test to make sure the "nbf" claim is checked.
+* Report start_time correctly.
+* Use Google APIs to deploy service configs.
+* Use github Dockerfile to build Flex docker image.
+* Add grpc interop stress test to Jenkins test.
+* Read the "azp" (authorized party) claim from an auth token.
+* Improve error handling logic.
+* Enabling hazelcast in Jenkins.
+* Stop collecting access logs in e2e tests.
+* Stop status print outs in custom nginx.conf.
+* Use espcli for GKE e2e tests.
+* Calculate memory usage for long-run test.
+* Add Google APIs Go bindings.
+* Added a t test for invalid api_key case.
+* Accept Issuer with or without https prefix for OpenID discovery.
+* Removed testing for go binary for new docker slave.
+* Update version number to 0.3.8.
+* Switch to using start_esp for GCE raw VM.
+
 # Release 0.3.7 13-09-2016
 
 - Do not send consumer metrics if api_key is not provided.
