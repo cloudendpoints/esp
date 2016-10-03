@@ -143,6 +143,4 @@ detect_memory_leak "${START_MEMORY_USAGE}" "${SECOND_MEMORY_USAGE}" "${INCREASED
 HAS_MEMORY_LEAK=$?
 echo "memory leak detect: ${HAS_MEMORY_LEAK}"
 
-# TODO: enable memory leak checking.
-#exit $((RESULT + HAS_MEMORY_LEAK))
-exit ${RESULT}
+exit $((${RESULT} + ${HAS_MEMORY_LEAK}))

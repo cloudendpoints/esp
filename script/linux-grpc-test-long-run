@@ -209,7 +209,4 @@ echo "memory leak detect: ${HAS_MEMORY_LEAK}"
 # This is to be consistent with other http stress tests.
 # All failure will be analyzed by release-engineers.
 
-# TODO: Add back the memory leak check once the memory leak issue is addressed.
-# exit $((${GRPC_STRESS_FAILURES} + ${HAS_MEMORY_LEAK}))
-
-exit ${GRPC_STRESS_FAILURES}
+exit $((${GRPC_STRESS_FAILURES} + ${HAS_MEMORY_LEAK}))
