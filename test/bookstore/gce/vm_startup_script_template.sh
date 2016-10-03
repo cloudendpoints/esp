@@ -81,8 +81,10 @@ function install_pkg_debian8() {
   # if failures are related to esp, apt-get install will fail.
   apt-get update --fix-missing
   # Install dependencies.
-  apt-get install python python-oauth2client python-mako python-urllib3
-  apt-get install -y npm endpoints-runtime supervisor && return 0
+  apt-get install -y python python-pip python-mako python-urllib3 \
+    && pip install --upgrade oauth2client \
+    && apt-get install -y npm endpoints-runtime supervisor \
+    && return 0
   return 1
 }
 
@@ -104,6 +106,7 @@ function install_debian_8() {
     TESTING_LOCAL_DEB="enpoints-runtime.deb"
     run gsutil cp "${TESTING_REMOTE_DEB}" "${TESTING_LOCAL_DEB}"
     run dpkg -i "${TESTING_LOCAL_DEB}"
+    run service nginx restart
   fi
   if [[ -n "${TESTING_REMOTE_DEB}" || -n "${DIRECT_REPO}" ]]; then
     # Cannot check version with official repo.
