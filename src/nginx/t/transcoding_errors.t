@@ -106,6 +106,32 @@ is($t->waitforsocket("127.0.0.1:${GrpcServerPort}"), 1, "GRPC test server socket
 
 ################################################################################
 
+# Try to make a successful call before continuing with the testing as sometimes
+# the first call after bringing up the backend fails.  Not sure what's the
+# reason, but one possibility is that the gRPC client in ESP caches the
+# "unavailable" status of the backend for some time. So even if the backend is
+# up right now as the last time we called the backend it was unavailable, it
+# decides to return unavailable this time as well.
+
+my $try = 0;
+my $max_tries = 5;
+while ($try < $max_tries) {
+  $response = ApiManager::http_get($NginxPort, '/shelves?key=test-api-key');
+  if ($response =~ qr/HTTP\/1.. 200 OK/) {
+    last;
+  } else {
+    # sleep 1 second before trying again
+    sleep(1);
+    $try++;
+  }
+}
+
+if ($try == $max_tries) {
+  fail('Failed to make a successful call after starting the backend.');
+}
+
+################################################################################
+
 # 3. Error propogated from the backend - shelf doesn't exist
 $response = ApiManager::http_get($NginxPort,'/shelves/100?key=api-key-3');
 
