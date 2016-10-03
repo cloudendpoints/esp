@@ -69,7 +69,6 @@ DOCKER_SLAVES = [
 // Please Update script/validate_release.py when adding or removing long-run-test.
 RELEASE_QUALIFICATION_BRANCHES = [
     'flex-off-endpoints-on',
-    'gce-container-vm',
     'gce-debian-8',
     'gke-tight-https',
     'gke-tight-http2-echo',
@@ -278,11 +277,6 @@ def e2eTest(nodeLabel) {
           e2eGCE(DEBIAN_JESSIE)
         }
       }],
-      ['gce-container-vm', {
-        node(nodeLabel) {
-          e2eGCEContainer(CONTAINER_VM)
-        }
-      }],
       ['gke-tight-http', {
         node(nodeLabel) {
           e2eGKE('tight', 'http')
@@ -316,11 +310,6 @@ def e2eTest(nodeLabel) {
       ['flex-off-endpoints-off', {
         node(nodeLabel) {
           e2eFlex(false, false)
-        }
-      }],
-      ['gce-container-vm-grpc', {
-        node(nodeLabel) {
-          e2eGCEContainer(CONTAINER_VM, 'echo')
         }
       }],
       ['gke-tight-http2-echo', {
@@ -614,31 +603,6 @@ def e2eGCE(vmImage) {
       "-v ${vmImage} " +
       "-d \"${espDebianPkg}\" " +
       "-r \"${debianPackageRepo}\"")
-}
-
-def e2eGCEContainer(vmImage, grpc = 'off') {
-  setGCloud()
-  checkoutSourceCode()
-  fastUnstash('tools')
-  def testType = 'gce-container'
-  def espImage = espDockerImage()
-  def backendImage = bookstoreDockerImage()
-  def gRpcFlag = ''
-  def prefix = ''
-  if (grpc != 'off') {
-    backendImage = gRpcTestServerImage(grpc)
-    gRpcFlag = "-g ${grpc}"
-    testType = "${testType}-grpc"
-    prefix = 'grpc-'
-  }
-  def commonOptions = e2eCommonOptions(testType, prefix)
-  echo('Running GCE container test')
-  sh("test/bookstore/gce-container/e2e.sh " +
-      commonOptions +
-      "-b ${backendImage} " +
-      "-e ${espImage} " +
-      "-v ${vmImage} " +
-      "${gRpcFlag}")
 }
 
 def localPerformanceTest() {
