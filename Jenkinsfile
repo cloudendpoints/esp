@@ -393,7 +393,7 @@ def isReleaseQualification() {
 }
 
 def isDefaultCleanNginxBinary() {
-  return (getParam('SERVICE_MANAGEMENT_URL') == '' && serverConfig == '')
+  return (getParam('SERVICE_MANAGEMENT_URL') == '' && getParam('SERVER_CONFIG') == '')
 }
 
 def bookstoreDockerImage() {
