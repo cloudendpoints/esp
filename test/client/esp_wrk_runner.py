@@ -72,10 +72,12 @@ def test(run, n, c, t, d):
     with open('wrk_script.lua.temp', 'r') as f:
         wrk_script = f.read()
 
+    expected_status = run.get('expected_status', '200')
     with open('wrk_script.lua', 'w') as f:
         f.write(Template(wrk_script).substitute(
                 HTTP_METHOD=wrk_method,
                 REQUEST_BODY_FILE=wrk_body_file,
+                EXPECTED_STATUS=expected_status,
                 OUT=wrk_out,
                 ERR=wrk_err))
 

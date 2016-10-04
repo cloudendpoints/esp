@@ -114,9 +114,6 @@ while true; do
       --allow_unverified_cert=true \
     || ((BOOKSTORE_FAILURES++))
 
-  echo "Getting endpoints status at $(date)."
-
-
   echo "Starting stress test at $(date)."
   ./esp_client.py \
     --test=stress \
@@ -125,6 +122,15 @@ while true; do
     --auth_token=${JWT_TOKEN} \
     --post_file=${POST_FILE} \
     || ((STRESS_FAILURES++))
+
+  echo "Starting negative stress test."
+  ./esp_client.py \
+    --test=negative \
+    --test_data=negative_test_data.json.temp \
+    --host=${HOST} \
+    --api_key=${API_KEY} \
+    --auth_token=${JWT_TOKEN} \
+    --post_file=${POST_FILE} \
 
   #######################
   # End of test suite

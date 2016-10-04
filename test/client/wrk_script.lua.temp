@@ -49,7 +49,7 @@ end
 
 -- Handle response per thread (affects wrk performance)
 response = function(status, headers, body)
-  if status ~= 200 then
+  if status ~= 200 and status ~= ${EXPECTED_STATUS} then
     error_file:write("{\"status\":")
     error_file:write(status)
     error_file:write(",\"Content-Type\":\"")

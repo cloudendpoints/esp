@@ -64,6 +64,9 @@ TEST_SUITES = {
         'debug': [
                 (esp_wrk_runner, 0, 5, 2, 1)
                 ],
+        'negative': [
+                (esp_wrk_runner, 0, 5, 2, 10)
+                ],
         'simple': [
                 (esp_wrk_runner, 0, 1, 1, 15),
                 (esp_wrk_runner, 0, 2, 1, 15),
@@ -175,11 +178,12 @@ if __name__ == "__main__":
 
     if not results:
         sys.exit('All load tests failed.')
-    if FLAGS.test_env:
+    if FLAGS.test != 'negative':
+      if FLAGS.test_env:
         esp_perfkit_publisher.Publish(results, test_env)
 
-    failed, non2xx = count_failed_requests(results)
-    if failed + non2xx > 0:
+      failed, non2xx = count_failed_requests(results)
+      if failed + non2xx > 0:
         sys.exit(
             ('Load test failed:\n'
              '  {} failed requests,\n'
