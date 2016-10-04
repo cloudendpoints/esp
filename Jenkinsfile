@@ -727,6 +727,7 @@ def presubmitTests(scenario, checkoutCode = true) {
 /*
 Build Parameters
  */
+
 def failIfNullOrEmpty(value, message) {
   if (value == null || value == '') {
     error(message)
@@ -734,8 +735,11 @@ def failIfNullOrEmpty(value, message) {
   return value
 }
 
-def getWithDefault(value, defaultValue='') {
-  return value == null ? defaultValue : value
+def getWithDefault(value, defaultValue = '') {
+  if (value == null || value == '') {
+    return defaultValue
+  }
+  return value
 }
 
 def getParam(name, defaultValue = '') {
