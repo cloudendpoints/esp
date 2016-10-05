@@ -259,20 +259,30 @@ void Aggregated::Check(
   }
 
   CheckResponse* response = new CheckResponse;
+  std::string service_name = info.service_name;
+  bool allow_unregistered_calls = info.allow_unregistered_calls;
 
-  auto check_on_done = [response, info, on_done, trace_span](
+  auto check_on_done = [response, service_name, allow_unregistered_calls,
+                        on_done, trace_span](
       const ::google::protobuf::util::Status& status) {
     TRACE(trace_span) << "Check returned with status: " << status.ToString();
     CheckResponseInfo response_info;
     if (status.ok()) {
       Status status =
-          Proto::ConvertCheckResponse(*response, info, &response_info);
+          Proto::ConvertCheckResponse(*response, service_name, &response_info);
       on_done(status, response_info);
     } else {
-      // Propagate error response from upstream, and network/parsing errors
-      on_done(Status(status.error_code(), status.error_message(),
-                     Status::SERVICE_CONTROL),
-              response_info);
+      // Propagate error response from upstream, and network/parsing error. If
+      // for network errors (status.error_code() = Code::UNAVAILABLE), if
+      // allow_unregistered_calls is true, it is OK to proceed.
+      if (status.error_code() == Code::UNAVAILABLE &&
+          allow_unregistered_calls) {
+        on_done(Status::OK, response_info);
+      } else {
+        on_done(Status(status.error_code(), status.error_message(),
+                       Status::SERVICE_CONTROL),
+                response_info);
+      }
     }
     delete response;
   };

@@ -860,13 +860,11 @@ Status Proto::FillReportRequest(const ReportRequestInfo& info,
 }
 
 Status Proto::ConvertCheckResponse(const CheckResponse& check_response,
-                                   const CheckRequestInfo& info,
+                                   const std::string& service_name,
                                    CheckResponseInfo* check_response_info) {
   if (check_response.check_errors().size() == 0) {
     return Status::OK;
   }
-
-  const std::string service_name = info.service_name;
 
   // TODO: aggregate status responses for all errors (including error.detail)
   // TODO: report a detailed status to the producer project, but hide it from

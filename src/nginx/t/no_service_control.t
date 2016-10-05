@@ -41,10 +41,11 @@ my $NginxPort = ApiManager::pick_port();
 my $BackendPort = ApiManager::pick_port();
 my $InvalidServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(5);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(6);
 
 # Save service name in the service configuration protocol buffer file.
-my $config = ApiManager::get_bookstore_service_config . <<"EOF";
+my $config = ApiManager::get_bookstore_service_config_allow_some_unregistered . <<"EOF";
+producer_project_id: "endpoints-test"
 control {
   environment: "http://127.0.0.1:${InvalidServiceControlPort}"
 }
@@ -81,24 +82,40 @@ $t->run();
 
 ################################################################################
 
-my $response = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key');
+my $response1 = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key');
+my $response2 = ApiManager::http_get($NginxPort,'/shelves/1?key=this-is-an-api-key');
+my $response3 = ApiManager::http_get($NginxPort,'/shelves/1');
 
 $t->stop_daemons();
-like($response, qr/HTTP\/1\.1 503 Service Temporarily Unavailable/, 'Returned HTTP 503');
-like($response, qr/content-type: application\/json/i,
+like($response1, qr/HTTP\/1\.1 503 Service Temporarily Unavailable/, 'Returned HTTP 503');
+like($response1, qr/content-type: application\/json/i,
      'Unauthorized has application/json body.');
-like($response, qr/Failed to connect to service control./i, 'Error body contains \'failed to connect\'.');
+like($response1, qr/Failed to connect to service control./i, 'Error body contains \'failed to connect\'.');
 
 my $requests = $t->read_file('requests.log');
-is($requests, '', 'Request did not reach the backend.');
 
+my ($response_headers, $response_body) = split /\r\n\r\n/, $response2, 2;
+like($response_headers, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');
+
+my ($response_headers3, $response_body3) = split /\r\n\r\n/, $response3, 2;
+like($response_headers3, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');
 ################################################################################
 
 sub bookstore {
   my ($t, $port, $file) = @_;
   my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
-    or die "Can't create test server socket: $!\n";
+      or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
+
+  $server->on_sub('GET', '/shelves/1', sub {
+        my ($headers, $body, $client) = @_;
+        print $client <<'EOF';
+HTTP/1.1 200 OK
+Connection: close
+
+Shelves data.
+EOF
+      });
   $server->run();
 }
 

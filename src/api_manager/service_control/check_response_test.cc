@@ -46,17 +46,16 @@ Status ConvertCheckErrorToStatus(gasv1::CheckError::Code code,
   gasv1::CheckResponse response;
   gasv1::CheckError* check_error = response.add_check_errors();
   CheckRequestInfo info;
-  info.service_name = service_name;
   check_error->set_code(code);
   check_error->set_detail(error_detail);
-  return Proto::ConvertCheckResponse(response, info, nullptr);
+  return Proto::ConvertCheckResponse(response, service_name, nullptr);
 }
 
 Status ConvertCheckErrorToStatus(gasv1::CheckError::Code code) {
   gasv1::CheckResponse response;
-  CheckRequestInfo info;
+  std::string service_name;
   response.add_check_errors()->set_code(code);
-  return Proto::ConvertCheckResponse(response, info, nullptr);
+  return Proto::ConvertCheckResponse(response, service_name, nullptr);
 }
 
 }  // namespace

@@ -212,6 +212,11 @@ sub get_bookstore_service_config_allow_unregistered {
          read_test_file("testdata/usage_fragment.pb.txt");
 }
 
+sub get_bookstore_service_config_allow_some_unregistered {
+  return get_bookstore_service_config .
+      read_test_file("testdata/usage_frag.pb.txt");
+}
+
 sub get_echo_service_config {
   return read_test_file("testdata/echo_service.pb.txt");
 }

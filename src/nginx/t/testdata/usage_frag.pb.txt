@@ -1,0 +1,39 @@
+usage {
+  rules {
+    selector: "ListShelves"
+    allow_unregistered_calls: false
+  }
+  rules {
+    selector: "CorsShelves"
+    allow_unregistered_calls: true
+  }
+  rules {
+    selector: "CreateShelf"
+    allow_unregistered_calls: true
+  }
+  rules {
+    selector: "GetShelf"
+    allow_unregistered_calls: true
+  }
+  rules {
+    selector: "DeleteShelf"
+    allow_unregistered_calls: true
+  }
+  rules {
+    selector: "ListBooks"
+    allow_unregistered_calls: true
+  }
+  rules {
+    selector: "CreateBook"
+    allow_unregistered_calls: true
+  }
+  rules {
+    selector: "GetBook"
+    allow_unregistered_calls: true
+  }
+  rules {
+    selector: "DeleteBook"
+    allow_unregistered_calls: true
+  }
+}
+

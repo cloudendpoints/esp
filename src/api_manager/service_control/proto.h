@@ -71,7 +71,7 @@ class Proto final {
   // failures.
   static utils::Status ConvertCheckResponse(
       const ::google::api::servicecontrol::v1::CheckResponse& response,
-      const CheckRequestInfo& info, CheckResponseInfo* check_response_info);
+      const std::string& service_name, CheckResponseInfo* check_response_info);
 
   static bool IsMetricSupported(const ::google::api::MetricDescriptor& metric);
   static bool IsLabelSupported(const ::google::api::LabelDescriptor& label);

@@ -236,6 +236,7 @@ void RequestContext::FillCheckRequestInfo(
     service_control::CheckRequestInfo *info) {
   FillOperationInfo(info);
   info->client_ip = request_->GetClientIP();
+  info->allow_unregistered_calls = method()->allow_unregistered_calls();
 }
 
 void RequestContext::FillReportRequestInfo(

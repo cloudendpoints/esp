@@ -81,6 +81,10 @@ struct OperationInfo {
 struct CheckRequestInfo : public OperationInfo {
   // The client IP address.
   std::string client_ip;
+  // Whether the method allow unregistered calls.
+  bool allow_unregistered_calls;
+
+  CheckRequestInfo() : allow_unregistered_calls(false) {}
 };
 
 // Stores the information substracted from the check response.
