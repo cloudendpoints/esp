@@ -62,14 +62,6 @@ function print_test_metrics() {
   done
 }
 
-START_MEMORY_USAGE=0
-SECOND_MEMORY_USAGE=0
-INCREASED_MEMORY_USAGE=0
-STATUS_SERVER=${HOST/%:*/:8090}
-STATUS_SERVER="http://${STATUS_SERVER}"
-echo "STATUS_SERVER: ${STATUS_SERVER}"
-local_json="$(mktemp /tmp/XXXXXX.json)"
-
 # Waits for the proxy and backend to start.
 HOST_IP=${HOST%:*}
 HOST_PORT=${HOST#*:}
@@ -91,28 +83,13 @@ START_TIME=$(date +"%s")
 END_TIME=$((START_TIME + DURATION_IN_HOUR * 60 * 60))
 RUN_COUNT=0
 SUCCESS_TIME=0
+
+detect_memory_leak_init "http://${HOST}"
+
 while true; do
   CURR_TIME=$(date +"%s")
   echo "Test time: $((CURR_TIME - START_TIME)) seconds, success time: ${SUCCESS_TIME} seconds."
-
   ((RUN_COUNT++))
-  curr_usage=$(get_memory_usage "${STATUS_SERVER}" "${local_json}") \
-    || error_exit "Could not extract memory usage from ${STATUS_SERVER}"
-  # Record the memory usage for each test run
-  # There is a big memory usage jump at first iteration.
-  # Use the delta between 2nd and 3rd iteration for calculating threshold.
-  if [[ ${RUN_COUNT} -eq 2 ]]; then
-    START_MEMORY_USAGE=${curr_usage}
-    echo "Start Memory Usage (Bytes): ${START_MEMORY_USAGE}."
-  else
-    INCREASED_MEMORY_USAGE=$((${curr_usage} - ${START_MEMORY_USAGE}))
-    echo "Memory Increased in Test ${RUN_COUNT} (Bytes): ${INCREASED_MEMORY_USAGE}"
-    if [[ ${RUN_COUNT} -eq 3 ]]; then
-      SECOND_MEMORY_USAGE=${curr_usage}
-      echo "Second Memory Usage (Bytes): ${SECOND_MEMORY_USAGE}."
-    fi
-  fi
-  python -m json.tool "${local_json}"
 
   timeout $((RUN_LENGTH + 10)) $ROOT/bazel-bin/test/grpc/interop-stress-client \
     --server_addresses "${HOST}" \
@@ -122,6 +99,8 @@ while true; do
     --do_not_abort_on_transient_failures false \
     --test_cases "${TEST_CASES}" \
   && ((SUCCESS_TIME += RUN_LENGTH))
+
+  detect_memory_leak_check ${RUN_COUNT}
 
   # Break if test has run long enough.
   [[ $(date +"%s") -lt ${END_TIME} ]] || break
@@ -136,11 +115,7 @@ FAILURE_TIME=$((TOTAL_TIME - SUCCESS_TIME))
 RESULT=0
 [[ ${FAILURE_TIME} -gt $((TOTAL_TIME / 20)) ]] && RESULT=1
 
-echo "Total Memory Increased (MB): $(( ${INCREASED_MEMORY_USAGE} / (1024*1024) ))."
-rm "${local_json}"
 # We fail the test if memory increase is large.
-detect_memory_leak "${START_MEMORY_USAGE}" "${SECOND_MEMORY_USAGE}" "${INCREASED_MEMORY_USAGE}"
-HAS_MEMORY_LEAK=$?
-echo "memory leak detect: ${HAS_MEMORY_LEAK}"
+detect_memory_leak_final && MEMORY_LEAK=0 || MEMORY_LEAK=1
 
-exit $((${RESULT} + ${HAS_MEMORY_LEAK}))
+exit $((${RESULT} + ${MEMORY_LEAK}))

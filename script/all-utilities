@@ -158,42 +158,55 @@ __EOF__
   return 0
 }
 
-# Get memory usage from /endpoints_status
-function get_memory_usage() {
-    local server=${1}
-    local local_json=${2}
-    echo > "${local_json}"
-    curl "${server}/endpoints_status" > "${local_json}"
+# Uses 3 functions to detect memory leak for stress tests.
+# 1) call detect_memory_leak_init() before your loop
+# 2) call detect_memory_leak_check() for each iteration
+# 3) call detect_memory_leak_final() at the end.
+function detect_memory_leak_init() {
+  local host=${1}
+  # host format has to be: proto://host:port.   port is optonal.
+  STATUS_SERVER="http:$(echo $host|awk -F : '{ print $2 }'):8090"
+  echo "STATUS_SERVER: ${STATUS_SERVER}"
 
-    python -c "import json, sys; obj = json.load(open(\"${local_json}\")); \
-    print obj['processes'][0]['memoryUsage']" \
-      || { echo "Could not extract memory usage from ${local_json}"; return 1; }
+  START_MEMORY_USAGE=0
+  INCREASED_MEMORY_USAGE=0
 }
 
-# Check Memory Leak.
-function detect_memory_leak() {
-    local start_usage=${1}
-    local second_usage=${2}
-    [[ ${second_usage} -gt 0 ]] \
-      || { echo "Only run test once."; return 0; }
+function detect_memory_leak_check() {
+  local run_count=${1}
+  local local_json="$(mktemp /tmp/XXXXXX.json)"
 
-    local memory_increased=$((${3} / (1024*1024) ))
-    echo "Memory Increased (MB): ${memory_increased} ."
-    (( threshold = 2 * (${second_usage} - ${start_usage}) / (1024*1024) ))
-    if [[ ${threshold} -gt 40 ]]; then
-        threshold=40
-    fi
-    if [[ ${threshold} -lt 10 ]]; then
-        threshold=10
-    fi
-    echo "Memory Threshold (MB): ${threshold}."
+  curl "${STATUS_SERVER}/endpoints_status" > "${local_json}"
+  python -m json.tool "${local_json}"
 
-    if [[ ${memory_increased} -gt ${threshold} ]]; then
-        echo "************ Memory leak is detected. *************"
-        return 1
-    else
-        return 0
-    fi
+  local curr_usage=$(python -c "import json, sys; obj = json.load(open(\"${local_json}\")); \
+      print obj['processes'][0]['memoryUsage']")
+  rm "${local_json}"
+  [[ -n "${curr_usage}" ]] || { echo "Could not extract memory usage"; return 1; }
+
+  if [[ ${run_count} -eq 1 ]]; then
+    START_MEMORY_USAGE=${curr_usage}
+    echo "Start Memory Usage (Bytes): ${START_MEMORY_USAGE}."
+  else
+    INCREASED_MEMORY_USAGE=$((curr_usage - START_MEMORY_USAGE))
+    echo "Memory Increased in Test ${run_count} (Bytes): ${INCREASED_MEMORY_USAGE}"
+  fi
+}
+
+function detect_memory_leak_final() {
+  [[ ${INCREASED_MEMORY_USAGE} -gt 0 ]] \
+    || { echo "Only run test once."; return 0; }
+
+  local memory_increased=$((INCREASED_MEMORY_USAGE / (1024*1024) ))
+  echo "Memory Increased (MB): ${memory_increased} ."
+  local threshold=40
+  echo "Memory Leak  Threshold (MB): ${threshold}."
+  if [[ ${memory_increased} -gt ${threshold} ]]; then
+    echo "************ Memory leak is detected. *************"
+    return 1
+  else
+    return 0
+  fi
 }
 
 # Extract key from test env json created from

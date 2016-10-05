@@ -65,16 +65,7 @@ RUN_COUNT=0
 STRESS_FAILURES=0
 BOOKSTORE_FAILURES=0
 
-START_MEMORY_USAGE=0
-SECOND_MEMORY_USAGE=0
-INCREASED_MEMORY_USAGE=0
-
-#Status server always run in port 8090 and use HTTP protocol.
-STATUS_SERVER=${HOST/%:80/:8090}
-STATUS_SERVER=${STATUS_SERVER/%:8080/:8090}
-STATUS_SERVER=${STATUS_SERVER/%:443/:8090}
-STATUS_SERVER=${STATUS_SERVER/https/http}
-local_json="$(mktemp /tmp/XXXXXX.json)"
+detect_memory_leak_init ${HOST}
 
 while true; do
   ((RUN_COUNT++))
@@ -85,22 +76,6 @@ while true; do
 
   echo "Starting test run ${RUN_COUNT} at $(date)."
   echo "Failures so far: Stress: ${STRESS_FAILURES}, Bookstore: ${BOOKSTORE_FAILURES}."
-
-  # Record the memory usage for each test run
-  curr_usage=$(get_memory_usage "${STATUS_SERVER}" "${local_json}") \
-    || error_exit "Could not extract memory usage from ${STATUS_SERVER}"
-  if [[ ${RUN_COUNT} -eq 1 ]]; then
-    START_MEMORY_USAGE=${curr_usage}
-    echo "Start Memory Usage (Bytes): ${START_MEMORY_USAGE}."
-  else
-    INCREASED_MEMORY_USAGE=$((${curr_usage} - ${START_MEMORY_USAGE}))
-    echo "Memory Increased in Test ${RUN_COUNT} (Bytes): ${INCREASED_MEMORY_USAGE}"
-    if [[ ${RUN_COUNT} -eq 2 ]]; then
-      SECOND_MEMORY_USAGE=${curr_usage}
-      echo "Second Memory Usage (Bytes): ${SECOND_MEMORY_USAGE}."
-    fi
-  fi
-  python -m json.tool "${local_json}"
 
   # Generating token for each run, that they expire in 1 hour.
   JWT_TOKEN=`${ROOT}/client/custom/gen-auth-token.sh -a ${SERVICE_NAME}`
@@ -136,14 +111,14 @@ while true; do
   # End of test suite
   #######################
 
+  detect_memory_leak_check ${RUN_COUNT}
+
   # Break if test has run long enough.
   [[ $(date +"%s") -lt ${END_TIME} ]] || break
 done
 
 echo "Finished ${RUN_COUNT} test runs."
 echo "Failures: Stress: ${STRESS_FAILURES}, Bookstore: ${BOOKSTORE_FAILURES}."
-echo "Total Memory Increased (MB): $(( ${INCREASED_MEMORY_USAGE} / (1024*1024) ))."
-rm "${local_json}"
 
 RESULT=0
 # We fail the test if all bookstore runs failed.
@@ -151,8 +126,6 @@ RESULT=0
   && RESULT=1
 
 # We fail the test if memory increase is large.
-detect_memory_leak "${START_MEMORY_USAGE}" "${SECOND_MEMORY_USAGE}" "${INCREASED_MEMORY_USAGE}"
-HAS_MEMORY_LEAK=$?
-echo "memory leak detect: ${HAS_MEMORY_LEAK}"
+detect_memory_leak_final && MEMORY_LEAK=0 || MEMORY_LEAK=1
 
-exit $((${RESULT} + ${HAS_MEMORY_LEAK}))
+exit $((${RESULT} + ${MEMORY_LEAK}))
