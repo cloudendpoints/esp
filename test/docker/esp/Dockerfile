@@ -39,7 +39,9 @@ RUN apt-get update && \
     apt-get -y -q upgrade && \
     apt-get install -y -q --no-install-recommends \
       apt-utils adduser cron logrotate wget \
-      libc6 libgcc1 libstdc++6 libuuid1 libtsan0 && \
+      python python-oauth2client python-mako python-urllib3 \
+      python-pip libc6 libgcc1 libstdc++6 libuuid1 libtsan0 && \
+    pip install --upgrade oauth2client && \
     apt-get clean && rm /var/lib/apt/lists/*_*
 
 ADD endpoints-runtime.deb endpoints-runtime.deb

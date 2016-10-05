@@ -27,8 +27,10 @@
 import json
 import logging
 import urllib3
-
-from oauth2client.service_account import ServiceAccountCredentials
+try:
+  from oauth2client.service_account import ServiceAccountCredentials
+except ImportError:
+  logging.warning("Could not import service_account.")
 
 _GOOGLE_API_SCOPE = (
     "https://www.googleapis.com/auth/service.management.readonly")

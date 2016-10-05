@@ -72,41 +72,48 @@ function check_esp_version_debian_8() {
     { echo 'ESP version &{version} is not expected ${ESP_VERSION}' ; exit 1; }
 }
 
-# Install Debian 8 packages
-function install_pkg_debian8() {
-  # Cleaning up apt-cache
+# Cleaning apt-cache
+function clean_apt() {
   apt-get clean
   rm -rf /var/lib/apt/lists/*
   # apt-get update sometime fails because of remote servers.
   # if failures are related to esp, apt-get install will fail.
   apt-get update --fix-missing
+}
+# Install Debian 8 packages
+function install_pkg_debian8() {
+  clean_apt
   # Install dependencies.
-  apt-get install -y python python-pip python-mako python-urllib3 \
-    && pip install --upgrade oauth2client \
-    && apt-get install -y npm endpoints-runtime supervisor \
+  # TODO: delete python dependencies once new package is released.
+  apt-get install -y ${@} \
     && return 0
   return 1
 }
 
 # Install ESP and Bookstore for Debian 8
 function install_debian_8() {
-  if [[ -z "${DIRECT_REPO}" ]]; then
-    export CLOUD_ENDPOINTS_REPO="google-cloud-endpoints-$(lsb_release -c -s)"
-  else
-    export CLOUD_ENDPOINTS_REPO="${DIRECT_REPO}"
-  fi
-  echo "${CLOUD_ENDPOINTS_REPO}"
-  echo "deb http://packages.cloud.google.com/apt ${CLOUD_ENDPOINTS_REPO} main" \
-    | tee /etc/apt/sources.list.d/google-cloud-endpoints.list
-  curl --silent https://packages.cloud.google.com/apt/doc/apt-key.gpg \
-    | apt-key add -
-  run retry install_pkg_debian8
   if [[ -z "${DIRECT_REPO}" && -n "${TESTING_REMOTE_DEB}" ]]; then
     # Installing the testing debian package with dpkg
     TESTING_LOCAL_DEB="enpoints-runtime.deb"
     run gsutil cp "${TESTING_REMOTE_DEB}" "${TESTING_LOCAL_DEB}"
-    run dpkg -i "${TESTING_LOCAL_DEB}"
-    run service nginx restart
+    clean_apt
+    # This will fail due to missing depencies
+    dpkg -i "${TESTING_LOCAL_DEB}"
+    # Apt will fix dependencies.
+    run retry apt-get -f install -qqy
+  else
+    # Installing package from repo
+    if [[ -z "${DIRECT_REPO}" ]]; then
+      export CLOUD_ENDPOINTS_REPO="google-cloud-endpoints-$(lsb_release -c -s)"
+    else
+      export CLOUD_ENDPOINTS_REPO="${DIRECT_REPO}"
+    fi
+    echo "${CLOUD_ENDPOINTS_REPO}"
+    echo "deb http://packages.cloud.google.com/apt ${CLOUD_ENDPOINTS_REPO} main" \
+      | tee /etc/apt/sources.list.d/google-cloud-endpoints.list
+    curl --silent https://packages.cloud.google.com/apt/doc/apt-key.gpg \
+      | apt-key add -
+    run retry install_pkg_debian8 endpoints-runtime
   fi
   if [[ -n "${TESTING_REMOTE_DEB}" || -n "${DIRECT_REPO}" ]]; then
     # Cannot check version with official repo.
@@ -115,7 +122,10 @@ function install_debian_8() {
 }
 
 case "${VM_IMAGE}" in
-  "debian-8") install_debian_8;;
+  "debian-8")
+    install_debian_8
+    run retry install_pkg_debian8 npm supervisor
+    ;;
   *) echo "${VM_IMAGE} is not yet supported" && exit 1;;
 esac
 
