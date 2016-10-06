@@ -364,9 +364,6 @@ def espDockerImage(suffix = '') {
 }
 
 def espFlexDockerImage() {
-  if (isRelease()) {
-    return 'does_not_exist'
-  }
   return espGenericDockerImage('-flex')
 }
 
