@@ -86,6 +86,7 @@ run retry -n 3 gcloud compute instances create "${INSTANCE_NAME}" \
   --machine-type "custom-2-3840" \
   --image-family "${VM_IMAGE}" \
   --image-project debian-cloud \
+  --boot-disk-size "100GB" \
   --metadata endpoints-service-name="${ESP_SERVICE}",endpoints-service-version="${ESP_SERVICE_VERSION}" \
   --metadata-from-file startup-script="${VM_STARTUP_SCRIPT}"
 
