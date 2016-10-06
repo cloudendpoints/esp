@@ -63,7 +63,7 @@ DOCKER_SLAVES = [
 ]
 
 // Release Qualification end to end tests.
-// If DEBIAN_PACKAGE_REPO build parameter is set only those test will run.
+// If RAPTURE_REPO build parameter is set only those test will run.
 // We can filter down the number of tests by using the E2E_FILTERS build
 // parameter.
 // Please Update script/validate_release.py when adding or removing long-run-test.
@@ -720,10 +720,10 @@ def getGitCommit() {
 }
 
 def getDebianPackageRepo() {
-  // Using a parameterized build with DEBIAN_PACKAGE_REPO env variable
-  debianPackageRepo = getParam('DEBIAN_PACKAGE_REPO')
+  // Using a parameterized build with RAPTURE_REPO env variable
+  debianPackageRepo = getParam('RAPTURE_REPO')
   if (debianPackageRepo == 'INVALID') {
-    failBranch('You must specify a valid DEBIAN_PACKAGE_REPO.')
+    failBranch('You must specify a valid RAPTURE_REPO.')
   }
   return debianPackageRepo
 }
