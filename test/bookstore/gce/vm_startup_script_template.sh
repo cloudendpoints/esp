@@ -69,7 +69,7 @@ function check_esp_version_debian_8() {
   local version=''
   version=$(dpkg -l | grep endpoints-runtime | awk '{print $3}')
   [[ "${version}" == "${ESP_VERSION}" ]] || \
-    { echo 'ESP version &{version} is not expected ${ESP_VERSION}' ; exit 1; }
+    { echo "ESP version ${version} is not expected ${ESP_VERSION}" ; exit 1; }
 }
 
 # Cleaning apt-cache
@@ -115,7 +115,7 @@ function install_debian_8() {
       | apt-key add -
     run retry install_pkg_debian8 endpoints-runtime
   fi
-  if [[ -n "${TESTING_REMOTE_DEB}" || -n "${DIRECT_REPO}" ]]; then
+  if [[ -n "${TESTING_REMOTE_DEB}" && -n "${DIRECT_REPO}" ]]; then
     # Cannot check version with official repo.
     check_esp_version_debian_8
   fi
