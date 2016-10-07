@@ -196,6 +196,52 @@ Status set_distribution_metric_to_overhead_time(const SupportedMetric& m,
   return Status::OK;
 }
 
+Status set_int64_metric_to_request_bytes(const SupportedMetric& m,
+                                         const ReportRequestInfo& info,
+                                         Operation* operation) {
+  if (info.request_bytes > 0) {
+    AddInt64Metric(m.name, info.request_bytes, operation);
+  }
+  return Status::OK;
+}
+
+Status set_int64_metric_to_response_bytes(const SupportedMetric& m,
+                                          const ReportRequestInfo& info,
+                                          Operation* operation) {
+  if (info.response_bytes > 0) {
+    AddInt64Metric(m.name, info.response_bytes, operation);
+  }
+  return Status::OK;
+}
+
+Status set_distribution_metric_to_streaming_request_message_counts(
+    const SupportedMetric& m, const ReportRequestInfo& info,
+    Operation* operation) {
+  if (info.streaming_request_message_counts > 0) {
+    AddDistributionMetric(size_distribution, m.name,
+                          info.streaming_request_message_counts, operation);
+  }
+  return Status::OK;
+}
+Status set_distribution_metric_to_streaming_response_message_counts(
+    const SupportedMetric& m, const ReportRequestInfo& info,
+    Operation* operation) {
+  if (info.streaming_response_message_counts > 0) {
+    AddDistributionMetric(size_distribution, m.name,
+                          info.streaming_response_message_counts, operation);
+  }
+  return Status::OK;
+}
+
+Status set_distribution_metric_to_streaming_durations(
+    const SupportedMetric& m, const ReportRequestInfo& info,
+    Operation* operation) {
+  if (info.streaming_durations > 0) {
+    AddDistributionMetric(time_distribution, m.name, info.streaming_durations,
+                          operation);
+  }
+  return Status::OK;
+}
 // Currently unsupported metrics:
 //
 const SupportedMetric supported_metrics[] = {
@@ -283,6 +329,79 @@ const SupportedMetric supported_metrics[] = {
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
         SupportedMetric::PRODUCER, set_distribution_metric_to_overhead_time,
     },
+    {
+        "serviceruntime.googleapis.com/api/consumer/request_bytes",
+        ::google::api::MetricDescriptor_MetricKind_DELTA,
+        ::google::api::MetricDescriptor_ValueType_INT64,
+        SupportedMetric::CONSUMER, set_int64_metric_to_request_bytes,
+    },
+    {
+        "serviceruntime.googleapis.com/api/consumer/response_bytes",
+        ::google::api::MetricDescriptor_MetricKind_DELTA,
+        ::google::api::MetricDescriptor_ValueType_INT64,
+        SupportedMetric::CONSUMER, set_int64_metric_to_response_bytes,
+    },
+    {
+        "serviceruntime.googleapis.com/api/producer/request_bytes",
+        ::google::api::MetricDescriptor_MetricKind_DELTA,
+        ::google::api::MetricDescriptor_ValueType_INT64,
+        SupportedMetric::PRODUCER, set_int64_metric_to_request_bytes,
+    },
+    {
+        "serviceruntime.googleapis.com/api/producer/response_bytes",
+        ::google::api::MetricDescriptor_MetricKind_DELTA,
+        ::google::api::MetricDescriptor_ValueType_INT64,
+        SupportedMetric::PRODUCER, set_int64_metric_to_response_bytes,
+    },
+    {
+        "serviceruntime.googleapis.com/api/consumer/"
+        "streaming_request_message_counts",
+        ::google::api::MetricDescriptor_MetricKind_DELTA,
+        ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
+        SupportedMetric::CONSUMER,
+        set_distribution_metric_to_streaming_request_message_counts,
+    },
+    {
+        "serviceruntime.googleapis.com/api/producer/"
+        "streaming_request_message_counts",
+        ::google::api::MetricDescriptor_MetricKind_DELTA,
+        ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
+        SupportedMetric::PRODUCER,
+        set_distribution_metric_to_streaming_request_message_counts,
+    },
+    {
+        "serviceruntime.googleapis.com/api/consumer/"
+        "streaming_response_message_counts",
+        ::google::api::MetricDescriptor_MetricKind_DELTA,
+        ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
+        SupportedMetric::CONSUMER,
+        set_distribution_metric_to_streaming_response_message_counts,
+    },
+    {
+        "serviceruntime.googleapis.com/api/producer/"
+        "streaming_response_message_counts",
+        ::google::api::MetricDescriptor_MetricKind_DELTA,
+        ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
+        SupportedMetric::PRODUCER,
+        set_distribution_metric_to_streaming_response_message_counts,
+    },
+    {
+        "serviceruntime.googleapis.com/api/consumer/"
+        "streaming_durations",
+        ::google::api::MetricDescriptor_MetricKind_DELTA,
+        ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
+        SupportedMetric::CONSUMER,
+        set_distribution_metric_to_streaming_durations,
+    },
+    {
+        "serviceruntime.googleapis.com/api/producer/"
+        "streaming_durations",
+        ::google::api::MetricDescriptor_MetricKind_DELTA,
+        ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
+        SupportedMetric::PRODUCER,
+        set_distribution_metric_to_streaming_durations,
+    },
+
 };
 const int supported_metrics_count =
     sizeof(supported_metrics) / sizeof(supported_metrics[0]);

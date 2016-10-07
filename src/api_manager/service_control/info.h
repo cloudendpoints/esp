@@ -146,13 +146,33 @@ struct ReportRequestInfo : public OperationInfo {
   // If consumer data should be sent.
   CheckResponseInfo check_response_info;
 
+  // request message size till the current time point.
+  int64_t request_bytes;
+
+  // response message size till the current time point.
+  int64_t response_bytes;
+
+  // number of messages for a stream.
+  int64_t streaming_request_message_counts;
+
+  // number of messages for a stream.
+  int64_t streaming_response_message_counts;
+
+  // streaming duration (microsecond) between first message and last message.
+  int64_t streaming_durations;
+
   ReportRequestInfo()
       : response_code(200),
         status(utils::Status::OK),
         request_size(-1),
         response_size(-1),
         protocol(protocol::UNKNOWN),
-        compute_platform(compute_platform::UNKNOWN) {}
+        compute_platform(compute_platform::UNKNOWN),
+        request_bytes(0),
+        response_bytes(0),
+        streaming_request_message_counts(0),
+        streaming_response_message_counts(0),
+        streaming_durations(0) {}
 };
 
 }  // namespace service_control
