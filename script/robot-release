@@ -68,23 +68,21 @@ done
     || error_exit 'Failed to build and install dependencies.'
 ) || error_exit 'Build of dependencies failed.'
 
-"${BAZEL}" clean \
-  || error_exit 'Failed to "${BAZEL}" clean before the release build.'
+${BAZEL} clean \
+  || error_exit 'Failed to ${BAZEL} clean before the release build.'
 
 if [[ "${SKIP_TESTS}" == 'false' ]]; then
   echo 'Running pre-release tests.'
-  "${BAZEL}" build ${BAZEL_ARGS} --config=release \
-      //src/... \
-      //third_party:all \
-    || error_exit 'Failed release tests.'
-  "${BAZEL}" test --config=release \
-      //src/... \
-      //third_party:all \
+  retry -n 3 ${BAZEL} fetch //src/... //third_party:all \
+  && retry -n 2 ${BAZEL} build ${BAZEL_ARGS} --config=release \
+      //src/... //third_party:all \
+  && ${BAZEL} test --config=release \
+      //src/... //third_party:all \
     || error_exit 'Failed release tests.'
 fi
 
 read ENDPOINTS_RUNTIME_VERSION < ${ROOT}/include/version
-BAZEL_VERSION="$("${BAZEL}" version | grep '^Build label: ' | sed 's/^Build label: //')"
+BAZEL_VERSION="$(${BAZEL} version | grep '^Build label: ' | sed 's/^Build label: //')"
 echo "Bazel ${BAZEL_VERSION}" > "${ROOT}/src/nginx/main/built_using"
 DEB="${ROOT}/bazel-bin/src/nginx/main/endpoints-server-proxy.deb"
 NGINX="${ROOT}/bazel-bin/src/nginx/main/nginx-esp"
@@ -101,11 +99,11 @@ fi
 
 if ! [[ -e "${TMP_DEBIAN_PACKAGE}" ]]; then
   echo 'Building debug nginx....'
-  "${BAZEL}" build ${BAZEL_ARGS} -c dbg //src/nginx/main:nginx-esp
+  ${BAZEL} build ${BAZEL_ARGS} -c dbg //src/nginx/main:nginx-esp
   echo 'Copying debug nginx...'
   cp -f "${NGINX}" "${ROOT}/src/nginx/main/nginx-debug"
   echo 'Building Endpoints Runtime .deb package.'
-  "${BAZEL}" build ${BAZEL_ARGS} --config=release //src/nginx/main:endpoints-server-proxy \
+  ${BAZEL} build ${BAZEL_ARGS} --config=release //src/nginx/main:endpoints-server-proxy \
     || error_exit 'Failed to build Endpoints Runtime .deb package.'
 
   if [[ -n "${RELEASE_DEB}" ]]; then
