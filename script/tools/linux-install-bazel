@@ -1,0 +1,91 @@
+#!/bin/bash
+#
+# Copyright (C) Endpoints Server Proxy Authors
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+################################################################################
+#
+# May require sudo login.
+
+if [[ "$(uname)" != "Linux" ]]; then
+  echo "Run on Linux only."
+  exit 1
+fi
+
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+. ${DIR}/all-utilities || { echo "Cannot load Bash utilities" ; exit 1 ; }
+
+# Release 0.3.2 (2016-10-07)
+BAZEL_VERSION='b6154cc4d1ac1c86e698dfa95ded656ea254c3e0'
+BAZEL_DIRECTORY="${HOME}/bazel"
+
+function clone_bazel() {
+  local dir="${1}"
+  echo "Cloning Bazel."
+  git clone https://github.com/bazelbuild/bazel.git "${dir}" \
+    || error_exit "Cannot clone Bazel repository."
+}
+
+function build_bazel() {
+  local dir="${1}"
+
+  echo 'Building Bazel'
+  pushd "$dir"
+  git clean -dffx \
+  && git fetch origin \
+  && git fetch origin --tags \
+  && git reset --hard ${BAZEL_VERSION} \
+  && ./compile.sh \
+  && ./output/bazel shutdown \
+  && rm -rf ${HOME}/.cache/bazel \
+  && ${SUDO} cp ./output/bazel /usr/local/bin/bazel \
+  || error_exit "Bazel build failed."
+
+  update_tool bazel "${BAZEL_VERSION}" ./output/bazel
+  set_bazel
+  popd
+}
+
+function update_bazel() {
+  local bazel_current='none'
+  if [[ -d "${BAZEL_DIRECTORY}" ]]; then
+    bazel_current="$(git -C "${BAZEL_DIRECTORY}" log -n 1 --pretty=format:%H)"
+  fi
+
+  if [[ "${BAZEL_VERSION}" != "${bazel_current}" ]]; then
+    local build_needed=true
+    local bazel_tmp="$(mktemp /tmp/XXXXX.bazel.bin)"
+    get_tool bazel ${BAZEL_VERSION} "${bazel_tmp}" \
+    && ${SUDO} cp "${bazel_tmp}" /usr/local/bin/bazel \
+    && ${SUDO} chmod a+rx /usr/local/bin/bazel \
+    && build_needed=false
+
+    if [[ ${build_needed} == true ]]; then
+      clone_bazel "${BAZEL_DIRECTORY}"
+      build_bazel ${BAZEL_DIRECTORY}
+    fi
+  fi
+  echo 'Bazel up-to-date.'
+}
+

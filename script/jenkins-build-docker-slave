@@ -37,25 +37,26 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILD=false
 PUSH=false
 FORCE=false
+TOOLS_BUCKET=''
 
 # Check if an image needs to be overwritten
 function update_image() {
   local image="${1}"
   [[ ${FORCE} == true ]] && return 0
-  gcloud docker pull "${image}"
+  ${GCLOUD} docker pull "${image}"
   local image_exists=${?}
   [[ ${image_exists} -eq 0 ]] && return 1
   return 0
 }
 
-
-while getopts :bi:fps:t: arg; do
+while getopts :bi:fps:t:T: arg; do
   case ${arg} in
     b) BUILD=true;;
     i) IMAGE="${OPTARG}";;
     f) FORCE=true;;
     s) SLAVE="${OPTARG}";;
     t) TAG="${OPTARG}";;
+    T) TOOLS_BUCKET="${OPTARG}";;
     *) error_exit "Unrecognized argument -${OPTARG}";;
   esac
 done
@@ -71,10 +72,10 @@ if [[ "${BUILD}" == true ]]; then
   update_image "${IMAGE}"
   if [[ ${?} -eq 0 ]]; then
     echo "Building docker image ${IMAGE}."
-    run retry -n 10 docker build --no-cache -t ${IMAGE} \
+    run retry -n 10 docker build --build-arg TOOLS_BUCKET="${TOOLS_BUCKET}" --no-cache -t ${IMAGE} \
       -f "${DOCKER_FILE}" . || error_exit "Could not build ${SLAVE}"
     echo "Pushing Docker image: ${IMAGE}"
-    retry -n 3 gcloud docker push "${IMAGE}" \
+    retry -n 3 ${GCLOUD} docker push "${IMAGE}" \
       || error_exit "Failed to push tag ${IMAGE}."
   fi
 fi
@@ -85,7 +86,7 @@ if [[ -n "${TAG}" ]]; then
   retry -n 3 docker tag "${IMAGE}" ${TAG}
 
   echo "Pushing Docker image: ${TAG}"
-  retry -n 3 gcloud docker push "${TAG}" \
+  retry -n 3 ${GCLOUD} docker push "${TAG}" \
     || error_exit "Failed to push tag ${TAG}."
 fi
 

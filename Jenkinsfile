@@ -28,7 +28,6 @@ SUCH DAMAGE.
 */
 
 import static java.util.UUID.randomUUID
-import java.io.File;
 
 
 // Supported Stages.
@@ -55,11 +54,12 @@ SUPPORTED_STAGES = [
 
 // Supported VM Images
 DEBIAN_JESSIE = 'debian-8'
-CONTAINER_VM = 'container-vm'
+UBUNTU_XENIAL = 'ubuntu-16-04'
 
 // Slaves Docker tags
 DOCKER_SLAVES = [
     (DEBIAN_JESSIE): 'gcr.io/endpoints-jenkins/debian-8-slave',
+    (UBUNTU_XENIAL): 'gcr.io/endpoints-jenkins/ubuntu-16-04-slave'
 ]
 
 // Release Qualification end to end tests.
@@ -81,23 +81,27 @@ ESP_RUNTIME_VERSION = ''
 // Global Variables defined in Jenkins
 BUCKET = ''
 BAZEL_ARGS = ''
+DEFAULT_SLAVE_LABEL = ''
 CLUSTER = ''
 PROJECT_ID = ''
+TOOLS_BUCKET = ''
 ZONE = ''
 
 node {
   BUCKET = failIfNullOrEmpty(env.BUCKET, 'BUCKET must be set.')
   BAZEL_ARGS = getWithDefault(env.BAZEL_ARGS)
+  DEFAULT_SLAVE_LABEL = getWithDefault(env.DEFAULT_SLAVE_LABEL, DEBIAN_JESSIE)
   CLUSTER = failIfNullOrEmpty(env.GKE_CLUSTER, 'GKE_CLUSTER must be set')
   PROJECT_ID = failIfNullOrEmpty(env.PROJECT_ID, 'PROJECT_ID must be set')
+  TOOLS_BUCKET = failIfNullOrEmpty(env.TOOLS_BUCKET, 'TOOLS_BUCKET must be set')
   ZONE = failIfNullOrEmpty(env.ZONE, 'ZONE must be set')
   stashSourceCode()
   setArtifactsLink()
 }
 
 node('master') {
-  def nodeLabel = getSlaveLabel(DEBIAN_JESSIE)
-  def buildNodeLabel = getBuildSlaveLabel(DEBIAN_JESSIE)
+  def nodeLabel = getParam('SLAVE_LABEL', DEFAULT_SLAVE_LABEL)
+  def buildNodeLabel = getBuildSlaveLabel(nodeLabel)
   def builtArtifacts = false
   try {
     if (runStage(CLEANUP_STAGE)) {
@@ -533,7 +537,8 @@ def buildNewDockerSlave(nodeLabel) {
   sh("script/jenkins-build-docker-slave -b " +
       "-i ${dockerImage} " +
       "-t ${testDockerImage} " +
-      "-s ${nodeLabel}")
+      "-s ${nodeLabel} " +
+      "-T \"${TOOLS_BUCKET}\"")
   echo("Testing ${testDockerImage}")
   node(getTestSlaveLabel(nodeLabel)) {
     setGCloud()
@@ -753,13 +758,6 @@ def sendFailureNotification() {
 
 def getTestSlaveLabel(label) {
   return "${label}-test"
-}
-
-def getSlaveLabel(label) {
-  if (getParam('USE_LATEST_RELEASE', false)) {
-    return getTestSlaveLabel(label)
-  }
-  return label
 }
 
 def getBuildSlaveLabel(label) {

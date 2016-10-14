@@ -1,5 +1,5 @@
-# Stored at gcr.io/endpoints-jenkins/debian-8-slave:latest
-FROM debian:jessie-backports
+# Stored at gcr.io/endpoints-jenkins/ubuntu-16-04-slave:latest
+FROM ubuntu:xenial
 
 # Please make sure that you update script/linux-install-software as well.
 ENV JENKINS_SLAVE_VERSION 2.62
@@ -22,7 +22,7 @@ RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 ADD script /tmp/esp_tmp/script
 RUN chmod +x /tmp/esp_tmp/script/linux-install-software
 RUN /tmp/esp_tmp/script/linux-install-software \
-      -p "debian-8" \
+      -p "ubuntu-16-04" \
       -b "${TOOLS_BUCKET}" \
     && rm -rf /tmp/esp_tmp
 

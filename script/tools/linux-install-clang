@@ -26,21 +26,33 @@
 #
 ################################################################################
 #
-if ! [[ "${@}" =~ "-tunnel " ]]; then
-  if [[ -n "${JENKINS_TUNNEL}" ]]; then
-    TUNNEL="-tunnel ${JENKINS_TUNNEL}"
+# May require sudo login.
+
+if [[ "$(uname)" != "Linux" ]]; then
+  echo "Run on Linux only."
+  exit 1
+fi
+
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+. ${DIR}/all-utilities || { echo "Cannot load Bash utilities" ; exit 1 ; }
+
+CLANG_VERSION='3.8'
+
+function install_clang() {
+  echo 'Installing clang'
+  clear_apt \
+  && ${SUDO} apt-get -qqy install {clang,clang-format}-"${CLANG_VERSION}" \
+  && ${SUDO} cp -f /usr/bin/clang-3.8 /usr/bin/clang \
+  && ${SUDO} cp -f /usr/bin/clang++-3.8 /usr/bin/clang++ \
+  && ${SUDO} cp -f /usr/bin/clang-format-3.8 /usr/bin/clang-format \
+  && return 0
+  return 1
+}
+
+function update_clang() {
+  local version="$(clang --version | grep -oh '[0-9]*\.[0-9]*\.[0-9]*')"
+  if ! [[ "${version}" =~ "${CLANG_VERSION}" ]]; then
+    retry install_clang || error_exit 'Cannot install clang.'
   fi
-fi
-
-if [[ -n "${JENKINS_URL}" ]]; then
-  URL="-url ${JENKINS_URL}"
-fi
-
-if [ -z "${JNLP_PROTOCOL_OPTS}" ]; then
-  echo "Warning: JnlpProtocol3 is disabled by default, use JNLP_PROTOCOL_OPTS to alter the behavior"
-  JNLP_PROTOCOL_OPTS="-Dorg.jenkinsci.remoting.engine.JnlpProtocol3.disabled=true"
-fi
-
-java ${JAVA_OPTS} ${JNLP_PROTOCOL_OPTS} \
-  -cp /usr/share/jenkins/slave.jar hudson.remoting.jnlp.Main \
-  -headless ${TUNNEL} ${URL} "${@}"
+  echo 'Clang is up to date.'
+}

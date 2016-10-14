@@ -1,0 +1,90 @@
+#!/bin/bash
+#
+# Copyright (C) Endpoints Server Proxy Authors
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+################################################################################
+#
+# May require sudo login.
+
+if [[ "$(uname)" != "Linux" ]]; then
+  echo "Run on Linux only."
+  exit 1
+fi
+
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+. ${DIR}/all-utilities || { echo "Cannot load Bash utilities" ; exit 1 ; }
+
+# Release 4.0.2
+WRK_VERSION='50305ed1d89408c26067a970dcd5d9dbea19de9d'
+WRK_DIRECTORY="${HOME}/wrk"
+
+function clone_wrk() {
+  local dir="${1}"
+  echo "Cloning wrk."
+  git clone https://github.com/wg/wrk.git "${dir}" \
+    || error_exit "Cannot clone wrk repository."
+}
+
+function build_wrk() {
+  local dir="${1}"
+
+  echo 'Building wrk'
+  pushd "$dir"
+  git clean -dffx \
+  && git fetch origin \
+  && git fetch origin --tags \
+  && git reset --hard ${WRK_VERSION} \
+  && make WITH_OPENSSL=/usr \
+  && ${SUDO} cp ./wrk /usr/local/bin/wrk \
+  && ${SUDO} chmod a+rx /usr/local/bin/wrk \
+  || error_exit "wrk build failed."
+
+  update_tool wrk "${WRK_VERSION}" ./wrk
+  set_wrk
+  popd
+}
+
+function update_wrk() {
+  local wrk_current='none'
+  if [[ -d "${WRK_DIRECTORY}" ]]; then
+    wrk_current="$(git -C "${WRK_DIRECTORY}" log -n 1 --pretty=format:%H)"
+  fi
+
+  if [[ "${WRK_VERSION}" != "${wrk_current}" ]]; then
+    local build_needed=true
+    local wrk_tmp="$(mktemp /tmp/XXXXX.wrk.bin)"
+    get_tool wrk "${WRK_VERSION}" "${wrk_tmp}" \
+    && ${SUDO} cp "${wrk_tmp}" /usr/local/bin/wrk \
+    && ${SUDO} chmod a+rx /usr/local/bin/wrk \
+    && build_needed=false
+
+    if [[ ${build_needed} == true ]]; then
+      clone_wrk "${WRK_DIRECTORY}"
+      build_wrk ${WRK_DIRECTORY}
+    fi
+  fi
+  echo 'wrk up-to-date.'
+}
+

@@ -1,0 +1,96 @@
+#!/bin/bash
+#
+# Copyright (C) Endpoints Server Proxy Authors
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+################################################################################
+#
+# May require sudo login.
+
+if [[ "$(uname)" != "Linux" ]]; then
+  echo "Run on Linux only."
+  exit 1
+fi
+
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+. ${DIR}/all-utilities || { echo "Cannot load Bash utilities" ; exit 1 ; }
+
+DOCKER_VERSION='1.12.2'
+
+# Ubuntu 16-04
+XENIAL_REPO='ubuntu-xenial'
+XENIAL_VERSION_SUFFIX='-0~xenial'
+# Debian 8
+JESSIE_REPO='debian-jessie'
+JESSIE_VERSION_SUFFIX='-0~jessie'
+# Default
+REPO="${JESSIE_REPO}"
+VERSION_SUFFIX="${JESSIE_VERSION_SUFFIX}"
+
+function set_platform_env() {
+  local platform="${1}"
+  case "${platform}" in
+    'debian-8')
+      REPO="${JESSIE_REPO}"
+      VERSION_SUFFIX="${JESSIE_VERSION_SUFFIX}";;
+    'ubuntu-16-04')
+      REPO="${XENIAL_REPO}"
+      VERSION_SUFFIX="${XENIAL_VERSION_SUFFIX}";;
+    *) error_exit "Plaform ${platform} is not supported."
+  esac
+}
+
+function purge_docker() {
+  echo 'Removing older docker installation if any'
+  ${SUDO} apt-get purge -y docker.io* \
+    || echo 'docker.io not installed, proceeding...'
+}
+
+function install_docker() {
+  echo 'Installing docker'
+  ${SUDO} apt-key adv \
+    --keyserver hkp://p80.pool.sks-keyservers.net:80 \
+    --recv-keys 58118E89F3A912897C070ADBF76221572C52609D \
+  && clear_apt \
+  && ${SUDO} apt-get -qqy install docker-engine="${DOCKER_VERSION}${VERSION_SUFFIX}" \
+  && return 0
+  return 1
+}
+
+function update_apt() {
+  echo 'Adding repo for docker'
+  echo "deb https://apt.dockerproject.org/repo ${REPO} main" \
+    | ${SUDO} tee /etc/apt/sources.list.d/docker.list
+}
+
+function update_docker() {
+  local version="$(docker --version | grep -oh '[0-9]*\.[0-9]*\.[0-9]*')"
+  if [[ "${version}" != "${DOCKER_VERSION}" ]]; then
+    local platform="${1}"
+    set_platform_env "${platform}"
+    update_apt
+    retry install_docker || error_exit 'Cannot install docker.'
+  fi
+  echo 'Docker is up to date.'
+}

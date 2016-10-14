@@ -177,7 +177,7 @@ function list_namespaces() {
 function list_services() {
   local regex=${1}
   local json_path="$(mktemp /tmp/XXXXX.json)"
-  "${GCLOUD}" alpha service-management list \
+  "${GCLOUD}" beta service-management list \
     --project "${PROJECT}" \
     --produced \
     --format=json > "${json_path}"

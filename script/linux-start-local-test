@@ -32,8 +32,6 @@
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . "${ROOT}/script/jenkins-utilities" || { echo 'Cannot load jenkins utilities'; exit 1; }
 
-NODE_JS_URL='https://nodejs.org/dist/v4.6.1/node-v4.6.1-linux-x64.tar.xz'
-
 TEST_ENV=""
 # This variable can be set by -m option. If set to a positive value, the nginx
 # and the backend will be kept alive for that much time for manual test. And
@@ -53,7 +51,6 @@ function tar_logs() {
     || echo "Unable to tar {path_to_tar}."
 }
 
-
 while getopts :b:m:t: arg; do
   case ${arg} in
     b) BUCKET="${OPTARG}";;
@@ -66,16 +63,6 @@ echo 'Tweaking Linux net interface'
 ${SUDO} sh -c 'echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse'
 ${SUDO} sh -c 'echo 1 > /proc/sys/net/ipv4/tcp_tw_recycle'
 ${SUDO} sh -c 'echo "1024 65000" > /proc/sys/net/ipv4/ip_local_port_range'
-
-if [[ ! -e /usr/local/bin/node  ]]; then
-  echo 'Installing Node.js and npm.'
-  NODE_TAR="$(mktemp /tmp/XXXX.tar.xz)"
-  wget "${NODE_JS_URL}" -O "${NODE_TAR}" \
-    || error_exit 'Failed to download Node.js package.'
-  ${SUDO} tar -C /usr/local --strip-components 1 -xf "${NODE_TAR}" \
-    || error_exit 'Failed to install Node.js.'
-  rm -rf "${NODE_TAR}"
-fi
 
 NGINX=${ROOT}/nginx-esp
 
@@ -117,7 +104,7 @@ cp -f "${NGINX_BAZEL_BIN}" "${NGINX}" \
 echo 'Creating service.json'
 sed "s|\${MY_PROJECT_ID}|esp-load-test|g" "${ROOT}/test/echo/swagger.json" \
   > "${ROOT}/test/echo/gce-vm/swagger.json"
-gcloud alpha service-management convert-config \
+${GCLOUD} beta service-management convert-config \
   ${ROOT}/test/echo/gce-vm/swagger.json > "${ROOT}/test/echo/gce-vm/service.json"
 # Hack to point to the right service control as convert-config is not consistent
 sed_i "s|endpoints-servicecontrol.sandbox|servicecontrol|g" \

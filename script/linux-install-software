@@ -35,21 +35,15 @@ fi
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . ${DIR}/all-utilities || { echo "Cannot load Bash utilities" ; exit 1 ; }
+# TOOLS
+. ${DIR}/tools/linux-install-bazel || error_exit "Cannot load Bazel install script"
+. ${DIR}/tools/linux-install-docker || error_exit "Cannot load Docker install script"
+. ${DIR}/tools/linux-install-clang || error_exit "Cannot load Clang install script"
+. ${DIR}/tools/linux-install-gcloud || error_exit "Cannot load gcloud install script"
+. ${DIR}/tools/linux-install-wrk || error_exit "Cannot load wrk install script"
+. ${DIR}/tools/linux-install-nodejs || error_exit "Cannot load nodejs install script"
 
 export DEBIAN_FRONTEND=noninteractive
-# Release 0.3.2 (2016-10-07)
-BAZEL_VERSION='b6154cc4d1ac1c86e698dfa95ded656ea254c3e0'
-BAZEL_DIRECTORY="${HOME}/bazel"
-CLANG_VERSION='3.8.0'
-CLANG_DIRECTORY="${HOME}/clang"
-SKIP_DOCKER_TEST=false
-
-function clear_apt() {
-  echo 'Clearing apt source lists'
-  ${SUDO} rm -rf /var/lib/apt/lists/*
-  ${SUDO} apt-get update --fix-missing -qq && return 0
-  return 1
-}
 
 function install_packages() {
   echo "Installing tools."
@@ -73,9 +67,8 @@ function install_packages() {
     libio-socket-ssl-perl \
     libtool \
     make \
-    npm \
-    openjdk-8-jdk \
-    openjdk-8-source \
+    openjdk-8-jdk-headless \
+    python-pip \
     pkg-config \
     unzip \
     uuid-dev \
@@ -85,131 +78,32 @@ function install_packages() {
     zlib1g-dev \
     && return 0
   return 1
+  # openjdk-8-source
 }
 
-function install_docker() {
-  echo 'Installing docker'
-  ${SUDO} apt-key adv \
-    --keyserver hkp://p80.pool.sks-keyservers.net:80 \
-    --recv-keys 58118E89F3A912897C070ADBF76221572C52609D \
-  && clear_apt \
-  && ${SUDO} apt-get -qqy install docker-engine \
-  && return 0
-  return 1
-}
 
-while getopts :d arg; do
+while getopts :b:p: arg; do
   case ${arg} in
-    d) SKIP_DOCKER_TEST=true;;
+    p) PLATFORM="${OPTARG}";;
+    b) TOOLS_BUCKET="${OPTARG}";;
   esac
 done
 
 echo 'Clearing packages in apt'
 ${SUDO} apt-get clean
 
+# Installing dependencies
 retry install_packages || error_exit 'Cannot install required packages.'
-echo 'Removing older docker installation if any'
-${SUDO} apt-get purge -y docker.io* \
-  || echo 'docker.io not installed, proceeding...'
-${SUDO} apt-get purge -y docker-engine \
-  || echo 'docker-engine not installed, proceeding...'
+retry ${SUDO} pip install --upgrade python-gflags || error_exit 'Cannot install gflags.'
 
-echo 'Adding repo for docker'
-echo "deb https://apt.dockerproject.org/repo debian-jessie main" \
-  | ${SUDO} tee /etc/apt/sources.list.d/docker.list
-retry install_docker || error_exit 'Cannot install docker.'
-
-echo 'Clearing packages downloaded by apt'
-${SUDO} apt-get clean
+# Installing tools
+echo "Installing tools if necessary"
+update_clang
+update_gcloud
+update_bazel
+update_docker "${PLATFORM}"
+update_wrk
+update_node_js
 clear_apt
-
-if [[ ${SKIP_DOCKER_TEST} == false ]]; then
-  echo 'Checking docker installation'
-  docker run hello-world \
-    || error_exit 'Docker not installed properly'
-fi
-
-if [[ ! -d "${BAZEL_DIRECTORY}" ]]; then
-  echo "Cloning Bazel."
-  git clone https://github.com/bazelbuild/bazel.git "${BAZEL_DIRECTORY}" \
-    || error_exit "Cannot clone Bazel repository."
-
-  BAZEL_CURRENT="none"
-else
-  BAZEL_CURRENT=$(git -C "${BAZEL_DIRECTORY}" log -n 1 --pretty=format:%H)
-fi
-
-if [[ "${BAZEL_VERSION}" == "${BAZEL_CURRENT}" ]]; then
-  echo "Bazel up-to-date."
-else
-  echo "Updating Bazel."
-  (cd "${BAZEL_DIRECTORY}" \
-    && git clean -dffx \
-    && git fetch origin \
-    && git fetch origin --tags \
-    && git reset --hard ${BAZEL_VERSION} \
-    && ./compile.sh \
-    && ./output/bazel shutdown \
-    && rm -rf ${HOME}/.cache/bazel \
-    && ${SUDO} cp ./output/bazel /usr/local/bin/bazel
-  ) \
-    || error_exit "Bazel build failed."
-fi
-
-if [[ -d "${CLANG_DIRECTORY}" ]]; then
-  CLANG_CURRENT=$("${CLANG_DIRECTORY}/bin/clang-format" -version | cut -d ' ' -f 3)
-else
-  CLANG_CURRENT='none'
-fi
-
-if [[ "${CLANG_VERSION}" != "${CLANG_CURRENT}" ]]; then
-  echo "Downloading clang ${CLANG_VERSION}."
-  mkdir "${CLANG_DIRECTORY}" \
-  && curl --silent --show-error --retry 10 \
-      "http://llvm.org/releases/${CLANG_VERSION}/clang+llvm-${CLANG_VERSION}-x86_64-linux-gnu-debian8.tar.xz" \
-      | tar Jx -C "${CLANG_DIRECTORY}" --strip=1 \
-  && cp "${CLANG_DIRECTORY}/bin/clang-format" /usr/local/bin/clang-format \
-  || error_exit 'Could not install clang-format'
-else
-  echo "Clang up-to-date."
-fi
-
-echo "Updating gcloud."
-${SUDO} gcloud -q components update
-${SUDO} gcloud -q components install beta
-
-echo 'Installing test client dependencies'
-export LDFLAGS=-L/usr/local/lib
-export CPPFLAGS=-I/usr/local/include
-export CXXFLAGS=-std=c++1y
-export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/usr/local/ssl/lib/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig
-
-echo 'Building python-gflags'
-git clone https://github.com/google/python-gflags || error_exit 'Cannot clone python-gflags'
-pushd python-gflags
-${SUDO} python ./setup.py install || error_exit 'Cannot install python-gflags'
-popd
-
-echo 'Building wrk'
-git clone https://github.com/wg/wrk || error_exit 'Cannot clone wrk'
-pushd wrk
-make WITH_OPENSSL=/usr || error_exit 'Cannot build wrk'
-${SUDO} cp ./wrk /usr/local/bin/wrk
-${SUDO} chmod a+rx /usr/local/bin/wrk
-popd
-export WRK=/usr/local/bin/wrk
-${WRK} --version
-
-echo 'Building nghttp2'
-git clone https://github.com/nghttp2/nghttp2.git || error_exit 'Cannot clone nghttp2'
-pushd nghttp2
-(autoreconf -i \
-&& automake \
-&& autoconf \
-&&./configure --enable-app) || error_exit 'Cannot configure nghttp2'
-make || error_exit 'Cannot make nghttp2'
-popd
-export H2LOAD=$(readlink --canonicalize ./nghttp2/src/h2load)
-${H2LOAD} --version
 
 echo "Software installation complete."

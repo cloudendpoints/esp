@@ -33,9 +33,8 @@ ESP_ROOT="$(cd "${DIR}/.." && pwd)"
 
 . ${DIR}/all-utilities || { echo "Cannot load Bash utilities" ; exit 1 ; }
 
-PROJECT_ID="$(gcloud config list core/project --format flattened | cut -d ' ' -f 2)"
+PROJECT_ID="$(${GCLOUD} config list core/project --format flattened | cut -d ' ' -f 2)"
 DEFAULT_ESP_SERVICE="testing-dot-${PROJECT_ID}.appspot.com"
-GSUTIL=$(which gsutil) || GSUTIL=~/google-cloud-sdk/bin/gsutil
 
 # End to End tests options
 API_KEY=''
@@ -66,10 +65,10 @@ ESP_SERVICE_VERSION=''
 # For Staging
 # $ sed -i s|\${ENDPOINT_SERVICE}|staging-testing-dot-endpoints-jenkins.appspot.com|g \
   # swagger.json
-# $ gcloud alpha service-management convert-config swagger.json swagger.json
+# $ gcloud beta service-management convert-config swagger.json swagger.json
 # $ sed -i s/endpoints-servicecontrol/staging-servicecontrol/g swagger.json
 # For both
-# $ gcloud alpha service-management deploy swagger.json
+# $ gcloud beta service-management deploy swagger.json
 # Take a note of the version and update here.
 # Once the service is deployed it will take 24h to get to staging.
 
@@ -104,9 +103,9 @@ function sed_i() {
 function delete_service() {
   local esp_service="${1}"
   if ! [[ "${esp_service}" =~ "${DEFAULT_ESP_SERVICE}" ]]; then
-    gcloud alpha service-management disable \
+    ${GCLOUD} beta service-management disable \
       "${esp_service}" --project="${PROJECT_ID}"
-    gcloud alpha service-management delete "${esp_service}" -q
+    ${GCLOUD} beta service-management delete "${esp_service}" -q
   fi
 }
 
@@ -134,7 +133,7 @@ function set_esp_service_version() {
   local esp_service="${1}"
   local json_path="$(mktemp /tmp/XXXXX.json)"
   local version=''
-  gcloud alpha service-management describe \
+  ${GCLOUD} beta service-management describe \
     ${esp_service} --format=json > "${json_path}" || return 1
   version="$(python - << __EOF__ "${json_path}"
 import json
@@ -162,13 +161,13 @@ function create_service() {
   retry -n 2 set_esp_service_version "${esp_service}"
   if [[ ${?} -ne 0 ]]; then
     echo 'Deploying service'
-    retry -n 3 run gcloud alpha service-management deploy "${swagger_json}"
+    retry -n 3 run ${GCLOUD} beta service-management deploy "${swagger_json}"
 
     retry -n 5 set_esp_service_version "${esp_service}" \
       || error_exit 'Could not fetch the service version.'
 
     echo 'Activating service'
-    retry -n 3 run gcloud alpha service-management enable \
+    retry -n 3 run ${GCLOUD} beta service-management enable \
       "${esp_service}" --project="${PROJECT_ID}" \
       || error_exit 'Could not activate the service.'
   fi
@@ -311,42 +310,6 @@ function save_vm_logs() {
   [[ ${?} -eq 0 ]] || { echo 'Failed to get logs'; return 1; }
 }
 
-# Save ESP logs from the ESP container running in the specified VM container
-function save_gce_container_esp_logs() {
-  local vm="${1}"
-  local log_dir="${2}"
-  # An extra filter for container. In GKE case, the same worker instance might
-  # run ESP containers from multiple jobs. We use this extra filter to find the
-  # correct container.
-  local container_filter="${3}"
-  local output_file="${log_dir}/error_stderr.log.gz"
-
-  echo "Getting ESP logs from a container in the VM: '${vm}'..."
-
-  # Make sure we have the private key to SSH to the VM
-  # Using ssh instead of gcloud compute ssh, as gcloud uses external IP
-  # address which does not work with restrictive firewall rules
-  set_ssh_private_key
-  [[ ${?} -eq 0 ]] || { echo 'Failed to download SSH private key'; return 1; }
-
-  # Find the ESP container
-  local container="$(ssh -i ${SSH_PRIVATE_KEY} \
-    -o StrictHostKeyChecking=no "${vm}" \
-    sudo docker ps | grep 'endpoints-runtime' | grep "${container_filter}" | awk '{print $1}')"
-  [[ -n "${container}" ]] || { echo 'Failed to find ESP container'; return 1; }
-
-  echo "Found ESP container: ${container}. Getting the logs..."
-  # Capture stderr only and discard stdout as it contains access logs and is
-  # huge for long-run tests. Then pipe it to gzip to compress the logs before
-  # downloading.
-  ssh -i "${SSH_PRIVATE_KEY}" \
-    -o StrictHostKeyChecking=no "${vm}" \
-    "sudo docker logs ${container} 2>&1 1>/dev/null | gzip" > "${output_file}"
-  [[ ${?} -eq 0 ]] || { echo 'Failed to get logs from container'; return 1; }
-
-  echo "Done! Logs saved!"
-}
-
 # Upload logs remote directory
 function upload_logs() {
   local remote_dir="${1}"
@@ -398,7 +361,7 @@ function e2e_options() {
 function get_host_ip() {
   local hostname="${1}"
   local ip=''
-  ip="$(gcloud compute instances describe "${hostname}" \
+  ip="$(${GCLOUD} compute instances describe "${hostname}" \
     --format='value(networkInterfaces.networkIP)')" || { ip=''; return 1; }
   export HOST_INTERNAL_IP="${ip}"
   return 0

@@ -26,21 +26,43 @@
 #
 ################################################################################
 #
-if ! [[ "${@}" =~ "-tunnel " ]]; then
-  if [[ -n "${JENKINS_TUNNEL}" ]]; then
-    TUNNEL="-tunnel ${JENKINS_TUNNEL}"
-  fi
+# May require ${SUDO} login.
+
+if [[ "$(uname)" != "Linux" ]]; then
+  echo "Run on Linux only."
+  exit 1
 fi
 
-if [[ -n "${JENKINS_URL}" ]]; then
-  URL="-url ${JENKINS_URL}"
-fi
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+. ${DIR}/all-utilities || { echo "Cannot load Bash utilities" ; exit 1 ; }
 
-if [ -z "${JNLP_PROTOCOL_OPTS}" ]; then
-  echo "Warning: JnlpProtocol3 is disabled by default, use JNLP_PROTOCOL_OPTS to alter the behavior"
-  JNLP_PROTOCOL_OPTS="-Dorg.jenkinsci.remoting.engine.JnlpProtocol3.disabled=true"
-fi
 
-java ${JAVA_OPTS} ${JNLP_PROTOCOL_OPTS} \
-  -cp /usr/share/jenkins/slave.jar hudson.remoting.jnlp.Main \
-  -headless ${TUNNEL} ${URL} "${@}"
+GCLOUD_URL='https://dl.google.com/dl/cloudsdk/channels/rapid/google-cloud-sdk.zip'
+
+function install_gcloud() {
+  CLOUDSDK_PYTHON_SITEPACKAGES=1
+  ${SUDO} rm -rf /usr/lib/google-cloud-sdk \
+  && export CLOUDSDK_CORE_DISABLE_PROMPTS=1 \
+  && export CLOUDSDK_INSTALL_DIR=/usr/lib/ \
+  && curl https://sdk.cloud.google.com | ${SUDO} bash \
+  && export PATH="/usr/lib/google-cloud-sdk/bin:${PATH}" \
+  && set_gcloud \
+  && return 0
+  return 1
+}
+
+function check_and_install_gcloud() {
+  ${GCLOUD} --version && return 0
+  retry install_gcloud && return 0
+  return 1
+}
+
+function update_gcloud() {
+  check_and_install_gcloud \
+    || error_exit 'Could not install gcloud'
+  echo "Updating gcloud."
+  ${SUDO} sed -i -e 's/true/false/' /usr/lib/google-cloud-sdk/lib/googlecloudsdk/core/config.json
+  ${SUDO} ${GCLOUD} -q components update kubectl beta \
+    || error_exit 'Cannot update gcloud'
+}
+
