@@ -49,7 +49,7 @@ function management() {
   var json = JSON.parse(content);
 
   // Set a custom service control
-  json.control.environment = "http://127.0.0.1:" + process.env.CONTROL_PORT;
+  json.control.environment = process.env.CONTROL_URL;
 
   management.get("/service_config", function(req, res) {
     if (req.param.configId == json.id) {

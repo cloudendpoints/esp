@@ -108,10 +108,6 @@ done
       -d "${ROOT}/bazel-bin/src/nginx/main/endpoints-server-proxy.deb" \
     || error_exit "Docker presubmit test failed."
 
-  ${ROOT}/test/docker/generic_docker_test.sh \
-      -d "${ROOT}/bazel-bin/src/nginx/main/endpoints-server-proxy.deb" \
-    || error_exit "Generic Docker presubmit test failed."
-
 ) || error_exit "Bazel build failed."
 
 echo "Presubmit tests completed successfully."

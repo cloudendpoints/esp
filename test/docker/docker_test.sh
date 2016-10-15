@@ -28,159 +28,207 @@
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # Load error handling utilities
-. ${ROOT}/script/all-utilities || { echo "Cannot load Bash utilities" ; exit 1 ; }
+. "${ROOT}/script/all-utilities" || { echo 'Cannot load Bash utilities' ; exit 1 ; }
+. "${ROOT}/test/docker/docker_test_lib.sh" || error_exit 'Cannot load docker test lib'
 
-DEB=""
+DEB=''
+SKIP_CLEANUP=false
+TAG="$(git rev-parse --short HEAD)-$(date +"%Y%m%d%H%M%S")"
 
-while getopts d: arg; do
-  case ${arg} in
-    d) DEB=${OPTARG};;
-    ?) exit 1;;
+while getopts d:st: arg; do
+  case "${arg}" in
+    d) DEB="${OPTARG}";;
+    s) SKIP_CLEANUP=true;;
+    t) TAG="${OPTARG}";;
+    ?) error_exit 'Unknown flag.';;
   esac
 done
 
-ACCESS_TOKEN=$(uuidgen)
-
 [[ -f "${DEB}" ]] || error_exit "Debian package \"${DEB}\" doesn't exist."
-cp "${DEB}" "${ROOT}/test/docker/esp/endpoints-runtime.deb"
 
-# Build Docker images.
-docker build -t metadata-image ${ROOT}/test/docker/metadata \
-  || error_exit "Cannot build a fake metadata Docker image."
-docker build -t gaeapp-image ${ROOT}/test/docker/backend \
-  || error_exit "Cannot build the backend Docker image."
-docker build -t control-image ${ROOT}/test/docker/control \
-  || error_exit "Cannot build the fake service control Docker image."
-docker build -t esp-image ${ROOT}/test/docker/esp \
-  || error_exit "Cannot build the Endpoints Proxy Docker image."
+ACCESS_TOKEN="$(uuidgen)"
+TEMP_DIR="$(command mktemp -d)"
 
-# Start metadata container.
-docker run \
-    --name=metadata \
-    --detach=true \
-    --publish-all \
-    --env="ACCESS_TOKEN=${ACCESS_TOKEN}" \
-    metadata-image \
-  || error_exit "Cannot start metadata container."
+cp -f "${DEB}" "${ROOT}/test/docker/esp/endpoints-runtime.deb"
+cp -f ${DEB} ${TEMP_DIR}/endpoints-runtime.deb
+cp -f ${ROOT}/docker/generic/* ${TEMP_DIR}
+cp -f ${ROOT}/test/docker/backend/service.json ${ROOT}/test/docker/management
 
-# Start gaeapp container.
-docker run \
-    --name=gaeapp \
-    --detach=true \
-    --publish-all \
-    gaeapp-image \
-  || error_exit "Cannot start gaeapp container."
+METADATA_IMAGE="metadata-image:${TAG}"
+APP_IMAGE="app-image:${TAG}"
+CONTROL_IMAGE="control-image:${TAG}"
+MANAGEMENT_IMAGE="management-image:${TAG}"
+ESP_IMAGE="esp-image:${TAG}"
 
-# Start service control container.
-docker run \
-    --name=control \
-    --detach=true \
-    --publish-all \
-    --env="ACCESS_TOKEN=${ACCESS_TOKEN}" \
-    control-image \
-  || error_exit "Cannot start service control container."
 
-# Start Endpoints proxy container.
-docker run \
-    --name=esp \
-    --detach=true \
-    --publish-all \
-    --link=metadata:metadata \
-    --link=control:control \
-    --link=gaeapp:gaeapp \
-    --volumes-from=gaeapp \
-    esp-image \
-  || error_exit "Cannot start Endpoints proxy container."
-
-METADATA_PORT=$(docker port metadata 8080) \
-  || error_exit "Cannot get metadata port number."
-GAEAPP_PORT=$(docker port gaeapp 8080) \
-  || error_exit "Cannot get gaeapp port number."
-CONTROL_PORT=$(docker port control 8080) \
-  || error_exit "Cannot get service control port number."
-ESP_PORT=$(docker port esp 8080) \
-  || error_exit "Cannot get esp port number."
-ESP_NGINX_STATUS_PORT=$(docker port esp 8090) \
-  || error_exit "Cannot get esp status port number."
-
-if [[ "$(uname)" == "Darwin" ]]; then
-  IP=$(docker-machine ip default)
-  METADATA_PORT=${IP}:${METADATA_PORT##*:}
-  GAEAPP_PORT=${IP}:${GAEAPP_PORT##*:}
-  CONTROL_PORT=${IP}:${CONTROL_PORT##*:}
-  ESP_PORT=${IP}:${ESP_PORT##*:}
-  ESP_NGINX_STATUS_PORT=${IP}:${ESP_NGINX_STATUS_PORT##*:}
-fi
-
-function wait_for() {
-  local URL=${1}
-
-  for (( I=0 ; I<60 ; I++ )); do
-    printf "\nWaiting for ${URL}\n"
-    curl --silent ${URL} && return 0
-    sleep 1
+function cleanup {
+  printf "\nPrinting container logs.\n"
+  for c in ${DOCKER_CONTAINERS[@]}; do
+    echo "Logs for container ${c}:"
+    docker logs "${c}"
   done
-  return 1
+  [[ ${SKIP_CLEANUP}  == true ]] && return
+  printf "\nShutting down.\n"
+  [[ -n "${DOCKER_CONTAINERS}" ]] && docker stop ${DOCKER_CONTAINERS[@]}
+  [[ -n "${DOCKER_CONTAINERS}" ]] && docker rm -f ${DOCKER_CONTAINERS[@]}
+  [[ -n "${DOCKER_IMAGES}" ]] && docker rmi -f ${DOCKER_IMAGES[@]}
 }
 
+trap cleanup EXIT
+
+# Build Docker images.
+docker_build "${METADATA_IMAGE}" "${ROOT}/test/docker/metadata"
+docker_build "${APP_IMAGE}" "${ROOT}/test/docker/backend"
+docker_build "${CONTROL_IMAGE}" "${ROOT}/test/docker/control"
+docker_build "${MANAGEMENT_IMAGE}" "${ROOT}/test/docker/management"
+docker_build "${ESP_IMAGE}" "${TEMP_DIR}"
+
+# nginx does not resolve local name in proxy_pass therefore we have to find the
+# ip address in the docker bridge network to allow container to talk to each
+# others.
+# Start metadata container.
+METADATA_CONTAINER="$(docker run \
+  --detach=true \
+  --publish-all \
+  --env="ACCESS_TOKEN=${ACCESS_TOKEN}" \
+  "${METADATA_IMAGE}")" \
+  || error_exit 'Cannot start metadata container.'
+DOCKER_CONTAINERS+=("${METADATA_CONTAINER}")
+LINKS+=("${METADATA_CONTAINER}:metadata")
+METADATA_DOCKER_IP="$(docker_ip "${METADATA_CONTAINER}")" \
+  || error_exit 'Cannot find metadata service ip.'
+echo "Metadata Server ip is ${METADATA_DOCKER_IP}."
+
+# Start app container.
+APP_CONTAINER="$(docker run \
+  --detach=true \
+  --publish-all \
+  "${APP_IMAGE}")" \
+  || error_exit 'Cannot start app container.'
+DOCKER_CONTAINERS+=("${APP_CONTAINER}")
+LINKS+=("${APP_CONTAINER}:app")
+APP_DOCKER_IP="$(docker_ip "${APP_CONTAINER}")" \
+  || error_exit 'Cannot find app server ip.'
+echo "App Server ip is ${APP_DOCKER_IP}."
+
+# Start service control container.
+CONTROL_CONTAINER="$(docker run \
+  --detach=true \
+  --publish-all \
+  --env="ACCESS_TOKEN=${ACCESS_TOKEN}" \
+  "${CONTROL_IMAGE}")" \
+  || error_exit 'Cannot start service control container.'
+DOCKER_CONTAINERS+=("${CONTROL_CONTAINER}")
+LINKS+=("${CONTROL_CONTAINER}:control")
+CONTROL_DOCKER_IP="$(docker_ip "${CONTROL_CONTAINER}")" \
+  || error_exit 'Cannot find service control ip.'
+echo "Service Control ip is ${CONTROL_DOCKER_IP}."
+
+MANAGEMENT_CONTAINER="$(docker run \
+  --detach=true \
+  --publish-all \
+  --env="ACCESS_TOKEN=${ACCESS_TOKEN}" \
+  --env="CONTROL_URL=http://${CONTROL_DOCKER_IP}:8080" \
+  "${MANAGEMENT_IMAGE}")" \
+  || error_exit 'Cannot start management container.'
+DOCKER_CONTAINERS+=("${MANAGEMENT_CONTAINER}")
+LINKS+=("${MANAGEMENT_CONTAINER}:management")
+MANAGEMENT_DOCKER_IP="$(docker_ip "${MANAGEMENT_CONTAINER}")" \
+  || error_exit 'Cannot find management server ip.'
+echo "Service Management ip is ${MANAGEMENT_DOCKER_IP}."
+
+METADATA_PORT=$(get_port "${METADATA_CONTAINER}" 8080) \
+  || error_exit 'Cannot get metadata port number.'
+APP_PORT=$(get_port "${APP_CONTAINER}" 8080) \
+  || error_exit 'Cannot get app port number.'
+CONTROL_PORT=$(get_port "${CONTROL_CONTAINER}" 8080) \
+  || error_exit 'Cannot get service control port number.'
+MANAGEMENT_PORT=$(get_port "${MANAGEMENT_CONTAINER}" 8080) \
+  || error_exit 'Cannot get management port number.'
+
 wait_for "${METADATA_PORT}/computeMetadata/v1/instance/service-accounts/default/token" \
-  || error_exit "Metadata container failed to start."
-wait_for "${GAEAPP_PORT}/shelves" \
-  || error_exit "Gaeapp failed to start."
+  || error_exit 'Metadata container failed to start.'
+wait_for "${APP_PORT}/shelves" \
+  || error_exit 'Gaeapp failed to start.'
 wait_for "${CONTROL_PORT}/" \
-  || error_exit "Service control failed to start."
-wait_for "${ESP_NGINX_STATUS_PORT}/nginx_status" \
-  || error_exit "Endpoints Proxy failed to start."
+  || error_exit 'Service control failed to start.'
+wait_for "${MANAGEMENT_PORT}/" \
+  || error_exit 'Management failed to start.'
 
 printf "\nCalling metadata.\n"
 curl -v ${METADATA_PORT}/computeMetadata/v1/instance/service-accounts/default/token
 METADATA_RESULT=$?
 
-printf "\nCalling gaeapp.\n"
-curl -v ${GAEAPP_PORT}/shelves
-GAEAPP_RESULT=$?
+printf "\nCalling app.\n"
+curl -v ${APP_PORT}/shelves
+APP_RESULT=$?
 
 printf "\nCalling control :check and :report.\n"
 curl -v -d="" ${CONTROL_PORT}/v1/services/bookstore-backend.endpointsv2.appspot.com:check \
   && curl -v -d="" ${CONTROL_PORT}/v1/services/bookstore-backend.endpointsv2.appspot.com:report
 CONTROL_RESULT=$?
 
-printf "\nCalling esp.\n"
-curl -v ${ESP_PORT}/shelves
-SHELVES_RESULT=$?
-SHELVES_BODY=$(curl --silent ${ESP_PORT}/shelves)
+printf "\nCalling management.\n"
+curl -v ${MANAGEMENT_PORT}
+MANAGEMENT_RESULT=$?
 
-curl -v ${ESP_PORT}/shelves/1/books
-BOOKS_RESULT=$?
-BOOKS_BODY=$(curl --silent ${ESP_PORT}/shelves/1/books)
-
-printf "\nGetting NGINX logs.\n"
 echo '*************************************************************************'
-docker exec esp cat /var/log/nginx/access.log
-docker exec esp cat /var/log/nginx/error.log
-echo '*************************************************************************'
-
-printf "\nShutting down.\n"
-docker stop metadata gaeapp control esp
-docker rm metadata gaeapp control esp
-docker rmi metadata-image gaeapp-image control-image esp-image
-
 echo "Metadata result: ${METADATA_RESULT}"
-echo "Gaeapp result: ${GAEAPP_RESULT}"
+echo "App result: ${APP_RESULT}"
 echo "Control result: ${CONTROL_RESULT}"
-echo "Shelves result: ${SHELVES_RESULT}"
-echo "Books result: ${BOOKS_RESULT}"
-
-[[ "${SHELVES_BODY}" == *"\"Fiction\""* ]] \
-  || error_exit "/shelves did not return Fiction: ${SHELVES_BODY}"
-[[ "${SHELVES_BODY}" == *"\"Fantasy\""* ]] \
-  || error_exit "/shelves did not return Fantasy: ${SHELVES_BODY}"
-[[ "${BOOKS_BODY}" == *"Method doesn't allow unregistered callers"* ]] \
-  || error_exit "/shelves/1/books did not return unregistered callers: ${BOOKS_RESULT}"
+echo "Management result: ${MANAGEMENT_RESULT}"
 
 [[ ${METADATA_RESULT} -eq 0 ]] \
-  && [[ ${GAEAPP_RESULT} -eq 0 ]] \
+  && [[ ${APP_RESULT} -eq 0 ]] \
   && [[ ${CONTROL_RESULT} -eq 0 ]] \
-  && [[ ${SHELVES_RESULT} -eq 0 ]] \
-  && [[ ${BOOKS_RESULT} -eq 0 ]] \
-  || error_exit "Test failed."
+  && [[ ${MANAGEMENT_RESULT} -eq 0 ]] \
+  || error_exit 'Test failed.'
+
+# The service name and version come from backend/README.md
+# We need to provide metadata for secret
+# Default port is 8080
+printf "\nRun docker test for http requests.\n"
+run_esp_test \
+  -a "${APP_DOCKER_IP}:8080" \
+  -e "${ESP_IMAGE}" \
+  -m "http://${METADATA_DOCKER_IP}:8080" \
+  -c "http://${MANAGEMENT_DOCKER_IP}:8080/service_config" \
+  -s bookstore-backend.endpointsv2.appspot.com \
+  -v 2016-04-25R1 \
+  || error_exit 'Docker test for http requests failed.'
+
+# Service name, version, and token are fetched from metadata
+printf "\nRun docker test for https requests.\n"
+run_esp_test \
+  -e "${ESP_IMAGE}" \
+  -p 8080 \
+  -S 8443 \
+  -m "http://${METADATA_DOCKER_IP}:8080" \
+  -c "http://${MANAGEMENT_DOCKER_IP}:8080/service_config" \
+  -a "${APP_DOCKER_IP}:8080" \
+  || error_exit 'Docker test for https requests failed.'
+
+# Still need to fetch service.json for custom nginx
+printf "\nRun docker test for custom nginx.conf.\n"
+run_esp_test \
+  -e "${ESP_IMAGE}" \
+  -n /etc/nginx/custom/nginx.conf \
+  -m "http://${METADATA_DOCKER_IP}:8080" \
+  -c "http://${MANAGEMENT_DOCKER_IP}:8080/service_config" \
+  -s bookstore-backend.endpointsv2.appspot.com \
+  -v 2016-04-25R1 \
+  || error_exit 'Docker test for custom nginx.conf failed.'
+
+printf "\nRun docker test for custom ports.\n"
+run_esp_test \
+  -e "${ESP_IMAGE}" \
+  -p 9000 \
+  -P 9001 \
+  -N 9050 \
+  -m "http://${METADATA_DOCKER_IP}:8080" \
+  -c "http://${MANAGEMENT_DOCKER_IP}:8080/service_config" \
+  -a "${APP_DOCKER_IP}:8080" \
+  -s bookstore-backend.endpointsv2.appspot.com \
+  -v 2016-04-25R1 \
+  || error_exit 'Docker test for custom ports failed.'
+

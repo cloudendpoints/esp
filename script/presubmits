@@ -109,10 +109,5 @@ function docker_tests() {
   "${ROOT}/test/docker/docker_test.sh" -d \
     "${ROOT}/bazel-bin/src/nginx/main/endpoints-server-proxy.deb" \
     || { echo  'Docker test failed'; return 1; }
-
-  echo 'Running Generic docker test...'
-  "${ROOT}/test/docker/generic_docker_test.sh" -d \
-    "${ROOT}/bazel-bin/src/nginx/main/endpoints-server-proxy.deb" \
-    || { echo  'Generic docker test failed'; return 1; }
 }
 
