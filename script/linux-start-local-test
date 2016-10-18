@@ -69,10 +69,10 @@ ${SUDO} sh -c 'echo "1024 65000" > /proc/sys/net/ipv4/ip_local_port_range'
 
 if [[ ! -e /usr/local/bin/node  ]]; then
   echo 'Installing Node.js and npm.'
-  NODE_TAR="$(mktemp /tmp/XXXX.tar.gz)"
+  NODE_TAR="$(mktemp /tmp/XXXX.tar.xz)"
   wget "${NODE_JS_URL}" -O "${NODE_TAR}" \
     || error_exit 'Failed to download Node.js package.'
-  ${SUDO} tar -C /usr/local --strip-components 1 -xzf "${NODE_TAR}" \
+  ${SUDO} tar -C /usr/local --strip-components 1 -xf "${NODE_TAR}" \
     || error_exit 'Failed to install Node.js.'
   rm -rf "${NODE_TAR}"
 fi
