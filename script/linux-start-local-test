@@ -32,6 +32,8 @@
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . "${ROOT}/script/jenkins-utilities" || { echo 'Cannot load jenkins utilities'; exit 1; }
 
+NODE_JS_URL='https://nodejs.org/dist/v4.6.1/node-v4.6.1-linux-x64.tar.xz'
+
 TEST_ENV=""
 # This variable can be set by -m option. If set to a positive value, the nginx
 # and the backend will be kept alive for that much time for manual test. And
@@ -61,16 +63,18 @@ while getopts :b:m:t: arg; do
 done
 
 echo 'Tweaking Linux net interface'
-sudo sh -c 'echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse'
-sudo sh -c 'echo 1 > /proc/sys/net/ipv4/tcp_tw_recycle'
-sudo sh -c 'echo "1024 65000" > /proc/sys/net/ipv4/ip_local_port_range'
+${SUDO} sh -c 'echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse'
+${SUDO} sh -c 'echo 1 > /proc/sys/net/ipv4/tcp_tw_recycle'
+${SUDO} sh -c 'echo "1024 65000" > /proc/sys/net/ipv4/ip_local_port_range'
 
 if [[ ! -e /usr/local/bin/node  ]]; then
   echo 'Installing Node.js and npm.'
-  wget https://storage.googleapis.com/apache_tarballs/node-v4.2.1-linux-x64.tar.gz \
+  NODE_TAR="$(mktemp /tmp/XXXX.tar.gz)"
+  wget "${NODE_JS_URL}" -O "${NODE_TAR}" \
     || error_exit 'Failed to download Node.js package.'
-  sudo tar -C /usr/local --strip-components 1 -xzf node-v4.2.1-linux-x64.tar.gz \
+  ${SUDO} tar -C /usr/local --strip-components 1 -xzf "${NODE_TAR}" \
     || error_exit 'Failed to install Node.js.'
+  rm -rf "${NODE_TAR}"
 fi
 
 NGINX=${ROOT}/nginx-esp
