@@ -1,3 +1,15 @@
+# Release 0.3.10 19-10-2016
+
+- Fail open for method with `allow_unregistered_calls`.
+- Ingress controller
+- Update googleapis and service-control-client-cxx submodules.
+- Cleanups, bug fixes and infrastructure improvements
+  - Increase disk size for GCE raw test.
+  - Use correct build paramater for rapture repo.
+  - Fix gce test for latest release.
+  - Adding fetch and retries for bazel builds.
+  - Tempory fix for performance test.
+
 # Release 0.3.9 06-10-2016
 
 - Fix debian package dependencies.
