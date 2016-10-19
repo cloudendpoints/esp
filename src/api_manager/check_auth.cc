@@ -396,8 +396,8 @@ void AuthChecker::PassUserInfoOnSuccess() {
   if (json_buf == nullptr) {
     return;
   }
-  char *base64_json_buf =
-      auth::esp_base64_encode(json_buf, strlen(json_buf), true, false, false);
+  char *base64_json_buf = auth::esp_base64_encode(
+      json_buf, strlen(json_buf), true, false, true /*padding*/);
   context_->request()->AddHeaderToBackend(kEndpointApiUserInfo,
                                           base64_json_buf);
   auth::esp_grpc_free(json_buf);

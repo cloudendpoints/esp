@@ -318,7 +318,7 @@ const char kUserInfo_kSub_kIss[] =
 // }
 const char kUserInfo_kSub2_kIss[] =
     "eyJpc3N1ZXIiOiJodHRwczovL2lzc3VlcjEuY29tIiwiaWQiOiJhbm90aGVyLXVzZXItaWQif"
-    "Q";
+    "Q==";
 
 // Base64 encoded string of
 // {
