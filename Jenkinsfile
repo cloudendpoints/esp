@@ -81,6 +81,7 @@ ESP_RUNTIME_VERSION = ''
 // Global Variables defined in Jenkins
 BUCKET = ''
 BAZEL_ARGS = ''
+BAZEL_BUILD_ARGS = ''
 DEFAULT_SLAVE_LABEL = ''
 CLUSTER = ''
 PROJECT_ID = ''
@@ -90,6 +91,7 @@ ZONE = ''
 node {
   BUCKET = failIfNullOrEmpty(env.BUCKET, 'BUCKET must be set.')
   BAZEL_ARGS = getWithDefault(env.BAZEL_ARGS)
+  BAZEL_BUILD_ARGS = getWithDefault(env.BAZEL_BUILD_ARGS)
   DEFAULT_SLAVE_LABEL = getWithDefault(env.DEFAULT_SLAVE_LABEL, DEBIAN_JESSIE)
   CLUSTER = failIfNullOrEmpty(env.GKE_CLUSTER, 'GKE_CLUSTER must be set')
   PROJECT_ID = failIfNullOrEmpty(env.PROJECT_ID, 'PROJECT_ID must be set')
@@ -492,7 +494,7 @@ def buildAndStash(buildTarget, stashTarget, name) {
   // Timing out after 40 minutes.
   timeout(40) {
     retry(3) {
-      sh("bazel build ${BAZEL_ARGS} --config=release ${buildTarget}")
+      sh("bazel ${BAZEL_ARGS} build ${BAZEL_BUILD_ARGS} --config=release ${buildTarget}")
       sleep(5)
     }
   }

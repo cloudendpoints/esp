@@ -66,7 +66,8 @@ if [[ ! -x ${AUTH_TOKEN_GEN} ]]; then
   [[ ${BUILD_AUTH_TOKEN_GEN} -ne 0 ]] \
     || error_exit "Cannot find ${AUTH_TOKEN_GEN}"
 
-  ${BAZEL} build ${BAZEL_ARGS} //src/tools:auth_token_gen \
+  ${BAZEL} ${BAZEL_ARGS} build ${BAZEL_BUILD_ARGS} \
+    //src/tools:auth_token_gen \
     || error_exit "Failed to build //src/tools:auth_token_gen"
 fi
 

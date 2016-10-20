@@ -94,8 +94,9 @@ if ! [[ -e "${NGINX_BAZEL_BIN}" ]]; then
   (
     echo 'Building Endpoints Runtime.'
     cd "${ROOT}" \
-      && retry -n 3 ${BAZEL} fetch //src/nginx/main:nginx-esp \
-      && retry -n 2 ${BAZEL} build ${BAZEL_ARGS} --config=release //src/nginx/main:nginx-esp
+      && retry -n 3 ${BAZEL} ${BAZEL_ARGS} fetch //src/nginx/main:nginx-esp \
+      && retry -n 2 ${BAZEL} ${BAZEL_ARGS} build ${BAZEL_BUILD_ARGS} \
+        --config=release //src/nginx/main:nginx-esp
   ) || error_exit 'Failed to build //src/nginx/main:nginx-esp'
 fi
 cp -f "${NGINX_BAZEL_BIN}" "${NGINX}" \

@@ -68,21 +68,22 @@ done
     || error_exit 'Failed to build and install dependencies.'
 ) || error_exit 'Build of dependencies failed.'
 
-${BAZEL} clean \
-  || error_exit 'Failed to ${BAZEL} clean before the release build.'
+${BAZEL} ${BAZEL_ARGS} clean \
+  || error_exit 'Failed to ${BAZEL} ${BAZEL_ARGS} clean before the release build.'
 
 if [[ "${SKIP_TESTS}" == 'false' ]]; then
   echo 'Running pre-release tests.'
-  retry -n 3 ${BAZEL} fetch //src/... //third_party:all \
-  && retry -n 2 ${BAZEL} build ${BAZEL_ARGS} --config=release \
-      //src/... //third_party:all \
-  && ${BAZEL} test --config=release \
+  retry -n 3 ${BAZEL} ${BAZEL_ARGS} fetch //src/... //third_party:all \
+  && retry -n 2 ${BAZEL} ${BAZEL_ARGS} build ${BAZEL_BUILD_ARGS} \
+    --config=release //src/... //third_party:all \
+  && ${BAZEL} ${BAZEL_ARGS} test --config=release \
       //src/... //third_party:all \
     || error_exit 'Failed release tests.'
 fi
 
 read ENDPOINTS_RUNTIME_VERSION < ${ROOT}/include/version
-BAZEL_VERSION="$(${BAZEL} version | grep '^Build label: ' | sed 's/^Build label: //')"
+BAZEL_VERSION="$(${BAZEL} ${BAZEL_ARGS} version \
+  | grep '^Build label: ' | sed 's/^Build label: //')"
 echo "Bazel ${BAZEL_VERSION}" > "${ROOT}/src/nginx/main/built_using"
 DEB="${ROOT}/bazel-bin/src/nginx/main/endpoints-server-proxy.deb"
 NGINX="${ROOT}/bazel-bin/src/nginx/main/nginx-esp"
@@ -99,11 +100,13 @@ fi
 
 if ! [[ -e "${TMP_DEBIAN_PACKAGE}" ]]; then
   echo 'Building debug nginx....'
-  ${BAZEL} build ${BAZEL_ARGS} -c dbg //src/nginx/main:nginx-esp
+  ${BAZEL} ${BAZEL_ARGS} build ${BAZEL_BUILD_ARGS} \
+    -c dbg //src/nginx/main:nginx-esp
   echo 'Copying debug nginx...'
   cp -f "${NGINX}" "${ROOT}/src/nginx/main/nginx-debug"
   echo 'Building Endpoints Runtime .deb package.'
-  ${BAZEL} build ${BAZEL_ARGS} --config=release //src/nginx/main:endpoints-server-proxy \
+  ${BAZEL} ${BAZEL_ARGS} build ${BAZEL_BUILD_ARGS} \
+    --config=release //src/nginx/main:endpoints-server-proxy \
     || error_exit 'Failed to build Endpoints Runtime .deb package.'
 
   if [[ -n "${RELEASE_DEB}" ]]; then
@@ -119,22 +122,27 @@ fi
 
 # Build docker container image for FLEX deployment.
 if [[ -n "${RELEASE_FLEX_IMAGE_FORMAT}" ]]; then
-  FLEX_IMAGE="$(git show -q HEAD --pretty=format:"${RELEASE_FLEX_IMAGE_FORMAT}")"
-  ${ROOT}/script/linux-build-docker -d "${TMP_DEBIAN_PACKAGE}" -i "${FLEX_IMAGE}" -p flex \
+  FLEX_IMAGE="$(git show -q HEAD \
+    --pretty=format:"${RELEASE_FLEX_IMAGE_FORMAT}")"
+  ${ROOT}/script/linux-build-docker -d "${TMP_DEBIAN_PACKAGE}" \
+    -i "${FLEX_IMAGE}" -p flex \
     || error_exit 'Failed to build a Flex Docker Image.'
 fi
 
 # Build docker container image for GKE/GCE deployment.
 if  [[ -n "${RELEASE_GENERIC_IMAGE_FORMAT}" ]]; then
-  GENERIC_IMAGE="$(git show -q HEAD --pretty=format:"${RELEASE_GENERIC_IMAGE_FORMAT}")"
-  ${ROOT}/script/linux-build-docker -c "${CONFIG}" -d "${TMP_DEBIAN_PACKAGE}" -i "${GENERIC_IMAGE}" -p generic \
+  GENERIC_IMAGE="$(git show -q HEAD \
+    --pretty=format:"${RELEASE_GENERIC_IMAGE_FORMAT}")"
+  ${ROOT}/script/linux-build-docker -c "${CONFIG}" \
+    -d "${TMP_DEBIAN_PACKAGE}" -i "${GENERIC_IMAGE}" -p generic \
     || error_exit 'Failed to build a generic Docker Image.'
 fi
 
 if [[ -n "${RELEASE_JSON}" ]]; then
   {
     echo "Uploading results to ${RELEASE_JSON}."
-    retry -n 3 gsutil -h Content-Type:application/json cp - "${RELEASE_JSON}" <<__EOF__
+    retry -n 3 gsutil -h Content-Type:application/json cp \
+      - "${RELEASE_JSON}" <<__EOF__
 {
   "docker": "${FLEX_IMAGE}",
   "flexDocker": "${FLEX_IMAGE}",

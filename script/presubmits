@@ -46,9 +46,9 @@ function test_service_control() {
   pushd "${ROOT}/third_party/service-control-client-cxx"
   dirs
 
-  retry -n 3 ${BAZEL} fetch :all \
-    && retry -n 2 ${BAZEL} build ${BAZEL_ARGS} :all \
-    && ${BAZEL} test --test_output=errors :all \
+  retry -n 3 ${BAZEL} ${BAZEL_ARGS} fetch :all \
+    && retry -n 2 ${BAZEL} ${BAZEL_ARGS} build ${BAZEL_BUILD_ARGS} :all \
+    && ${BAZEL} ${BAZEL_ARGS} test --test_output=errors :all \
     || { echo 'Failed to run service control tests'; return 1; }
   popd
 }
@@ -64,10 +64,12 @@ function build_and_test() {
     error="${message} with config ${config}"
   fi
   echo "${message}..."
-  retry -n 3 ${BAZEL} fetch //src/... //test/src/... //third_party:all \
-    && retry -n 2 ${BAZEL} build ${BAZEL_ARGS} ${config_flag} \
+  retry -n 3 ${BAZEL} ${BAZEL_ARGS} fetch \
+    //src/... //test/src/... //third_party:all \
+    && retry -n 2 ${BAZEL} ${BAZEL_ARGS} build \
+      ${BAZEL_BUILD_ARGS} ${config_flag} \
       //src/... //test/src/... //third_party:all \
-    && ${BAZEL} test --test_output=errors ${config_flag} \
+    && ${BAZEL} ${BAZEL_ARGS} test --test_output=errors ${config_flag} \
       //src/... //test/src/... //third_party:all \
     || { echo "${error}..."; return 1; }
 }
@@ -100,9 +102,10 @@ function coverage() {
 
 function docker_tests() {
   echo 'Building a debian package...'
-  retry -n 3 ${BAZEL} fetch //src/nginx/main:endpoints-server-proxy \
-  && retry -n 2 ${BAZEL} build ${BAZEL_ARGS} --config=release \
-    //src/nginx/main:endpoints-server-proxy \
+  retry -n 3 ${BAZEL} ${BAZEL_ARGS} \
+    fetch //src/nginx/main:endpoints-server-proxy \
+  && retry -n 2 ${BAZEL} ${BAZEL_ARGS} build ${BAZEL_BUILD_ARGS} \
+    --config=release //src/nginx/main:endpoints-server-proxy \
     || { echo  'Building the debian package failed'; return 1; }
 
   echo 'Running Docker test...'

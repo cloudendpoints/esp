@@ -59,7 +59,7 @@ fi
 CLI="$ESP_ROOT/bazel-bin/test/src/espcli"
 
 if [[ ! -x ${CLI} ]]; then
-  ${BAZEL} build ${BAZEL_ARGS} //test/src:espcli \
+  ${BAZEL} ${BAZEL_ARGS} build ${BAZEL_BUILD_ARGS} //test/src:espcli \
     || error_exit "Failed to build //test/src:espcli"
 fi
 

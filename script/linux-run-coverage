@@ -57,17 +57,17 @@ function header() {
 }
 
 cd "${ROOT}"
-${BAZEL} clean
+${BAZEL} ${BAZEL_ARGS} clean
 ${ROOT}/script/obliterate
 echo "Running code coverage build."
-retry -n 3 ${BAZEL} fetch //src/... \
-  && retry -n 2 ${BAZEL} build ${BAZEL_ARGS} \
+retry -n 3 ${BAZEL} ${BAZEL_ARGS} fetch //src/... \
+  && retry -n 2 ${BAZEL} ${BAZEL_ARGS} build ${BAZEL_BUILD_ARGS} \
   --collect_code_coverage \
   --instrumentation_filter '' //src/... \
   || error_exit 'Cannot build targets.'
 
 # Run all unit tests. They are tests defined by query
-# ${BAZEL} query 'tests(//src/...) - tests(//src/nginx/t/...)'
+# ${BAZEL} ${BAZEL_ARGS} query 'tests(//src/...) - tests(//src/nginx/t/...)'
 #
 # Bazel returns the test targets as, for example:
 #   //src/api_manager:http_template_test
@@ -78,7 +78,7 @@ while read test; do
   ${ROOT}/bazel-bin/${test} \
     || error_exit "${ROOT}/bazel-bin/${test} failed."
 done < <(
-    ${BAZEL} query 'tests(//src/...) - tests(//src/nginx/t/...)' \
+    ${BAZEL} ${BAZEL_ARGS} query 'tests(//src/...) - tests(//src/nginx/t/...)' \
       | sed -e 's|^//||' -e 's|:|/|' \
       | sort
     )
@@ -101,7 +101,7 @@ while IFS=':' read package test; do
   # wants to write to the actual bazel-out directory where tools later
   # expect to find coverage data results.
   ln -s $(readlink "${ROOT}/bazel-out") \
-      "${ROOT}/bazel-bin/${package}/${test}.runfiles/${TEST_WORKSPACE}/bazel-out" \
+    "${ROOT}/bazel-bin/${package}/${test}.runfiles/${TEST_WORKSPACE}/bazel-out" \
     || error_exit "Cannot create a symlink."
 
   # Run the test.
@@ -109,7 +109,7 @@ while IFS=':' read package test; do
     "${ROOT}/bazel-bin/${package}/${test}" \
     || error_exit "${ROOT}/bazel-bin/${package}/${test} failed."
 done < <(
-    ${BAZEL} query 'tests(//src/nginx/t/...)' \
+    ${BAZEL} ${BAZEL_ARGS} query 'tests(//src/nginx/t/...)' \
       | sort
     )
 
