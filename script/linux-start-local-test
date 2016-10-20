@@ -145,6 +145,7 @@ if [[ ${MANUAL_TEST_DURATION_MINUTES} -gt 0 ]]; then
   sleep `expr "${MANUAL_TEST_DURATION_MINUTES}" \* 60`
 else
   echo 'Start basic testing'
+  cat "${TEST_ENV}"
   pushd "${ROOT}/test/client"
   ./esp_client.py \
     --test_env="${TEST_ENV}" \

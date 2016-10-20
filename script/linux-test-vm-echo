@@ -123,6 +123,7 @@ POST_FILE="${ROOT}/test/echo/esp-echo-client-secret-x509.json"
 
 echo "Start perf testing"
 pushd "${ROOT}/test/client" > /dev/null
+cat "${TEST_ENV}"
 ./esp_client.py \
   --test_env="${TEST_ENV}" \
   --host=${HOST} \
