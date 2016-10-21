@@ -280,6 +280,8 @@ void ProxyFlow::StartUpstreamWritesDone(std::shared_ptr<ProxyFlow> flow,
 }
 
 void ProxyFlow::StartUpstreamWriteMessage(std::shared_ptr<ProxyFlow> flow) {
+  flow->server_call_->UpdateRequestMessageStat(
+      static_cast<int64_t>(flow->downstream_to_upstream_buffer_.Length()));
   flow->upstream_reader_writer_->Write(
       flow->downstream_to_upstream_buffer_,
       flow->async_grpc_queue_->MakeTag([flow](bool ok) {
@@ -363,6 +365,8 @@ void ProxyFlow::StartDownstreamWriteMessage(std::shared_ptr<ProxyFlow> flow) {
       return;
     }
   }
+  flow->server_call_->UpdateResponseMessageStat(
+      static_cast<int64_t>(flow->upstream_to_downstream_buffer_.Length()));
   flow->server_call_->Write(
       flow->upstream_to_downstream_buffer_, [flow](bool ok) {
         if (!ok) {

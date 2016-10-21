@@ -49,6 +49,11 @@ class NgxEspRequest : public Request {
   virtual std::string GetUnparsedRequestPath();
   virtual std::string GetClientIP();
 
+  virtual int64_t GetGrpcRequestBytes();
+  virtual int64_t GetGrpcResponseBytes();
+  virtual int64_t GetGrpcRequestMessageCounts();
+  virtual int64_t GetGrpcResponseMessageCounts();
+
   virtual void SetAuthToken(const std::string &auth_token);
   virtual utils::Status AddHeaderToBackend(const std::string &key,
                                            const std::string &value);

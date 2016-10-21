@@ -28,8 +28,8 @@
 
 #include <functional>
 
-#include <sys/time.h>
 #include <time.h>
+#include <chrono>
 
 #include "google/api/metric.pb.h"
 #include "google/protobuf/timestamp.pb.h"
@@ -739,19 +739,20 @@ const char kLogFieldNameRequestLatency[] = "request_latency_in_ms";
 const char kLogFieldNameUrl[] = "url";
 const char kLogFieldNameErrorCause[] = "error_cause";
 
-// Convert timestamp from struct timeval to Timestamp
-Timestamp CreateTimestamp(const struct timeval& tv) {
+// Convert timestamp from time_point to Timestamp
+Timestamp CreateTimestamp(std::chrono::system_clock::time_point tp) {
   Timestamp time_stamp;
-  time_stamp.set_seconds(tv.tv_sec);
-  time_stamp.set_nanos(tv.tv_usec * 1000);
+  long long nanos = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                        tp.time_since_epoch())
+                        .count();
+
+  time_stamp.set_seconds(nanos / 1000000000);
+  time_stamp.set_nanos(nanos % 1000000000);
   return time_stamp;
 }
 
 Timestamp GetCurrentTimestamp() {
-  struct timeval tv;
-  struct timezone tz;
-  gettimeofday(&tv, &tz);
-  return CreateTimestamp(tv);
+  return CreateTimestamp(std::chrono::system_clock::now());
 }
 
 Status VerifyRequiredCheckFields(const OperationInfo& info) {

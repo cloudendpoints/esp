@@ -61,6 +61,8 @@ type ExpectedReport struct {
 	LogMessage        string
 	RequestSize       int64
 	ResponseSize      int64
+	RequestBytes      int64
+	ResponseBytes     int64
 	ResponseCode      int
 	Referer           string
 	StatusCode        string
@@ -87,6 +89,8 @@ var (
 		"serviceruntime.googleapis.com/api/producer/backend_latencies":          true,
 		"serviceruntime.googleapis.com/api/consumer/request_overhead_latencies": true,
 		"serviceruntime.googleapis.com/api/producer/request_overhead_latencies": true,
+		"serviceruntime.googleapis.com/api/consumer/streaming_durations":        true,
+		"serviceruntime.googleapis.com/api/producer/streaming_durations":        true,
 	}
 	randomLogEntries = []string{
 		"timestamp",
@@ -322,6 +326,9 @@ func CreateReport(er *ExpectedReport) servicecontrol.ReportRequest {
 			"serviceruntime.googleapis.com/api/consumer/request_sizes", er.RequestSize),
 		createDistMetricSet(&sizeDistOptions,
 			"serviceruntime.googleapis.com/api/producer/request_sizes", er.RequestSize),
+
+		createInt64MetricSet("serviceruntime.googleapis.com/api/consumer/request_bytes", er.RequestBytes),
+		createInt64MetricSet("serviceruntime.googleapis.com/api/producer/request_bytes", er.RequestBytes),
 	}
 	for name, _ := range randomMatrics {
 		ms = append(ms, createDistMetricSet(&timeDistOptions, name, int64(fakeLatency)))
@@ -331,7 +338,9 @@ func CreateReport(er *ExpectedReport) servicecontrol.ReportRequest {
 			createDistMetricSet(&sizeDistOptions,
 				"serviceruntime.googleapis.com/api/consumer/response_sizes", er.ResponseSize),
 			createDistMetricSet(&sizeDistOptions,
-				"serviceruntime.googleapis.com/api/producer/response_sizes", er.ResponseSize))
+				"serviceruntime.googleapis.com/api/producer/response_sizes", er.ResponseSize),
+			createInt64MetricSet("serviceruntime.googleapis.com/api/consumer/response_bytes", er.ResponseBytes),
+			createInt64MetricSet("serviceruntime.googleapis.com/api/producer/response_bytes", er.ResponseBytes))
 	}
 	if er.ErrorType != "" {
 		ms = append(ms,

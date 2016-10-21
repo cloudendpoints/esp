@@ -158,6 +158,17 @@ NgxEspGrpcServerCall::~NgxEspGrpcServerCall() {
   downstream_slices_.clear();
 }
 
+void NgxEspGrpcServerCall::UpdateRequestMessageStat(int64_t size) {
+  ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
+  ctx->grpc_request_bytes += size;
+  ++ctx->grpc_request_message_counts;
+}
+void NgxEspGrpcServerCall::UpdateResponseMessageStat(int64_t size) {
+  ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
+  ctx->grpc_response_bytes += size;
+  ++ctx->grpc_response_message_counts;
+}
+
 void NgxEspGrpcServerCall::AddInitialMetadata(const std::string &key,
                                               const std::string &value) {
   if (!cln_.data) {

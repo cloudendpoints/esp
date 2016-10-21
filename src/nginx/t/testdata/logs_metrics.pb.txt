@@ -192,6 +192,56 @@ metrics {
   value_type: DISTRIBUTION
 }
 metrics {
+  name: "serviceruntime.googleapis.com/api/producer/request_bytes"
+  metric_kind: DELTA
+  value_type: INT64
+}
+metrics {
+  name: "serviceruntime.googleapis.com/api/producer/response_bytes"
+  metric_kind: DELTA
+  value_type: INT64
+}
+metrics {
+  name: "serviceruntime.googleapis.com/api/consumer/request_bytes"
+  metric_kind: DELTA
+  value_type: INT64
+}
+metrics {
+  name: "serviceruntime.googleapis.com/api/consumer/response_bytes"
+  metric_kind: DELTA
+  value_type: INT64
+}
+metrics {
+  name: "serviceruntime.googleapis.com/api/producer/streaming_request_message_counts"
+  metric_kind: DELTA
+  value_type: DISTRIBUTION
+}
+metrics {
+  name: "serviceruntime.googleapis.com/api/producer/streaming_response_message_counts"
+  metric_kind: DELTA
+  value_type: DISTRIBUTION
+}
+metrics {
+  name: "serviceruntime.googleapis.com/api/consumer/streaming_request_message_counts"
+  metric_kind: DELTA
+  value_type: DISTRIBUTION
+}
+metrics {
+  name: "serviceruntime.googleapis.com/api/consumer/streaming_response_message_counts"
+  metric_kind: DELTA
+  value_type: DISTRIBUTION
+}
+metrics {
+  name: "serviceruntime.googleapis.com/api/producer/streaming_durations"
+  metric_kind: DELTA
+  value_type: DISTRIBUTION
+}
+metrics {
+  name: "serviceruntime.googleapis.com/api/consumer/streaming_durations"
+  metric_kind: DELTA
+  value_type: DISTRIBUTION
+}
+metrics {
   name: "serviceruntime.googleapis.com/api/producer/top_request_sizes_by_consumer"
   labels {
     key: "/consumer_id"
@@ -250,6 +300,11 @@ monitoring {
     metrics: "serviceruntime.googleapis.com/api/producer/top_request_count_by_consumer"
     metrics: "serviceruntime.googleapis.com/api/producer/top_request_sizes_by_consumer"
     metrics: "serviceruntime.googleapis.com/api/producer/top_response_sizes_by_consumer"
+    metrics: "serviceruntime.googleapis.com/api/producer/streaming_request_message_counts"
+    metrics: "serviceruntime.googleapis.com/api/producer/streaming_response_message_counts"
+    metrics: "serviceruntime.googleapis.com/api/producer/streaming_durations"
+    metrics: "serviceruntime.googleapis.com/api/producer/request_bytes"
+    metrics: "serviceruntime.googleapis.com/api/producer/response_bytes"
   }
   consumer_destinations {
     monitored_resource: "api"
@@ -264,5 +319,10 @@ monitoring {
     metrics: "serviceruntime.googleapis.com/api/consumer/top_request_count_by_end_user"
     metrics: "serviceruntime.googleapis.com/api/consumer/top_request_count_by_end_user_country"
     metrics: "serviceruntime.googleapis.com/api/consumer/top_request_count_by_referer"
+    metrics: "serviceruntime.googleapis.com/api/consumer/streaming_request_message_counts"
+    metrics: "serviceruntime.googleapis.com/api/consumer/streaming_response_message_counts"
+    metrics: "serviceruntime.googleapis.com/api/consumer/streaming_durations"
+    metrics: "serviceruntime.googleapis.com/api/consumer/request_bytes"
+    metrics: "serviceruntime.googleapis.com/api/consumer/response_bytes"
   }
 }

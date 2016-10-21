@@ -152,6 +152,8 @@ my $expected_report_body = ServiceControl::gen_report_body({
   'response_code' => '200',
   'request_size' => 844,
   'response_size' => 208,
+  'request_bytes' => 844,
+  'response_bytes' => 208,
   'jwtAuth' => 'issuer=NjI4NjQ1NzQxODgxLW5vYWJpdTIzZjVhOG04b3ZkOHVjdjY5OGxqNzh2djBsQGRldmVsb3Blci5nc2VydmljZWFjY291bnQuY29t&audience=ZW5kcG9pbnRzLXRlc3QuY2xvdWRlbmRwb2ludHNhcGlzLmNvbQ',
   });
 

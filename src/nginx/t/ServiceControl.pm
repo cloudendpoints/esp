@@ -45,12 +45,16 @@ my @http1_random_metrics = (
     'serviceruntime.googleapis.com/api/producer/backend_latencies',
     'serviceruntime.googleapis.com/api/consumer/request_overhead_latencies',
     'serviceruntime.googleapis.com/api/producer/request_overhead_latencies',
+    'serviceruntime.googleapis.com/api/consumer/streaming_durations',
+    'serviceruntime.googleapis.com/api/producer/streaming_durations',
 );
 
 my @http2_random_metrics = (
     @http1_random_metrics,
     'serviceruntime.googleapis.com/api/consumer/response_sizes',
     'serviceruntime.googleapis.com/api/producer/response_sizes',
+    'serviceruntime.googleapis.com/api/consumer/response_bytes',
+    'serviceruntime.googleapis.com/api/producer/response_bytes',
 );
 
 sub gen_metric_int64 {
@@ -221,6 +225,43 @@ sub gen_report_body {
     if ($send_consumer_metric)  {
       push @metrics, gen_metric_dist(\%size_distribution,
               'serviceruntime.googleapis.com/api/consumer/response_sizes', $in->{response_size});
+    }
+  }
+
+  if (exists $in->{streaming_request_message_counts}) {
+    push @metrics, gen_metric_dist(\%size_distribution,
+            'serviceruntime.googleapis.com/api/producer/streaming_request_message_counts', $in->{streaming_request_message_counts});
+    if ($send_consumer_metric)  {
+      push @metrics, gen_metric_dist(\%size_distribution,
+              'serviceruntime.googleapis.com/api/consumer/streaming_request_message_counts', $in->{streaming_request_message_counts});
+    }
+  }
+
+  if (exists $in->{streaming_response_message_counts}) {
+    push @metrics, gen_metric_dist(\%size_distribution,
+            'serviceruntime.googleapis.com/api/producer/streaming_response_message_counts', $in->{streaming_response_message_counts});
+    if ($send_consumer_metric)  {
+      push @metrics, gen_metric_dist(\%size_distribution,
+              'serviceruntime.googleapis.com/api/consumer/streaming_response_message_counts', $in->{streaming_response_message_counts});
+    }
+  }
+
+
+  if (exists $in->{request_bytes}) {
+    push @metrics, gen_metric_int64(
+            'serviceruntime.googleapis.com/api/producer/request_bytes', $in->{request_bytes});
+    if ($send_consumer_metric)  {
+      push @metrics, gen_metric_int64(
+              'serviceruntime.googleapis.com/api/consumer/request_bytes', $in->{request_bytes});
+    }
+  }
+
+  if (exists $in->{response_bytes}) {
+    push @metrics, gen_metric_int64(
+            'serviceruntime.googleapis.com/api/producer/response_bytes', $in->{response_bytes});
+    if ($send_consumer_metric)  {
+      push @metrics, gen_metric_int64(
+              'serviceruntime.googleapis.com/api/consumer/response_bytes', $in->{response_bytes});
     }
   }
 

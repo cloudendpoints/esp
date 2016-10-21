@@ -55,6 +55,12 @@ class Request {
   // This will be used by service control Check() call.
   virtual std::string GetClientIP() = 0;
 
+  // Get GRPC stats.
+  virtual int64_t GetGrpcRequestBytes() = 0;
+  virtual int64_t GetGrpcResponseBytes() = 0;
+  virtual int64_t GetGrpcRequestMessageCounts() = 0;
+  virtual int64_t GetGrpcResponseMessageCounts() = 0;
+
   // Finds a HTTP query parameter with a name. Returns true if found.
   virtual bool FindQuery(const std::string &name, std::string *query) = 0;
 

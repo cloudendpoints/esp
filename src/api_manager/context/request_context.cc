@@ -80,8 +80,7 @@ using context::ServiceContext;
 RequestContext::RequestContext(std::shared_ptr<ServiceContext> service_context,
                                std::unique_ptr<Request> request)
     : service_context_(service_context), request_(std::move(request)) {
-  struct timezone tz;
-  gettimeofday(&start_time_, &tz);
+  start_time_ = std::chrono::system_clock::now();
   operation_id_ = GenerateUUID();
   const std::string &method = request_->GetRequestHTTPMethod();
   const std::string &path = request_->GetRequestPath();
@@ -245,6 +244,26 @@ void RequestContext::FillReportRequestInfo(
 
   info->request_size = response->GetRequestSize();
   info->response_size = response->GetResponseSize();
+
+  // GetGrpcRequestBytes/GetGrpcResponseBytes  returns the size of messages
+  // during intermediate grpc streaming call, and the headers are not counted.
+  // Thus it is less than request_size/response_size which include headers. Here
+  // we report the larger one to be consistent with non-streaming case.
+  info->request_bytes =
+      std::max(info->request_size, request_->GetGrpcRequestBytes());
+  info->response_bytes =
+      std::max(info->response_size, request_->GetGrpcResponseBytes());
+
+  info->streaming_request_message_counts =
+      request_->GetGrpcRequestMessageCounts();
+  info->streaming_response_message_counts =
+      request_->GetGrpcResponseMessageCounts();
+
+  info->streaming_durations =
+      std::chrono::duration_cast<std::chrono::microseconds>(
+          std::chrono::system_clock::now() - start_time_)
+          .count();
+
   info->status = response->GetResponseStatus();
   info->response_code = info->status.HttpCode();
   info->protocol = request_->GetRequestProtocol();

@@ -58,6 +58,9 @@ class ServerCall {
       const utils::Status &status,
       std::multimap<std::string, std::string> response_trailers) = 0;
   virtual void RecordBackendTime(int64_t backend_time) = 0;
+
+  virtual void UpdateRequestMessageStat(int64_t size) = 0;
+  virtual void UpdateResponseMessageStat(int64_t size) = 0;
 };
 
 }  // namespace grpc

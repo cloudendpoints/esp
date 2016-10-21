@@ -26,6 +26,7 @@
 #ifndef NGINX_NGX_ESP_MODULE_H_
 #define NGINX_NGX_ESP_MODULE_H_
 
+#include <atomic>
 #include <map>
 #include <memory>
 #include <string>
@@ -225,6 +226,12 @@ struct ngx_esp_request_ctx_s {
 
   // The backend request time in milliseconds. -1 if not available.
   int64_t backend_time;
+
+  // Streaming metrics from grpc calls.
+  std::atomic_int_fast64_t grpc_request_bytes;
+  std::atomic_int_fast64_t grpc_response_bytes;
+  std::atomic_int_fast64_t grpc_request_message_counts;
+  std::atomic_int_fast64_t grpc_response_message_counts;
 
   // HTTP upstream subrequest connection
   ngx_esp_http_connection *http_subrequest;

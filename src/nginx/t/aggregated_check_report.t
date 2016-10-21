@@ -156,6 +156,8 @@ my $expected_report_body = ServiceControl::gen_report_body({
   'response_code' => '200',
   'request_size' => 62,
   'response_size' => 104,
+  'request_bytes' => 62,
+  'response_bytes' => 104,
   });
 ServiceControl::aggregate_report_body($expected_report_body, 3);
 
