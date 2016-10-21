@@ -32,7 +32,7 @@ if [[ $UID -ne 0 ]]; then
 fi
 
 [[ -z "${PLATFORM}" ]] && PLATFORM='debian-8'
-TOOLS_BUCKET=''
+TOOLS_DIR='/tmp/esp-tools'
 
 # Library of useful utilities.
 function set_gcloud() {

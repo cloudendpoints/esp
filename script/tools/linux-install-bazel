@@ -38,7 +38,7 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Release 0.3.2 (2016-10-07)
 BAZEL_VERSION='b6154cc4d1ac1c86e698dfa95ded656ea254c3e0'
-BAZEL_DIRECTORY="${HOME}/bazel"
+BAZEL_DIRECTORY="${TOOLS_DIR}/bazel"
 
 function clone_bazel() {
   local dir="${1}"

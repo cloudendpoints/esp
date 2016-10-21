@@ -89,6 +89,8 @@ while getopts :b:p: arg; do
   esac
 done
 
+[[ -z "${PLATFORM}" ]] && error_exit 'PLATFORM is not set'
+
 echo 'Clearing packages in apt'
 ${SUDO} apt-get clean
 
@@ -98,6 +100,11 @@ retry ${SUDO} pip install --upgrade python-gflags || error_exit 'Cannot install 
 
 # Installing tools
 echo "Installing tools if necessary"
+if [[ -d "${TOOLS_DIR}" ]]; then
+  [[ -n "${SUDO}" ]] && ${SUDO} chown -R "${USER}" "${TOOLS_DIR}"
+else
+  mkdir -p "${TOOLS_DIR}" -m 0777
+fi
 update_clang
 update_gcloud
 update_bazel

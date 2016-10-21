@@ -417,7 +417,7 @@ Stages
  */
 
 def buildPackages() {
-  checkoutSourceCode()
+  setupNode()
   def espImgGeneric = espDockerImage()
   def serverConfig = getParam('SERVER_CONFIG')
   def serverConfigFlag = ''
@@ -471,8 +471,7 @@ def buildPackages() {
 }
 
 def buildBookstoreImage() {
-  setGCloud()
-  checkoutSourceCode()
+  setupNode()
   def bookstoreImg = bookstoreDockerImage()
   sh("test/bookstore/linux-build-bookstore-docker -i ${bookstoreImg}")
 }
@@ -480,16 +479,14 @@ def buildBookstoreImage() {
 def buildGrcpTest() {
   def gRpcEchoServerImg = gRpcTestServerImage('echo')
   def gRpcInteropServerImg = gRpcTestServerImage('interop')
-  setGCloud()
-  checkoutSourceCode()
+  setupNode()
   sh("test/grpc/linux-build-grpc-docker -i ${gRpcEchoServerImg}")
   sh("test/grpc/linux-build-grpc-docker -o -i ${gRpcInteropServerImg}")
 }
 
 def buildAndStash(buildTarget, stashTarget, name) {
   if (pathExistsCloudStorage(stashArchivePath(name))) return
-  setGCloud()
-  checkoutSourceCode()
+  setupNode()
   // Turns out Bazel does not like to be terminated.
   // Timing out after 40 minutes.
   timeout(40) {
@@ -502,8 +499,7 @@ def buildAndStash(buildTarget, stashTarget, name) {
 }
 
 def testCleanup(daysOld, project, flags) {
-  setGCloud()
-  checkoutSourceCode()
+  setupNode()
   sh("script/jenkins-tests-cleanup.sh -d ${daysOld} -p ${project} -f ${flags}")
 }
 
@@ -528,8 +524,7 @@ def updateGerrit(flow, success = false) {
 }
 
 def buildNewDockerSlave(nodeLabel) {
-  setGCloud()
-  checkoutSourceCode()
+  setupNode()
   def dockerImage = "${DOCKER_SLAVES[nodeLabel]}:${GIT_SHA}"
   // Test Slave image setup in Jenkins
   def testDockerImage = "${DOCKER_SLAVES[nodeLabel]}:test"
@@ -543,8 +538,7 @@ def buildNewDockerSlave(nodeLabel) {
       "-T \"${TOOLS_BUCKET}\"")
   echo("Testing ${testDockerImage}")
   node(getTestSlaveLabel(nodeLabel)) {
-    setGCloud()
-    checkoutSourceCode()
+    setupNode()
     sh('jenkins/slaves/slave-test')
   }
   echo("Retagging ${testDockerImage} to ${dockerImage}")
@@ -570,8 +564,7 @@ def e2eCommonOptions(testId, prefix = '') {
 //  'echo': run grpc echo pass_through and transcoding tests
 //  'interop': run grpc interop pass_through test.
 def e2eGKE(coupling, proto, grpc = 'off') {
-  setGCloud()
-  checkoutSourceCode()
+  setupNode()
   fastUnstash('tools')
   def uniqueID = getUniqueID("gke-${coupling}-${proto}", true)
   def serviceName = generateServiceName(uniqueID)
@@ -594,8 +587,7 @@ def e2eGKE(coupling, proto, grpc = 'off') {
 }
 
 def e2eGCE(vmImage) {
-  setGCloud()
-  checkoutSourceCode()
+  setupNode()
   fastUnstash('tools')
   def commonOptions = e2eCommonOptions('gce-raw')
   def espDebianPkg = espDebianPackage()
@@ -613,8 +605,7 @@ def localPerformanceTest() {
   // This will not work for staging or server-config.
   // In order to fully support this we'll need to use the debian
   // packages created in buildPackages().
-  setGCloud()
-  checkoutSourceCode()
+  setupNode()
   if (pathExistsCloudStorage(stashArchivePath('nginx-esp'))) {
     // Using binary build by buildArtifacts()
     fastUnstash('tools')
@@ -635,8 +626,7 @@ def localPerformanceTest() {
 }
 
 def flexPerformance() {
-  setGCloud()
-  checkoutSourceCode()
+  setupNode()
   fastUnstash('tools')
   def testId = 'jenkins-perf-test-vm-esp'
   def uniqueId = getUniqueID('flex-perf', false)
@@ -654,8 +644,7 @@ def flexPerformance() {
 }
 
 def e2eFlex(endpoints, flex) {
-  setGCloud()
-  checkoutSourceCode()
+  setupNode()
   fastUnstash('tools')
   def espImgFlex = espFlexDockerImage()
   def rcTestVersion = getUniqueID('', false)
@@ -679,8 +668,7 @@ def e2eFlex(endpoints, flex) {
 
 def presubmitTests(scenario, checkoutCode = true) {
   if (checkoutCode) {
-    setGCloud()
-    checkoutSourceCode()
+    setupNode()
   }
   def logBucket = "gs://${BUCKET}/${GIT_SHA}/logs"
   def uniqueId = getUniqueID(scenario, true)
@@ -778,6 +766,11 @@ def createServerConfigTag() {
 def failBranch(errorMessage) {
   echo(errorMessage)
   error(errorMessage)
+}
+
+def setupNode() {
+  checkoutSourceCode()
+  sh "script/jenkins-init-slaves.sh -z ${ZONE} -c ${CLUSTER}"
 }
 
 def getUniqueID(testId, useSha) {
@@ -931,18 +924,7 @@ def initialize(setup = false, authDaemon = true) {
   }
 }
 
-def setGCloud() {
-  retry(5) {
-    timeout(1) {
-      sh("gcloud config set compute/zone ${ZONE}")
-      sh("gcloud container clusters get-credentials ${CLUSTER}")
-      if (getParam('GCLOUD_URL') != '') {
-        sh('sudo gcloud components update -q')
-      }
-    }
-    sleep(5)
-  }
-}
+
 
 def setGitAuthDaemon() {
   sh('''#!/bin/bash
