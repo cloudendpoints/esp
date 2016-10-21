@@ -24,14 +24,17 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
-
 #include <map>
 #include <memory>
 #include <sstream>
 
+#include <unistd.h>
+
 #include <gflags/gflags.h>
-#include <grpc++/grpc++.h>
+#include <grpc++/channel.h>
+#include <grpc++/client_context.h>
 #include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
@@ -182,6 +185,8 @@ int main(int argc, char **argv) {
     client.DoStatusWithMessage();
   } else if (FLAGS_test_case == "custom_metadata") {
     client.DoCustomMetadata();
+  } else if (FLAGS_test_case == "cacheable_unary") {
+    client.DoCacheableUnary();
   } else if (FLAGS_test_case == "all") {
     client.DoEmpty();
     client.DoLargeUnary();
@@ -199,6 +204,7 @@ int main(int argc, char **argv) {
     client.DoEmptyStream();
     client.DoStatusWithMessage();
     client.DoCustomMetadata();
+    client.DoCacheableUnary();
     // service_account_creds and jwt_token_creds can only run with ssl.
     if (FLAGS_use_tls) {
       grpc::string json_key = GetServiceAccountJsonKey();
@@ -210,6 +216,7 @@ int main(int argc, char **argv) {
     // compute_engine_creds only runs in GCE.
   } else {
     const char *testcases[] = {"all",
+                               "cacheable_unary",
                                "cancel_after_begin",
                                "cancel_after_first_response",
                                "client_compressed_streaming",
@@ -231,7 +238,8 @@ int main(int argc, char **argv) {
                                "server_compressed_unary",
                                "server_streaming",
                                "status_code_and_message",
-                               "timeout_on_sleeping_server"};
+                               "timeout_on_sleeping_server",
+                               "unimplemented_method"};
     char *joined_testcases =
         gpr_strjoin_sep(testcases, GPR_ARRAY_SIZE(testcases), "\n", NULL);
 
