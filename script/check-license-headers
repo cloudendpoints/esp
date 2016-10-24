@@ -35,7 +35,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
   || { echo "Cannot load Bash utilities" ; exit 1 ; }
 
 function is_source_code_file() {
-  first_line="$(head -1 ${1} | xargs)"
+  first_line="$(head -1 ${1} | xargs --null)"
   filename="$(echo ${1} |awk -F / '{print $NF}')"
   [[ "${filename}" == 'BUILD' ]] && return 0
   [[ "${first_line}" == '#!/bin/bash' ]] && return 0
