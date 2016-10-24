@@ -103,6 +103,10 @@ http {
       endpoints_status;
       access_log off;
     }
+    location /healthz {
+      return 200;
+      access_log off;
+    }
     location / {
       root /dev/null;
     }
