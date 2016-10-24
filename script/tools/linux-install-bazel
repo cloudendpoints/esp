@@ -56,7 +56,7 @@ function build_bazel() {
   && git fetch origin \
   && git fetch origin --tags \
   && git reset --hard ${BAZEL_VERSION} \
-  && ./compile.sh \
+  && BAZEL_ARGS='' ./compile.sh \
   && ./output/bazel shutdown \
   && rm -rf ${HOME}/.cache/bazel \
   && ${SUDO} cp ./output/bazel /usr/local/bin/bazel \

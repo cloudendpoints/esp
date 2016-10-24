@@ -619,7 +619,6 @@ def localPerformanceTest() {
       script: "script/create-test-env-json " +
           "-t ${testId} " +
           "-i ${uniqueId}").trim()
-  sh('script/linux-prep-machine')
   sh("script/linux-start-local-test " +
       "-t ${testEnv} " +
       "-b ${logBucket}")
