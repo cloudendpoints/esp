@@ -42,7 +42,7 @@ my $NginxPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $GrpcServerPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(27);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(30);
 
 $t->write_file('service.json',
   ApiManager::get_transcoding_test_service_config(
@@ -201,6 +201,14 @@ EOF
 like($response, qr/HTTP\/1\.1 400 Bad Request/, 'Got a 400.');
 like($response, qr/Content-Type: application\/json/i, 'Content-type is application/json');
 like($response, qr/Expected : between key:value pair./i, "Got the missing colon message");
+
+# 9. Api key missing
+$response = ApiManager::http_get($NginxPort,'/shelves/1');
+
+like($response, qr/HTTP\/1\.1 401 Unauthorized/, 'Got a 401.');
+like($response, qr/Content-Type: application\/json/i, 'Content-type is application/json');
+like($response, qr/Method doesn't allow unregistered callers/i,
+  'Got the "unregistered caller" message');
 
 ################################################################################
 
