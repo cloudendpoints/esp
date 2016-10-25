@@ -33,6 +33,12 @@ build:tsan_nopie --copt -DGRPC_TSAN
 build:tsan_nopie --linkopt -fsanitize=thread
 build:tsan_nopie --linkopt -Wl,-ltsan
 
+# Explicitly instruct the compiler to use the gold linker. TSAN uses linker
+# options (e.g., --push-state) that are only available in gold linker. On some
+# linux versions (e.g., Travis's latest trusty), specifying -fsanitize=thread
+# doesn't automatically use the gold linker.
+build:tsan_nopie --linkopt -fuse-ld=gold
+
 # Release builds
 build:release -c opt
 
