@@ -45,7 +45,7 @@ my $GrpcServerPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(20);
 
-$t->write_file('service.json',
+$t->write_file('service.pb.txt',
   ApiManager::get_transcoding_test_service_config(
     'endpoints-transcoding-test.cloudendpointsapis.com',
     "http://127.0.0.1:${ServiceControlPort}"));
@@ -66,7 +66,7 @@ http {
     server_name localhost;
     location / {
       endpoints {
-        api service.json;
+        api service.pb.txt;
         server_config server_config.pb.txt;
         on;
       }

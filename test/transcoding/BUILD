@@ -60,5 +60,5 @@ cc_binary(
     ],
 )
 
-# Export service.json such that the tests can use it
-exports_files(["service.json"])
+# Export service.pb.txt such that the tests can use it
+exports_files(["service.pb.txt"])

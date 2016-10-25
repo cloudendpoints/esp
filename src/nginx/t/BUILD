@@ -265,7 +265,7 @@ nginx_suite(
         "//test/grpc:local/service.json",
         "//test/transcoding:bookstore-client",
         "//test/transcoding:bookstore-server",
-        "//test/transcoding:service.json",
+        "//test/transcoding:service.pb.txt",
     ],
     nginx = "//src/nginx/main:nginx-esp",
     tests = [

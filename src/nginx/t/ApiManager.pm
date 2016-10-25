@@ -254,7 +254,7 @@ sub get_grpc_interop_service_config {
 
 sub get_transcoding_test_service_config {
   my ($host_name, $service_control_address) = @_;
-  my $path = './test/transcoding/service.json';
+  my $path = './test/transcoding/service.pb.txt';
   my $service_config = read_file_using_full_path($path);
   # Replace the host name
   $service_config =~ s/<YOUR_PROJECT_ID>.appspot.com/$host_name/;
