@@ -1,8 +1,0 @@
-# ThreadSanitizer suppressions file for ESP
-
-# TSAN is unable to capture how NGINX uses eventfd and epoll to synchronize
-# writing and then reading the ngx_notify handler in
-# third_party/nginx/src/event/modules/ngx_epoll_module.c.
-# There will be a true data race, if another NGINX module uses ngx_notify, but
-# that's not what TSAN is complaining about.
-race:ngx_epoll_notify_handler

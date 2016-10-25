@@ -34,6 +34,7 @@
 
 extern "C" {
 #include "ngx_core.h"
+#include "ngx_event.h"
 }
 
 #include "include/api_manager/async_grpc_queue.h"
@@ -72,6 +73,8 @@ class NgxEspGrpcQueue : public AsyncGrpcQueue {
   // The completion queue processed by the library.  Tags queued to
   // this queue must be created by MakeTag or AllocTag.
   virtual ::grpc::CompletionQueue *GetQueue() { return cq_.get(); }
+
+  void Init(ngx_cycle_t *cycle);
 
  private:
   static std::weak_ptr<NgxEspGrpcQueue> instance;
@@ -134,6 +137,7 @@ class NgxEspGrpcQueue : public AsyncGrpcQueue {
   void DrainPending();
 
   std::mutex mu_;
+  ngx_event_t notify_;
   std::unique_ptr<::grpc::CompletionQueue> cq_;
   std::deque<Finalizer> pending_;
   bool notified_;

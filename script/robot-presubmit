@@ -69,9 +69,6 @@ done
   bazel build //test/src/... \
     || error_exit "Bazel build failed for //test/src/..."
 
-  bazel build //third_party/nginx:nginx \
-    || error_exit "Bazel build failed for //third_party/nginx:nginx"
-
   # Test Perl test rules.
 
   bazel test //test/perl:test_pass \

@@ -94,13 +94,9 @@ nginx_suite(
     size = "small",
     data = [
         "matching-client-secret.json",
-        "testdata/grpc_tsan_suppressions",
         "//test/grpc:grpc-test-client",
         "//test/grpc:grpc-test-server",
     ],
-    env = {
-        "TSAN_OPTIONS": "suppressions=./src/nginx/t/testdata/grpc_tsan_suppressions",
-    },
     nginx = "//src/nginx/main:nginx-esp",
     tests = [
         "grpc_api_key.t",
@@ -129,13 +125,9 @@ nginx_suite(
 nginx_suite(
     size = "small",
     data = [
-        "testdata/grpc_tsan_suppressions",
         "//test/grpc:interop-client",
         "//test/grpc:interop-server",
     ],
-    env = {
-        "TSAN_OPTIONS": "suppressions=./src/nginx/t/testdata/grpc_tsan_suppressions",
-    },
     nginx = "//src/nginx/main:nginx-esp",
     tests = [
         "grpc_interop_metadata.t",
@@ -151,13 +143,9 @@ nginx_suite(
 nginx_suite(
     size = "medium",
     data = [
-        "testdata/grpc_tsan_suppressions",
         "//test/grpc:grpc-test-client",
         "//test/grpc:grpc-test-server",
     ],
-    env = {
-        "TSAN_OPTIONS": "suppressions=./src/nginx/t/testdata/grpc_tsan_suppressions",
-    },
     nginx = "//src/nginx/main:nginx-esp",
     tests = [
         "grpc_ministress.t",
@@ -272,16 +260,12 @@ nginx_suite(
 nginx_suite(
     size = "small",
     data = [
-        "testdata/grpc_tsan_suppressions",
         "//test/grpc:grpc-test-server",
         "//test/grpc:local/service.json",
         "//test/transcoding:bookstore-client",
         "//test/transcoding:bookstore-server",
         "//test/transcoding:service.json",
     ],
-    env = {
-        "TSAN_OPTIONS": "suppressions=./src/nginx/t/testdata/grpc_tsan_suppressions",
-    },
     nginx = "//src/nginx/main:nginx-esp",
     tests = [
         "transcoding.t",

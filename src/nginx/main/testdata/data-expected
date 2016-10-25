@@ -32,6 +32,9 @@
 ./usr/share/doc/
 ./usr/share/doc/nginx-google/
 ./usr/share/doc/nginx-google/copyright
+./usr/share/man/
+./usr/share/man/man8/
+./usr/share/man/man8/nginx.8
 ./usr/share/nginx/
 ./usr/share/nginx/html/
 ./usr/share/nginx/html/50x.html

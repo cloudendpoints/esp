@@ -265,11 +265,16 @@ extern ngx_module_t  ngx_mail_proxy_module;
 #if (NGX_STREAM)
 extern ngx_module_t  ngx_stream_module;
 extern ngx_module_t  ngx_stream_core_module;
+extern ngx_module_t  ngx_stream_log_module;
 extern ngx_module_t  ngx_stream_proxy_module;
 extern ngx_module_t  ngx_stream_upstream_module;
+extern ngx_module_t  ngx_stream_write_filter_module;
 #endif
 #if (NGX_STREAM_SSL)
 extern ngx_module_t  ngx_stream_ssl_module;
+#endif
+#if (NGX_STREAM_REALIP)
+extern ngx_module_t  ngx_stream_realip_module;
 #endif
 #if (NGX_STREAM_LIMIT_CONN)
 extern ngx_module_t  ngx_stream_limit_conn_module;
@@ -297,6 +302,9 @@ extern ngx_module_t  ngx_stream_upstream_least_conn_module;
 #endif
 #if (NGX_STREAM_UPSTREAM_ZONE)
 extern ngx_module_t  ngx_stream_upstream_zone_module;
+#endif
+#if (NGX_STREAM_SSL_PREREAD)
+extern ngx_module_t  ngx_stream_ssl_preread_module;
 #endif
 
 #if 0
@@ -538,11 +546,16 @@ ngx_module_t *ngx_modules[] = {
 #if (NGX_STREAM)
     &ngx_stream_module,
     &ngx_stream_core_module,
+    &ngx_stream_log_module,
     &ngx_stream_proxy_module,
     &ngx_stream_upstream_module,
+    &ngx_stream_write_filter_module,
 #endif
 #if (NGX_STREAM_SSL)
     &ngx_stream_ssl_module,
+#endif
+#if (NGX_STREAM_REALIP)
+    &ngx_stream_realip_module,
 #endif
 #if (NGX_STREAM_LIMIT_CONN)
     &ngx_stream_limit_conn_module,
@@ -570,6 +583,9 @@ ngx_module_t *ngx_modules[] = {
 #endif
 #if (NGX_STREAM_UPSTREAM_ZONE)
     &ngx_stream_upstream_zone_module,
+#endif
+#if (NGX_STREAM_SSL_PREREAD)
+    &ngx_stream_ssl_preread_module,
 #endif
 
 #if 0
@@ -812,11 +828,16 @@ char *ngx_module_names[] = {
 #if (NGX_STREAM)
     "ngx_stream_module",
     "ngx_stream_core_module",
+    "ngx_stream_log_module",
     "ngx_stream_proxy_module",
     "ngx_stream_upstream_module",
+    "ngx_stream_write_filter_module",
 #endif
 #if (NGX_STREAM_SSL)
     "ngx_stream_ssl_module",
+#endif
+#if (NGX_STREAM_REALIP)
+    "ngx_stream_realip_module",
 #endif
 #if (NGX_STREAM_LIMIT_CONN)
     "ngx_stream_limit_conn_module",
@@ -844,6 +865,9 @@ char *ngx_module_names[] = {
 #endif
 #if (NGX_STREAM_UPSTREAM_ZONE)
     "ngx_stream_upstream_zone_module",
+#endif
+#if (NGX_STREAM_SSL_PREREAD)
+    "ngx_stream_ssl_preread_module",
 #endif
 
 #if 0
@@ -908,18 +932,19 @@ ngx_show_configure_options(void)
 #endif
 #endif
 
+#if (NGX_COMPAT)
+    ngx_write_stderr(" --with-compat");
+#endif
 #if (NGX_DEBUG)
     ngx_write_stderr(" --with-debug");
 #endif
 #if (NGX_HAVE_FILE_AIO)
     ngx_write_stderr(" --with-file-aio");
 #endif
-#if (NGX_HAVE_INET6)
-    ngx_write_stderr(" --with-ipv6");
-#endif
 #if (NGX_THREADS)
     ngx_write_stderr(" --with-threads");
 #endif
+
 #if (NGX_HAVE_POLL)
     ngx_write_stderr(" --with-poll_module");
 #endif
@@ -1091,8 +1116,14 @@ ngx_show_configure_options(void)
 
 #if (NGX_STREAM)
     ngx_write_stderr(" --with-stream");
+#if (NGX_STREAM_REALIP)
+    ngx_write_stderr(" --with-stream_realip_module");
+#endif
 #if (NGX_STREAM_SSL)
     ngx_write_stderr(" --with-stream_ssl_module");
+#endif
+#if (NGX_STREAM_SSL_PREREAD)
+    ngx_write_stderr(" --with-stream_ssl_preread_module");
 #endif
 #if !(NGX_STREAM_ACCESS)
     ngx_write_stderr(" --without-stream_access_module");

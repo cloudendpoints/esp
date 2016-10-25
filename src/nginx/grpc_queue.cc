@@ -110,6 +110,10 @@ std::shared_ptr<NgxEspGrpcQueue> NgxEspGrpcQueue::TryInstance() {
   return instance.lock();
 }
 
+void NgxEspGrpcQueue::Init(ngx_cycle_t *cycle) {
+  ngx_notify_init(&notify_, NginxTagHandler, cycle);
+}
+
 // Runs GRPC event callbacks on the main nginx thread.
 void NgxEspGrpcQueue::NginxTagHandler(ngx_event_t *) {
   std::shared_ptr<NgxEspGrpcQueue> queue = TryInstance();
@@ -134,7 +138,7 @@ void NgxEspGrpcQueue::WorkerThread(NgxEspGrpcQueue *queue) {
         }
       }
       if (notify_nginx) {
-        ngx_notify(&NginxTagHandler);
+        ngx_notify(&queue->notify_);
       }
     }
   }

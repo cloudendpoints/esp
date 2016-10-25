@@ -32,6 +32,7 @@
 #include <core/ngx_string.h>
 #include <memory>
 
+#include "module.h"
 #include "src/nginx/config.h"
 #include "src/nginx/environment.h"
 #include "src/nginx/error.h"
@@ -1026,6 +1027,7 @@ ngx_int_t ngx_esp_init_process(ngx_cycle_t *cycle) {
     }
     if (lc->grpc_pass && !mc->grpc_queue) {
       mc->grpc_queue = NgxEspGrpcQueue::Instance();
+      mc->grpc_queue->Init(cycle);
     }
   }
 
