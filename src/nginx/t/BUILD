@@ -172,6 +172,7 @@ nginx_suite(
         "check_report_body.t",
         "check_report_metrics.t",
         "check_with_token.t",
+        "config_extra_field.t",
         "config_missing.t",
         "cors.t",
         "failed_check.t",
