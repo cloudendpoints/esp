@@ -1294,8 +1294,6 @@ http {
     delete: "/shelves/{shelf}/books/{book}"
   }
 }
-authentication {
-}
 context {
 }
 usage {

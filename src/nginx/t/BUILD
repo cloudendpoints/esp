@@ -261,6 +261,7 @@ nginx_suite(
 nginx_suite(
     size = "small",
     data = [
+        "matching-client-secret.json",
         "//test/grpc:grpc-test-server",
         "//test/grpc:local/service.json",
         "//test/transcoding:bookstore-client",
@@ -270,6 +271,7 @@ nginx_suite(
     nginx = "//src/nginx/main:nginx-esp",
     tests = [
         "transcoding.t",
+        "transcoding_auth.t",
         "transcoding_bindings.t",
         "transcoding_errors.t",
         "transcoding_large.t",

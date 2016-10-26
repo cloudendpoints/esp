@@ -21,6 +21,8 @@ The `service.pb.txt` service config file used in this sample is generated from
    it in proto text format),
  - move the values containing `<YOUR_PROJECT_ID>` and the `control` section to
    the top of the file, s.t. it's easier to edit.
+ - remove the `authentication` section to allow `transcoding_auth.t` test add a
+   test sepcific `authentication` section.
  - add the following rule under the `http` section (needed by transcoding t
    tests):
 ```
