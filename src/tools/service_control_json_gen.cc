@@ -267,7 +267,7 @@ std::string UuidGen() {
     info.referer = "referer";
     info.request_start_time = tv;
 
-    ::google::api_manager::service_control::Proto scp(logs);
+    ::google::api_manager::service_control::Proto scp(logs, "2016-09-19r0");
     scp.FillCheckRequest(info, &check_request);
     request = &check_request;
   }
@@ -288,7 +288,7 @@ std::string UuidGen() {
     info.response_size = 1024 * 1024;
     info.log_message = "test-method is called";
 
-    ::google::api_manager::service_control::Proto scp(logs);
+    ::google::api_manager::service_control::Proto scp(logs, "2016-09-19r0");
     scp.FillReportRequest(info, &report_request);
     request = &report_request;
 

@@ -57,6 +57,7 @@ using ::google::service_control_client::TransportDoneFunc;
 namespace {
 
 const char kServiceName[] = "library.googleapis.com";
+const char kServiceConfigId[] = "2016-09-19r0";
 const int MAX_PROTO_PASS_SIZE = 1000000;
 
 }  //  namespace
@@ -95,7 +96,7 @@ std::string request_text;
 // 2. Re-use protobuf from a pool.
 // 3. Use proto arena allocation.
 int main() {
-  Proto scp({"local_test_log"});
+  Proto scp({"local_test_log"}, kServiceConfigId);
 
   std::unique_ptr<ServiceControlClient> client;
   // To set the cache, flush interval large enough for this test.
@@ -109,7 +110,7 @@ int main() {
                                TransportDoneFunc) { ++total_called_checks; };
   options.report_transport = [](const ReportRequest&, ReportResponse*,
                                 TransportDoneFunc) { ++total_called_reports; };
-  client = CreateServiceControlClient(kServiceName, options);
+  client = CreateServiceControlClient(kServiceName, kServiceConfigId, options);
 
   ReportRequestInfo info;
   FillOperationInfo(&info);
@@ -127,7 +128,7 @@ int main() {
   GOOGLE_LOG(INFO) << "Report 1 million requests time: "
                    << 1000.0 * (std::clock() - start) / CLOCKS_PER_SEC << "ms";
   GOOGLE_CHECK(total_called_reports == 0);
-  client = CreateServiceControlClient(kServiceName, options);
+  client = CreateServiceControlClient(kServiceName, kServiceConfigId, options);
   GOOGLE_CHECK(total_called_reports == 1);
   total_called_reports = 0;
 
@@ -144,7 +145,7 @@ int main() {
                    << 1000.0 * (std::clock() - start_reuse) / CLOCKS_PER_SEC
                    << "ms";
   GOOGLE_CHECK(total_called_reports == 0);
-  client = CreateServiceControlClient(kServiceName, options);
+  client = CreateServiceControlClient(kServiceName, kServiceConfigId, options);
   // GOOGLE_CHECK(total_called_reports == 1) does not hold here.
   total_called_reports = 0;
 
@@ -162,7 +163,7 @@ int main() {
                    << 1000.0 * (std::clock() - start_arena) / CLOCKS_PER_SEC
                    << "ms";
   GOOGLE_CHECK(total_called_reports == 0);
-  client = CreateServiceControlClient(kServiceName, options);
+  client = CreateServiceControlClient(kServiceName, kServiceConfigId, options);
   GOOGLE_CHECK(total_called_reports == 1);
 
   return 0;

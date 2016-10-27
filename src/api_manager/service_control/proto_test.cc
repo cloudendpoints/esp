@@ -141,7 +141,7 @@ std::string ReportRequestToString(gasv1::ReportRequest* request) {
 
 class ProtoTest : public ::testing::Test {
  protected:
-  ProtoTest() : scp_({"local_test_log"}) {}
+  ProtoTest() : scp_({"local_test_log"}, "2016-09-19r0") {}
 
   Proto scp_;
 };

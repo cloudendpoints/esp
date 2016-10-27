@@ -233,6 +233,7 @@ sub gen_report_body {
     'serviceName' => $in->{api_name},
     'operations' => [ $operation ]
   };
+  $ret->{'serviceConfigId'} = $in->{serviceConfigId} if exists $in->{serviceConfigId};
   print Dumper $ret if $ENV{TEST_NGINX_VERBOSE};
   return $ret;
 }

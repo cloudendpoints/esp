@@ -137,6 +137,7 @@ like($r->{uri}, qr/:check$/, 'First call was a :check');
 my $check_body1 = ServiceControl::convert_proto($r->{body}, 'check_request', 'json');
 my $expected_check_body1 = {
   'serviceName' => 'endpoints-test.cloudendpointsapis.com',
+  'serviceConfigId' => '2016-08-25r1',
   'operation' => {
      'consumerId' => 'api_key:this-is-an-api-key',
      'operationName' => 'CorsShelves',
@@ -156,6 +157,7 @@ like($r->{uri}, qr/:report$/, 'Second call was a :report');
 
 my $report_body1 = ServiceControl::convert_proto($r->{body}, 'report_request', 'json');
 my $expected_report_body1 = ServiceControl::gen_report_body({
+  'serviceConfigId' => '2016-08-25r1',
   'url' => '/shelves?key=this-is-an-api-key',
   'api_key' => 'this-is-an-api-key',
   'producer_project_id' => 'esp-project-id',
@@ -179,6 +181,7 @@ like($r->{uri}, qr/:check$/, 'Third call was a :check');
 my $check_body2 = ServiceControl::convert_proto($r->{body}, 'check_request', 'json');
 my $expected_check_body2 = {
   'serviceName' => 'endpoints-test.cloudendpointsapis.com',
+  'serviceConfigId' => '2016-08-25r1',
   'operation' => {
      'consumerId' => 'project:esp-project-id',
      'operationName' => 'CORS',
@@ -198,6 +201,7 @@ like($r->{uri}, qr/:report$/, 'Fouth call was a :report');
 
 my $report_body2 = ServiceControl::convert_proto($r->{body}, 'report_request', 'json');
 my $expected_report_body2 = ServiceControl::gen_report_body({
+  'serviceConfigId' => '2016-08-25r1',
   'url' => '/shelves/1',
   'producer_project_id' => 'esp-project-id',
   'no_consumer_data' => 1,

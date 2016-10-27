@@ -24,7 +24,7 @@ The `service.json` service config file is generated from
 
  - At top folder run:
 
-   protoc test/grpc/grpc-test.proto -Itest/grpc -Ithird_party/config/ -Ithird_party/googleapis/ --include_imports --descriptor_set_out=out.descriptors
+   protoc test/grpc/grpc-test.proto -Itest/grpc -I$(bazel info output_base)/external/googleapis_git/ --include_imports --descriptor_set_out=out.descriptors
 
  - Follow the [API Compiler](https://github.com/googleapis/api-compiler)
    instructions to build it.

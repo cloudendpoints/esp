@@ -118,6 +118,7 @@ is($r->{headers}->{'content-type'}, 'application/x-protobuf', ':check Content-Ty
 my $check_body = ServiceControl::convert_proto($r->{body}, 'check_request', 'json');
 my $expected_check_body = {
   'serviceName' => 'endpoints-test.cloudendpointsapis.com',
+  'serviceConfigId' => '2016-08-25r1',
   'operation' => {
      'consumerId' => 'project:endpoints-test',
      'operationName' => 'ListShelves',
@@ -138,6 +139,7 @@ is($r->{headers}->{'content-type'}, 'application/x-protobuf', ':report Content-T
 
 my $report_body = ServiceControl::convert_proto($r->{body}, 'report_request', 'json');
 my $expected_report_body = ServiceControl::gen_report_body({
+  'serviceConfigId' => '2016-08-25r1',
   'url' => '/shelves',
   'producer_project_id' => 'endpoints-test',
   'no_consumer_data' => 1,

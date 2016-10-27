@@ -878,18 +878,21 @@ std::vector<const Element*> FilterPointers(
 
 }  // namespace
 
-Proto::Proto(const std::set<std::string>& logs)
+Proto::Proto(const std::set<std::string>& logs,
+             const std::string& service_config_id)
     : logs_(logs.begin(), logs.end()),
       metrics_(FilterPointers<SupportedMetric>(
           supported_metrics, supported_metrics + supported_metrics_count,
           [](const struct SupportedMetric* m) { return m->set != nullptr; })),
       labels_(FilterPointers<SupportedLabel>(
           supported_labels, supported_labels + supported_labels_count,
-          [](const struct SupportedLabel* l) { return l->set != nullptr; })) {}
+          [](const struct SupportedLabel* l) { return l->set != nullptr; })),
+      service_config_id_(service_config_id) {}
 
 Proto::Proto(const std::set<std::string>& logs,
              const std::set<std::string>& metrics,
-             const std::set<std::string>& labels)
+             const std::set<std::string>& labels,
+             const std::string& service_config_id)
     : logs_(logs.begin(), logs.end()),
       metrics_(FilterPointers<SupportedMetric>(
           supported_metrics, supported_metrics + supported_metrics_count,
@@ -901,7 +904,8 @@ Proto::Proto(const std::set<std::string>& logs,
           [&labels](const struct SupportedLabel* l) {
             return l->set && (l->kind == SupportedLabel::SYSTEM ||
                               labels.find(l->name) != labels.end());
-          })) {}
+          })),
+      service_config_id_(service_config_id) {}
 
 Status Proto::FillCheckRequest(const CheckRequestInfo& info,
                                CheckRequest* request) {
@@ -910,6 +914,7 @@ Status Proto::FillCheckRequest(const CheckRequestInfo& info,
     return status;
   }
   request->set_service_name(info.service_name);
+  request->set_service_config_id(service_config_id_);
 
   Timestamp current_time = GetCurrentTimestamp();
   Operation* op = request->mutable_operation();
@@ -934,6 +939,7 @@ Status Proto::FillReportRequest(const ReportRequestInfo& info,
     return status;
   }
   request->set_service_name(info.service_name);
+  request->set_service_config_id(service_config_id_);
 
   Timestamp current_time = GetCurrentTimestamp();
   Operation* op = request->add_operations();

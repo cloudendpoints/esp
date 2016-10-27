@@ -143,7 +143,7 @@ Aggregated::Aggregated(const ::google::api::Service& service,
       server_config_(server_config),
       env_(env),
       sa_token_(sa_token),
-      service_control_proto_(logs, metrics, labels),
+      service_control_proto_(logs, metrics, labels, service.id()),
       url_(service_, server_config) {
   if (sa_token_) {
     sa_token_->SetAudience(
@@ -159,7 +159,7 @@ Aggregated::Aggregated(const std::set<std::string>& logs,
       server_config_(nullptr),
       env_(env),
       sa_token_(nullptr),
-      service_control_proto_(logs),
+      service_control_proto_(logs, ""),
       url_(service_, server_config_),
       client_(std::move(client)) {}
 
@@ -203,7 +203,7 @@ Status Aggregated::Init() {
                 std::chrono::milliseconds(interval_ms), callback)));
       };
   client_ = ::google::service_control_client::CreateServiceControlClient(
-      service_->name(), options);
+      service_->name(), service_->id(), options);
   return Status::OK;
 }
 

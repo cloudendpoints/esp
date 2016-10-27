@@ -39,12 +39,14 @@ namespace service_control {
 class Proto final {
  public:
   // Initializes Proto with all supported metrics and labels.
-  Proto(const std::set<std::string>& logs);
+  Proto(const std::set<std::string>& logs,
+        const std::string& service_config_id);
 
   // Initializes Proto with specified (and supported) metrics and
   // labels.
   Proto(const std::set<std::string>& logs, const std::set<std::string>& metrics,
-        const std::set<std::string>& labels);
+        const std::set<std::string>& labels,
+        const std::string& service_config_id);
 
   // Fills the CheckRequest protobuf from info.
   // There are some logic inside the Fill functions beside just filling
@@ -80,6 +82,7 @@ class Proto final {
   const std::vector<std::string> logs_;
   const std::vector<const struct SupportedMetric*> metrics_;
   const std::vector<const struct SupportedLabel*> labels_;
+  const std::string service_config_id_;
 };
 
 }  // namespace service_control

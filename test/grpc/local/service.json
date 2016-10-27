@@ -1901,143 +1901,6 @@
     },
     "syntax": "SYNTAX_PROTO3"
   }, {
-    "name": "google.type.Money",
-    "fields": [{
-      "kind": "TYPE_STRING",
-      "cardinality": "CARDINALITY_OPTIONAL",
-      "number": 1,
-      "name": "currency_code",
-      "options": [{
-        "name": "google.protobuf.FieldOptions.ctype",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.StringValue",
-          "value": "STRING"
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.jstype",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.StringValue",
-          "value": "JS_NORMAL"
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.lazy",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.deprecated",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.weak",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }],
-      "jsonName": "currencyCode"
-    }, {
-      "kind": "TYPE_INT64",
-      "cardinality": "CARDINALITY_OPTIONAL",
-      "number": 2,
-      "name": "units",
-      "options": [{
-        "name": "google.protobuf.FieldOptions.ctype",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.StringValue",
-          "value": "STRING"
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.jstype",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.StringValue",
-          "value": "JS_NORMAL"
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.lazy",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.deprecated",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.weak",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }],
-      "jsonName": "units"
-    }, {
-      "kind": "TYPE_INT32",
-      "cardinality": "CARDINALITY_OPTIONAL",
-      "number": 3,
-      "name": "nanos",
-      "options": [{
-        "name": "google.protobuf.FieldOptions.ctype",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.StringValue",
-          "value": "STRING"
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.jstype",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.StringValue",
-          "value": "JS_NORMAL"
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.lazy",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.deprecated",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.weak",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }],
-      "jsonName": "nanos"
-    }],
-    "options": [{
-      "name": "google.protobuf.MessageOptions.message_set_wire_format",
-      "value": {
-        "@type": "type.googleapis.com/google.protobuf.BoolValue",
-        "value": false
-      }
-    }, {
-      "name": "google.protobuf.MessageOptions.no_standard_descriptor_accessor",
-      "value": {
-        "@type": "type.googleapis.com/google.protobuf.BoolValue",
-        "value": false
-      }
-    }, {
-      "name": "google.protobuf.MessageOptions.deprecated",
-      "value": {
-        "@type": "type.googleapis.com/google.protobuf.BoolValue",
-        "value": false
-      }
-    }],
-    "sourceContext": {
-      "fileName": "google/type/money.proto"
-    },
-    "syntax": "SYNTAX_PROTO3"
-  }, {
     "name": "google.api.servicecontrol.v1.MetricValue",
     "fields": [{
       "kind": "TYPE_MESSAGE",
@@ -2344,45 +2207,6 @@
         }
       }],
       "jsonName": "distributionValue"
-    }, {
-      "kind": "TYPE_MESSAGE",
-      "cardinality": "CARDINALITY_OPTIONAL",
-      "number": 9,
-      "name": "money_value",
-      "typeUrl": "type.googleapis.com/google.type.Money",
-      "oneofIndex": 1,
-      "options": [{
-        "name": "google.protobuf.FieldOptions.ctype",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.StringValue",
-          "value": "STRING"
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.jstype",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.StringValue",
-          "value": "JS_NORMAL"
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.lazy",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.deprecated",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.weak",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }],
-      "jsonName": "moneyValue"
     }],
     "oneofs": ["value"],
     "options": [{
@@ -2613,214 +2437,6 @@
     }],
     "sourceContext": {
       "fileName": "google/api/servicecontrol/v1/metric_value.proto"
-    },
-    "syntax": "SYNTAX_PROTO3"
-  }, {
-    "name": "google.api.servicecontrol.v1.QuotaProperties",
-    "fields": [{
-      "kind": "TYPE_ENUM",
-      "cardinality": "CARDINALITY_OPTIONAL",
-      "number": 1,
-      "name": "quota_mode",
-      "typeUrl": "type.googleapis.com/google.api.servicecontrol.v1.QuotaProperties.QuotaMode",
-      "options": [{
-        "name": "google.protobuf.FieldOptions.ctype",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.StringValue",
-          "value": "STRING"
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.jstype",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.StringValue",
-          "value": "JS_NORMAL"
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.lazy",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.deprecated",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.weak",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }],
-      "jsonName": "quotaMode"
-    }, {
-      "kind": "TYPE_MESSAGE",
-      "cardinality": "CARDINALITY_REPEATED",
-      "number": 2,
-      "name": "limit_by_ids",
-      "typeUrl": "type.googleapis.com/google.api.servicecontrol.v1.QuotaProperties.LimitByIdsEntry",
-      "options": [{
-        "name": "google.protobuf.FieldOptions.ctype",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.StringValue",
-          "value": "STRING"
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.jstype",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.StringValue",
-          "value": "JS_NORMAL"
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.lazy",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.deprecated",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.weak",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }],
-      "jsonName": "limitByIds"
-    }],
-    "options": [{
-      "name": "google.protobuf.MessageOptions.message_set_wire_format",
-      "value": {
-        "@type": "type.googleapis.com/google.protobuf.BoolValue",
-        "value": false
-      }
-    }, {
-      "name": "google.protobuf.MessageOptions.no_standard_descriptor_accessor",
-      "value": {
-        "@type": "type.googleapis.com/google.protobuf.BoolValue",
-        "value": false
-      }
-    }, {
-      "name": "google.protobuf.MessageOptions.deprecated",
-      "value": {
-        "@type": "type.googleapis.com/google.protobuf.BoolValue",
-        "value": false
-      }
-    }],
-    "sourceContext": {
-      "fileName": "google/api/servicecontrol/v1/quota_properties.proto"
-    },
-    "syntax": "SYNTAX_PROTO3"
-  }, {
-    "name": "google.api.servicecontrol.v1.QuotaProperties.LimitByIdsEntry",
-    "fields": [{
-      "kind": "TYPE_STRING",
-      "cardinality": "CARDINALITY_OPTIONAL",
-      "number": 1,
-      "name": "key",
-      "options": [{
-        "name": "google.protobuf.FieldOptions.ctype",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.StringValue",
-          "value": "STRING"
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.jstype",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.StringValue",
-          "value": "JS_NORMAL"
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.lazy",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.deprecated",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.weak",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }],
-      "jsonName": "key"
-    }, {
-      "kind": "TYPE_STRING",
-      "cardinality": "CARDINALITY_OPTIONAL",
-      "number": 2,
-      "name": "value",
-      "options": [{
-        "name": "google.protobuf.FieldOptions.ctype",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.StringValue",
-          "value": "STRING"
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.jstype",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.StringValue",
-          "value": "JS_NORMAL"
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.lazy",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.deprecated",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.weak",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }],
-      "jsonName": "value"
-    }],
-    "options": [{
-      "name": "google.protobuf.MessageOptions.message_set_wire_format",
-      "value": {
-        "@type": "type.googleapis.com/google.protobuf.BoolValue",
-        "value": false
-      }
-    }, {
-      "name": "google.protobuf.MessageOptions.no_standard_descriptor_accessor",
-      "value": {
-        "@type": "type.googleapis.com/google.protobuf.BoolValue",
-        "value": false
-      }
-    }, {
-      "name": "google.protobuf.MessageOptions.deprecated",
-      "value": {
-        "@type": "type.googleapis.com/google.protobuf.BoolValue",
-        "value": false
-      }
-    }, {
-      "name": "google.protobuf.MessageOptions.map_entry",
-      "value": {
-        "@type": "type.googleapis.com/google.protobuf.BoolValue",
-        "value": true
-      }
-    }],
-    "sourceContext": {
-      "fileName": "google/api/servicecontrol/v1/quota_properties.proto"
     },
     "syntax": "SYNTAX_PROTO3"
   }, {
@@ -3127,44 +2743,6 @@
       }],
       "jsonName": "logEntries"
     }, {
-      "kind": "TYPE_MESSAGE",
-      "cardinality": "CARDINALITY_OPTIONAL",
-      "number": 9,
-      "name": "quota_properties",
-      "typeUrl": "type.googleapis.com/google.api.servicecontrol.v1.QuotaProperties",
-      "options": [{
-        "name": "google.protobuf.FieldOptions.ctype",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.StringValue",
-          "value": "STRING"
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.jstype",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.StringValue",
-          "value": "JS_NORMAL"
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.lazy",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.deprecated",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }, {
-        "name": "google.protobuf.FieldOptions.weak",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }],
-      "jsonName": "quotaProperties"
-    }, {
       "kind": "TYPE_ENUM",
       "cardinality": "CARDINALITY_OPTIONAL",
       "number": 11,
@@ -3409,6 +2987,43 @@
         }
       }],
       "jsonName": "operations"
+    }, {
+      "kind": "TYPE_STRING",
+      "cardinality": "CARDINALITY_OPTIONAL",
+      "number": 3,
+      "name": "service_config_id",
+      "options": [{
+        "name": "google.protobuf.FieldOptions.ctype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "STRING"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.jstype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "JS_NORMAL"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.lazy",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.weak",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }],
+      "jsonName": "serviceConfigId"
     }],
     "options": [{
       "name": "google.protobuf.MessageOptions.message_set_wire_format",
@@ -3987,59 +3602,6 @@
     },
     "syntax": "SYNTAX_PROTO3"
   }, {
-    "name": "google.api.servicecontrol.v1.QuotaProperties.QuotaMode",
-    "enumvalue": [{
-      "name": "ACQUIRE",
-      "options": [{
-        "name": "google.protobuf.EnumValueOptions.deprecated",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }]
-    }, {
-      "name": "ACQUIRE_BEST_EFFORT",
-      "number": 1,
-      "options": [{
-        "name": "google.protobuf.EnumValueOptions.deprecated",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }]
-    }, {
-      "name": "CHECK",
-      "number": 2,
-      "options": [{
-        "name": "google.protobuf.EnumValueOptions.deprecated",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }]
-    }, {
-      "name": "RELEASE",
-      "number": 3,
-      "options": [{
-        "name": "google.protobuf.EnumValueOptions.deprecated",
-        "value": {
-          "@type": "type.googleapis.com/google.protobuf.BoolValue",
-          "value": false
-        }
-      }]
-    }],
-    "options": [{
-      "name": "google.protobuf.EnumOptions.deprecated",
-      "value": {
-        "@type": "type.googleapis.com/google.protobuf.BoolValue",
-        "value": false
-      }
-    }],
-    "sourceContext": {
-      "fileName": "google/api/servicecontrol/v1/quota_properties.proto"
-    },
-    "syntax": "SYNTAX_PROTO3"
-  }, {
     "name": "google.api.servicecontrol.v1.Operation.Importance",
     "enumvalue": [{
       "name": "LOW",
@@ -4356,6 +3918,46 @@
     }],
     "metricKind": "DELTA",
     "valueType": "DISTRIBUTION"
+  }, {
+    "name": "serviceruntime.googleapis.com/api/producer/streaming_request_message_counts",
+    "metricKind": "DELTA",
+    "valueType": "DISTRIBUTION"
+  }, {
+    "name": "serviceruntime.googleapis.com/api/producer/streaming_response_message_counts",
+    "metricKind": "DELTA",
+    "valueType": "DISTRIBUTION"
+  }, {
+    "name": "serviceruntime.googleapis.com/api/consumer/streaming_request_message_counts",
+    "metricKind": "DELTA",
+    "valueType": "DISTRIBUTION"
+  }, {
+    "name": "serviceruntime.googleapis.com/api/consumer/streaming_response_message_counts",
+    "metricKind": "DELTA",
+    "valueType": "DISTRIBUTION"
+  }, {
+    "name": "serviceruntime.googleapis.com/api/producer/streaming_durations",
+    "metricKind": "DELTA",
+    "valueType": "DISTRIBUTION"
+  }, {
+    "name": "serviceruntime.googleapis.com/api/consumer/streaming_durations",
+    "metricKind": "DELTA",
+    "valueType": "DISTRIBUTION"
+  }, {
+    "name": "serviceruntime.googleapis.com/api/producer/request_bytes",
+    "metricKind": "DELTA",
+    "valueType": "INT64"
+  }, {
+    "name": "serviceruntime.googleapis.com/api/producer/response_bytes",
+    "metricKind": "DELTA",
+    "valueType": "INT64"
+  }, {
+    "name": "serviceruntime.googleapis.com/api/consumer/request_bytes",
+    "metricKind": "DELTA",
+    "valueType": "INT64"
+  }, {
+    "name": "serviceruntime.googleapis.com/api/consumer/response_bytes",
+    "metricKind": "DELTA",
+    "valueType": "INT64"
   }],
   "monitoredResources": [{
     "type": "api",
@@ -4384,11 +3986,11 @@
   "monitoring": {
     "producerDestinations": [{
       "monitoredResource": "api",
-      "metrics": ["serviceruntime.googleapis.com/api/producer/request_count", "serviceruntime.googleapis.com/api/producer/error_count", "serviceruntime.googleapis.com/api/producer/total_latencies", "serviceruntime.googleapis.com/api/producer/request_overhead_latencies", "serviceruntime.googleapis.com/api/producer/backend_latencies", "serviceruntime.googleapis.com/api/producer/request_sizes", "serviceruntime.googleapis.com/api/producer/response_sizes", "serviceruntime.googleapis.com/api/producer/top_request_count_by_consumer", "serviceruntime.googleapis.com/api/producer/top_request_sizes_by_consumer", "serviceruntime.googleapis.com/api/producer/top_response_sizes_by_consumer", "serviceruntime.googleapis.com/api/producer/by_consumer/request_count", "serviceruntime.googleapis.com/api/producer/by_consumer/error_count", "serviceruntime.googleapis.com/api/producer/by_consumer/total_latencies", "serviceruntime.googleapis.com/api/producer/by_consumer/quota_used_count", "serviceruntime.googleapis.com/api/producer/by_consumer/request_overhead_latencies", "serviceruntime.googleapis.com/api/producer/by_consumer/backend_latencies", "serviceruntime.googleapis.com/api/producer/by_consumer/request_sizes", "serviceruntime.googleapis.com/api/producer/by_consumer/response_sizes"]
+      "metrics": ["serviceruntime.googleapis.com/api/producer/request_count", "serviceruntime.googleapis.com/api/producer/error_count", "serviceruntime.googleapis.com/api/producer/total_latencies", "serviceruntime.googleapis.com/api/producer/request_overhead_latencies", "serviceruntime.googleapis.com/api/producer/backend_latencies", "serviceruntime.googleapis.com/api/producer/request_sizes", "serviceruntime.googleapis.com/api/producer/response_sizes", "serviceruntime.googleapis.com/api/producer/top_request_count_by_consumer", "serviceruntime.googleapis.com/api/producer/top_request_sizes_by_consumer", "serviceruntime.googleapis.com/api/producer/top_response_sizes_by_consumer", "serviceruntime.googleapis.com/api/producer/streaming_request_message_counts", "serviceruntime.googleapis.com/api/producer/streaming_response_message_counts", "serviceruntime.googleapis.com/api/producer/streaming_durations", "serviceruntime.googleapis.com/api/producer/request_bytes", "serviceruntime.googleapis.com/api/producer/response_bytes", "serviceruntime.googleapis.com/api/producer/by_consumer/request_count", "serviceruntime.googleapis.com/api/producer/by_consumer/error_count", "serviceruntime.googleapis.com/api/producer/by_consumer/total_latencies", "serviceruntime.googleapis.com/api/producer/by_consumer/quota_used_count", "serviceruntime.googleapis.com/api/producer/by_consumer/request_overhead_latencies", "serviceruntime.googleapis.com/api/producer/by_consumer/backend_latencies", "serviceruntime.googleapis.com/api/producer/by_consumer/request_sizes", "serviceruntime.googleapis.com/api/producer/by_consumer/response_sizes"]
     }],
     "consumerDestinations": [{
       "monitoredResource": "api",
-      "metrics": ["serviceruntime.googleapis.com/api/consumer/request_count", "serviceruntime.googleapis.com/api/consumer/error_count", "serviceruntime.googleapis.com/api/consumer/quota_used_count", "serviceruntime.googleapis.com/api/consumer/total_latencies", "serviceruntime.googleapis.com/api/consumer/request_overhead_latencies", "serviceruntime.googleapis.com/api/consumer/backend_latencies", "serviceruntime.googleapis.com/api/consumer/request_sizes", "serviceruntime.googleapis.com/api/consumer/response_sizes", "serviceruntime.googleapis.com/api/consumer/top_request_count_by_end_user", "serviceruntime.googleapis.com/api/consumer/top_request_count_by_end_user_country", "serviceruntime.googleapis.com/api/consumer/top_request_count_by_referer"]
+      "metrics": ["serviceruntime.googleapis.com/api/consumer/request_count", "serviceruntime.googleapis.com/api/consumer/error_count", "serviceruntime.googleapis.com/api/consumer/quota_used_count", "serviceruntime.googleapis.com/api/consumer/total_latencies", "serviceruntime.googleapis.com/api/consumer/request_overhead_latencies", "serviceruntime.googleapis.com/api/consumer/backend_latencies", "serviceruntime.googleapis.com/api/consumer/request_sizes", "serviceruntime.googleapis.com/api/consumer/response_sizes", "serviceruntime.googleapis.com/api/consumer/top_request_count_by_end_user", "serviceruntime.googleapis.com/api/consumer/top_request_count_by_end_user_country", "serviceruntime.googleapis.com/api/consumer/top_request_count_by_referer", "serviceruntime.googleapis.com/api/consumer/streaming_request_message_counts", "serviceruntime.googleapis.com/api/consumer/streaming_response_message_counts", "serviceruntime.googleapis.com/api/consumer/streaming_durations", "serviceruntime.googleapis.com/api/consumer/request_bytes", "serviceruntime.googleapis.com/api/consumer/response_bytes"]
     }]
   },
   "systemParameters": {
