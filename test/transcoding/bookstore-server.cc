@@ -260,6 +260,58 @@ class BookstoreServiceImpl : public Bookstore::Service {
     return ::grpc::Status(grpc::NOT_FOUND, "Book not found");
   }
 
+  ::grpc::Status QueryShelves(::grpc::ServerContext*,
+                              const QueryShelvesRequest* request,
+                              ListShelvesResponse* reply) {
+    std::cerr << "GRPC-BACKEND: QueryShelves" << std::endl;
+    PrintRequest(*request);
+
+    for (const auto& shelf : shelves_) {
+      if (request->shelf().id() != 0 && shelf.id() != request->shelf().id()) {
+        continue;
+      }
+      if (!request->shelf().theme().empty() &&
+          shelf.theme() != request->shelf().theme()) {
+        continue;
+      }
+      *reply->add_shelves() = shelf;
+    }
+    return ::grpc::Status::OK;
+  }
+
+  ::grpc::Status QueryBooks(::grpc::ServerContext*,
+                            const QueryBooksRequest* request,
+                            ListBooksResponse* reply) {
+    std::cerr << "GRPC-BACKEND: QueryBooks" << std::endl;
+    PrintRequest(*request);
+
+    auto begin = std::begin(books_);
+    auto end = std::end(books_);
+
+    if (request->shelf() != 0) {
+      begin = books_.lower_bound(request->shelf());
+      end = books_.upper_bound(request->shelf());
+    }
+
+    for (auto it = begin; it != end; ++it) {
+      if (request->book().id() != 0 &&
+          it->second.id() != request->book().id()) {
+        continue;
+      }
+      if (!request->book().author().empty() &&
+          it->second.author() != request->book().author()) {
+        continue;
+      }
+      if (!request->book().title().empty() &&
+          it->second.title() != request->book().title()) {
+        continue;
+      }
+      *reply->add_books() = it->second;
+    }
+
+    return ::grpc::Status::OK;
+  }
+
  private:
   // A helper to create shelves
   static Shelf CreateShelfObject(std::string theme) {

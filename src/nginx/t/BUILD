@@ -275,6 +275,7 @@ nginx_suite(
         "transcoding_bindings.t",
         "transcoding_errors.t",
         "transcoding_large.t",
+        "transcoding_query_params.t",
         "transcoding_shared_port_ssl.t",
         "transcoding_streaming.t",
     ],

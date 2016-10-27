@@ -65,6 +65,12 @@ service Bookstore {
   // Deletes a book from a shelf.
   rpc DeleteBook(DeleteBookRequest) returns (google.protobuf.Empty) {
   }
+  // Query for matching shelves
+  rpc QueryShelves(QueryShelvesRequest) returns (ListShelvesResponse) {
+  }
+  // Query for matching books
+  rpc QueryBooks(QueryBooksRequest) returns (ListBooksResponse) {
+  }
 }
 
 // A shelf resource.
@@ -143,4 +149,18 @@ message DeleteBookRequest {
   int64 shelf = 1;
   // The ID of the book to delete.
   int64 book = 2;
+}
+
+// Request message for QueryShelves method.
+message QueryShelvesRequest {
+  // The shelf to match
+  Shelf shelf = 1;
+}
+
+// Request message for QueryBooks method.
+message QueryBooksRequest {
+  // The shelf to look in
+  int64 shelf = 1;
+  // The book to match
+  Book book = 2;
 }

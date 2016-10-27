@@ -108,6 +108,28 @@ apis {
       }
     }
   }
+  methods {
+    name: "QueryShelves"
+    request_type_url: "type.googleapis.com/endpoints.examples.bookstore.QueryShelvesRequest"
+    response_type_url: "type.googleapis.com/endpoints.examples.bookstore.ListShelvesResponse"
+    options {
+      name: "google.protobuf.MethodOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+  }
+  methods {
+    name: "QueryBooks"
+    request_type_url: "type.googleapis.com/endpoints.examples.bookstore.QueryBooksRequest"
+    response_type_url: "type.googleapis.com/endpoints.examples.bookstore.ListBooksResponse"
+    options {
+      name: "google.protobuf.MethodOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+  }
   options {
     name: "google.protobuf.ServiceOptions.deprecated"
     value {
@@ -1087,6 +1109,175 @@ types {
   }
   syntax: SYNTAX_PROTO3
 }
+types {
+  name: "endpoints.examples.bookstore.QueryShelvesRequest"
+  fields {
+    kind: TYPE_MESSAGE
+    cardinality: CARDINALITY_OPTIONAL
+    number: 1
+    name: "shelf"
+    type_url: "type.googleapis.com/endpoints.examples.bookstore.Shelf"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "shelf"
+  }
+  options {
+    name: "google.protobuf.MessageOptions.message_set_wire_format"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.deprecated"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  source_context {
+    file_name: "bookstore.proto"
+  }
+  syntax: SYNTAX_PROTO3
+}
+types {
+  name: "endpoints.examples.bookstore.QueryBooksRequest"
+  fields {
+    kind: TYPE_INT64
+    cardinality: CARDINALITY_OPTIONAL
+    number: 1
+    name: "shelf"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "shelf"
+  }
+  fields {
+    kind: TYPE_MESSAGE
+    cardinality: CARDINALITY_OPTIONAL
+    number: 2
+    name: "book"
+    type_url: "type.googleapis.com/endpoints.examples.bookstore.Book"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "book"
+  }
+  options {
+    name: "google.protobuf.MessageOptions.message_set_wire_format"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.deprecated"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  source_context {
+    file_name: "bookstore.proto"
+  }
+  syntax: SYNTAX_PROTO3
+}
 documentation {
   rules {
     selector: "google.protobuf.Empty"
@@ -1209,6 +1400,26 @@ documentation {
     description: "The ID of the book to delete."
   }
   rules {
+    selector: "endpoints.examples.bookstore.QueryShelvesRequest"
+    description: "Request message for QueryShelves method."
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.QueryShelvesRequest.shelf"
+    description: "The shelf to match"
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.QueryBooksRequest"
+    description: "Request message for QueryBooks method."
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.QueryBooksRequest.shelf"
+    description: "The shelf to look in"
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.QueryBooksRequest.book"
+    description: "The book to match"
+  }
+  rules {
     selector: "endpoints.examples.bookstore.Bookstore"
     description: "A simple Bookstore API.\n\nThe API manages shelves and books resources. Shelves contain books."
   }
@@ -1247,6 +1458,14 @@ documentation {
   rules {
     selector: "endpoints.examples.bookstore.Bookstore.DeleteBook"
     description: "Deletes a book from a shelf."
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.Bookstore.QueryShelves"
+    description: "Query for matching shelves"
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.Bookstore.QueryBooks"
+    description: "Query for matching books"
   }
 }
 http {
@@ -1293,6 +1512,14 @@ http {
   rules {
     selector: "endpoints.examples.bookstore.Bookstore.DeleteBook"
     delete: "/shelves/{shelf}/books/{book}"
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.Bookstore.QueryShelves"
+    get: "/query/shelves"
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.Bookstore.QueryBooks"
+    get: "/query/books"
   }
 }
 context {
@@ -1425,6 +1652,36 @@ system_parameters {
   }
   rules {
     selector: "endpoints.examples.bookstore.Bookstore.DeleteBook"
+    parameters {
+      name: "api_key"
+      http_header: "x-api-key"
+    }
+    parameters {
+      name: "api_key"
+      url_query_parameter: "key"
+    }
+    parameters {
+      name: "api_key"
+      url_query_parameter: "api_key"
+    }
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.Bookstore.QueryShelves"
+    parameters {
+      name: "api_key"
+      http_header: "x-api-key"
+    }
+    parameters {
+      name: "api_key"
+      url_query_parameter: "key"
+    }
+    parameters {
+      name: "api_key"
+      url_query_parameter: "api_key"
+    }
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.Bookstore.QueryBooks"
     parameters {
       name: "api_key"
       http_header: "x-api-key"
