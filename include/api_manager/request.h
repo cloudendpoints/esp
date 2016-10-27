@@ -46,6 +46,8 @@ class Request {
 
   // Returns the REST path or RPC path for this call.
   virtual std::string GetRequestPath() = 0;
+  // Returns the query parameters
+  virtual std::string GetQueryParameters() = 0;
   // Returns the request path before parsed.
   virtual std::string GetUnparsedRequestPath() = 0;
 

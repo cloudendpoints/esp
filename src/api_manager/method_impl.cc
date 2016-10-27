@@ -96,5 +96,19 @@ void MethodInfoImpl::process_system_parameters() {
   api_key_url_query_parameters_ = url_query_parameters(api_key_parameter_name);
 }
 
+void MethodInfoImpl::ProcessSystemQueryParameterNames() {
+  for (const auto &param : url_query_parameters_) {
+    for (const auto &name : param.second) {
+      system_query_parameter_names_.insert(name);
+    }
+  }
+
+  if (!api_key_http_headers_ && !api_key_url_query_parameters_) {
+    // Adding the default api_key url query parameters
+    system_query_parameter_names_.insert("key");
+    system_query_parameter_names_.insert("api_key");
+  }
+}
+
 }  // namespace api_manager
 }  // namespace google

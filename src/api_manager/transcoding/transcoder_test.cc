@@ -92,6 +92,10 @@ class TestMethodInfo : public MethodInfo {
   }
   const std::string &backend_address() const { return empty_; }
   const std::string &rpc_method_full_name() const { return empty_; }
+  const std::set<std::string> &system_query_parameter_names() const {
+    static std::set<std::string> dummy;
+    return dummy;
+  };
 
   // Methods that the Transcoder does use
   const std::string &request_type_url() const { return request_type_url_; }

@@ -67,7 +67,8 @@ class Config {
   // https://github.com/googleapis/googleapis/blob/master/google/api/http.proto
   // for more details).
   MethodCallInfo GetMethodCallInfo(const std::string &http_method,
-                                   const std::string &url) const;
+                                   const std::string &url,
+                                   const std::string &query_params) const;
 
   const ::google::api::Service &service() const { return service_; }
 

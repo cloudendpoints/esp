@@ -33,6 +33,7 @@
 #include <unordered_map>
 
 #include "src/api_manager/http_template.h"
+#include "src/api_manager/method.h"
 #include "src/api_manager/method_call_info.h"
 #include "src/api_manager/path_matcher_node.h"
 
@@ -48,20 +49,21 @@ typedef std::unordered_map<std::string, PathMatcherNode*>
     ServiceRootPathMatcherNodeMap;
 
 // The immutable, thread safe PathMatcher stores a mapping from a combination of
-// a service (host) name and a HTTP path to your data(void*). It is constructed
-// with a PathMatcherBuilder and supports one operation: Lookup. Clients may use
-// this method to locate your data(void*) for a combination of service name and
-// HTTP URL path.
+// a service (host) name and a HTTP path to your method (MethodInfo*). It is
+// constructed with a PathMatcherBuilder and supports one operation: Lookup.
+// Clients may use this method to locate your method (MethodInfo*) for a
+// combination of service name and HTTP URL path.
 //
 // Usage example:
 // 1) building the PathMatcher:
 //     PathMatcherBuilder builder(false);
-//     for each (service_name, http_method, url_path, associated data)
+//     for each (service_name, http_method, url_path, associated method)
 //         builder.register(service_name, http_method, url_path, datat);
 //     PathMater matcher = builder.Build();
 // 2) lookup:
-//      void * data = matcher.Lookup(service_name, http_method, url_path);
-//      if (data == nullptr)  failed to find it.
+//      MethodInfo * method = matcher.Lookup(service_name, http_method,
+//                                           url_path);
+//      if (method == nullptr)  failed to find it.
 //
 class PathMatcher {
  public:
@@ -70,13 +72,15 @@ class PathMatcher {
   explicit PathMatcher(PathMatcherBuilder& builder);
   ~PathMatcher();
 
-  void* Lookup(const std::string& service_name, const std::string& http_method,
-               const std::string& path,
-               std::vector<VariableBinding>* variable_bindings,
-               std::string* body_field_path) const;
+  MethodInfo* Lookup(const std::string& service_name,
+                     const std::string& http_method, const std::string& path,
+                     const std::string& query_params,
+                     std::vector<VariableBinding>* variable_bindings,
+                     std::string* body_field_path) const;
 
-  void* Lookup(const std::string& service_name, const std::string& http_method,
-               const std::string& path) const;
+  MethodInfo* Lookup(const std::string& service_name,
+                     const std::string& http_method,
+                     const std::string& path) const;
 
  private:
   // A map between service names and their root path matcher nodes.
@@ -89,14 +93,14 @@ class PathMatcher {
   // Holds the set of custom verbs found in configured templates.
   std::set<std::string> custom_verbs_;
   // Data we store per each registered method
-  struct MethodInfo {
-    void* data;
+  struct MethodData {
+    MethodInfo* method;
     std::vector<HttpTemplate::Variable> variables;
     std::string body_field_path;
   };
   // The info associated with each method. The path matcher nodes
-  // will hold pointers to MethodInfo objects in this vector.
-  std::vector<std::unique_ptr<MethodInfo>> methods_;
+  // will hold pointers to MethodData objects in this vector.
+  std::vector<std::unique_ptr<MethodData>> methods_;
 
  private:
   friend class PathMatcherBuilder;
@@ -112,15 +116,14 @@ class PathMatcherBuilder {
   PathMatcherBuilder(bool strict_service_matching);
   ~PathMatcherBuilder();
 
-  // Registers your data for a given method.
+  // Registers a method.
   //
   // Registrations are one-to-one. If this function is called more than once, it
-  // replaces the existing data. Only the last registered WrapperGraph
-  // is stored.
+  // replaces the existing method. Only the last registered method is stored.
   // Return false if path is an invalid http template.
   bool Register(std::string service_name, std::string http_method,
                 std::string path, std::string body_field_path,
-                void* method_data);
+                MethodInfo* method);
 
   // Returns a shared_ptr to a thread safe PathMatcher that contains all
   // registered path-WrapperGraph pairs.
@@ -144,8 +147,8 @@ class PathMatcherBuilder {
   // be multiple templates in different services on a server. Consider moving
   // this to PathMatcherNode.
   std::set<std::string> custom_verbs_;
-  typedef PathMatcher::MethodInfo MethodInfo;
-  std::vector<std::unique_ptr<MethodInfo>> methods_;
+  typedef PathMatcher::MethodData MethodData;
+  std::vector<std::unique_ptr<MethodData>> methods_;
 };
 
 }  // namespace api_manager

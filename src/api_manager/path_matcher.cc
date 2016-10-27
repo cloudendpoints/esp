@@ -25,7 +25,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 #include "src/api_manager/path_matcher.h"
+
 #include "src/api_manager/http_template.h"
+#include "src/api_manager/method.h"
 #include "src/api_manager/method_call_info.h"
 
 #include <algorithm>
@@ -181,10 +183,9 @@ std::string UrlUnescapeString(const std::string& part,
   return unescaped;
 }
 
-void ExtractVariableBindings(const std::vector<HttpTemplate::Variable>& vars,
+void ExtractBindingsFromPath(const std::vector<HttpTemplate::Variable>& vars,
                              const std::vector<std::string>& parts,
                              std::vector<VariableBinding>* bindings) {
-  bindings->clear();
   for (const auto& var : vars) {
     // Determine the subpath bound to the variable based on the
     // [start_segment, end_segment) segment range of the variable.
@@ -214,6 +215,35 @@ void ExtractVariableBindings(const std::vector<HttpTemplate::Variable>& vars,
   }
 }
 
+void ExtractBindingsFromQueryParameters(
+    const std::string& query_params, const std::set<std::string>& system_params,
+    std::vector<VariableBinding>* bindings) {
+  // The bindings in URL the query parameters have the following form:
+  //      <field_path1>=value1&<field_path2>=value2&...&<field_pathN>=valueN
+  // Query parameters may also contain system parameters such as `api_key`.
+  // We'll need to ignore these. Example:
+  //      book.id=123&book.author=Neal%20Stephenson&api_key=AIzaSyAz7fhBkC35D2M
+  vector<std::string> params;
+  split(query_params, '&', params);
+  for (const auto& param : params) {
+    size_t pos = param.find('=');
+    if (pos != 0 && pos != std::string::npos) {
+      auto name = param.substr(0, pos);
+      // Make sure the query parameter is not a system parameter (e.g.
+      // `api_key`) before adding the binding.
+      if (system_params.find(name) == std::end(system_params)) {
+        // The name of the parameter is a field path, which is a dot-delimited
+        // sequence of field names that identify the (potentially deep) field
+        // in the request, e.g. `book.author.name`.
+        VariableBinding binding;
+        split(name, '.', binding.field_path);
+        binding.value = UrlUnescapeString(param.substr(pos + 1), true);
+        bindings->emplace_back(std::move(binding));
+      }
+    }
+  }
+}
+
 }  // namespace
 
 PathMatcher::PathMatcher(PathMatcherBuilder& builder)
@@ -237,11 +267,12 @@ PathMatcher::~PathMatcher() { utils::STLDeleteValues(&root_ptr_map_); }
 // values parsed from the path.
 // TODO: cache results by adding get/put methods here (if profiling reveals
 // benefit)
-void* PathMatcher::Lookup(const string& service_name, const string& http_method,
-                          const string& path,
-                          std::vector<VariableBinding>* variable_bindings,
-                          std::string* body_field_path) const {
-  const vector<string> parts = ExtractRequestParts(path);
+MethodInfo* PathMatcher::Lookup(const string& service_name,
+                                const string& http_method, const string& url,
+                                const string& query_params,
+                                std::vector<VariableBinding>* variable_bindings,
+                                std::string* body_field_path) const {
+  const vector<string> parts = ExtractRequestParts(url);
 
   PathMatcherNode* root_ptr = utils::FindPtrOrNull(root_ptr_map_, service_name);
 
@@ -267,19 +298,24 @@ void* PathMatcher::Lookup(const string& service_name, const string& http_method,
   if (lookup_result.data == nullptr || lookup_result.is_multiple) {
     return nullptr;
   }
-  MethodInfo* method = reinterpret_cast<MethodInfo*>(lookup_result.data);
+  MethodData* method_data = reinterpret_cast<MethodData*>(lookup_result.data);
   if (variable_bindings != nullptr) {
-    ExtractVariableBindings(method->variables, parts, variable_bindings);
+    variable_bindings->clear();
+    ExtractBindingsFromPath(method_data->variables, parts, variable_bindings);
+    ExtractBindingsFromQueryParameters(
+        query_params, method_data->method->system_query_parameter_names(),
+        variable_bindings);
   }
   if (body_field_path != nullptr) {
-    *body_field_path = method->body_field_path;
+    *body_field_path = method_data->body_field_path;
   }
-  return method->data;
+  return method_data->method;
 }
 
-void* PathMatcher::Lookup(const string& service_name, const string& http_method,
-                          const string& path) const {
-  return Lookup(service_name, http_method, path, nullptr, nullptr);
+MethodInfo* PathMatcher::Lookup(const string& service_name,
+                                const string& http_method,
+                                const string& path) const {
+  return Lookup(service_name, http_method, path, string(), nullptr, nullptr);
 }
 
 // Initializes the builder with a root Path Segment
@@ -314,7 +350,7 @@ void PathMatcherBuilder::InsertPathToNode(const PathMatcherNode::PathInfo& path,
 // template into the trie.
 bool PathMatcherBuilder::Register(string service_name, string http_method,
                                   string http_template, string body_field_path,
-                                  void* method_data) {
+                                  MethodInfo* method) {
   std::unique_ptr<HttpTemplate> ht(HttpTemplate::Parse(http_template));
   if (nullptr == ht) {
     return false;
@@ -323,23 +359,23 @@ bool PathMatcherBuilder::Register(string service_name, string http_method,
   if (path_info.path_info().size() == 0) {
     return false;
   }
-  // Create & initialize a MethodInfo struct. Then insert its pointer
+  // Create & initialize a MethodData struct. Then insert its pointer
   // into the path matcher trie.
-  auto method_info = std::unique_ptr<MethodInfo>(new MethodInfo());
-  method_info->data = method_data;
-  method_info->variables = std::move(ht->Variables());
-  method_info->body_field_path = std::move(body_field_path);
+  auto method_data = std::unique_ptr<MethodData>(new MethodData());
+  method_data->method = method;
+  method_data->variables = std::move(ht->Variables());
+  method_data->body_field_path = std::move(body_field_path);
   // Don't mark batch methods as duplicates, since we insert them into each
   // service, and their graphs are all the same. We'll just use the first one
   // as the default. This allows batch requests on any service name to work.
-  InsertPathToNode(path_info, method_info.get(), kDefaultServiceName,
+  InsertPathToNode(path_info, method_data.get(), kDefaultServiceName,
                    http_method, false, default_root_ptr_.get());
   PathMatcherNode* root_ptr =
       utils::LookupOrInsertNew(&root_ptr_map_, service_name);
-  InsertPathToNode(path_info, method_info.get(), service_name, http_method,
+  InsertPathToNode(path_info, method_data.get(), service_name, http_method,
                    true, root_ptr);
-  // Add the method_info to the methods_ vector for cleanup
-  methods_.emplace_back(std::move(method_info));
+  // Add the method_data to the methods_ vector for cleanup
+  methods_.emplace_back(std::move(method_data));
   return true;
 }
 

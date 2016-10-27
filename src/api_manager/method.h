@@ -88,6 +88,9 @@ class MethodInfo {
 
   // Get whether response is streaming
   virtual bool response_streaming() const = 0;
+
+  // Get the names of url system parameters
+  virtual const std::set<std::string> &system_query_parameter_names() const = 0;
 };
 
 }  // namespace api_manager

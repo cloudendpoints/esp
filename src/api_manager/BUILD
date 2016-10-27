@@ -217,6 +217,7 @@ cc_test(
     size = "small",
     srcs = [
         "path_matcher_test.cc",
+        "mock_method_info.h"
     ],
     linkstatic = 1,
     deps = [

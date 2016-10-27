@@ -23,33 +23,42 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#ifndef API_MANAGER_MOCK_REQUEST_H_
-#define API_MANAGER_MOCK_REQUEST_H_
+#ifndef API_MANAGER_MOCK_METHOD_INFO_H_
+#define API_MANAGER_MOCK_METHOD_INFO_H_
 
 #include "gmock/gmock.h"
-#include "include/api_manager/request.h"
+#include "src/api_manager/method.h"
 
 namespace google {
 namespace api_manager {
 
-class MockRequest : public Request {
+class MockMethodInfo : public MethodInfo {
  public:
-  MOCK_METHOD2(FindQuery, bool(const std::string &, std::string *));
-  MOCK_METHOD2(FindHeader, bool(const std::string &, std::string *));
-  MOCK_METHOD2(AddHeaderToBackend,
-               utils::Status(const std::string &, const std::string &));
-  MOCK_METHOD1(SetAuthToken, void(const std::string &));
-  MOCK_METHOD0(GetRequestHTTPMethod, std::string());
-  MOCK_METHOD0(GetRequestPath, std::string());
-  MOCK_METHOD0(GetQueryParameters, std::string());
-  MOCK_METHOD0(GetRequestProtocol, ::google::api_manager::protocol::Protocol());
-  MOCK_METHOD0(GetUnparsedRequestPath, std::string());
-  MOCK_METHOD0(GetInsecureCallerID, std::string());
-  MOCK_METHOD0(GetClientIP, std::string());
-  MOCK_METHOD0(GetRequestHeaders, std::multimap<std::string, std::string> *());
+  virtual ~MockMethodInfo() {}
+  MOCK_CONST_METHOD0(name, const std::string&());
+  MOCK_CONST_METHOD0(auth, bool());
+  MOCK_CONST_METHOD0(allow_unregistered_calls, bool());
+  MOCK_CONST_METHOD1(isIssuerAllowed, bool(const std::string&));
+  MOCK_CONST_METHOD2(isAudienceAllowed,
+                     bool(const std::string&, const std::set<std::string>&));
+  MOCK_CONST_METHOD1(http_header_parameters,
+                     const std::vector<std::string>*(const std::string&));
+  MOCK_CONST_METHOD1(url_query_parameters,
+                     const std::vector<std::string>*(const std::string&));
+  MOCK_CONST_METHOD0(api_key_http_headers, const std::vector<std::string>*());
+  MOCK_CONST_METHOD0(api_key_url_query_parameters,
+                     const std::vector<std::string>*());
+  MOCK_CONST_METHOD0(backend_address, const std::string&());
+  MOCK_CONST_METHOD0(rpc_method_full_name, const std::string&());
+  MOCK_CONST_METHOD0(request_type_url, const std::string&());
+  MOCK_CONST_METHOD0(request_streaming, bool());
+  MOCK_CONST_METHOD0(response_type_url, const std::string&());
+  MOCK_CONST_METHOD0(response_streaming, bool());
+  MOCK_CONST_METHOD0(system_query_parameter_names,
+                     const std::set<std::string>&());
 };
 
 }  // namespace api_manager
 }  // namespace google
 
-#endif  // API_MANAGER_MOCK_REQUEST_H_
+#endif  // API_MANAGER_MOCK_METHOD_INFO_H_

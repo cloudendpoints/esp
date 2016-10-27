@@ -65,9 +65,9 @@ class ServiceContext {
   ApiManagerEnvInterface *env() { return env_.get(); }
   Config *config() { return config_.get(); }
 
-  MethodCallInfo GetMethodCallInfo(const char *http_method,
-                                   size_t http_method_size, const char *url,
-                                   size_t url_size) const;
+  MethodCallInfo GetMethodCallInfo(const std::string &http_method,
+                                   const std::string &url,
+                                   const std::string &query_params) const;
 
   service_control::Interface *service_control() const {
     return service_control_.get();

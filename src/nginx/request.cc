@@ -45,6 +45,10 @@ std::string NgxEspRequest::GetRequestHTTPMethod() {
 
 std::string NgxEspRequest::GetRequestPath() { return ngx_str_to_std(r_->uri); }
 
+std::string NgxEspRequest::GetQueryParameters() {
+  return ngx_str_to_std(r_->args);
+}
+
 std::string NgxEspRequest::GetUnparsedRequestPath() {
   return ngx_str_to_std(r_->unparsed_uri);
 }

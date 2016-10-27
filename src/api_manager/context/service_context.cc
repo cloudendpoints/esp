@@ -62,19 +62,16 @@ ServiceContext::ServiceContext(std::unique_ptr<ApiManagerEnvInterface> env,
                                   ->api_authentication_config()
                                   .force_disable()) {}
 
-MethodCallInfo ServiceContext::GetMethodCallInfo(const char *http_method,
-                                                 size_t http_method_size,
-                                                 const char *url,
-                                                 size_t url_size) const {
+MethodCallInfo ServiceContext::GetMethodCallInfo(
+    const std::string& http_method, const std::string& url,
+    const std::string& query_params) const {
   if (config_ == nullptr) {
     return MethodCallInfo();
   }
-  std::string h(http_method, http_method_size);
-  std::string u(url, url_size);
-  return config_->GetMethodCallInfo(h, u);
+  return config_->GetMethodCallInfo(http_method, url, query_params);
 }
 
-const std::string &ServiceContext::project_id() const {
+const std::string& ServiceContext::project_id() const {
   if (gce_metadata_.has_valid_data() && !gce_metadata_.project_id().empty()) {
     return gce_metadata_.project_id();
   } else {
@@ -106,7 +103,7 @@ ServiceContext::CreateCloudTraceAggregator() {
   if (config_->server_config() &&
       config_->server_config()->has_cloud_tracing_config()) {
     // If url_override is set in server config, use it to query Cloud Trace.
-    const auto &tracing_config =
+    const auto& tracing_config =
         config_->server_config()->cloud_tracing_config();
     if (!tracing_config.url_override().empty()) {
       url = tracing_config.url_override();

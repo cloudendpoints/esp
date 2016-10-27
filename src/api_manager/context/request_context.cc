@@ -85,6 +85,7 @@ RequestContext::RequestContext(std::shared_ptr<ServiceContext> service_context,
   operation_id_ = GenerateUUID();
   const std::string &method = request_->GetRequestHTTPMethod();
   const std::string &path = request_->GetRequestPath();
+  std::string query_params = request_->GetQueryParameters();
 
   // In addition to matching the method, service_context_->GetMethodCallInfo()
   // will extract the variable bindings from the url. We need variable bindings
@@ -95,8 +96,8 @@ RequestContext::RequestContext(std::shared_ptr<ServiceContext> service_context,
   // 2) Store all the pieces needed for extracting variable bindings (such as
   //    http template variables, url path parts) in MethodCallInfo and extract
   //    variables lazily when needed.
-  method_call_ = service_context_->GetMethodCallInfo(
-      method.c_str(), method.length(), path.c_str(), path.length());
+  method_call_ =
+      service_context_->GetMethodCallInfo(method, path, query_params);
 
   if (method_call_.method_info) {
     ExtractApiKey();

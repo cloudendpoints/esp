@@ -617,12 +617,26 @@ TEST(Config, RpcMethodsWithHttpRulesAndVariableBindings) {
           body: "book.title"
         }
       }
+      system_parameters {
+        rules {
+          selector: "Bookstore.CreateBook"
+          parameters {
+            name: "system_paramter"
+            url_query_parameter: "sys"
+          }
+          parameters {
+            name: "system_paramter"
+            url_query_parameter: "system"
+          }
+        }
+      }
     )";
 
   std::unique_ptr<Config> config = Config::Create(&env, config_text, "");
   ASSERT_TRUE(config);
 
-  MethodCallInfo list_shelves = config->GetMethodCallInfo("GET", "/shelves");
+  MethodCallInfo list_shelves =
+      config->GetMethodCallInfo("GET", "/shelves", "");
 
   ASSERT_NE(nullptr, list_shelves.method_info);
   EXPECT_EQ("/Bookstore/ListShelves",
@@ -637,7 +651,7 @@ TEST(Config, RpcMethodsWithHttpRulesAndVariableBindings) {
   EXPECT_EQ(0, list_shelves.variable_bindings.size());
 
   MethodCallInfo list_books =
-      config->GetMethodCallInfo("GET", "/shelves/88/books");
+      config->GetMethodCallInfo("GET", "/shelves/88/books", "");
 
   ASSERT_NE(nullptr, list_books.method_info);
   EXPECT_EQ("/Bookstore/ListBooks",
@@ -655,7 +669,7 @@ TEST(Config, RpcMethodsWithHttpRulesAndVariableBindings) {
   EXPECT_EQ("88", list_books.variable_bindings[0].value);
 
   MethodCallInfo create_book =
-      config->GetMethodCallInfo("POST", "/shelves/99/books");
+      config->GetMethodCallInfo("POST", "/shelves/99/books", "");
 
   ASSERT_NE(nullptr, create_book.method_info);
   EXPECT_EQ("/Bookstore/CreateBook",
@@ -673,7 +687,7 @@ TEST(Config, RpcMethodsWithHttpRulesAndVariableBindings) {
   EXPECT_EQ("99", create_book.variable_bindings[0].value);
 
   MethodCallInfo create_book_1 =
-      config->GetMethodCallInfo("POST", "/shelves/77/books/88/auth");
+      config->GetMethodCallInfo("POST", "/shelves/77/books/88/auth", "");
 
   ASSERT_NE(nullptr, create_book_1.method_info);
   EXPECT_EQ("/Bookstore/CreateBook",
@@ -698,6 +712,49 @@ TEST(Config, RpcMethodsWithHttpRulesAndVariableBindings) {
   EXPECT_EQ((std::vector<std::string>{"book", "author"}),
             create_book_1.variable_bindings[2].field_path);
   EXPECT_EQ("auth", create_book_1.variable_bindings[2].value);
+
+  MethodCallInfo create_book_2 = config->GetMethodCallInfo(
+      "POST", "/shelves/55/books", "book.title=Readme");
+
+  ASSERT_NE(nullptr, create_book_2.method_info);
+  EXPECT_EQ("/Bookstore/CreateBook",
+            create_book_2.method_info->rpc_method_full_name());
+  EXPECT_EQ("types.googleapis.com/Bookstore.CreateBookRequest",
+            create_book_2.method_info->request_type_url());
+  EXPECT_EQ(false, create_book_2.method_info->request_streaming());
+  EXPECT_EQ("types.googleapis.com/Bookstore.Book",
+            create_book_2.method_info->response_type_url());
+  EXPECT_EQ(false, create_book_2.method_info->response_streaming());
+  EXPECT_EQ("book", create_book_2.body_field_path);
+  ASSERT_EQ(2, create_book_2.variable_bindings.size());
+  EXPECT_EQ(std::vector<std::string>(1, "shelf"),
+            create_book_2.variable_bindings[0].field_path);
+  EXPECT_EQ("55", create_book_2.variable_bindings[0].value);
+  EXPECT_EQ((std::vector<std::string>{"book", "title"}),
+            create_book_2.variable_bindings[1].field_path);
+  EXPECT_EQ("Readme", create_book_2.variable_bindings[1].value);
+
+  MethodCallInfo create_book_3 =
+      config->GetMethodCallInfo("POST", "/shelves/321/books",
+                                "book.id=123&key=0&api_key=1&sys=2&system=3");
+
+  ASSERT_NE(nullptr, create_book_3.method_info);
+  EXPECT_EQ("/Bookstore/CreateBook",
+            create_book_3.method_info->rpc_method_full_name());
+  EXPECT_EQ("types.googleapis.com/Bookstore.CreateBookRequest",
+            create_book_3.method_info->request_type_url());
+  EXPECT_EQ(false, create_book_3.method_info->request_streaming());
+  EXPECT_EQ("types.googleapis.com/Bookstore.Book",
+            create_book_3.method_info->response_type_url());
+  EXPECT_EQ(false, create_book_3.method_info->response_streaming());
+  EXPECT_EQ("book", create_book_3.body_field_path);
+  ASSERT_EQ(2, create_book_3.variable_bindings.size());
+  EXPECT_EQ(std::vector<std::string>(1, "shelf"),
+            create_book_3.variable_bindings[0].field_path);
+  EXPECT_EQ("321", create_book_3.variable_bindings[0].value);
+  EXPECT_EQ((std::vector<std::string>{"book", "id"}),
+            create_book_3.variable_bindings[1].field_path);
+  EXPECT_EQ("123", create_book_3.variable_bindings[1].value);
 }
 
 TEST(Config, TestHttpOptions) {

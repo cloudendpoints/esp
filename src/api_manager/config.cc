@@ -328,6 +328,12 @@ bool Config::LoadSystemParameters(ApiManagerEnvInterface *env) {
       env->LogError(error.c_str());
     }
   }
+  // For each method compile a set of system query parameter names.
+  // PathMatcher uses this set to ignore system query parameters when building
+  // variable bindings.
+  for (auto &m : method_map_) {
+    m.second->ProcessSystemQueryParameterNames();
+  }
   return true;
 }
 
@@ -419,20 +425,21 @@ std::unique_ptr<Config> Config::Create(ApiManagerEnvInterface *env,
 
 const MethodInfo *Config::GetMethodInfo(const string &http_method,
                                         const string &url) const {
-  return path_matcher_ == nullptr ? nullptr
-                                  : (MethodInfo *)path_matcher_->Lookup(
-                                        service_.name(), http_method, url);
+  return path_matcher_ == nullptr
+             ? nullptr
+             : path_matcher_->Lookup(service_.name(), http_method, url);
 }
 
-MethodCallInfo Config::GetMethodCallInfo(const std::string &http_method,
-                                         const std::string &url) const {
+MethodCallInfo Config::GetMethodCallInfo(
+    const std::string &http_method, const std::string &url,
+    const std::string &query_params) const {
   MethodCallInfo call_info;
   if (path_matcher_ == nullptr) {
     call_info.method_info = nullptr;
   } else {
-    call_info.method_info = static_cast<MethodInfo *>(path_matcher_->Lookup(
-        service_.name(), http_method, url, &call_info.variable_bindings,
-        &call_info.body_field_path));
+    call_info.method_info = path_matcher_->Lookup(
+        service_.name(), http_method, url, query_params,
+        &call_info.variable_bindings, &call_info.body_field_path);
   }
   return call_info;
 }

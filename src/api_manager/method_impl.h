@@ -125,6 +125,12 @@ class MethodInfoImpl : public MethodInfo {
     response_streaming_ = response_streaming;
   }
 
+  const std::set<std::string> &system_query_parameter_names() const {
+    return system_query_parameter_names_;
+  }
+
+  void ProcessSystemQueryParameterNames();
+
  private:
   // Method name.
   std::string name_;
@@ -141,6 +147,9 @@ class MethodInfoImpl : public MethodInfo {
 
   // system parameter map of parameter name to url query parameter name.
   std::map<std::string, std::vector<std::string> > url_query_parameters_;
+
+  // all the names of system query parameters
+  std::set<std::string> system_query_parameter_names_;
 
   // http header for api_key.
   const std::vector<std::string> *api_key_http_headers_;
