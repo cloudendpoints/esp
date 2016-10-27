@@ -50,6 +50,10 @@ std::string NgxEspRequest::GetUnparsedRequestPath() {
 }
 
 ::google::api_manager::protocol::Protocol NgxEspRequest::GetRequestProtocol() {
+  ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
+  if (ctx->grpc_pass_through) {
+    return ::google::api_manager::protocol::GRPC;
+  }
   if (r_ && r_->connection) {
 #if (NGX_SSL)
     if (r_->connection->ssl) {

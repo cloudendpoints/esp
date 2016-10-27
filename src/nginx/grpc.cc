@@ -129,7 +129,7 @@ ngx_int_t GrpcBackendHandler(ngx_http_request_t *r) {
   ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r);
 
   Status status = Status::OK;
-  if (IsGrpcRequest(r)) {
+  if (ctx->grpc_pass_through) {
     // Check whether there's a GRPC backend defined for this request;
     // if there is, we can use it for GRPC traffic.  Otherwise, we'll
     // take the next-best option: falling through and passing the

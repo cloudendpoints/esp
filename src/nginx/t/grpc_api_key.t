@@ -43,7 +43,7 @@ my $Http2NginxPort = ApiManager::pick_port();
 my $GrpcBackendPort = ApiManager::pick_port();
 my $GrpcFallbackPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(8);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(9);
 $t->write_file('service.pb.txt',
         ApiManager::get_grpc_test_service_config($GrpcBackendPort) .
         ApiManager::read_test_file('testdata/logs_metrics.pb.txt') . <<"EOF");
@@ -125,6 +125,7 @@ like($r->{uri}, qr/:report$/, 'Second call was a :report');
 my $report_body = ServiceControl::convert_proto($r->{body}, 'report_request', 'json');
 my $expected_report_body = ServiceControl::gen_report_body({
   'url' => '/test.grpc.Test/Echo',
+  'protocol' => 'grpc',
   'api_key' => 'this-is-an-api-key',
   'producer_project_id' => 'endpoints-grpc-test',
   'location' => 'us-central1',
@@ -133,12 +134,12 @@ my $expected_report_body = ServiceControl::gen_report_body({
   'http_method' => 'POST',
   'log_message' => 'Method: test.grpc.Test.Echo',
   'response_code' => '200',
-  'request_size' => 293,
-  'response_size' => 121,
+  'request_size' => 315,
+  'response_size' => 109,
   });
 # TODO: request_size is different between Mac and Linux.
 # response_size is wrong for grpc too. Disable it for now
-#ok(ServiceControl::compare_json($report_body, $expected_report_body), 'Report body is received.');
+ok(ServiceControl::compare_json($report_body, $expected_report_body), 'Report body is received.');
 
 ################################################################################
 

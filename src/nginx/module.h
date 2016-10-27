@@ -217,6 +217,8 @@ struct ngx_esp_request_ctx_s {
 
   // GRPC Proxying support.
   NgxEspGrpcServerCall *grpc_server_call;
+  // Mark if this request is grpc pass through.
+  bool grpc_pass_through;
 
   // RequestHandlerInterface object
   std::unique_ptr<RequestHandlerInterface> request_handler;
