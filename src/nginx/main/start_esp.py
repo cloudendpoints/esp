@@ -108,7 +108,8 @@ def write_template(ingress, nginx_conf, args):
             service_account=args.service_account_key,
             metadata=args.metadata,
             resolver=args.dns,
-            access_log=args.access_log)
+            access_log=args.access_log,
+            healthz=args.healthz)
 
     # Save nginx conf
     try:
@@ -312,6 +313,11 @@ def make_argparser():
         default=None, help='''
         Specify the URL to fetch the service configuration.
     ''')
+
+    parser.add_argument('-z', '--healthz', default=None, help='''Define a
+    health checking endpoint on the same ports as the application backend. For
+    example, "-z healthz" makes ESP return code 200 for location "/healthz",
+    instead of forwarding the request to the backend.  Default: not used.''')
 
     # Specify a custom service.json path.
     # If this is specified, service json will not be fetched.

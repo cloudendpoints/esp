@@ -50,6 +50,13 @@ http {
 
     access_log ${access_log};
 
+% if healthz:
+    location = /${healthz} {
+      return 200;
+      access_log off;
+    }
+% endif
+
 % for i, location in enumerate(ingress.locations):
     location ${location.path} {
       # Begin Endpoints v2 Support
