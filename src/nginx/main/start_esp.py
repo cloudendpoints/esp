@@ -73,6 +73,12 @@ DNS_RESOLVER = "8.8.8.8"
 # Default HTTP/1.x port
 DEFAULT_PORT = 8080
 
+# Default status port
+DEFAULT_STATUS_PORT = 8090
+
+# Default backend
+DEFAULT_BACKEND = "127.0.0.1:8081"
+
 # PID file (for nginx as a daemon)
 PID_FILE = "/var/run/nginx.pid"
 
@@ -224,7 +230,13 @@ def make_ingress(service_config, args):
         backends = [args.backend[len(GRPC_PREFIX):]]
     else:
         grpc = False
-        backends = [args.backend]
+        backend = args.backend
+        if backend.startswith("http://"):
+            backend = backend[len("http://"):]
+        elif backend.startswith("https://"):
+            logging.error("https:// protocol for the backend server is not supported.")
+            sys.exit(2)
+        backends = [backend]
 
     locations = [Location(
             path='/',
@@ -246,7 +258,6 @@ class ArgumentParser(argparse.ArgumentParser):
 
 def make_argparser():
     parser = ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description = textwrap.dedent('''
         ESP start-up script. This script fetches the service configuration from
         the service management service and configures ESP to expose the specified
@@ -264,55 +275,53 @@ def make_argparser():
         (-p, -P, -S, -N) and the backend (-a) to generate an nginx config file.
         '''))
 
-    parser.add_argument('-k', '--service_account_key', help='''
-        Set the service account key JSON file.
-        Used to access the service control and the service management.
-        If the option is omitted, ESP contacts the metadata service to fetch an access token.
-    ''')
+    parser.add_argument('-k', '--service_account_key', help=''' Use the service
+    account key JSON file to access the service control and the service
+    management.  If the option is omitted, ESP contacts the metadata service to
+    fetch an access token.  ''')
 
-    parser.add_argument('-s', '--service', help='''
-        Set the name of the Endpoints service.
-        If omitted and -c not specified, ESP contacts the metadata service to fetch the service name.
-    ''')
+    parser.add_argument('-s', '--service', help=''' Set the name of the
+    Endpoints service.  If omitted and -c not specified, ESP contacts the
+    metadata service to fetch the service name.  ''')
 
-    parser.add_argument('-v', '--version', help='''
-        Set the config version of the Endpoints service.
-        If omitted and -c not specified, ESP contacts the metadata service to fetch the service version.
-    ''')
+    parser.add_argument('-v', '--version', help=''' Set the config version of
+    the Endpoints service.  If omitted and -c not specified, ESP contacts the
+    metadata service to fetch the service version.  ''')
 
-    parser.add_argument('-n', '--nginx_config', help='''
-        Set a custom nginx config file.
-    ''')
+    parser.add_argument('-n', '--nginx_config', help=''' Use a custom nginx
+    config file instead of the config template {template}. If you specify this
+    option, then all the port options are ignored.
+    '''.format(template=NGINX_CONF_TEMPLATE))
 
     parser.add_argument('-p', '--http_port', default=None, type=int, help='''
-        Expose a port to accept HTTP/1.x connections.
-        Note that if you do not specify -p, -P, and -S, then the default -p {port} is set.
-    '''.format(port=DEFAULT_PORT))
+    Expose a port to accept HTTP/1.x connections.  By default, if you do not
+    specify any of the port options (-p, -P, and -S), then port {port} is
+    exposed as HTTP/1.x port. However, if you specify any of the port options,
+    then only the ports you specified are exposed, which may or may not include
+    HTTP/1.x port.  '''.format(port=DEFAULT_PORT))
 
     parser.add_argument('-P', '--http2_port', default=None, type=int, help='''
-        Expose a port to accept HTTP/2 connections.
-        Note that this cannot be the same port as HTTP/1.x port.
-    ''')
+    Expose a port to accept HTTP/2 connections.  Note that this cannot be the
+    same port as HTTP/1.x port.  ''')
 
     parser.add_argument('-S', '--ssl_port', default=None, type=int, help='''
-        Expose a port for HTTPS requests.
-        Accepts both HTTP/1.x and HTTP/2 connections.
-    ''')
+    Expose a port for HTTPS requests.  Accepts both HTTP/1.x and HTTP/2
+    secure connections.  ''')
 
-    parser.add_argument('-N', '--status_port', default=8090, type=int, help='''
-        Set the ESP status port. Status information is available at /endpoints_status
-        location over HTTP/1.x.
-    ''')
+    parser.add_argument('-N', '--status_port', default=DEFAULT_STATUS_PORT,
+    type=int, help=''' Change the ESP status port. Status information is
+    available at /endpoints_status location over HTTP/1.x. Default value:
+    {port}.'''.format(port=DEFAULT_STATUS_PORT))
 
-    parser.add_argument('-a', '--backend', default='localhost:8081', help='''
-        Set the application server address to which ESP proxies the requests.
-        For GRPC backends, please use grpc:// prefix, e.g. grpc://localhost:8081.
-    ''')
+    parser.add_argument('-a', '--backend', default=DEFAULT_BACKEND, help='''
+    Change the application server address to which ESP proxies the requests.  For
+    GRPC backends, please use grpc:// prefix, e.g. grpc://127.0.0.1:8081.
+    Default value: {backend}.'''.format(backend=DEFAULT_BACKEND))
 
-    parser.add_argument('-c', '--service_config_url',
-        default=None, help='''
-        Specify the URL to fetch the service configuration.
-    ''')
+    parser.add_argument('-c', '--service_config_url', default=None, help='''
+    Use the specified URL to fetch the service configuration instead of using
+    the default URL template
+    {template}.'''.format(template=SERVICE_MGMT_URL_TEMPLATE))
 
     parser.add_argument('-z', '--healthz', default=None, help='''Define a
     health checking endpoint on the same ports as the application backend. For
