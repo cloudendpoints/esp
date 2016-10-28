@@ -137,11 +137,9 @@ my $expected_report_body = ServiceControl::gen_report_body({
   'http_method' => 'POST',
   'log_message' => 'Method: test.grpc.Test.EchoStream',
   'response_code' => '200',
-  'request_size' => 501,
+  'request_size' => ($^O eq 'darwin' ? 499 : 501),
   'response_size' => 479,
   });
-# TODO: request_size is different between Mac and Linux.
-# response_size is wrong for grpc too. Disable it for now
 ok(ServiceControl::compare_json($report_body, $expected_report_body), 'Report body is received.');
 
 ################################################################################
