@@ -158,7 +158,7 @@ my ($mn, $metrics, $metric, $labels);
 
 $labels = $get_shelf->{labels};
 isnt($labels, undef, 'GetShelf operation has labels');
-is($labels->{'/credential_id'}, 'apiKey:an-api-key',
+is($labels->{'/credential_id'}, 'apikey:an-api-key',
    'GetShelf credential id is an API key.');
 is($labels->{'/protocol'}, 'http', 'GetShelf protocol is http');
 is($labels->{'/response_code'}, '200', 'GetShelf response code is 200');
@@ -210,7 +210,7 @@ isnt($get_book, undef, 'Found GetBook operation.');
 
 $labels = $get_book->{labels};
 isnt($labels, undef, 'GetBook operation has labels');
-is($labels->{'/credential_id'}, 'apiKey:an-api-key',
+is($labels->{'/credential_id'}, 'apikey:an-api-key',
     'GetBook credential id is an API key.');
 is($labels->{'/protocol'}, 'http', 'GetBook protocol is http.');
 is($labels->{'/response_code'}, '404', 'GetBook response code is 404.');

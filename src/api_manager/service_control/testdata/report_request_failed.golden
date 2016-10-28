@@ -13,7 +13,7 @@ operations {
   }
   labels {
     key: "/credential_id"
-    value: "jwtAuth:issuer=YXV0aC1pc3N1ZXI&audience=YXV0aC1hdWRpZW5jZQ"
+    value: "jwtauth:issuer=YXV0aC1pc3N1ZXI&audience=YXV0aC1hdWRpZW5jZQ"
   }
   labels {
     key: "/error_type"

@@ -149,9 +149,9 @@ func createReportLabels(er *ExpectedReport) map[string]string {
 		labels["servicecontrol.googleapis.com/platform"] = "unknown"
 	}
 	if er.ApiKey != "" {
-		labels["/credential_id"] = "apiKey:" + er.ApiKey
+		labels["/credential_id"] = "apikey:" + er.ApiKey
 	} else if er.JwtAuth != "" {
-		labels["/credential_id"] = "jwtAuth:" + er.JwtAuth
+		labels["/credential_id"] = "jwtauth:" + er.JwtAuth
 	}
 	return labels
 }

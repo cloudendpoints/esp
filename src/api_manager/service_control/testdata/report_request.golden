@@ -13,7 +13,7 @@ operations {
   }
   labels {
     key: "/credential_id"
-    value: "apiKey:api_key_x"
+    value: "apikey:api_key_x"
   }
   labels {
     key: "/protocol"

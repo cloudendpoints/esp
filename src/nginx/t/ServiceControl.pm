@@ -133,9 +133,9 @@ sub gen_report_labels {
   }
 
   if (exists $in->{api_key}) {
-    $labels->{'/credential_id'} = 'apiKey:' . $in->{api_key};
+    $labels->{'/credential_id'} = 'apikey:' . $in->{api_key};
   } elsif (exists $in->{jwtAuth}) {
-    $labels->{'/credential_id'} = 'jwtAuth:' . $in->{jwtAuth};
+    $labels->{'/credential_id'} = 'jwtauth:' . $in->{jwtAuth};
   }
   return $labels;
 }

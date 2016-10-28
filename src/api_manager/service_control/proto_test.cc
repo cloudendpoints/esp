@@ -271,7 +271,7 @@ TEST_F(ProtoTest, CredentailIdApiKeyTest) {
   ASSERT_TRUE(scp_.FillReportRequest(info, &request).ok());
 
   ASSERT_EQ(request.operations(0).labels().at("/credential_id"),
-            "apiKey:api_key_x");
+            "apikey:api_key_x");
 }
 
 TEST_F(ProtoTest, CredentailIdIssuerOnlyTest) {
@@ -284,7 +284,7 @@ TEST_F(ProtoTest, CredentailIdIssuerOnlyTest) {
   ASSERT_TRUE(scp_.FillReportRequest(info, &request).ok());
 
   ASSERT_EQ(request.operations(0).labels().at("/credential_id"),
-            "jwtAuth:issuer=YXV0aC1pc3N1ZXI");
+            "jwtauth:issuer=YXV0aC1pc3N1ZXI");
 }
 
 TEST_F(ProtoTest, CredentailIdIssuerAudienceTest) {
@@ -298,7 +298,7 @@ TEST_F(ProtoTest, CredentailIdIssuerAudienceTest) {
   ASSERT_TRUE(scp_.FillReportRequest(info, &request).ok());
 
   ASSERT_EQ(request.operations(0).labels().at("/credential_id"),
-            "jwtAuth:issuer=YXV0aC1pc3N1ZXI&audience=YXV0aC1hdWRpZW5jZQ");
+            "jwtauth:issuer=YXV0aC1pc3N1ZXI&audience=YXV0aC1hdWRpZW5jZQ");
 }
 
 }  // namespace

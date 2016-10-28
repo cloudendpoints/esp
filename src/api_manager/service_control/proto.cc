@@ -431,7 +431,7 @@ Status set_credential_id(const SupportedLabel& l, const ReportRequestInfo& info,
   // 2) If auth issuer and audience both are available, set it as:
   //    jwtAuth:issuer=base64(issuer)&audience=base64(audience)
   if (!info.api_key.empty()) {
-    std::string credential_id("apiKey:");
+    std::string credential_id("apikey:");
     credential_id += info.api_key.ToString();
     (*labels)[l.name] = credential_id;
   } else if (!info.auth_issuer.empty()) {
@@ -442,7 +442,7 @@ Status set_credential_id(const SupportedLabel& l, const ReportRequestInfo& info,
     if (base64_issuer == nullptr) {
       return Status(Code::INTERNAL, "Out of memory");
     }
-    std::string credential_id("jwtAuth:issuer=");
+    std::string credential_id("jwtauth:issuer=");
     credential_id += base64_issuer;
     auth::esp_grpc_free(base64_issuer);
 
