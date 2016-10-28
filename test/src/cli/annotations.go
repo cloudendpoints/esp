@@ -21,26 +21,24 @@
 // LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 // OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 // SUCH DAMAGE.
-//
 ////////////////////////////////////////////////////////////////////////////////
-//
-// ESP CLI
-//
-package main
 
-import (
-	"cli"
-	"fmt"
-	"log"
-	"os"
-)
+package cli
 
-// TODO: add undeploy command
-func main() {
-	log.SetPrefix("[espcli] ")
-	log.SetFlags(0)
-	if err := cli.RootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(-1)
-	}
-}
+// Prefix for ESP managed resources
+const EndpointsPrefix = "endpoints-"
+
+// Label to tag pods running ESP for a given k8s service
+// Label to tag ESP services for a given k8s service
+const AnnotationManagedService = "endpoints.googleapis.com/managed-service"
+
+// Label to tag ESP pods for loosely coupled ESP services
+// (to support multiple loose ESP deployments for a service)
+const AnnotationEndpointsService = "endpoints.googleapis.com/endpoints"
+
+// Label to tag ESP services with service config name and id
+const AnnotationConfigName = "endpoints.googleapis.com/config-name"
+const AnnotationConfigId = "endpoints.googleapis.com/config-id"
+
+// Label to tag ESP services with the type of the deployment
+const AnnotationDeploymentType = "endpoints.googleapis.com/deployment-type"

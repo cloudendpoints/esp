@@ -26,6 +26,7 @@
 package cli
 
 import (
+	"deploy"
 	"log"
 	"os"
 
@@ -39,18 +40,8 @@ import (
 var (
 	namespace string
 	clientset *kubernetes.Clientset
+	cfg       deploy.Service
 )
-
-// Prefix for ESP managed resources
-const endpointsPrefix = "endpoints-"
-
-// Label to tag pods running ESP for a given k8s service
-// Label to tag services points to ESP pods for a given k8s service
-const ESPManagedService = "googleapis.com/service"
-
-// Label to tag pods with loosely coupled ESP services
-// (to support multiple ESP deployments for a service)
-const ESPEndpoints = "googleapis.com/endpoints"
 
 // RootCmd for CLI
 var RootCmd = &cobra.Command{
@@ -58,7 +49,7 @@ var RootCmd = &cobra.Command{
 	Short: "ESP deployment manager for Kubernetes",
 	Long:  "A script to deploy ESP and monitor ESP deployments in Kubernetes",
 	Run: func(cmd *cobra.Command, args []string) {
-		log.Println("ESP deployment command line interface")
+		log.Println("Please specify -h option to see the list of options.")
 	},
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		config, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
@@ -66,13 +57,14 @@ var RootCmd = &cobra.Command{
 			&clientcmd.ConfigOverrides{},
 		).ClientConfig()
 		if err != nil {
-			log.Println("Cannot retrieve kube configuration")
+			log.Println("Cannot find the default Kubernetes configuration.")
+			log.Println("Please check with kubectl your cluster config.")
 			os.Exit(-2)
 		}
 
 		clientset, err = kubernetes.NewForConfig(config)
 		if err != nil {
-			log.Println("Cannot connect to Kubernetes API: ", err)
+			log.Println("Cannot connect to the Kubernetes API: ", err)
 			os.Exit(-2)
 		}
 	},
@@ -80,5 +72,5 @@ var RootCmd = &cobra.Command{
 
 func init() {
 	RootCmd.PersistentFlags().StringVar(&namespace,
-		"namespace", api.NamespaceDefault, "kubernetes namespace")
+		"namespace", api.NamespaceDefault, "Specify Kubernetes namespace")
 }

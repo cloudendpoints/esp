@@ -152,15 +152,18 @@ go_library(
     name = "vendor/deploy",
     srcs = [
         "deploy/service.go",
+        "deploy/default_service_config.go",
     ],
     go_prefix = "//test/src:go_prefix",
     deps = [
         ":vendor/google/api",
         "@golang_oauth2//:oauth2/google",
+        "@golang_oauth2//:oauth2/jwt",
         "@github_com_x_net//:context",
         "@google_api_go_client//:servicemanagement/v1",
         "@github_com_golang_protobuf//:jsonpb",
         "@github_com_golang_protobuf//:proto",
+        "@go_yaml//:yaml.v2",
     ],
 )
 

@@ -45,8 +45,8 @@ DEBIAN_PKG=''
 DIRECT_REPO=''
 DURATION_IN_HOUR=0
 ENDPOINTS_RUNTIME_VERSION=''
-ESP_IMAGE='b.gcr.io/endpoints/endpoints-runtime:0.3'
-GRPC='off'
+ESP_IMAGE='b.gcr.io/endpoints/endpoints-runtime:latest'
+BACKEND=''
 INSTANCE_NAME=''
 NAMESPACE=''
 REMOTE_LOG_DIR=''
@@ -230,32 +230,28 @@ function long_running_test() {
   local status
   local http_code=200
 
-  if [[ "${GRPC}" == 'echo' ]]; then
+  echo "Running ${BACKEND} long running test on ${host}"
+  if [[ "${BACKEND}" == 'echo' ]]; then
     # We expect HTTP host to run at port 8080 for GRPC tests
     local http_host="http://${host%:*}:8080"
-    echo "Checking grpc service ${http_host}, ${host}"
     retry -n 10 -t 90 check_grpc_service "${host}"
     status=${?}
     if [[ ${status} -eq 0 ]]; then
-      echo 'Running grpc long running test.'
       run_nonfatal "${ESP_ROOT}"/script/linux-grpc-test-long-run \
         -h "${http_host}" \
         -g "${host}" \
         -l "${duration_in_hour}" \
         -a "${api_key}" \
         -s "${esp_service}" 2>&1 | tee "${log_file}"
-        status=${PIPESTATUS[0]}
+      status=${PIPESTATUS[0]}
     fi
-  elif [[ "${GRPC}" == 'interop' ]]; then
-    echo 'Running grpc interop long running test.'
+  elif [[ "${BACKEND}" == 'interop' ]]; then
     run_nonfatal "${ESP_ROOT}"/script/test-grpc-interop \
-        -h "${host}" \
-        -l "${duration_in_hour}" \
-        -s "${esp_service}" 2>&1 | tee "${log_file}"
+      -h "${host}" \
+      -l "${duration_in_hour}" \
+      -s "${esp_service}" 2>&1 | tee "${log_file}"
     status=${PIPESTATUS[0]}
   else
-    # Checking Service before starting the test.
-    echo "Checking service: ${host}"
     retry -n 10 -t 90 check_http_service "${host}/shelves" ${http_code}
     status=${?}
     if [[ ${status} -eq 0 ]]; then
@@ -265,7 +261,7 @@ function long_running_test() {
         -l "${duration_in_hour}" \
         -a "${api_key}" \
         -s "${esp_service}" 2>&1 | tee "${log_file}"
-        status=${PIPESTATUS[0]}
+      status=${PIPESTATUS[0]}
     fi
   fi
 
@@ -332,7 +328,7 @@ function e2e_options() {
       c) COUPLING_OPTION="$(echo ${OPTARG} | tr '[A-Z]' '[a-z]')";;
       d) DEBIAN_PKG="${OPTARG}";;
       e) ESP_IMAGE="${OPTARG}";;
-      g) GRPC="${OPTARG}";;
+      g) BACKEND="${OPTARG}";;
       i) UNIQUE_ID="${OPTARG}";;
       k) API_KEY="${OPTARG}";;
       l) DURATION_IN_HOUR="${OPTARG}";;

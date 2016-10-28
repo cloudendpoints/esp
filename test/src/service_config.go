@@ -24,7 +24,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
-// ESP CLI
+// Service config CLI
 //
 package main
 
@@ -37,12 +37,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	cfg           deploy.Service
-	serviceAPI    []string
-	serviceConfig []string
-	serviceProto  []string
-)
+var s deploy.Service
 
 func check(err error) {
 	if err != nil {
@@ -52,61 +47,56 @@ func check(err error) {
 }
 
 func main() {
-	var deployCmd = &cobra.Command{
-		Use: "deploy",
-		Run: func(cmd *cobra.Command, args []string) {
-			check(cfg.Connect())
-			out, err := cfg.Deploy(serviceAPI, serviceConfig, serviceProto)
+	log.SetPrefix("[service_config] ")
+	log.SetFlags(0)
+	var deploy = &cobra.Command{
+		Use: "deploy [config+]",
+		Long: `Deploy service config files, which are one or combination of
+OpenAPI, Google Service Config, or proto descriptor.
+(supported extensions: .yaml, .yml, .json, .pb, .descriptor).`,
+		Run: func(cmd *cobra.Command, configs []string) {
+			check(s.Connect())
+			out, err := s.Deploy(configs, "")
 			check(err)
 			bytes, err := out.MarshalJSON()
 			check(err)
 			fmt.Print(string(bytes))
 		},
 	}
-
-	deployCmd.PersistentFlags().StringArrayVar(&serviceAPI,
-		"openapi", nil,
-		"OpenAPI specification file(s)")
-	deployCmd.PersistentFlags().StringArrayVar(&serviceConfig,
-		"config", nil,
-		"Service config specification file(s)")
-	deployCmd.PersistentFlags().StringArrayVar(&serviceProto,
-		"proto", nil,
-		"Proto descriptor file(s)")
-
-	var fetchCmd = &cobra.Command{
+	var fetch = &cobra.Command{
 		Use: "fetch",
 		Run: func(cmd *cobra.Command, args []string) {
-			check(cfg.Connect())
-			out, err := cfg.Fetch()
+			check(s.Connect())
+			out, err := s.Fetch()
 			check(err)
-			report, err := cfg.GenerateConfigReport()
-			check(err)
-			for _, d := range report.Diagnostics {
-				log.Println("[" + d.Kind + "] " +
-					d.Location + ": " + d.Message)
-			}
 			bytes, err := out.MarshalJSON()
 			check(err)
 			fmt.Print(string(bytes))
 		},
 	}
+	var undelete = &cobra.Command{
+		Use: "undelete",
+		Run: func(cmd *cobra.Command, args []string) {
+			check(s.Connect())
+			check(s.Undelete())
+		},
+	}
 
-	fetchCmd.PersistentFlags().StringVarP(&cfg.Version,
+	fetch.PersistentFlags().StringVarP(&s.Version,
 		"version", "v", "",
 		"API service config version, empty to use the latest")
 
-	var rootCmd = &cobra.Command{}
-	rootCmd.PersistentFlags().StringVarP(&cfg.Name,
+	var root = &cobra.Command{}
+	root.PersistentFlags().StringVarP(&s.Name,
 		"service", "s", "",
 		"API service name")
-	rootCmd.PersistentFlags().StringVarP(&cfg.CredentialsFile,
+	root.PersistentFlags().StringVarP(&s.CredentialsFile,
 		"creds", "k", "",
 		"Service account private key JSON file")
-	rootCmd.PersistentFlags().StringVarP(&cfg.ProducerProject,
+	root.PersistentFlags().StringVarP(&s.ProducerProject,
 		"project", "p", "",
 		"Service producer project")
 
-	rootCmd.AddCommand(deployCmd, fetchCmd)
-	rootCmd.Execute()
+	root.AddCommand(deploy, fetch, undelete)
+	root.Execute()
 }

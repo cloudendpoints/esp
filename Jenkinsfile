@@ -388,12 +388,9 @@ def isDefaultCleanNginxBinary() {
   return (getParam('SERVICE_MANAGEMENT_URL') == '' && getParam('SERVER_CONFIG') == '')
 }
 
-def bookstoreDockerImage() {
-  return "gcr.io/${PROJECT_ID}/bookstore:${GIT_SHA}"
-}
-
-def gRpcTestServerImage(grpc) {
-  return "gcr.io/${PROJECT_ID}/grpc-${grpc}-server:${GIT_SHA}"
+// One of bookstore, echo, interop
+def backendImage(app) {
+  return "gcr.io/${PROJECT_ID}/${app}:${GIT_SHA}"
 }
 
 def espDebianPackage() {
@@ -472,13 +469,13 @@ def buildPackages() {
 
 def buildBookstoreImage() {
   setupNode()
-  def bookstoreImg = bookstoreDockerImage()
+  def bookstoreImg = backendImage('bookstore')
   sh("test/bookstore/linux-build-bookstore-docker -i ${bookstoreImg}")
 }
 
 def buildGrcpTest() {
-  def gRpcEchoServerImg = gRpcTestServerImage('echo')
-  def gRpcInteropServerImg = gRpcTestServerImage('interop')
+  def gRpcEchoServerImg = backendImage('echo')
+  def gRpcInteropServerImg = backendImage('interop')
   setupNode()
   sh("test/grpc/linux-build-grpc-docker -i ${gRpcEchoServerImg}")
   sh("test/grpc/linux-build-grpc-docker -o -i ${gRpcInteropServerImg}")
@@ -559,29 +556,23 @@ def e2eCommonOptions(testId, prefix = '') {
       "${skipCleanup} "
 }
 
-// grpc is a string; one of
-//  'off': not use grpc
+// backend is a string; one of
+//  'bookstore': HTTP bookstore
 //  'echo': run grpc echo pass_through and transcoding tests
 //  'interop': run grpc interop pass_through test.
-def e2eGKE(coupling, proto, grpc = 'off') {
+def e2eGKE(coupling, proto, backend = 'bookstore') {
   setupNode()
   fastUnstash('tools')
-  def uniqueID = getUniqueID("gke-${coupling}-${proto}", true)
-  def serviceName = generateServiceName(uniqueID)
-  def backendDockerImage = bookstoreDockerImage()
-  if (grpc != 'off') {
-    serviceName = "grpc-${grpc}-dot-${PROJECT_ID}.appspot.com"
-    backendDockerImage = gRpcTestServerImage(grpc)
-  }
+  def uniqueID = getUniqueID("gke-${coupling}-${proto}-${backend}", true)
   sh("script/e2e-kube.sh " +
-      " -b ${backendDockerImage}" +
-      " -g ${grpc}" +
-      " -e " + espDockerImage() +
-      " -t ${proto}" +
       " -c ${coupling}" +
-      " -a ${serviceName}" +
-      " -B ${BUCKET} " +
+      " -t ${proto}" +
+      " -g ${backend}" +
+      " -b " + backendImage(backend) +
+      " -e " + espDockerImage() +
       " -i ${uniqueID} " +
+      " -a ${uniqueID}.${PROJECT_ID}.appspot.com" +
+      " -B ${BUCKET} " +
       " -l " + getParam('DURATION_HOUR', 0) +
       (getParam('SKIP_CLEANUP', false) ? " -s" : ""))
 }

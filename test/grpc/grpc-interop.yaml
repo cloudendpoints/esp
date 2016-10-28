@@ -1,8 +1,7 @@
 type: google.api.Service
 config_version: 3
-name: interop-dot-esp-grpc-load-test.appspot.com
-title: Grpc Interop test API
-producer_project_id: esp-grpc-load-test
+title: GRPC Interop Test
+name: ${ENDPOINT_SERVICE}
 apis:
 - name: grpc.testing.TestService
 usage:

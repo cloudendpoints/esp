@@ -26,18 +26,18 @@
 package cli
 
 import (
-	"deploy"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"reflect"
 	"strconv"
 	"strings"
-	"utils"
 
 	"github.com/spf13/cobra"
 
+	base "k8s.io/client-go/1.5/pkg/api"
 	api "k8s.io/client-go/1.5/pkg/api/v1"
 	extensions "k8s.io/client-go/1.5/pkg/apis/extensions/v1beta1"
 	"k8s.io/client-go/1.5/pkg/util/intstr"
@@ -61,25 +61,30 @@ var (
 
 	svc *api.Service
 
-	cfg           deploy.Service
-	serviceAPI    []string
-	serviceConfig []string
-	serviceProto  []string
+	configs []string
 
-	grpc  bool
-	tight bool
+	grpc bool
+	// loose or tight
+	containerType string
 )
 
 // Default number of replicas for ESP service
 const defaultReplicas = 1
 
+func check(msg string, err error) {
+	if err != nil {
+		log.Println(msg, err)
+		os.Exit(-1)
+	}
+}
+
 var deployCmd = &cobra.Command{
-	Use:   "deploy [source kubernetes service] [target ESP service]",
-	Short: "Deploy ESP for a service as a sidecar or a separate service",
+	Use:   "deploy [source Kubernetes service] [target ESP service]",
+	Short: "Deploy ESP for an existing Kubernetes service",
 	Run: func(cmd *cobra.Command, args []string) {
 		// Must take one parameter
 		if len(args) != 2 {
-			log.Println("Please specify kubernetes service name and ESP service name")
+			log.Println("Please specify Kubernetes service/deployment name and ESP service name")
 			os.Exit(-1)
 		}
 
@@ -89,35 +94,15 @@ var deployCmd = &cobra.Command{
 		// First argument is the service name
 		var err error
 		svc, err = clientset.Core().Services(namespace).Get(name)
-		if err != nil {
-			log.Println("Cannot find kubernetes service:", err)
-			os.Exit(-1)
-		}
-
+		check("Cannot find Kubernetes service:", err)
 		err = CreateServiceConfig(name, namespace)
-		if err != nil {
-			log.Println("Failed to create service config", err)
-			os.Exit(-1)
-		}
-
+		check("Failed to create service config:", err)
 		backend, err := GetBackend()
-		if err != nil {
-			log.Println(err)
-			os.Exit(-2)
-		}
-
-		// selector for ESP pods
-		selector, err := CreateDeployment(app, ports, backend)
-		if err != nil {
-			log.Println(err)
-			os.Exit(-2)
-		}
-
-		err = CreateService(app, selector, ports, api.ServiceType(serviceType))
-		if err != nil {
-			log.Println(err)
-			os.Exit(-2)
-		}
+		check("Failed to retrieve application backend address:", err)
+		selector, err := InjectDeployment(app, ports, backend)
+		check("Failed to inject deployment:", err)
+		err = InjectService(app, selector, ports, api.ServiceType(serviceType))
+		check("Failed to inject service:", err)
 	},
 }
 
@@ -125,7 +110,7 @@ func init() {
 	RootCmd.AddCommand(deployCmd)
 	deployCmd.PersistentFlags().StringVar(&image,
 		"image",
-		"b.gcr.io/endpoints/endpoints-runtime:0.3.7",
+		"b.gcr.io/endpoints/endpoints-runtime:latest",
 		"URL to ESP docker image")
 
 	deployCmd.PersistentFlags().StringVarP(&cfg.Name,
@@ -133,15 +118,18 @@ func init() {
 		"API service name")
 	deployCmd.PersistentFlags().StringVarP(&cfg.Version,
 		"version", "v", "",
-		"API service config version, empty to use the latest")
+		"API service config ID, empty to use the latest")
 	deployCmd.PersistentFlags().StringVarP(&cfg.CredentialsFile,
 		"creds", "k", "",
-		"Service account private key JSON file")
+		"Service account credentials JSON file")
+	deployCmd.PersistentFlags().StringVar(&cfg.ProducerProject,
+		"project", "",
+		"Service producer project (optional if you use service account credentials)")
 
 	deployCmd.PersistentFlags().IntVarP(&ports.status,
 		"status", "N", 8090, "Status port for ESP (always enabled)")
 	deployCmd.PersistentFlags().IntVarP(&ports.http,
-		"http", "p", 8080, "HTTP/1.x port to use for ESP")
+		"http", "p", 80, "HTTP/1.x port to use for ESP")
 	deployCmd.PersistentFlags().IntVarP(&ports.http2,
 		"http2", "P", 0, "HTTP/2 port to use for ESP")
 	deployCmd.PersistentFlags().IntVarP(&ports.ssl,
@@ -152,59 +140,47 @@ func init() {
 		"access_log", "", "Use a custom nginx access log file (or 'off' to disable)")
 
 	deployCmd.PersistentFlags().StringVar(&sslKey,
-		"sslKey", utils.SSLKeyFile(), "SSL key file")
+		"sslKey", "", "SSL key file")
 	deployCmd.PersistentFlags().StringVar(&sslCert,
-		"sslCert", utils.SSLCertFile(), "SSL certificate file")
+		"sslCert", "", "SSL certificate file")
 
 	deployCmd.PersistentFlags().BoolVarP(&grpc,
 		"grpc", "g", false,
 		"Use GRPC to communicate with the backend")
-	deployCmd.PersistentFlags().BoolVarP(&tight,
-		"tight", "t", false,
-		"Use a sidecar deployment instead of a separate service")
+	deployCmd.PersistentFlags().StringVarP(&containerType,
+		"deploy", "d", "tight",
+		"Specify deployment (tight or loose)")
 	deployCmd.PersistentFlags().StringVarP(&serviceType,
-		"serviceType", "e", "NodePort",
-		"Expose ESP service as the provided service type")
+		"serviceType", "e", string(api.ServiceTypeClusterIP),
+		fmt.Sprintf("Expose ESP service as the provided service type (one of %s, %s, %s)",
+			api.ServiceTypeClusterIP, api.ServiceTypeNodePort, api.ServiceTypeLoadBalancer))
 
-	deployCmd.PersistentFlags().StringArrayVar(&serviceAPI,
-		"openapi", nil,
-		"OpenAPI specification file(s)")
-	deployCmd.PersistentFlags().StringArrayVar(&serviceConfig,
-		"config", nil,
-		"Service config specification file(s)")
-	deployCmd.PersistentFlags().StringArrayVar(&serviceProto,
-		"proto", nil,
-		"Proto descriptor file(s)")
-	deployCmd.PersistentFlags().StringVar(&cfg.ProducerProject,
-		"project", "",
-		"Service producer project")
+	deployCmd.PersistentFlags().StringArrayVarP(&configs,
+		"config", "c", nil, "Service config file, one or combination of "+
+			"OpenAPI, Google Service Config, or proto descriptor. "+
+			"(supported extensions: .yaml, .yml, .json, .pb, .descriptor).")
 }
 
 // CreateServiceConfig creates/enables/submits configuration for the service
 func CreateServiceConfig(name, namespace string) error {
-	if cfg.Name == "" {
-		cfg.Name = name + "." + namespace + "." + cfg.ProducerProject + ".appspot.com"
-	}
-
 	err := cfg.Connect()
 	if err != nil {
 		return err
 	}
 
-	if len(serviceAPI) == 0 && len(serviceConfig) == 0 && len(serviceProto) == 0 {
-		// nothing to submit: fetch latest service config version
-		if cfg.Version == "" {
-			_, err := cfg.Fetch()
-			if err != nil {
-				return err
-			}
-		}
-	} else {
-		if cfg.Version != "" {
+	defaultName := name + "." + namespace + "." + cfg.ProducerProject + ".appspot.com"
+
+	if cfg.Version != "" {
+		// retrieve config
+		if len(configs) > 0 {
 			return errors.New("Cannot submit config sources for a specific version")
 		}
-		// create config
-		_, err := cfg.Deploy(serviceAPI, serviceConfig, serviceProto)
+		if cfg.Name == "" {
+			cfg.Name = defaultName
+		}
+	} else {
+		// submit config
+		_, err := cfg.Deploy(configs, defaultName)
 		if err != nil {
 			return err
 		}
@@ -222,7 +198,7 @@ func GetBackend() (string, error) {
 	svcPort := svcPorts[0]
 
 	var backend string
-	if tight {
+	if containerType == "tight" {
 		if svcPort.TargetPort.Type != intstr.Int {
 			return "", errors.New("Service target port should not be a named port")
 		}
@@ -237,11 +213,6 @@ func GetBackend() (string, error) {
 	}
 
 	return backend, nil
-}
-
-// MakeName defines the name for the ESP container for a kubernetes service
-func MakeName(name string) string {
-	return endpointsPrefix + name
 }
 
 // MakeContainer from ESP image
@@ -261,7 +232,7 @@ func MakeContainer(serviceName string, ports Ports, backend string) (*api.Contai
 		// some parameters are ignored but ports must be published
 		args = append(args, "-n", "/etc/nginx/custom/nginx.conf")
 
-		name, err := AddConfig(endpointsPrefix+"custom-", map[string]string{
+		name, err := AddConfig(EndpointsPrefix+"custom-", map[string]string{
 			"nginx.conf": customNginxConf,
 		})
 
@@ -295,7 +266,7 @@ func MakeContainer(serviceName string, ports Ports, backend string) (*api.Contai
 		args = append(args, "-S", strconv.Itoa(ports.ssl))
 		published = append(published, api.ContainerPort{ContainerPort: int32(ports.ssl)})
 
-		name, err := AddSecret(endpointsPrefix+"ssl-", map[string]string{
+		name, err := AddSecret(EndpointsPrefix+"ssl-", map[string]string{
 			"nginx.key": sslKey,
 			"nginx.crt": sslCert,
 		})
@@ -318,7 +289,7 @@ func MakeContainer(serviceName string, ports Ports, backend string) (*api.Contai
 	if cfg.CredentialsFile != "" {
 		args = append(args, "-k", "/etc/nginx/creds/secret.json")
 
-		name, err := AddSecret(endpointsPrefix+"creds-", map[string]string{
+		name, err := AddSecret(EndpointsPrefix+"creds-", map[string]string{
 			"secret.json": cfg.CredentialsFile,
 		})
 
@@ -335,60 +306,72 @@ func MakeContainer(serviceName string, ports Ports, backend string) (*api.Contai
 	}
 
 	esp := api.Container{
-		Name:         MakeName(serviceName),
+		Name:         EndpointsPrefix + serviceName,
 		Image:        image,
 		Ports:        published,
 		Args:         args,
 		VolumeMounts: volumeMounts,
+		ReadinessProbe: &api.Probe{
+			Handler: api.Handler{
+				HTTPGet: &api.HTTPGetAction{
+					Path: "/healthz",
+					Port: intstr.FromInt(ports.status),
+				},
+			},
+		},
 	}
 
 	return &esp, volumes, nil
 }
 
-// CreateDeployment creates ESP pods
-func CreateDeployment(app string, ports Ports, backend string) (map[string]string, error) {
+// TODO garbage collect old secrets
+// TODO document re-deployment
+// TODO leaking deployment when switching to tight
+
+// InjectDeployment creates ESP pods
+func InjectDeployment(app string, ports Ports, backend string) (map[string]string, error) {
+	var deployment *extensions.Deployment
+	var selector map[string]string
+
 	esp, volumes, err := MakeContainer(svc.Name, ports, backend)
 	if err != nil {
 		return nil, err
 	}
 
-	if tight {
+	if containerType == "tight" {
+		// retrieve selector from the original service
+		selector = svc.Spec.Selector
+
 		// find deployment by service name
-		dpl, err := clientset.Extensions().Deployments(namespace).Get(svc.Name)
+		deployment, err = clientset.Extensions().Deployments(namespace).Get(svc.Name)
 		if err != nil {
 			return nil, err
 		}
 
 		// update deployment
-		// TODO garbage collect old secrets
-		// TODO document re-deployment
-		template := &dpl.Spec.Template
+		template := &deployment.Spec.Template
 		template.Spec.Containers = append(
 			filterContainers(template.Spec.Containers), *esp)
 		template.Spec.Volumes = append(
 			filterVolumes(template.Spec.Volumes), volumes...)
-		template.Labels[ESPManagedService] = svc.Name
-		template.Labels[ESPEndpoints] = app
+		template.Labels[AnnotationManagedService] = svc.Name
+		template.Labels[AnnotationEndpointsService] = app
 
 		// commit updates
-		_, err = clientset.Extensions().Deployments(namespace).Update(dpl)
+		_, err = clientset.Extensions().Deployments(namespace).Update(deployment)
 		if err != nil {
 			return nil, err
 		}
-		log.Println("Updated deployment", dpl.Name)
-
-		// retrieve selector from the original service
-		selector := svc.Spec.Selector
-		return selector, nil
+		log.Println("Updated deployment", deployment.Name)
 	} else {
 		replicas := int32(defaultReplicas)
-		selector := map[string]string{
-			ESPManagedService: svc.Name,
-			ESPEndpoints:      app,
+		selector = map[string]string{
+			AnnotationManagedService:   svc.Name,
+			AnnotationEndpointsService: app,
 		}
 
 		// Create replication controller
-		deployment := &extensions.Deployment{
+		deployment = &extensions.Deployment{
 			ObjectMeta: api.ObjectMeta{
 				Name: app,
 			},
@@ -406,13 +389,24 @@ func CreateDeployment(app string, ports Ports, backend string) (map[string]strin
 			},
 		}
 
-		deployment, err = clientset.Extensions().Deployments(namespace).Create(deployment)
-		if err != nil {
-			return nil, err
+		// check if it exists
+		_, err = clientset.Extensions().Deployments(namespace).Get(app)
+		if err == nil {
+			deployment, err = clientset.Extensions().Deployments(namespace).Update(deployment)
+			if err != nil {
+				return nil, err
+			}
+			log.Println("Updated deployment", deployment.Name)
+		} else {
+			deployment, err = clientset.Extensions().Deployments(namespace).Create(deployment)
+			if err != nil {
+				return nil, err
+			}
+			log.Println("Created deployment", deployment.Name)
+
 		}
-		log.Println("Created deployment", deployment.Name)
-		return selector, nil
 	}
+	return selector, nil
 }
 
 // CreateServicePorts lists published ports for ESP container
@@ -423,7 +417,7 @@ func CreateServicePorts(ports Ports) []api.ServicePort {
 		port := int(v.Field(i).Int())
 		if port > 0 {
 			published = append(published, api.ServicePort{
-				Name:     endpointsPrefix + v.Type().Field(i).Name,
+				Name:     EndpointsPrefix + v.Type().Field(i).Name,
 				Protocol: api.ProtocolTCP,
 				Port:     int32(port),
 			})
@@ -432,18 +426,23 @@ func CreateServicePorts(ports Ports) []api.ServicePort {
 	return published
 }
 
-// CreateService creates ESP service
-func CreateService(
+// InjectService creates ESP service
+func InjectService(
 	app string,
 	selector map[string]string,
 	ports Ports,
-	serviceType api.ServiceType) error {
+	serviceType api.ServiceType) (err error) {
 	// publish all ports
-	svc := &api.Service{
+	proxyService := &api.Service{
 		ObjectMeta: api.ObjectMeta{
 			Name: app,
 			Labels: map[string]string{
-				ESPManagedService: svc.Name,
+				AnnotationManagedService: svc.Name,
+			},
+			Annotations: map[string]string{
+				AnnotationConfigName:     cfg.Name,
+				AnnotationConfigId:       cfg.Version,
+				AnnotationDeploymentType: containerType,
 			},
 		},
 		Spec: api.ServiceSpec{
@@ -453,11 +452,22 @@ func CreateService(
 		},
 	}
 
-	svc, err := clientset.Core().Services(namespace).Create(svc)
-	if err != nil {
-		return err
+	_, err = clientset.Core().Services(namespace).Get(app)
+	if err == nil {
+		log.Printf("Service %s already exists\n", app)
+		err = clientset.Core().Services(namespace).Delete(app, &base.DeleteOptions{})
+		if err != nil {
+			return
+		}
+		log.Println("Deleted service", app)
 	}
-	log.Println("Created service", svc.Name)
+
+	_, err = clientset.Core().Services(namespace).Create(proxyService)
+	if err != nil {
+		return
+	}
+	log.Println("Created service", app)
+
 	return nil
 }
 
@@ -544,7 +554,7 @@ func makeConfigVolume(name string) api.Volume {
 func filterVolumes(volumes []api.Volume) []api.Volume {
 	var out = make([]api.Volume, 0)
 	for _, v := range volumes {
-		if !strings.HasPrefix(v.Name, endpointsPrefix) {
+		if !strings.HasPrefix(v.Name, EndpointsPrefix) {
 			out = append(out, v)
 		}
 	}
@@ -554,7 +564,7 @@ func filterVolumes(volumes []api.Volume) []api.Volume {
 func filterContainers(containers []api.Container) []api.Container {
 	var out = make([]api.Container, 0)
 	for _, v := range containers {
-		if !strings.HasPrefix(v.Name, endpointsPrefix) {
+		if !strings.HasPrefix(v.Name, EndpointsPrefix) {
 			out = append(out, v)
 		}
 	}

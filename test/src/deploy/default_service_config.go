@@ -24,23 +24,48 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
-// ESP CLI
-//
-package main
+package deploy
 
-import (
-	"cli"
-	"fmt"
-	"log"
-	"os"
-)
-
-// TODO: add undeploy command
-func main() {
-	log.SetPrefix("[espcli] ")
-	log.SetFlags(0)
-	if err := cli.RootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(-1)
-	}
-}
+const defaultServiceConfig = `
+swagger: '2.0'
+info:
+  title: %s
+  version: 1.0.0
+paths:
+  "/**":
+    get:
+      operationId: Get
+      responses:
+        '200':
+          description: Get
+        default:
+          description: Error
+    delete:
+      operationId: Delete
+      responses:
+        '204':
+          description: Delete
+        default:
+          description: Error
+    patch:
+      operationId: Patch
+      responses:
+        '200':
+          description: Patch
+        default:
+          description: Error
+    post:
+      operationId: Post
+      responses:
+        '200':
+          description: Post
+        default:
+          description: Error
+    put:
+      operationId: Put
+      responses:
+        '200':
+          description: Put
+        default:
+          description: Error
+`

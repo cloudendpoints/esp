@@ -30,8 +30,6 @@ import (
 	"log"
 	"os"
 
-	"golang.org/x/net/context"
-	"golang.org/x/oauth2/google"
 	logging "google.golang.org/api/logging/v2beta1"
 
 	"github.com/spf13/cobra"
@@ -55,31 +53,34 @@ var logCmd = &cobra.Command{
 		if active {
 			ExtractFromPods(name)
 		}
-		if project != "" {
+		if cfg.CredentialsFile != "" || cfg.ProducerProject != "" {
 			ExtractFromGCP(name)
 		}
 	},
 }
 
 var (
-	project string
-	active  bool
+	active bool
 )
 
 func init() {
 	RootCmd.AddCommand(logCmd)
-	logCmd.PersistentFlags().StringVarP(&project,
-		"project", "p", "",
-		"GCP project for Kubernetes Google Cloud Logging integration")
 	logCmd.PersistentFlags().BoolVarP(&active,
 		"active", "a", true,
 		"Query kubectl to fetch logs (both stdout and stderr)")
+	logCmd.PersistentFlags().StringVarP(&cfg.CredentialsFile,
+		"creds", "k", "",
+		"Service account credentials JSON file")
+	logCmd.PersistentFlags().StringVarP(&cfg.ProducerProject,
+		"project", "p", "",
+		"Service producer project (optional if you use service account credentials)")
 }
 
+// ExtractFromGCP Logging service
 func ExtractFromGCP(name string) {
 	log.Println("Extracting logs from Google Cloud Logging:")
-	ctx := context.Background()
-	hc, err := google.DefaultClient(ctx, logging.CloudPlatformScope)
+
+	hc, err := cfg.GetClient(logging.CloudPlatformScope)
 	if err != nil {
 		log.Println(err)
 		os.Exit(-1)
@@ -95,18 +96,18 @@ func ExtractFromGCP(name string) {
 	filter := fmt.Sprintf(`resource.type="container"
 		AND resource.labels.container_name="%s"
 		AND resource.labels.namespace_id="%s"
-		AND severity=ERROR`, MakeName(name), namespace)
+		AND severity=ERROR`, EndpointsPrefix+name, namespace)
 	log.Println("Filter: ", filter)
 	req := &logging.ListLogEntriesRequest{
 		OrderBy:    "timestamp asc",
 		Filter:     filter,
-		ProjectIds: []string{project},
+		ProjectIds: []string{cfg.ProducerProject},
 	}
 
 	resp, err := client.Entries.List(req).Fields(
 		"entries(resource/labels)",
 		"entries(severity,textPayload,timestamp)",
-	).Context(ctx).Do()
+	).Do()
 	if err != nil {
 		log.Println(err)
 		os.Exit(-1)
@@ -124,7 +125,7 @@ func ExtractFromGCP(name string) {
 func ExtractFromPods(name string) {
 	log.Println("Extracting logs from existing pods:")
 	label := labels.SelectorFromSet(labels.Set(map[string]string{
-		ESPManagedService: name,
+		AnnotationManagedService: name,
 	}))
 	options := api.ListOptions{LabelSelector: label}
 	list, err := clientset.Core().Pods(namespace).List(options)
@@ -148,7 +149,7 @@ func ExtractFromPods(name string) {
 func PrintLogs(name, pod string) {
 	log.Printf("[pod_id=%s]", pod)
 	logOptions := &versioned.PodLogOptions{
-		Container: MakeName(name),
+		Container: EndpointsPrefix + name,
 	}
 	raw, err := clientset.Core().Pods(namespace).GetLogs(pod, logOptions).Do().Raw()
 	if err != nil {

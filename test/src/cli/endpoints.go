@@ -41,16 +41,12 @@ import (
 	"k8s.io/client-go/1.5/pkg/labels"
 )
 
-var (
-	ip string
-)
-
 var endpointsCmd = &cobra.Command{
-	Use:   "endpoints [kubernetes service]",
-	Short: "Describe ESP endpoints for a kubernetes service",
+	Use:   "endpoints [Kubernetes service]",
+	Short: "Describe ESP endpoints for a Kubernetes service",
 	PreRun: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
-			log.Println("Please specify kubernetes service name")
+			log.Println("Please specify Kubernetes service name")
 			os.Exit(-1)
 		}
 	},
@@ -68,10 +64,9 @@ var endpointsCmd = &cobra.Command{
 
 func init() {
 	RootCmd.AddCommand(endpointsCmd)
-	endpointsCmd.PersistentFlags().StringVar(&ip,
-		"ip", "localhost", "Node IP address for NodePort resolution")
 }
 
+// GetESPEndpoints collects endpoints information
 func GetESPEndpoints(name string) (map[string]map[string]string, error) {
 	// collect all services running ESP
 	list, err := GetESPServices(name)
@@ -87,15 +82,16 @@ func GetESPEndpoints(name string) (map[string]map[string]string, error) {
 			log.Println(err)
 			os.Exit(-1)
 		}
-		out[svc] = ends
+		out[svc.Name] = ends
 	}
 
 	return out, nil
 }
 
-func GetESPServices(name string) ([]string, error) {
+// GetESPServices for a Kubernetes service
+func GetESPServices(name string) ([]*versioned.Service, error) {
 	label := labels.SelectorFromSet(labels.Set(map[string]string{
-		ESPManagedService: name,
+		AnnotationManagedService: name,
 	}))
 	options := api.ListOptions{LabelSelector: label}
 	list, err := clientset.Core().Services(namespace).List(options)
@@ -103,31 +99,35 @@ func GetESPServices(name string) ([]string, error) {
 		return nil, err
 	}
 
-	var out = make([]string, len(list.Items))
+	var out = make([]*versioned.Service, len(list.Items))
 	for i := 0; i < len(list.Items); i++ {
-		out[i] = list.Items[i].Name
+		out[i] = &list.Items[i]
 	}
 	return out, nil
 }
 
-// Endpoints retrieves endpoints for a service
-func GetEndpoints(name string) (map[string]string, error) {
-	svc, err := clientset.Core().Services(namespace).Get(name)
-	if err != nil {
-		return nil, err
-	}
-
+// GetEndpoints retrieves endpoints information for an ESP service
+func GetEndpoints(svc *versioned.Service) (map[string]string, error) {
 	out := map[string]string{}
+
+	out[AnnotationConfigId] = svc.Annotations[AnnotationConfigId]
+	out[AnnotationConfigName] = svc.Annotations[AnnotationConfigName]
+	out[AnnotationDeploymentType] = svc.Annotations[AnnotationDeploymentType]
 
 	if svc.Spec.Type == versioned.ServiceTypeNodePort {
 		for _, port := range svc.Spec.Ports {
-			out[port.Name] = ip + ":" + strconv.Itoa(int(port.NodePort))
+			out[port.Name] = "NODE_IP:" + strconv.Itoa(int(port.NodePort))
+		}
+	} else if svc.Spec.Type == versioned.ServiceTypeClusterIP {
+		for _, port := range svc.Spec.Ports {
+			out[port.Name] = svc.Name + ":" + strconv.Itoa(int(port.Port))
 		}
 	} else if svc.Spec.Type == versioned.ServiceTypeLoadBalancer {
 		var address string
+		var err error
 		ok := utils.Repeat(func() bool {
-			log.Println("Retrieving address of the service " + name)
-			svc, err = clientset.Core().Services(namespace).Get(name)
+			log.Println("Retrieving address of the service " + svc.Name)
+			svc, err = clientset.Core().Services(namespace).Get(svc.Name)
 			if err != nil {
 				return false
 			}
