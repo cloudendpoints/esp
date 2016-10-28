@@ -1,5 +1,6 @@
 producer_project_id: "<YOUR_PROJECT_ID>"
 name: "<YOUR_PROJECT_ID>.appspot.com"
+id: "2016-08-25r1"
 control {
   environment: "servicecontrol.googleapis.com"
 }

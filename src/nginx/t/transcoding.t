@@ -43,12 +43,13 @@ my $NginxPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $GrpcServerPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(21);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(23);
 
 $t->write_file('service.pb.txt',
   ApiManager::get_transcoding_test_service_config(
     'endpoints-transcoding-test.cloudendpointsapis.com',
-    "http://127.0.0.1:${ServiceControlPort}"));
+    "http://127.0.0.1:${ServiceControlPort}") .
+    ApiManager::read_test_file('testdata/logs_metrics.pb.txt'));
 
 $t->write_file('server_config.pb.txt', ApiManager::disable_service_control_cache);
 
@@ -173,6 +174,44 @@ while (my ($i, $r) = each @servicecontrol_requests) {
     like($r->{uri}, qr/:report$/, "Report has correct uri for ${i}");
   }
 }
+
+# :check
+my $r = shift @servicecontrol_requests;
+my $check_body = ServiceControl::convert_proto($r->{body}, 'check_request', 'json');
+my $expected_check_body = {
+  'serviceName' => 'endpoints-transcoding-test.cloudendpointsapis.com',
+  'serviceConfigId' => '2016-08-25r1',
+  'operation' => {
+     'consumerId' => 'api_key:api-key',
+     'operationName' => 'endpoints.examples.bookstore.Bookstore.ListShelves',
+     'labels' => {
+        'servicecontrol.googleapis.com/caller_ip' => '127.0.0.1',
+        'servicecontrol.googleapis.com/service_agent' => ServiceControl::service_agent(),
+        'servicecontrol.googleapis.com/user_agent' => 'ESP',
+     }
+  }
+};
+ok(ServiceControl::compare_json($check_body, $expected_check_body), 'Check body is received.');
+
+# :report
+$r = shift @servicecontrol_requests;
+my $report_body = ServiceControl::convert_proto($r->{body}, 'report_request', 'json');
+my $expected_report_body = ServiceControl::gen_report_body({
+  'serviceConfigId' => '2016-08-25r1',
+  'url' => '/shelves?key=api-key',
+  'api_key' => 'api-key',
+  'producer_project_id' => 'endpoints-transcoding-test',
+  'location' => 'us-central1',
+  'api_name' =>  'endpoints-transcoding-test.cloudendpointsapis.com',
+  'api_version' =>  '2016-08-25r1',
+  'api_method' =>  'endpoints.examples.bookstore.Bookstore.ListShelves',
+  'http_method' => 'GET',
+  'log_message' => 'Method: endpoints.examples.bookstore.Bookstore.ListShelves',
+  'response_code' => '200',
+  'request_size' => 51,
+  'response_size' => 193,
+  });
+ok(ServiceControl::compare_json($report_body, $expected_report_body), 'Report body is received.');
 
 ################################################################################
 
