@@ -138,7 +138,7 @@ is(scalar @$traces, 1, 'Trace request contains 1 trace.' );
 like($json_obj->{traces}->[0]->{traceId}, qr/[0-9a-fA-F]{32}/,
     'Trace ID is valid.');
 is($json_obj->{traces}->[0]->{spans}->[0]->{name},
-    'endpoints-test.cloudendpointsapis.com.<Unknown Operation Name>',
+    'endpoints-test.cloudendpointsapis.com/<Unknown Operation Name>',
     'Root trace span name is set to <Unknown Operation Name>');
 
 ################################################################################

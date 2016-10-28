@@ -49,6 +49,7 @@ type ExpectedCheck struct {
 
 type ExpectedReport struct {
 	Version           string
+	ServiceName       string
 	ApiName           string
 	ApiVersion        string
 	ApiMethod         string
@@ -167,7 +168,6 @@ func makeNumberValue(v int64) *structpb.Value {
 func createLogEntry(er *ExpectedReport) *servicecontrol.LogEntry {
 	pl := make(map[string]*structpb.Value)
 
-	pl["api_name"] = makeStringValue(er.ApiName)
 	pl["api_method"] = makeStringValue(er.ApiMethod)
 	pl["http_response_code"] = makeNumberValue(int64(er.ResponseCode))
 
@@ -344,7 +344,7 @@ func CreateReport(er *ExpectedReport) servicecontrol.ReportRequest {
 	op.MetricValueSets = ms
 
 	erPb := servicecontrol.ReportRequest{
-		ServiceName: er.ApiName,
+		ServiceName: er.ServiceName,
 		Operations:  []*servicecontrol.Operation{&op},
 	}
 	return erPb

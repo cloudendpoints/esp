@@ -43,7 +43,7 @@ const char kIssuer3http[] = "http://iss3/";
 const char kIssuer4[] = "iss4";
 
 TEST(MethodInfo, Create) {
-  MethodInfoImplPtr method_info(new MethodInfoImpl(kMethodName));
+  MethodInfoImplPtr method_info(new MethodInfoImpl(kMethodName, "", ""));
   ASSERT_FALSE(method_info->auth());
   ASSERT_FALSE(method_info->allow_unregistered_calls());
   ASSERT_EQ(kMethodName, method_info->name());
@@ -56,7 +56,7 @@ TEST(MethodInfo, Create) {
 }
 
 TEST(MethodInfo, IssueAndAudiences) {
-  MethodInfoImplPtr method_info(new MethodInfoImpl(kMethodName));
+  MethodInfoImplPtr method_info(new MethodInfoImpl(kMethodName, "", ""));
   method_info->addAudiencesForIssuer(kIssuer1, "aud1,aud2");
   method_info->addAudiencesForIssuer(kIssuer1, "aud3");
   method_info->addAudiencesForIssuer(kIssuer1, ",");
@@ -99,7 +99,7 @@ TEST(MethodInfo, IssueAndAudiences) {
 }
 
 TEST(MethodInfo, TestParameters) {
-  MethodInfoImplPtr method_info(new MethodInfoImpl(kMethodName));
+  MethodInfoImplPtr method_info(new MethodInfoImpl(kMethodName, "", ""));
 
   ASSERT_EQ(nullptr, method_info->url_query_parameters("xyz"));
   ASSERT_EQ(nullptr, method_info->http_header_parameters("xyz"));
@@ -124,7 +124,7 @@ TEST(MethodInfo, TestParameters) {
 }
 
 TEST(MethodInfo, PreservesBackendAddress) {
-  MethodInfoImplPtr method_info(new MethodInfoImpl(kMethodName));
+  MethodInfoImplPtr method_info(new MethodInfoImpl(kMethodName, "", ""));
   method_info->set_backend_address("backend");
   ASSERT_EQ(method_info->backend_address(), "backend");
 }

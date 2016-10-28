@@ -40,8 +40,11 @@ namespace api_manager {
 // The name for api key in system parameter from service config.
 const char api_key_parameter_name[] = "api_key";
 
-MethodInfoImpl::MethodInfoImpl(const string &name)
+MethodInfoImpl::MethodInfoImpl(const string &name, const string &api_name,
+                               const string &api_version)
     : name_(name),
+      api_name_(api_name),
+      api_version_(api_version),
       auth_(false),
       allow_unregistered_calls_(false),
       api_key_http_headers_(nullptr),

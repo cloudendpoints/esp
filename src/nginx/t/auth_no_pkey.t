@@ -132,12 +132,11 @@ is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:report', ':rep
 my $report_body = ServiceControl::convert_proto($r->{body}, 'report_request', 'json');
 my $expected_report_body = ServiceControl::gen_report_body({
   'serviceConfigId' => '2016-08-25r1',
+  'serviceName' =>  'endpoints-test.cloudendpointsapis.com',
   'url' => '/shelves',
   'producer_project_id' => 'endpoints-test',
   'no_consumer_data' => 1,
   'location' => 'us-central1',
-  'api_name' =>  'endpoints-test.cloudendpointsapis.com',
-  'api_version' =>  '2016-08-25r1',
   'api_method' =>  'ListShelves',
   'http_method' => 'GET',
   'error_cause' => 'auth',

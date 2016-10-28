@@ -42,16 +42,91 @@ my $NginxPort = ApiManager::pick_port();
 my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(18);
-
-# Save service name in the service configuration protocol buffer file.
-my $config = ApiManager::get_bookstore_service_config_allow_unregistered .
-             ApiManager::read_test_file('testdata/logs_metrics.pb.txt') . <<"EOF";
-control {
-  environment: "http://127.0.0.1:${ServiceControlPort}"
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(15);
+$t->write_file('service.json', <<"EOF");
+{
+    "apis": [
+        {
+            "name": "test.Bookstore",
+            "methods": [
+                {
+                    "name": "ListShelves",
+                    "requestTypeUrl": "type.googleapis.com/google.protobuf.Empty",
+                    "responseTypeUrl": "type.googleapis.com/google.protobuf.Empty",
+                }
+            ],
+            "version": "v1"
+        },
+        {
+            "name": "Bookstore",
+            "methods": [
+                {
+                    "name": "ListShelves",
+                    "requestTypeUrl": "type.googleapis.com/google.protobuf.Empty",
+                    "responseTypeUrl": "type.googleapis.com/google.protobuf.Empty",
+                }
+            ],
+            "version": "v2"
+        }
+    ],
+    "control": {
+        "environment": "http://127.0.0.1:${ServiceControlPort}"
+    },
+    "http": {
+        "rules": [
+            {
+                "get": "/shelves",
+                "selector": "test.Bookstore.ListShelves"
+            }
+        ]
+    },
+    "id": "2016-08-25r1",
+    "name": "endpoints-test.cloudendpointsapis.com",
+    "logging": {
+        "producerDestinations": [
+            {
+                "logs": [
+                    "endpoints_log"
+                ],
+                "monitoredResource": "api"
+            }
+        ]
+    },
+    "logs": [
+        {
+            "name": "endpoints_log"
+        }
+    ],
+    "monitoredResources": [
+        {
+            "labels": [
+                {
+                    "key": "cloud.googleapis.com/location"
+                },
+                {
+                    "key": "cloud.googleapis.com/uid"
+                },
+                {
+                    "key": "serviceruntime.googleapis.com/api_version"
+                },
+                {
+                    "key": "serviceruntime.googleapis.com/api_method"
+                },
+                {
+                    "key": "serviceruntime.googleapis.com/consumer_project"
+                },
+                {
+                    "key": "cloud.googleapis.com/project"
+                },
+                {
+                    "key": "cloud.googleapis.com/service"
+                }
+            ],
+            "type": "api"
+        }
+    ]
 }
 EOF
-$t->write_file('service.pb.txt', $config);
 
 ApiManager::write_file_expand($t, 'nginx.conf', <<"EOF");
 %%TEST_GLOBALS%%
@@ -67,7 +142,7 @@ http {
     server_name localhost;
     location / {
       endpoints {
-        api service.pb.txt;
+        api service.json;
         %%TEST_CONFIG%%
         on;
       }
@@ -89,45 +164,31 @@ $t->run();
 
 ################################################################################
 
-# Issues two identical requests
-my $response1 = ApiManager::http_get($NginxPort, '/shelves?key=this-is-an-api-key');
-my $response2 = ApiManager::http_get($NginxPort, '/shelves?key=this-is-an-api-key');
-my $response3 = ApiManager::http_get($NginxPort, '/shelves?key=this-is-an-api-key');
+my $response = ApiManager::http_get($NginxPort,'/shelves?key=this-is-key');
 
 is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');
 $t->stop_daemons();
 
-my ($response_headers1, $response_body1) = split /\r\n\r\n/, $response1, 2;
+my ($response_headers, $response_body) = split /\r\n\r\n/, $response, 2;
 
-like($response_headers1, qr/HTTP\/1\.1 200 OK/, 'response1 returned HTTP 200.');
-is($response_body1, <<'EOF', 'Shelves returned in the response1 body.');
-Shelves data.
-EOF
+like($response_headers, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');
 
-my ($response_headers3, $response_body3) = split /\r\n\r\n/, $response3, 2;
-
-like($response_headers3, qr/HTTP\/1\.1 200 OK/, 'response3 returned HTTP 200.');
-is($response_body3, <<'EOF', 'Shelves returned in the response3 body.');
-Shelves data.
-EOF
-
-# Should have only one Check request, second one should use the cached one.
 my @requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
-is(scalar @requests, 2, 'Service control was called twice.');
+is(scalar @requests, 2, 'Service control received 2 requests.');
 
 my $r = shift @requests;
-is($r->{verb}, 'POST', ':check was called via POST');
+is($r->{verb}, 'POST', 'Service control :check was post');
 is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:check', ':check was called');
-is($r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}", ':check call has Host header');
-is($r->{headers}->{'content-type'}, 'application/x-protobuf', 'Content-Type is application/x-protobuf');
+is($r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}", 'Host header was set for :check');
+is($r->{headers}->{'content-type'}, 'application/x-protobuf', ':check Content-Type was protocol buffer');
 
 my $check_body = ServiceControl::convert_proto($r->{body}, 'check_request', 'json');
 my $expected_check_body = {
   'serviceName' => 'endpoints-test.cloudendpointsapis.com',
   'serviceConfigId' => '2016-08-25r1',
   'operation' => {
-     'consumerId' => 'api_key:this-is-an-api-key',
-     'operationName' => 'ListShelves',
+     'consumerId' => 'api_key:this-is-key',
+     'operationName' => 'test.Bookstore.ListShelves',
      'labels' => {
         'servicecontrol.googleapis.com/caller_ip' => '127.0.0.1',
         'servicecontrol.googleapis.com/service_agent' => ServiceControl::service_agent(),
@@ -137,28 +198,52 @@ my $expected_check_body = {
 };
 ok(ServiceControl::compare_json($check_body, $expected_check_body), 'Check body is received.');
 
-$r = shift @requests;
-is($r->{verb}, 'POST', ':report was called via POST');
+my $r = shift @requests;
+is($r->{verb}, 'POST', 'Service control :report was post');
 is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:report', ':report was called');
-is($r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}", ':report call has Host header');
-is($r->{headers}->{'content-type'}, 'application/x-protobuf', 'Content-Type is application/x-protobuf');
+is($r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}", 'Host header was set for :report');
+is($r->{headers}->{'content-type'}, 'application/x-protobuf', ':report Content-Type was protocol buffer');
 
 my $report_body = ServiceControl::convert_proto($r->{body}, 'report_request', 'json');
-my $expected_report_body = ServiceControl::gen_report_body({
-  'serviceName' => 'endpoints-test.cloudendpointsapis.com',
-  'serviceConfigId' => '2016-08-25r1',
-  'url' => '/shelves?key=this-is-an-api-key',
-  'api_key' => 'this-is-an-api-key',
-  'location' => 'us-central1',
-  'api_method' =>  'ListShelves',
-  'http_method' => 'GET',
-  'log_message' => 'Method: ListShelves',
-  'response_code' => '200',
-  'request_size' => 62,
-  'response_size' => 104,
-  });
-ServiceControl::aggregate_report_body($expected_report_body, 3);
-
+my $expected_report_body = {
+ 'serviceName' => 'endpoints-test.cloudendpointsapis.com',
+ 'serviceConfigId' => '2016-08-25r1',
+ 'operations' => [
+  {
+   'operationName' => 'test.Bookstore.ListShelves',
+   'consumerId' => 'api_key:this-is-key',
+   'labels' => {
+    'cloud.googleapis.com/location' => 'us-central1',
+    'servicecontrol.googleapis.com/service_agent' => ServiceControl::service_agent(),
+    'servicecontrol.googleapis.com/platform' => 'unknown',
+    'servicecontrol.googleapis.com/user_agent' => 'ESP',
+    'serviceruntime.googleapis.com/api_method' => 'test.Bookstore.ListShelves',
+    'serviceruntime.googleapis.com/api_version' => 'v1'
+   },
+   'logEntries' => [
+    {
+     'structPayload' => {
+      'api_key' => 'this-is-key',
+      'api_name' => 'test.Bookstore',
+      'api_version'=> 'v1',
+      'url' => '/shelves?key=this-is-key',
+      'api_method' => 'test.Bookstore.ListShelves',
+      'location' => 'us-central1',
+      'log_message' => 'Method: test.Bookstore.ListShelves',
+      'http_response_code' => 200,
+      'request_size' => 55,
+      'response_size' =>  90,
+      'http_method' => 'GET'
+     },
+     'name' => 'endpoints_log',
+     'severity' => 'INFO'
+    }
+   ]
+  }
+ ]
+};
+use Data::Dumper;
+print Dumper $report_body;
 ok(ServiceControl::compare_json($report_body, $expected_report_body), 'Report body is received.');
 
 ################################################################################
@@ -185,6 +270,7 @@ HTTP/1.1 200 OK
 Connection: close
 
 EOF
+
     $t->write_file($done, ':report done');
   });
 
@@ -205,10 +291,8 @@ sub bookstore {
 HTTP/1.1 200 OK
 Connection: close
 
-Shelves data.
 EOF
   });
-
   $server->run();
 }
 

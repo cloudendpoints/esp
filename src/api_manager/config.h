@@ -121,8 +121,10 @@ class Config {
   // Load SystemParameters info to MethodInfo.
   bool LoadSystemParameters(ApiManagerEnvInterface *env);
 
-  // Gets the MethodInfoImpl for a selector, creating it if necessary.
-  MethodInfoImpl *GetOrCreateMethodInfoImpl(const std::string &selector);
+  // Gets the MethodInfoImpl creating it if necessary
+  MethodInfoImpl *GetOrCreateMethodInfoImpl(const std::string &name,
+                                            const std::string &api_name,
+                                            const std::string &api_version);
 
   // Load Backend info to MethodInfo.
   bool LoadBackends(ApiManagerEnvInterface *env);

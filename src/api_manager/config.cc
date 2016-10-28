@@ -91,12 +91,34 @@ bool ReadConfigFromString(const std::string &service_config,
 
 Config::Config() {}
 
-MethodInfoImpl *Config::GetOrCreateMethodInfoImpl(const string &selector) {
+MethodInfoImpl *Config::GetOrCreateMethodInfoImpl(const string &name,
+                                                  const string &api_name,
+                                                  const string &api_version) {
+  std::string selector;
+  std::string path;
+
+  if (api_name.empty()) {
+    selector = name;
+    path = name;
+  } else {
+    // The corresponding selector is "{api.name}.{method.name}".
+    std::ostringstream selector_builder;
+    selector_builder << api_name << '.' << name;
+    selector = selector_builder.str();
+
+    // The corresponding RPC path is "/{api.name}/{method.name}".
+    std::ostringstream path_builder;
+    path_builder << '/' << api_name << '/' << name;
+    path = path_builder.str();
+  }
+
   auto i = method_map_.find(selector);
   if (i == std::end(method_map_)) {
-    i = method_map_
-            .emplace(selector, MethodInfoImplPtr(new MethodInfoImpl(selector)))
-            .first;
+    auto info =
+        MethodInfoImplPtr(new MethodInfoImpl(name, api_name, api_version));
+    info->set_selector(selector);
+    info->set_rpc_method_full_name(path);
+    i = method_map_.emplace(selector, std::move(info)).first;
   }
   return i->second.get();
 }
@@ -143,7 +165,7 @@ bool Config::LoadHttpMethods(ApiManagerEnvInterface *env,
       continue;
     }
 
-    MethodInfoImpl *mi = GetOrCreateMethodInfoImpl(selector);
+    MethodInfoImpl *mi = GetOrCreateMethodInfoImpl(selector, "", "");
 
     if (!pmb->Register(service_.name(), http_method, *url, rule.body(), mi)) {
       string error("Invalid HTTP template: ");
@@ -182,7 +204,7 @@ bool Config::AddOptionsMethodForAllUrls(ApiManagerEnvInterface *env,
     suffix << ++n;
     cors_selector = cors_selector_base + "." + suffix.str();
   }
-  MethodInfoImpl *mi = GetOrCreateMethodInfoImpl(cors_selector);
+  MethodInfoImpl *mi = GetOrCreateMethodInfoImpl(cors_selector, "", "");
   mi->set_auth(false);
   mi->set_allow_unregistered_calls(true);
 
@@ -207,29 +229,19 @@ bool Config::LoadRpcMethods(ApiManagerEnvInterface *env,
       // The name in the Api message is the package name followed by
       // the API's simple name, and the name in the Method message is
       // the simple name of the method.
-
-      // The corresponding RPC path is "/{api.name}/{method.name}".
-      std::ostringstream path_builder;
-      path_builder << '/' << api.name() << '/' << method.name();
-      std::string path = path_builder.str();
-
-      // The corresponding selector is "{api.name}.{method.name}".
-      std::ostringstream selector_builder;
-      selector_builder << api.name() << '.' << method.name();
-      std::string selector = selector_builder.str();
-
-      MethodInfoImpl *mi = GetOrCreateMethodInfoImpl(selector);
+      MethodInfoImpl *mi =
+          GetOrCreateMethodInfoImpl(method.name(), api.name(), api.version());
 
       // Initialize RPC method details
-      mi->set_rpc_method_full_name(path);
       mi->set_request_type_url(method.request_type_url());
       mi->set_request_streaming(method.request_streaming());
       mi->set_response_type_url(method.response_type_url());
       mi->set_response_streaming(method.response_streaming());
 
-      if (!pmb->Register(service_.name(), http_post, path, std::string(), mi)) {
+      if (!pmb->Register(service_.name(), http_post, mi->rpc_method_full_name(),
+                         std::string(), mi)) {
         string error("Invalid method: ");
-        error += selector;
+        error += mi->selector();
         env->LogError(error.c_str());
       }
     }
@@ -395,10 +407,11 @@ std::unique_ptr<Config> Config::Create(ApiManagerEnvInterface *env,
   }
   config->LoadServerConfig(env, server_config);
   PathMatcherBuilder pmb(false /* strict_service_matching */);
-  if (!config->LoadHttpMethods(env, &pmb)) {
+  // Load apis before http rules to store API versions
+  if (!config->LoadRpcMethods(env, &pmb)) {
     return nullptr;
   }
-  if (!config->LoadRpcMethods(env, &pmb)) {
+  if (!config->LoadHttpMethods(env, &pmb)) {
     return nullptr;
   }
   config->path_matcher_ = pmb.Build();
