@@ -50,7 +50,7 @@ my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(22);
 
 # Save service name in the service configuration protocol buffer file.
 $t->write_file('service.pb.txt',
-               ApiManager::get_bookstore_service_config_allow_unregistered . <<"EOF");
+               ApiManager::get_bookstore_service_config . <<"EOF");
 control {
   environment: "http://127.0.0.1:${ServiceControlPort}"
 }
@@ -112,7 +112,7 @@ $t->run();
 
 my $token = Auth::get_auth_token('./src/nginx/t/matching-client-secret.json');
 my $response = ApiManager::http($NginxPort,<<"EOF");
-GET /shelves HTTP/1.0
+GET /shelves?key=api-key HTTP/1.0
 Authorization: Bearer $token
 Host: localhost
 
@@ -164,8 +164,8 @@ is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:check',
 
 # Verify the :check body contents.
 my $check_json = decode_json(ServiceControl::convert_proto($r->{body}, 'check_request', 'json'));
-is($check_json->{operation}->{consumerId}, 'project:esp-test-app',
-   'Project ID from metadata server was used for :check.');
+is($check_json->{operation}->{consumerId}, 'api_key:api-key',
+   'ConsumerID is using api-key for :check.');
 
 # :report
 $r = shift @servicecontrol_requests;
@@ -174,8 +174,8 @@ is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:report',
    ':report uri was correct');
 
 my $report_json = decode_json(ServiceControl::convert_proto($r->{body}, 'report_request', 'json'));
-is($report_json->{operations}[0]->{consumerId}, 'project:esp-test-app',
-   'Project ID from metadata server was used for :report.');
+is($report_json->{operations}[0]->{consumerId}, 'api_key:api-key',
+   'ConsumerID is using api-key for :report.');
 
 # Verify backend was not called.
 is($t->read_file('bookstore.log'), '', 'Backend was not called.');

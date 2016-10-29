@@ -270,13 +270,15 @@ void Aggregated::Check(
     if (status.ok()) {
       Status status =
           Proto::ConvertCheckResponse(*response, service_name, &response_info);
-      on_done(status, response_info);
+      // If allow_unregistered_calls is true, it is always OK to proceed.
+      if (allow_unregistered_calls) {
+        on_done(Status::OK, response_info);
+      } else {
+        on_done(status, response_info);
+      }
     } else {
-      // Propagate error response from upstream, and network/parsing error. If
-      // for network errors (status.error_code() = Code::UNAVAILABLE), if
-      // allow_unregistered_calls is true, it is OK to proceed.
-      if (status.error_code() == Code::UNAVAILABLE &&
-          allow_unregistered_calls) {
+      // If allow_unregistered_calls is true, it is always OK to proceed.
+      if (allow_unregistered_calls) {
         on_done(Status::OK, response_info);
       } else {
         on_done(Status(status.error_code(), status.error_message(),
