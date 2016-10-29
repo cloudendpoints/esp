@@ -197,15 +197,14 @@ ok(ServiceControl::compare_json($check_body, $expected_check_body), 'Check body 
 $r = shift @servicecontrol_requests;
 my $report_body = ServiceControl::convert_proto($r->{body}, 'report_request', 'json');
 my $expected_report_body = ServiceControl::gen_report_body({
-  'serviceName' => 'endpoints-transcoding-test.cloudendpointsapis.com',
-  'api_method' => 'endpoints.examples.bookstore.Bookstore.ListShelves',
   'serviceConfigId' => '2016-08-25r1',
   'url' => '/shelves?key=api-key',
   'api_key' => 'api-key',
   'producer_project_id' => 'endpoints-transcoding-test',
   'location' => 'us-central1',
-  'api_name' =>  'endpoints.examples.bookstore.Bookstore',
-  'api_version' =>  'v1',
+  'api_name' =>  'endpoints-transcoding-test.cloudendpointsapis.com',
+  'api_version' =>  '2016-08-25r1',
+  'api_method' =>  'endpoints.examples.bookstore.Bookstore.ListShelves',
   'http_method' => 'GET',
   'log_message' => 'Method: endpoints.examples.bookstore.Bookstore.ListShelves',
   'response_code' => '200',

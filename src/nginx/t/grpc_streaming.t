@@ -127,14 +127,13 @@ like($r->{uri}, qr/:report$/, 'Second call was a :report');
 
 my $report_body = ServiceControl::convert_proto($r->{body}, 'report_request', 'json');
 my $expected_report_body = ServiceControl::gen_report_body({
-  'serviceName' =>  'endpoints-grpc-test.cloudendpointsapis.com',
-  'api_method' =>  'test.grpc.Test.EchoStream',
   'url' => '/test.grpc.Test/EchoStream',
   'protocol' => 'grpc',
   'api_key' => 'this-is-an-api-key',
-  'api_name' =>  'test.grpc.Test',
   'producer_project_id' => 'endpoints-grpc-test',
   'location' => 'us-central1',
+  'api_name' =>  'endpoints-grpc-test.cloudendpointsapis.com',
+  'api_method' =>  'test.grpc.Test.EchoStream',
   'http_method' => 'POST',
   'log_message' => 'Method: test.grpc.Test.EchoStream',
   'response_code' => '200',

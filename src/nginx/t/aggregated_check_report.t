@@ -145,11 +145,12 @@ is($r->{headers}->{'content-type'}, 'application/x-protobuf', 'Content-Type is a
 
 my $report_body = ServiceControl::convert_proto($r->{body}, 'report_request', 'json');
 my $expected_report_body = ServiceControl::gen_report_body({
-  'serviceName' => 'endpoints-test.cloudendpointsapis.com',
   'serviceConfigId' => '2016-08-25r1',
   'url' => '/shelves?key=this-is-an-api-key',
   'api_key' => 'this-is-an-api-key',
   'location' => 'us-central1',
+  'api_name' =>  'endpoints-test.cloudendpointsapis.com',
+  'api_version' =>  '2016-08-25r1',
   'api_method' =>  'ListShelves',
   'http_method' => 'GET',
   'log_message' => 'Method: ListShelves',

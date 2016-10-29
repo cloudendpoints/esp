@@ -38,17 +38,8 @@ class MethodInfo {
  public:
   virtual ~MethodInfo() {}
 
-  // Return the method name
+  // Return the name or selector for this method.
   virtual const std::string &name() const = 0;
-
-  // Return the API name
-  virtual const std::string &api_name() const = 0;
-
-  // Return the API version
-  virtual const std::string &api_version() const = 0;
-
-  // Return the method selector
-  virtual const std::string &selector() const = 0;
 
   // Return if auth is enabled for this method.
   virtual bool auth() const = 0;

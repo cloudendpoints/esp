@@ -113,6 +113,7 @@ sub gen_report_labels {
   my $labels = {
     'servicecontrol.googleapis.com/service_agent' => service_agent(),
     'servicecontrol.googleapis.com/user_agent' => 'ESP',
+    'serviceruntime.googleapis.com/api_method' => $in->{api_method},
     'cloud.googleapis.com/location' => $in->{location},
     '/response_code' => $in->{response_code},
     '/status_code' => Status::http_response_code_to_status_code($in->{response_code}),
@@ -120,7 +121,6 @@ sub gen_report_labels {
     '/protocol' => 'http'
   };
 
-  $labels->{'serviceruntime.googleapis.com/api_method'} = $in->{api_method};
   $labels->{'/status_code'} = $in->{status_code} if exists $in->{status_code};
   $labels->{'/error_type'} = $in->{error_type} if exists $in->{error_type};
   $labels->{'/protocol'} = $in->{protocol} if exists $in->{protocol};
@@ -144,11 +144,11 @@ sub gen_log_entry {
   my $in = shift;
 
   my $payload = {
+    'api_name' => $in->{api_name},
     'api_method' => $in->{api_method},
     'http_response_code' => $in->{response_code},
   };
 
-  $payload->{api_name} = $in->{api_name} if exists $in->{api_name};
   $payload->{api_version} = $in->{api_version} if exists $in->{api_version};
   $payload->{producer_project_id} = $in->{producer_project_id} if
     exists $in->{producer_project_id};
@@ -177,8 +177,9 @@ sub gen_log_entry {
 sub gen_report_body {
   my $in = shift;
 
-  my $operation = {};
-  $operation->{operationName} = $in->{api_method};
+  my $operation = {
+    'operationName' => $in->{api_method},
+  };
   if (exists $in->{api_key}) {
     $operation->{consumerId} = 'api_key:' . $in->{api_key};
   } elsif (exists $in->{producer_project_id}) {
@@ -229,10 +230,10 @@ sub gen_report_body {
 
   $operation->{metricValueSets} = \@metrics;
   my $ret = {
+    'serviceName' => $in->{api_name},
     'operations' => [ $operation ]
   };
   $ret->{'serviceConfigId'} = $in->{serviceConfigId} if exists $in->{serviceConfigId};
-  $ret->{'serviceName'} = $in->{serviceName} if exists $in->{serviceName};
   print Dumper $ret if $ENV{TEST_NGINX_VERBOSE};
   return $ret;
 }

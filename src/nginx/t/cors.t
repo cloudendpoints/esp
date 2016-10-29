@@ -158,12 +158,13 @@ like($r->{uri}, qr/:report$/, 'Second call was a :report');
 my $report_body1 = ServiceControl::convert_proto($r->{body}, 'report_request', 'json');
 my $expected_report_body1 = ServiceControl::gen_report_body({
   'serviceConfigId' => '2016-08-25r1',
-  'serviceName' =>  'endpoints-test.cloudendpointsapis.com',
   'url' => '/shelves?key=this-is-an-api-key',
   'api_key' => 'this-is-an-api-key',
   'producer_project_id' => 'esp-project-id',
   'referer' => 'http://google.com/bookstore/root',
   'location' => 'us-central1',
+  'api_name' =>  'endpoints-test.cloudendpointsapis.com',
+  'api_version' =>  '2016-08-25r1',
   'api_method' =>  'CorsShelves',
   'http_method' => 'OPTIONS',
   'log_message' => 'Method: CorsShelves',
@@ -201,12 +202,13 @@ like($r->{uri}, qr/:report$/, 'Fouth call was a :report');
 my $report_body2 = ServiceControl::convert_proto($r->{body}, 'report_request', 'json');
 my $expected_report_body2 = ServiceControl::gen_report_body({
   'serviceConfigId' => '2016-08-25r1',
-  'serviceName' =>  'endpoints-test.cloudendpointsapis.com',
   'url' => '/shelves/1',
   'producer_project_id' => 'esp-project-id',
   'no_consumer_data' => 1,
   'referer' => 'http://google.com/bookstore/root',
   'location' => 'us-central1',
+  'api_name' =>  'endpoints-test.cloudendpointsapis.com',
+  'api_version' =>  '2016-08-25r1',
   'api_method' =>  'CORS',
   'http_method' => 'OPTIONS',
   'log_message' => 'Method: CORS',

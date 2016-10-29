@@ -111,10 +111,17 @@ RequestContext::RequestContext(std::shared_ptr<ServiceContext> service_context,
 
     std::string method_name = kUnrecognizedOperation;
     if (method_call_.method_info) {
-      method_name = method_call_.method_info->selector();
+      method_name = method_call_.method_info->name();
     }
-    // qualify with the service name
-    method_name = service_context_->service_name() + "/" + method_name;
+    // If the method_name does not have service_name prefix, append service_name
+    // in front of it. In http case, the method_name will be a bare method name,
+    // such as "ListShelves", where we want to prepend service_name.
+    // In gRPC case, the method name already has service_name prefix, we will do
+    // nothing.
+    if (method_name.compare(0, service_context_->service_name().size(),
+                            service_context_->service_name())) {
+      method_name = service_context_->service_name() + '.' + method_name;
+    }
     cloud_trace_.reset(cloud_trace::CreateCloudTrace(
         trace_context_header, method_name,
         &service_context_->cloud_trace_aggregator()->sampler()));
@@ -168,7 +175,7 @@ void RequestContext::CompleteCheck(Status status) {
 void RequestContext::FillOperationInfo(service_control::OperationInfo *info) {
   info->service_name = service_context_->service_name();
   if (method()) {
-    info->operation_name = method()->selector();
+    info->operation_name = method()->name();
   } else {
     info->operation_name = kUnrecognizedOperation;
   }
@@ -212,10 +219,9 @@ void RequestContext::FillComputePlatform(
 
 void RequestContext::FillLogMessage(service_control::ReportRequestInfo *info) {
   if (method()) {
-    info->api_method = method()->selector();
-    info->api_name = method()->api_name();
-    info->api_version = method()->api_version();
-    info->log_message = std::string(kMessage) + method()->selector();
+    const std::string &method_name = method()->name();
+    info->api_method = method_name;
+    info->log_message = std::string(kMessage) + method_name;
   } else {
     std::string http_verb = info->method;
     if (http_verb.empty()) {
@@ -241,6 +247,8 @@ void RequestContext::FillReportRequestInfo(
 
   info->url = request_->GetUnparsedRequestPath();
   info->method = request_->GetRequestHTTPMethod();
+  info->api_name = info->service_name;
+  info->api_version = service_context_->config()->service().id();
 
   info->request_size = response->GetRequestSize();
   info->response_size = response->GetResponseSize();

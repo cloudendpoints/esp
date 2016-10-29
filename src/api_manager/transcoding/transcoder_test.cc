@@ -69,9 +69,6 @@ class TestMethodInfo : public MethodInfo {
   // MethodInfo implementation
   // Methods that the Transcoder doesn't use
   const std::string &name() const { return empty_; }
-  const std::string &api_name() const { return empty_; }
-  const std::string &api_version() const { return empty_; }
-  const std::string &selector() const { return empty_; }
   bool auth() const { return false; }
   bool allow_unregistered_calls() const { return false; }
   bool isIssuerAllowed(const std::string &issuer) const { return false; }

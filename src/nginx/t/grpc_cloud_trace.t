@@ -138,7 +138,7 @@ is($trace_request->{uri}, '/v1/projects/endpoints-grpc-test/traces',
 my $json_obj = decode_json($trace_request->{body});
 is($json_obj->{traces}->[0]->{projectId}, 'endpoints-grpc-test', 'Project ID in body is correct.');
 is($json_obj->{traces}->[0]->{spans}->[0]->{name},
-    'endpoints-grpc-test.cloudendpointsapis.com/test.grpc.Test.Echo',
+    'endpoints-grpc-test.cloudendpointsapis.com.test.grpc.Test.Echo',
     'Root trace span name is set to method name');
 is($json_obj->{traces}->[0]->{spans}->[0]->{kind}, 'RPC_SERVER', 'Trace span kind is RPC_SERVER');
 is($json_obj->{traces}->[0]->{spans}->[0]->{parentSpanId}, undef,
