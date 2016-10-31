@@ -23,7 +23,7 @@ http {
   endpoints_certificates /etc/nginx/trusted-ca-certificates.crt;
 
 % for i, location in enumerate(ingress.locations):
-% if not location.grpc:
+% if location.proto != 'grpc':
   upstream app_server${i} {
   % for backend in location.backends:
     server ${backend};
@@ -72,11 +72,17 @@ http {
       }
       # End Endpoints v2 Support
 
-% if location.grpc:
+% if location.proto == 'grpc':
       # WARNING: only first backend is used
       grpc_pass ${location.backends[0]} override;
 % else:
+  % if location.proto == 'http':
       proxy_pass http://app_server${i};
+  % elif location.proto == 'https':
+      proxy_pass https://app_server${i};
+      proxy_ssl_certificate /etc/nginx/ssl/backend.crt;
+      proxy_ssl_certificate_key /etc/nginx/ssl/backend.key;
+  % endif
       proxy_redirect off;
       proxy_set_header Host $host;
       proxy_set_header X-Real-IP $remote_addr;

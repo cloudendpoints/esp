@@ -56,8 +56,10 @@ NGINX_CONF_TEMPLATE = "/etc/nginx/nginx-auto.conf.template"
 # Location of generated config files
 CONFIG_DIR = "/etc/nginx/endpoints"
 
-# GRPC protocol prefix
+# Protocol prefixes
 GRPC_PREFIX = "grpc://"
+HTTP_PREFIX = "http://"
+HTTPS_PREFIX = "https://"
 
 # Metadata service
 METADATA_ADDRESS = "http://169.254.169.254"
@@ -85,7 +87,7 @@ PID_FILE = "/var/run/nginx.pid"
 Port = collections.namedtuple('Port',
         ['port', 'proto'])
 Location = collections.namedtuple('Location',
-        ['path', 'backends', 'service_config', 'grpc'])
+        ['path', 'backends', 'service_config', 'proto'])
 Ingress = collections.namedtuple('Ingress',
         ['ports', 'host', 'locations'])
 
@@ -226,23 +228,23 @@ def make_ingress(service_config, args):
         ports.append(Port(args.ssl_port, "ssl"))
 
     if args.backend.startswith(GRPC_PREFIX):
-        grpc = True
+        proto = "grpc"
         backends = [args.backend[len(GRPC_PREFIX):]]
+    elif args.backend.startswith(HTTP_PREFIX):
+        proto = "http"
+        backends = [args.backend[len(HTTP_PREFIX):]]
+    elif args.backend.startswith(HTTPS_PREFIX):
+        proto = "https"
+        backends = [args.backend[len(HTTPS_PREFIX):]]
     else:
-        grpc = False
-        backend = args.backend
-        if backend.startswith("http://"):
-            backend = backend[len("http://"):]
-        elif backend.startswith("https://"):
-            logging.error("https:// protocol for the backend server is not supported.")
-            sys.exit(2)
-        backends = [backend]
+        proto = "http"
+        backends = [args.backend]
 
     locations = [Location(
             path='/',
             backends=backends,
             service_config=service_config,
-            grpc=grpc)]
+            proto=proto)]
 
     ingress = Ingress(
             ports=ports,
@@ -306,7 +308,8 @@ def make_argparser():
 
     parser.add_argument('-S', '--ssl_port', default=None, type=int, help='''
     Expose a port for HTTPS requests.  Accepts both HTTP/1.x and HTTP/2
-    secure connections.  ''')
+    secure connections. Requires the certificate and key files
+    /etc/nginx/ssl/nginx.crt and /etc/nginx/ssl/nginx.key''')
 
     parser.add_argument('-N', '--status_port', default=DEFAULT_STATUS_PORT,
     type=int, help=''' Change the ESP status port. Status information is
@@ -314,9 +317,13 @@ def make_argparser():
     {port}.'''.format(port=DEFAULT_STATUS_PORT))
 
     parser.add_argument('-a', '--backend', default=DEFAULT_BACKEND, help='''
-    Change the application server address to which ESP proxies the requests.  For
-    GRPC backends, please use grpc:// prefix, e.g. grpc://127.0.0.1:8081.
-    Default value: {backend}.'''.format(backend=DEFAULT_BACKEND))
+    Change the application server address to which ESP proxies the requests.
+    Default value: {backend}. For HTTPS backends, please use "https://" prefix,
+    e.g. https://127.0.0.1:8081 and provide the certificate and key files
+    /etc/nginx/ssl/backend.crt and /etc/nginx/ssl/backend.key. For HTTP/1.x
+    backends, prefix "http://" is optional. For GRPC backends, please use
+    "grpc://" prefix, e.g. grpc://127.0.0.1:8081.
+    '''.format(backend=DEFAULT_BACKEND))
 
     parser.add_argument('-c', '--service_config_url', default=None, help='''
     Use the specified URL to fetch the service configuration instead of using
