@@ -55,12 +55,13 @@ def fetch_service_name(metadata):
     try:
         response = client.request("GET", url, headers=headers)
     except:
-        raise FetchError(1, "Failed to fetch service name from metadata")
+        raise FetchError(1,
+            "Failed to fetch service name from the metadata server: " + url)
     status_code = response.status
 
     if status_code != 200:
-        message_template = "Fetching service name failed (status code {})"
-        raise FetchError(1, message_template.format(status_code))
+        message_template = "Fetching service name failed (url {}, status code {})"
+        raise FetchError(1, message_template.format(url, status_code))
 
     name = response.data
     logging.info("Service name: " + name)
@@ -75,12 +76,13 @@ def fetch_service_version(metadata):
     try:
         response = client.request("GET", url, headers=headers)
     except:
-        raise FetchError(1, "Failed to fetch service version from metadata")
+        raise FetchError(1,
+            "Failed to fetch service version from the metadata server: " + url)
     status_code = response.status
 
     if status_code != 200:
-        message_template = "Fetching service version failed (status code {})"
-        raise FetchError(1, message_template.format(status_code))
+        message_template = "Fetching service version failed (url {}, status code {})"
+        raise FetchError(1, message_template.format(url, status_code))
 
     version = response.data
     logging.info("Service version:" + version)
@@ -89,9 +91,11 @@ def fetch_service_version(metadata):
 
 def make_access_token(secret_token_json):
     """Construct an access token from service account token."""
+    logging.info("Constructing an access token with scope " + _GOOGLE_API_SCOPE)
     credentials = ServiceAccountCredentials.from_json_keyfile_name(
         secret_token_json,
         scopes=[_GOOGLE_API_SCOPE])
+    logging.info("Service account email: " + credentials.service_account_email)
     token = credentials.get_access_token().access_token
     return token
 
@@ -104,12 +108,13 @@ def fetch_access_token(metadata):
     try:
         response = client.request("GET", access_token_url, headers=headers)
     except:
-        raise FetchError(1, "Failed to fetch access token from metadata")
+        raise FetchError(1,
+            "Failed to fetch access token from the metadata server: " + access_token_url)
     status_code = response.status
 
     if status_code != 200:
-        message_template = "Fetching access token failed (status code {})"
-        raise FetchError(1, message_template.format(status_code))
+        message_template = "Fetching access token failed (url {}, status code {})"
+        raise FetchError(1, message_template.format(access_token_url, status_code))
 
     token = json.loads(response.data)["access_token"]
     return token
@@ -130,8 +135,8 @@ def fetch_service_json(service_mgmt_url, access_token):
     status_code = response.status
 
     if status_code != 200:
-        message_template = "Fetching service config failed (status code {})"
-        raise FetchError(1, message_template.format(status_code))
+        message_template = "Fetching service config failed (status code {}, reason {}, url {})"
+        raise FetchError(1, message_template.format(status_code, response.reason, service_mgmt_url))
 
     service_config = json.loads(response.data)
     return service_config
