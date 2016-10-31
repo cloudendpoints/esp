@@ -39,9 +39,13 @@ namespace api_manager {
 // An implementation of MethodInfo interface.
 class MethodInfoImpl : public MethodInfo {
  public:
-  MethodInfoImpl(const std::string &name);
+  MethodInfoImpl(const std::string &name, const std::string &api_name,
+                 const std::string &api_version);
 
   const std::string &name() const { return name_; }
+  const std::string &api_name() const { return api_name_; }
+  const std::string &api_version() const { return api_version_; }
+  const std::string &selector() const { return selector_; }
   bool auth() const { return auth_; }
   bool allow_unregistered_calls() const { return allow_unregistered_calls_; }
 
@@ -101,6 +105,8 @@ class MethodInfoImpl : public MethodInfo {
   // their lookup results.
   void process_system_parameters();
 
+  void set_selector(const std::string &selector) { selector_ = selector; }
+
   void set_backend_address(const std::string &address) {
     backend_address_ = address;
   }
@@ -132,8 +138,12 @@ class MethodInfoImpl : public MethodInfo {
   void ProcessSystemQueryParameterNames();
 
  private:
-  // Method name.
+  // Method name
   std::string name_;
+  // API name
+  std::string api_name_;
+  // API version
+  std::string api_version_;
   // Whether auth is enabled.
   bool auth_;
   // Does the method allow unregistered callers (callers without client identity
@@ -158,6 +168,9 @@ class MethodInfoImpl : public MethodInfo {
 
   // The backend address for this method.
   std::string backend_address_;
+
+  // Method selector
+  std::string selector_;
 
   // The RPC method name
   std::string rpc_method_full_name_;

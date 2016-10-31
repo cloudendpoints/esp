@@ -56,14 +56,14 @@ TEST(Config, CreateFromBinaryProto) {
   const MethodInfo *method = config->GetMethodInfo("GET", "/path/a/b/c");
   ASSERT_NE(nullptr, method);
 
-  std::string name = method->name();
+  std::string name = method->selector();
   ASSERT_EQ("Paths.Get", name);
   ASSERT_FALSE(method->allow_unregistered_calls());
 
   method = config->GetMethodInfo("POST", "/Paths/Get");
   ASSERT_NE(nullptr, method);
 
-  ASSERT_EQ("Paths.Get", method->name());
+  ASSERT_EQ("Paths.Get", method->selector());
   ASSERT_FALSE(method->allow_unregistered_calls());
 }
 

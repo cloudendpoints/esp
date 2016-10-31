@@ -129,7 +129,7 @@ my $json_obj = decode_json($trace_request->{body});
 is($json_obj->{traces}->[0]->{projectId}, 'api-manager-project', 'Project ID in body is correct.');
 is($json_obj->{traces}->[0]->{traceId}, $trace_id, 'Trace ID matches the provided one.');
 is($json_obj->{traces}->[0]->{spans}->[0]->{name},
-    'endpoints-test.cloudendpointsapis.com.ListShelves',
+    'endpoints-test.cloudendpointsapis.com/ListShelves',
     'Root trace span name is set to method name of ListShelves');
 is($json_obj->{traces}->[0]->{spans}->[0]->{kind}, 'RPC_SERVER', 'Trace span kind is RPC_SERVER');
 is($json_obj->{traces}->[0]->{spans}->[0]->{parentSpanId}, $parent_span_id,

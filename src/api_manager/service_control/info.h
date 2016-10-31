@@ -115,7 +115,6 @@ struct ReportRequestInfo : public OperationInfo {
   // API name and version.
   ::google::protobuf::StringPiece api_name;
   ::google::protobuf::StringPiece api_version;
-  // API full method name.
   ::google::protobuf::StringPiece api_method;
 
   // The request size in bytes. -1 if not available.
