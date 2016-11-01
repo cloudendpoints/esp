@@ -22,6 +22,8 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+import httplib
+import json
 import subprocess
 
 def IssueCommand(cmd, force_info_log=False, suppress_warning=False,
@@ -49,3 +51,66 @@ def IssueCommand(cmd, force_info_log=False, suppress_warning=False,
     rc = process.poll()
     print '=== Finished with code %d' % rc
     return stdout, rc
+
+COLOR_RED = '\033[91m'
+COLOR_GREEN = '\033[92m'
+COLOR_END = '\033[0m'
+
+HTTPS_PREFIX = 'https://'
+HTTP_PREFIX = 'http://'
+
+def green(text):
+    return COLOR_GREEN + text + COLOR_END
+
+def red(text):
+    return COLOR_RED + text + COLOR_END
+
+def http_connection(host, allow_unverified_cert):
+  if host.startswith(HTTPS_PREFIX):
+      host = host[len(HTTPS_PREFIX):]
+      print 'Use https to connect: %s' % host
+      if allow_unverified_cert:
+          try:
+            conn = httplib.HTTPSConnection(
+                host, timeout=5, context=ssl._create_unverified_context())
+          except AttributeError:
+            # Legacy versions of python do not check certificate.
+            return httplib.HTTPSConnection(
+                host, timeout=5)
+      else:
+          return httplib.HTTPSConnection(host)
+  else:
+      if host.startswith(HTTP_PREFIX):
+          host = host[len(HTTP_PREFIX):]
+      else:
+          host = host
+      print 'Use http to connect: %s' % host
+      return httplib.HTTPConnection(host)
+
+class Response(object):
+    """A class to wrap around httplib.response class."""
+
+    def __init__(self, r):
+        self.text = r.read()
+        self.status_code = r.status
+        self.headers = r.getheaders()
+        self.content_type = r.getheader('content-type')
+        if self.content_type != None:
+            self.content_type = self.content_type.lower()
+
+    def json(self):
+        try:
+            return json.loads(self.text)
+        except ValueError as e:
+            print 'Error: failed in JSON decode: %s' % self.text
+            return {}
+
+    def is_json(self):
+        if self.content_type != 'application/json':
+            return False
+        try:
+            json.loads(self.text)
+            return True
+        except ValueError as e:
+            return False
+

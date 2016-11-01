@@ -50,6 +50,7 @@ Testing steps:
 """
 
 import argparse
+import esp_utils
 import httplib
 import json
 import ssl
@@ -59,38 +60,6 @@ import sys
 class C:
     pass
 FLAGS = C
-
-
-COLOR_RED = '\033[91m'
-COLOR_GREEN = '\033[92m'
-COLOR_END = '\033[0m'
-
-HTTPS_PREFIX = 'https://'
-HTTP_PREFIX = 'http://'
-
-
-def green(text):
-    return COLOR_GREEN + text + COLOR_END
-
-
-def red(text):
-    return COLOR_RED + text + COLOR_END
-
-
-class Response(object):
-    """A class to wrap around httplib.response class."""
-
-    def __init__(self, r):
-        self.text = r.read()
-        self.status_code = r.status
-
-    def json(self):
-        try:
-            return json.loads(self.text)
-        except ValueError as e:
-            print 'Error: failed in JSON decode: %s' % self.text
-            return {}
-
 
 class EspBookstoreTest(object):
     """End to end integration test of bookstore application with deployed
@@ -105,36 +74,16 @@ class EspBookstoreTest(object):
     def __init__(self):
         self._failed_tests = 0
         self._passed_tests = 0
-
-        if FLAGS.host.startswith(HTTPS_PREFIX):
-            host = FLAGS.host[len(HTTPS_PREFIX):]
-            print 'Use https to connect: %s' % host
-            if FLAGS.allow_unverified_cert:
-                try:
-                  self.conn = httplib.HTTPSConnection(
-                      host, timeout=5, context=ssl._create_unverified_context())
-                except AttributeError:
-                  # Legacy versions of python do not check certificate.
-                  self.conn = httplib.HTTPSConnection(
-                      host, timeout=5)
-            else:
-                self.conn = httplib.HTTPSConnection(host)
-        else:
-            if FLAGS.host.startswith(HTTP_PREFIX):
-                host = FLAGS.host[len(HTTP_PREFIX):]
-            else:
-                host = FLAGS.host
-            print 'Use http to connect: %s' % host
-            self.conn = httplib.HTTPConnection(host)
+        self.conn = esp_utils.http_connection(FLAGS.host, FLAGS.allow_unverified_cert)
 
     def fail(self, msg):
-        print '%s: %s' % (red('FAILED'), msg if msg else '')
+        print '%s: %s' % (esp_utils.red('FAILED'), msg if msg else '')
         self._failed_tests += 1
 
     def assertEqual(self, a, b):
         msg = 'assertEqual(%s, %s)' % (str(a), str(b))
         if a == b:
-            print '%s: %s' % (green('OK'), msg)
+            print '%s: %s' % (esp_utils.green('OK'), msg)
             self._passed_tests += 1
         else:
             self.fail(msg)
@@ -155,7 +104,7 @@ class EspBookstoreTest(object):
             print 'headers: %s' % str(headers)
             print 'body: %s' % body
         self.conn.request(method, url, body, headers)
-        response = Response(self.conn.getresponse())
+        response = esp_utils.Response(self.conn.getresponse())
         if FLAGS.verbose:
             print 'Status: %s, body=%s' % (response.status_code, response.text)
         return response
@@ -317,10 +266,10 @@ class EspBookstoreTest(object):
         self.delete_shelf(shelf1['name'])
         self.verify_list_shelves([])
         if self._failed_tests:
-            sys.exit(red('%d tests passed, %d tests failed.' % (
+            sys.exit(esp_utils.red('%d tests passed, %d tests failed.' % (
                 self._passed_tests, self._failed_tests)))
         else:
-            print green('All %d tests passed' % self._passed_tests)
+            print esp_utils.green('All %d tests passed' % self._passed_tests)
 
 
 if __name__ == '__main__':
@@ -339,4 +288,4 @@ if __name__ == '__main__':
     try:
         esp_test.run_all_tests()
     except KeyError as e:
-        sys.exit(red('Test failed.'))
+        sys.exit(esp_utils.red('Test failed.'))

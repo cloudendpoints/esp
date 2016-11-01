@@ -120,6 +120,18 @@ function grpc_test_transcode() {
       --test_data=grpc_test_data.json
 }
 
+function grpc_test_transcode_fuzzing() {
+  STATUS_HOST="http:$(echo ${HTTP_HOST}|awk -F : '{ print $2 }'):8090"
+
+  echo "Starting grpc transcode fuzz test at $(date)."
+  ./esp_transcoding_fuzz_test.py \
+      --address="${HTTP_HOST}" \
+      --status_address="${STATUS_HOST}" \
+      --api_key="${API_KEY}" \
+      --auth_token="${AUTH_TOKEN}" \
+      --runs=3
+}
+
 # Issue a request to allow Endpoints-Runtime to fetch metadata.
 # If sending N requests concurrently, N-1 requests will fail while the
 # first request is fetching the metadata.
@@ -161,6 +173,7 @@ while true; do
 
   if [[ -n ${HTTP_HOST} ]]; then
     grpc_test_transcode || ((HTTP_STRESS_FAILURES++))
+    grpc_test_transcode_fuzzing || ((HTTP_STRESS_FAILURES++))
   fi
   #######################
   # End of test suite
