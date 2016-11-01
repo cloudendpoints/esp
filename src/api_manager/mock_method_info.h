@@ -36,6 +36,9 @@ class MockMethodInfo : public MethodInfo {
  public:
   virtual ~MockMethodInfo() {}
   MOCK_CONST_METHOD0(name, const std::string&());
+  MOCK_CONST_METHOD0(api_name, const std::string&());
+  MOCK_CONST_METHOD0(api_version, const std::string&());
+  MOCK_CONST_METHOD0(selector, const std::string&());
   MOCK_CONST_METHOD0(auth, bool());
   MOCK_CONST_METHOD0(allow_unregistered_calls, bool());
   MOCK_CONST_METHOD1(isIssuerAllowed, bool(const std::string&));
