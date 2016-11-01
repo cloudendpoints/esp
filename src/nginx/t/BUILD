@@ -130,6 +130,7 @@ nginx_suite(
     ],
     nginx = "//src/nginx/main:nginx-esp",
     tests = [
+        "grpc_interop_cancel.t",
         "grpc_interop_metadata.t",
         "grpc_interop_status.t",
         "grpc_interop_streaming.t",
