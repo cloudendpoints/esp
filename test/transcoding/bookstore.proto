@@ -29,6 +29,7 @@ syntax = "proto3";
 package endpoints.examples.bookstore;
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
 
 option java_multiple_files = true;
 option java_outer_classname = "BookstoreProto";
@@ -70,6 +71,9 @@ service Bookstore {
   }
   // Query for matching books
   rpc QueryBooks(QueryBooksRequest) returns (ListBooksResponse) {
+  }
+  // Echo with a struct
+  rpc EchoStruct(google.protobuf.Struct) returns (google.protobuf.Struct) {
   }
 }
 

@@ -312,6 +312,17 @@ class BookstoreServiceImpl : public Bookstore::Service {
     return ::grpc::Status::OK;
   }
 
+  ::grpc::Status EchoStruct(::grpc::ServerContext*,
+                            const ::google::protobuf::Struct* request,
+                            ::google::protobuf::Struct* reply) {
+    std::cerr << "GRPC-BACKEND: EchoStruct" << std::endl;
+    PrintRequest(*request);
+
+    *reply = *request;
+
+    return ::grpc::Status::OK;
+  }
+
  private:
   // A helper to create shelves
   static Shelf CreateShelfObject(std::string theme) {

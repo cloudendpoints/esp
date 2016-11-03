@@ -130,6 +130,17 @@ apis {
       }
     }
   }
+  methods {
+    name: "EchoStruct"
+    request_type_url: "type.googleapis.com/google.protobuf.Struct"
+    response_type_url: "type.googleapis.com/google.protobuf.Struct"
+    options {
+      name: "google.protobuf.MethodOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+  }
   options {
     name: "google.protobuf.ServiceOptions.deprecated"
     value {
@@ -164,6 +175,516 @@ types {
   }
   source_context {
     file_name: "google/protobuf/empty.proto"
+  }
+  syntax: SYNTAX_PROTO3
+}
+types {
+  name: "google.protobuf.Struct"
+  fields {
+    kind: TYPE_MESSAGE
+    cardinality: CARDINALITY_REPEATED
+    number: 1
+    name: "fields"
+    type_url: "type.googleapis.com/google.protobuf.Struct.FieldsEntry"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "fields"
+  }
+  options {
+    name: "google.protobuf.MessageOptions.message_set_wire_format"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.deprecated"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  source_context {
+    file_name: "google/protobuf/struct.proto"
+  }
+  syntax: SYNTAX_PROTO3
+}
+types {
+  name: "google.protobuf.Struct.FieldsEntry"
+  fields {
+    kind: TYPE_STRING
+    cardinality: CARDINALITY_OPTIONAL
+    number: 1
+    name: "key"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "key"
+  }
+  fields {
+    kind: TYPE_MESSAGE
+    cardinality: CARDINALITY_OPTIONAL
+    number: 2
+    name: "value"
+    type_url: "type.googleapis.com/google.protobuf.Value"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "value"
+  }
+  options {
+    name: "google.protobuf.MessageOptions.message_set_wire_format"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.deprecated"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.map_entry"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      value: "\b\001"
+    }
+  }
+  source_context {
+    file_name: "google/protobuf/struct.proto"
+  }
+  syntax: SYNTAX_PROTO3
+}
+types {
+  name: "google.protobuf.Value"
+  fields {
+    kind: TYPE_ENUM
+    cardinality: CARDINALITY_OPTIONAL
+    number: 1
+    name: "null_value"
+    type_url: "type.googleapis.com/google.protobuf.NullValue"
+    oneof_index: 1
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "nullValue"
+  }
+  fields {
+    kind: TYPE_DOUBLE
+    cardinality: CARDINALITY_OPTIONAL
+    number: 2
+    name: "number_value"
+    oneof_index: 1
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "numberValue"
+  }
+  fields {
+    kind: TYPE_STRING
+    cardinality: CARDINALITY_OPTIONAL
+    number: 3
+    name: "string_value"
+    oneof_index: 1
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "stringValue"
+  }
+  fields {
+    kind: TYPE_BOOL
+    cardinality: CARDINALITY_OPTIONAL
+    number: 4
+    name: "bool_value"
+    oneof_index: 1
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "boolValue"
+  }
+  fields {
+    kind: TYPE_MESSAGE
+    cardinality: CARDINALITY_OPTIONAL
+    number: 5
+    name: "struct_value"
+    type_url: "type.googleapis.com/google.protobuf.Struct"
+    oneof_index: 1
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "structValue"
+  }
+  fields {
+    kind: TYPE_MESSAGE
+    cardinality: CARDINALITY_OPTIONAL
+    number: 6
+    name: "list_value"
+    type_url: "type.googleapis.com/google.protobuf.ListValue"
+    oneof_index: 1
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "listValue"
+  }
+  oneofs: "kind"
+  options {
+    name: "google.protobuf.MessageOptions.message_set_wire_format"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.ServiceOptions.deprecated"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  source_context {
+    file_name: "google/protobuf/struct.proto"
+  }
+  syntax: SYNTAX_PROTO3
+}
+types {
+  name: "google.protobuf.ListValue"
+  fields {
+    kind: TYPE_MESSAGE
+    cardinality: CARDINALITY_REPEATED
+    number: 1
+    name: "values"
+    type_url: "type.googleapis.com/google.protobuf.Value"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "values"
+  }
+  options {
+    name: "google.protobuf.MessageOptions.message_set_wire_format"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  options {
+    name: "google.protobuf.MessageOptions.deprecated"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  source_context {
+    file_name: "google/protobuf/struct.proto"
   }
   syntax: SYNTAX_PROTO3
 }
@@ -1278,10 +1799,88 @@ types {
   }
   syntax: SYNTAX_PROTO3
 }
+enums {
+  name: "google.protobuf.NullValue"
+  enumvalue {
+    name: "NULL_VALUE"
+    options {
+      name: "google.protobuf.EnumValueOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+  }
+  options {
+    name: "google.protobuf.EnumOptions.deprecated"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+    }
+  }
+  source_context {
+    file_name: "google/protobuf/struct.proto"
+  }
+  syntax: SYNTAX_PROTO3
+}
 documentation {
   rules {
     selector: "google.protobuf.Empty"
     description: "A generic empty message that you can re-use to avoid defining duplicated\nempty messages in your APIs. A typical example is to use it as the request\nor the response type of an API method. For instance:\n\n    service Foo {\n      rpc Bar(google.protobuf.Empty) returns (google.protobuf.Empty);\n    }\n\nThe JSON representation for `Empty` is empty JSON object `{}`."
+  }
+  rules {
+    selector: "google.protobuf.Struct"
+    description: "`Struct` represents a structured data value, consisting of fields\nwhich map to dynamically typed values. In some languages, `Struct`\nmight be supported by a native representation. For example, in\nscripting languages like JS a struct is represented as an\nobject. The details of that representation are described together\nwith the proto support for the language.\n\nThe JSON representation for `Struct` is JSON object."
+  }
+  rules {
+    selector: "google.protobuf.Struct.fields"
+    description: "Unordered map of dynamically typed values."
+  }
+  rules {
+    selector: "google.protobuf.Value"
+    description: "`Value` represents a dynamically typed value which can be either\nnull, a number, a string, a boolean, a recursive struct value, or a\nlist of values. A producer of value is expected to set one of that\nvariants, absence of any variant indicates an error.\n\nThe JSON representation for `Value` is JSON value."
+  }
+  rules {
+    selector: "google.protobuf.Value.null_value"
+    description: "Represents a null value."
+  }
+  rules {
+    selector: "google.protobuf.kind"
+    description: "The kind of value."
+  }
+  rules {
+    selector: "google.protobuf.Value.number_value"
+    description: "Represents a double value."
+  }
+  rules {
+    selector: "google.protobuf.Value.string_value"
+    description: "Represents a string value."
+  }
+  rules {
+    selector: "google.protobuf.Value.bool_value"
+    description: "Represents a boolean value."
+  }
+  rules {
+    selector: "google.protobuf.Value.struct_value"
+    description: "Represents a structured value."
+  }
+  rules {
+    selector: "google.protobuf.Value.list_value"
+    description: "Represents a repeated `Value`."
+  }
+  rules {
+    selector: "google.protobuf.ListValue"
+    description: "`ListValue` is a wrapper around a repeated field of values.\n\nThe JSON representation for `ListValue` is JSON array."
+  }
+  rules {
+    selector: "google.protobuf.ListValue.values"
+    description: "Repeated field of dynamically typed values."
+  }
+  rules {
+    selector: "google.protobuf.NullValue"
+    description: "`NullValue` is a singleton enumeration to represent the null value for the\n`Value` type union.\n\n The JSON representation for `NullValue` is JSON `null`."
+  }
+  rules {
+    selector: "google.protobuf.NullValue.NULL_VALUE"
+    description: "Null value."
   }
   rules {
     selector: "endpoints.examples.bookstore"
@@ -1467,6 +2066,10 @@ documentation {
     selector: "endpoints.examples.bookstore.Bookstore.QueryBooks"
     description: "Query for matching books"
   }
+  rules {
+    selector: "endpoints.examples.bookstore.Bookstore.EchoStruct"
+    description: "Echo with a struct"
+  }
 }
 http {
   rules {
@@ -1520,6 +2123,11 @@ http {
   rules {
     selector: "endpoints.examples.bookstore.Bookstore.QueryBooks"
     get: "/query/books"
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.Bookstore.EchoStruct"
+    post: "/echostruct"
+    body: "*"
   }
 }
 context {
@@ -1682,6 +2290,21 @@ system_parameters {
   }
   rules {
     selector: "endpoints.examples.bookstore.Bookstore.QueryBooks"
+    parameters {
+      name: "api_key"
+      http_header: "x-api-key"
+    }
+    parameters {
+      name: "api_key"
+      url_query_parameter: "key"
+    }
+    parameters {
+      name: "api_key"
+      url_query_parameter: "api_key"
+    }
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.Bookstore.EchoStruct"
     parameters {
       name: "api_key"
       http_header: "x-api-key"
