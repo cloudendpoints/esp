@@ -95,6 +95,10 @@ plans {
         key: "client-text"
         value: "text"
       }
+      metadata {
+        key: "client-binary-bin"
+        value: "\\n\\v\\n\\v"
+      }
     }
     request {
       text: "Hello, world!"
@@ -102,9 +106,17 @@ plans {
         key: "initial-text"
         value: "text"
       }
+      return_initial_metadata {
+        key: "initial-binary-bin"
+        value: "\\n\\v\\n\\v"
+      }
       return_trailing_metadata {
         key: "trailing-text"
         value: "text"
+      }
+      return_trailing_metadata {
+        key: "trailing-binary-bin"
+        value: "\\n\\v\\n\\v"
       }
     }
   }
@@ -118,7 +130,7 @@ my $test_results_expected = <<'EOF';
 results {
   echo {
     text: "Hello, world!"
-    verified_metadata: 3
+    verified_metadata: 6
   }
 }
 EOF

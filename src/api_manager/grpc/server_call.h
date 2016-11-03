@@ -43,8 +43,9 @@ class ServerCall {
   virtual ~ServerCall() {}
 
   // GRPC protocol operations on the downstream GRPC call.
-  virtual void AddInitialMetadata(std::string key, std::string value) = 0;
-  virtual void SendInitialMetadata(std::function<void(bool)> continuation) = 0;
+  virtual void SendInitialMetadata(
+      std::multimap<std::string, std::string> initial_metadata,
+      std::function<void(bool)> continuation) = 0;
 
   // Continuation receives an indicator (true to continue, false to interrupt)
   // and an optional error status

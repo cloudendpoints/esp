@@ -26,6 +26,14 @@
 //
 #include "src/api_manager/grpc/proxy_flow.h"
 
+#include "grpc/grpc.h"
+#include "grpc/support/alloc.h"
+#include "src/api_manager/auth/lib/base64.h"
+
+extern "C" {
+#include "src/core/lib/security/util/b64.h"
+}
+
 using ::google::protobuf::util::error::UNAVAILABLE;
 using ::google::protobuf::util::error::UNKNOWN;
 using ::google::api_manager::utils::Status;
@@ -118,6 +126,58 @@ namespace grpc {
 // All transitions labeled [success] also define an implicit
 // transition to "DownstreamFinish" in case of error.
 
+namespace {
+Status ProcessDownstreamHeaders(
+    const std::multimap<std::string, std::string> &headers,
+    ::grpc::ClientContext *context) {
+  for (const auto &it : headers) {
+    // GRPC runtime libraries use "-bin" suffix to detect binary headers and
+    // properly apply base64 encoding & decoding as headers are sent and
+    // received. So we decode here before passing it to GRPC runtime.
+    if (grpc_is_binary_header(it.first.c_str(), it.first.length())) {
+      // Workaround for https://github.com/grpc/grpc/issues/8624
+      if (it.second.length() == 0) {
+        continue;
+      }
+      ::grpc::Slice value_slice(
+          grpc_base64_decode_with_len(it.second.c_str(), it.second.length(),
+                                      false),
+          ::grpc::Slice::STEAL_REF);
+      std::string binary_value(
+          reinterpret_cast<const char *>(value_slice.begin()),
+          value_slice.size());
+      context->AddMetadata(it.first, std::move(binary_value));
+    } else {
+      context->AddMetadata(it.first, it.second);
+    }
+  }
+  return Status::OK;
+}
+
+Status ProcessUpstreamHeaders(
+    const std::multimap<::grpc::string_ref, ::grpc::string_ref>
+        &upstream_headers,
+    std::multimap<std::string, std::string> *downstream_headers) {
+  for (auto &it : upstream_headers) {
+    std::string key(it.first.data(), it.first.size());
+    std::string value;
+    if (grpc_is_binary_header(it.first.data(), it.first.length())) {
+      char *b64_value = auth::esp_base64_encode(
+          it.second.data(), it.second.size(), false, false, false);
+      if (b64_value == nullptr) {
+        continue;
+      }
+      value = b64_value;
+      gpr_free(b64_value);
+    } else {
+      value = std::string(it.second.data(), it.second.size());
+    }
+    downstream_headers->emplace(std::move(key), std::move(value));
+  }
+  return Status::OK;
+}
+}  // namespace
+
 void ProxyFlow::Start(AsyncGrpcQueue *async_grpc_queue,
                       std::shared_ptr<ServerCall> server_call,
                       std::shared_ptr<::grpc::GenericStub> upstream_stub,
@@ -125,10 +185,12 @@ void ProxyFlow::Start(AsyncGrpcQueue *async_grpc_queue,
                       const std::multimap<std::string, std::string> &headers) {
   auto flow = std::make_shared<ProxyFlow>(
       async_grpc_queue, std::move(server_call), upstream_stub);
-  for (const auto &it : headers) {
-    flow->upstream_context_.AddMetadata(it.first, it.second);
+  Status status = ProcessDownstreamHeaders(headers, &flow->upstream_context_);
+  if (status.ok()) {
+    ProxyFlow::StartUpstreamCall(flow, method);
+  } else {
+    ProxyFlow::StartDownstreamFinish(flow, status);
   }
-  ProxyFlow::StartUpstreamCall(flow, method);
 }
 
 ProxyFlow::ProxyFlow(AsyncGrpcQueue *async_grpc_queue,
@@ -251,15 +313,6 @@ void ProxyFlow::StartUpstreamReadInitialMetadata(
                      std::string("upstream backend failed to send metadata")));
           return;
         }
-        {
-          std::lock_guard<std::mutex> lock(flow->mu_);
-          for (auto &it : flow->upstream_context_.GetServerInitialMetadata()) {
-            std::string key(it.first.data(), it.first.size());
-            std::string value(it.second.data(), it.second.size());
-            flow->server_call_->AddInitialMetadata(std::move(key),
-                                                   std::move(value));
-          }
-        }
         StartDownstreamWriteInitialMetadata(flow);
         StartUpstreamReadMessage(flow);
       }));
@@ -267,13 +320,16 @@ void ProxyFlow::StartUpstreamReadInitialMetadata(
 
 void ProxyFlow::StartDownstreamWriteInitialMetadata(
     std::shared_ptr<ProxyFlow> flow) {
+  std::multimap<std::string, std::string> initial_metadata;
   {
     std::lock_guard<std::mutex> lock(flow->mu_);
     if (flow->sent_downstream_finish_) {
       return;
     }
+    ProcessUpstreamHeaders(flow->upstream_context_.GetServerInitialMetadata(),
+                           &initial_metadata);
   }
-  flow->server_call_->SendInitialMetadata([flow](bool ok) {
+  flow->server_call_->SendInitialMetadata(initial_metadata, [flow](bool ok) {
     if (!ok) {
       StartDownstreamFinish(
           flow,
@@ -355,11 +411,8 @@ void ProxyFlow::StartDownstreamFinish(std::shared_ptr<ProxyFlow> flow,
   std::multimap<std::string, std::string> response_trailers;
 
   if (flow->status_from_esp_.ok()) {
-    for (auto &it : flow->upstream_context_.GetServerTrailingMetadata()) {
-      std::string key(it.first.data(), it.first.size());
-      std::string value(it.second.data(), it.second.size());
-      response_trailers.emplace(key, value);
-    }
+    ProcessUpstreamHeaders(flow->upstream_context_.GetServerTrailingMetadata(),
+                           &response_trailers);
   }
   int64_t backend_time = std::chrono::duration_cast<std::chrono::milliseconds>(
                              system_clock::now() - flow->start_time_)

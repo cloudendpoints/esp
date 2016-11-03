@@ -65,8 +65,9 @@ class NgxEspGrpcServerCall : public grpc::ServerCall {
   virtual ~NgxEspGrpcServerCall();
 
   // ServerCall methods.
-  virtual void AddInitialMetadata(std::string key, std::string value);
-  virtual void SendInitialMetadata(std::function<void(bool)> continuation);
+  virtual void SendInitialMetadata(
+      std::multimap<std::string, std::string> initial_metadata,
+      std::function<void(bool)> continuation);
   virtual void Read(::grpc::ByteBuffer* msg,
                     std::function<void(bool, utils::Status)> continuation);
   virtual void Write(const ::grpc::ByteBuffer& msg,
@@ -112,6 +113,8 @@ class NgxEspGrpcServerCall : public grpc::ServerCall {
   void CompletePendingRead(bool proceed, utils::Status status);
 
   void RunPendingRead();
+
+  void AddInitialMetadata(const std::string& key, const std::string& value);
 
   // Attempts to read a GRPC message from downstream into read_msg_;
   // calls CompletePendingRead and returns true if successful.

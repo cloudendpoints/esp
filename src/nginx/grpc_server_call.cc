@@ -158,8 +158,8 @@ NgxEspGrpcServerCall::~NgxEspGrpcServerCall() {
   downstream_slices_.clear();
 }
 
-void NgxEspGrpcServerCall::AddInitialMetadata(std::string key,
-                                              std::string value) {
+void NgxEspGrpcServerCall::AddInitialMetadata(const std::string &key,
+                                              const std::string &value) {
   if (!cln_.data) {
     return;
   }
@@ -199,10 +199,15 @@ void NgxEspGrpcServerCall::AddInitialMetadata(std::string key,
 }
 
 void NgxEspGrpcServerCall::SendInitialMetadata(
+    std::multimap<std::string, std::string> initial_metadata,
     std::function<void(bool)> continuation) {
   if (!cln_.data) {
     continuation(false);
     return;
+  }
+
+  for (const auto &it : initial_metadata) {
+    AddInitialMetadata(it.first, it.second);
   }
 
   if (add_header_failed_) {
