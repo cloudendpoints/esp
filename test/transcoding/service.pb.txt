@@ -613,7 +613,7 @@ types {
     }
   }
   options {
-    name: "google.protobuf.ServiceOptions.deprecated"
+    name: "google.protobuf.MessageOptions.deprecated"
     value {
       type_url: "type.googleapis.com/google.protobuf.BoolValue"
     }
@@ -909,6 +909,45 @@ types {
       }
     }
     json_name: "title"
+  }
+  fields {
+    kind: TYPE_STRING
+    cardinality: CARDINALITY_REPEATED
+    number: 4
+    name: "quotes"
+    options {
+      name: "google.protobuf.FieldOptions.ctype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\006STRING"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.jstype"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.StringValue"
+        value: "\n\tJS_NORMAL"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.lazy"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.deprecated"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    options {
+      name: "google.protobuf.FieldOptions.weak"
+      value {
+        type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      }
+    }
+    json_name: "quotes"
   }
   options {
     name: "google.protobuf.MessageOptions.message_set_wire_format"
@@ -1913,6 +1952,10 @@ documentation {
   rules {
     selector: "endpoints.examples.bookstore.Book.title"
     description: "A book title."
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.Book.quotes"
+    description: "Quotes from the book."
   }
   rules {
     selector: "endpoints.examples.bookstore.ListShelvesResponse"

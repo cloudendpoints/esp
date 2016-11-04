@@ -43,8 +43,8 @@ my $NginxPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $GrpcServerPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(24);
-my $total_requests = 9;
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(26);
+my $total_requests = 10;
 
 $t->write_file('service.pb.txt',
   ApiManager::get_transcoding_test_service_config(
@@ -191,6 +191,50 @@ ok(ApiManager::verify_http_json_response(
             {'id' => '99', 'author' => 'Leo Tolstoy', 'title' => 'Anna Karenina'} ]}),
     'Got the Leo Tolstoy books on shelf 3');
 
+# 10. Binding shelf=3, book=<post body> and the repeated field book.quote with
+#     two values ("Winter is coming" and "Hold the door") in CreateBookRequest.
+#     These values should be added to the repeated field in addition to what is
+#     translated in the body.
+#    Using the following HTTP template:
+#      POST /shelves/{shelf}/books
+#      body: book
+my $request = <<'EOF';
+{
+  "id" : "1000",
+  "author" : "George R.R. Martin",
+  "title": "A Game of Thrones",
+  "quotes" : [
+    "A girl has no name",
+    "A very small man can cast a very large shadow"
+  ]
+}
+EOF
+
+my $request_size = length($request);
+
+$response = ApiManager::http($NginxPort,<<EOF);
+POST /shelves/3/books?key=api-key&book.quotes=Winter%20is%20coming&book.quotes=Hold%20the%20door HTTP/1.0
+Host: 127.0.0.1:${NginxPort}
+Content-Type: application/json
+Content-Length: $request_size
+
+$request
+EOF
+ok(ApiManager::verify_http_json_response(
+    $response,
+    {
+      'id' => '1000',
+      'author' => 'George R.R. Martin',
+      'title' => 'A Game of Thrones',
+      'quotes' => [
+        'A girl has no name',
+        'A very small man can cast a very large shadow',
+        'Winter is coming',
+        'Hold the door'
+      ]
+    }), 'Got the new "Game of Thrones" book');
+
+
 # Wait for the service control report
 is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');
 $t->stop_daemons();
@@ -250,6 +294,26 @@ ok(ApiManager::compare_json(
 ok(ApiManager::compare_json(
     $translated_requests[8], {shelf => '3', book => {'author'=>'Leo Tolstoy'}} ),
     'The translated Query shelf=3 and book.author=Leo%20Tolstoy request is as expected');
+
+# 10. CreateBookRequest with shelf=3 and book with 4 quotes
+ok(ApiManager::compare_json(
+    $translated_requests[9],
+    {
+      shelf => '3',
+      book =>
+      {
+        'id'=>'1000',
+        'author' => 'George R.R. Martin',
+        'title' => 'A Game of Thrones',
+        'quotes' => [
+          'A girl has no name',
+          'A very small man can cast a very large shadow',
+          'Winter is coming',
+          'Hold the door'
+        ]
+      }
+    } ),
+    'The translated CreateBookRequest with 4 quotes is as expected');
 
 # Expect 2*$total_requests service control calls for $total_requests.
 my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');

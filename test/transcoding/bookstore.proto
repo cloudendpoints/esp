@@ -93,6 +93,8 @@ message Book {
   string author = 2;
   // A book title.
   string title = 3;
+  // Quotes from the book.
+  repeated string quotes = 4;
 }
 
 // Response to ListShelves call.
