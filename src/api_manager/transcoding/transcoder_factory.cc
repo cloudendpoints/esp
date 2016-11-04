@@ -32,6 +32,7 @@
 
 #include "google/api/service.pb.h"
 #include "google/protobuf/io/zero_copy_stream.h"
+#include "google/protobuf/stubs/common.h"
 #include "google/protobuf/stubs/status.h"
 #include "src/api_manager/method_call_info.h"
 #include "src/api_manager/transcoding/json_request_translator.h"
@@ -107,6 +108,15 @@ pbutil::Status MethodCallInfoToRequestInfo(TypeHelper* type_helper,
   // Resolve the field paths of the bindings and add to the request_info
   for (const auto& unresolved_binding : call_info.variable_bindings) {
     RequestWeaver::BindingInfo resolved_binding;
+
+    // Verify that the value is valid UTF8 before continuing
+    if (!pb::internal::IsStructurallyValidUTF8(
+            unresolved_binding.value.c_str(),
+            unresolved_binding.value.size())) {
+      return pbutil::Status(pberr::INVALID_ARGUMENT,
+                            "Encountered non UTF-8 code points.");
+    }
+
     resolved_binding.value = unresolved_binding.value;
 
     // Try to resolve the field path

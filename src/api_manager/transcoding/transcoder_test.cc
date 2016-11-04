@@ -504,6 +504,18 @@ TEST_F(TranscoderTest, TranslationError) {
   EXPECT_EQ(pberr::NOT_FOUND, t->ResponseStatus().error_code());
 }
 
+TEST_F(TranscoderTest, InvalidUTF8InVariableBinding) {
+  ASSERT_TRUE(LoadService("bookstore_service.pb.txt"));
+  SetMethodInfo(/*request_type_url*/ "type.googleapis.com/Shelf",
+                /*response_type_url*/ "type.googleapis.com/Shelf");
+  AddVariableBinding("theme", "\xC2\xE2\x98");
+
+  std::unique_ptr<Transcoder> t;
+  TestZeroCopyInputStream request_in, response_in;
+  EXPECT_EQ(pberr::INVALID_ARGUMENT,
+            Build(&request_in, &response_in, &t).error_code());
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace transcoding

@@ -283,6 +283,7 @@ nginx_suite(
         "transcoding_query_params.t",
         "transcoding_shared_port_ssl.t",
         "transcoding_streaming.t",
+        "transcoding_utf8.t",
     ],
     deps = [
         ":perl_library",
