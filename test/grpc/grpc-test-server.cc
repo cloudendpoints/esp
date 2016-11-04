@@ -104,6 +104,17 @@ class EchoCall final : public CorkableCall {
 
   void RunToCompletion() override {
     response_.set_text(request_.text());
+    auto &received_metadata = *response_.mutable_received_metadata();
+    for (const auto &it : context_.client_metadata()) {
+      received_metadata[std::string(it.first.data(), it.first.length())] =
+          std::string(it.second.data(), it.second.length());
+    }
+    for (const auto &it : request_.return_initial_metadata()) {
+      context_.AddInitialMetadata(it.first, it.second);
+    }
+    for (const auto &it : request_.return_trailing_metadata()) {
+      context_.AddTrailingMetadata(it.first, it.second);
+    }
     responder_.Finish(response_,
                       Status(StatusCode(request_.return_status().code()),
                              request_.return_status().details()),

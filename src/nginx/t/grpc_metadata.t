@@ -43,7 +43,7 @@ my $Http2NginxPort = ApiManager::pick_port();
 my $GrpcBackendPort = ApiManager::pick_port();
 my $GrpcFallbackPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(9);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(8);
 $t->write_file('service.pb.txt',
         ApiManager::get_grpc_test_service_config($GrpcBackendPort) .
         ApiManager::read_test_file('testdata/logs_metrics.pb.txt') . <<"EOF");
@@ -91,9 +91,21 @@ plans {
   echo {
     call_config {
       api_key: "this-is-an-api-key"
+      metadata {
+        key: "client-text"
+        value: "text"
+      }
     }
     request {
       text: "Hello, world!"
+      return_initial_metadata {
+        key: "initial-text"
+        value: "text"
+      }
+      return_trailing_metadata {
+        key: "trailing-text"
+        value: "text"
+      }
     }
   }
 }
@@ -106,6 +118,7 @@ my $test_results_expected = <<'EOF';
 results {
   echo {
     text: "Hello, world!"
+    verified_metadata: 3
   }
 }
 EOF
@@ -121,23 +134,6 @@ like($r->{uri}, qr/:check$/, 'First call was a :check');
 # :report
 $r = shift @servicecontrol_requests;
 like($r->{uri}, qr/:report$/, 'Second call was a :report');
-
-my $report_body = ServiceControl::convert_proto($r->{body}, 'report_request', 'json');
-my $expected_report_body = ServiceControl::gen_report_body({
-  'serviceName' =>  'endpoints-grpc-test.cloudendpointsapis.com',
-  'api_method' => 'test.grpc.Test.Echo',
-  'url' => '/test.grpc.Test/Echo',
-  'protocol' => 'grpc',
-  'api_key' => 'this-is-an-api-key',
-  'api_name' => 'test.grpc.Test',
-  'producer_project_id' => 'endpoints-grpc-test',
-  'location' => 'us-central1',
-  'http_method' => 'POST',
-  'log_message' => 'Method: test.grpc.Test.Echo',
-  'response_code' => '200',
-  'request_size' => ($^O eq 'darwin' ? 313 : 315),
-});
-ok(ServiceControl::compare_http2_report_json($report_body, $expected_report_body), 'Report body is received.');
 
 ################################################################################
 

@@ -103,6 +103,30 @@ void SetCallConfig(const CallConfig &call_config, ClientContext *ctx) {
   if (!call_config.auth_token().empty()) {
     ctx->AddMetadata("authorization", "Bearer " + call_config.auth_token());
   }
+  for (const auto &it : call_config.metadata()) {
+    ctx->AddMetadata(it.first, it.second);
+  }
+}
+
+template <class T1, class T2>
+int VerifyMetadata(
+    const T1 &expected, const T2 &actual,
+    google::protobuf::RepeatedPtrField<EchoResult::MetadataResult> *results) {
+  int verified = 0;
+  for (const auto &it : actual) {
+    std::string key = std::string(it.first.data(), it.first.size());
+    std::string value = std::string(it.second.data(), it.second.size());
+    if (expected.find(key) == expected.end()) continue;
+    if (expected.at(key) == value) {
+      ++verified;
+    } else {
+      auto *metadata = results->Add();
+      metadata->set_key(key);
+      metadata->set_expected(expected.at(key));
+      metadata->set_actual(value);
+    }
+  }
+  return verified;
 }
 
 std::string RandomString(int max_size) {
@@ -157,6 +181,21 @@ class Echo {
                  echo->status_.error_message()));
           if (echo->status_.ok()) {
             ok &= (echo->desc_.request().text() == echo->response_.text());
+
+            auto *metadata_results =
+                result.mutable_echo()->mutable_metadata_result();
+            int verified_metadata = 0;
+            verified_metadata += VerifyMetadata(
+                echo->desc_.call_config().metadata(),
+                echo->response_.received_metadata(), metadata_results);
+            verified_metadata += VerifyMetadata(
+                echo->desc_.request().return_initial_metadata(),
+                echo->ctx_.GetServerInitialMetadata(), metadata_results);
+            verified_metadata += VerifyMetadata(
+                echo->desc_.request().return_trailing_metadata(),
+                echo->ctx_.GetServerTrailingMetadata(), metadata_results);
+            result.mutable_echo()->set_verified_metadata(verified_metadata);
+            ok &= metadata_results->size() == 0;
           }
           done(ok, result);
         }));

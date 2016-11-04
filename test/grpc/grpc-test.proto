@@ -43,6 +43,10 @@ message EchoRequest {
   // If non 0, the text payload is randomly generated.
   // The payload size is random between 0 and value of this field.
   int32 random_payload_max_size = 3;
+
+  // The metadata that server should return
+  map<string, bytes> return_initial_metadata = 4;
+  map<string, bytes> return_trailing_metadata = 5;
 }
 
 // The echo response message.
@@ -52,6 +56,9 @@ message EchoResponse {
 
   // The length of time that's elapsed since the start of the RPC.
   fixed64 elapsed_micros = 102;
+
+  // The metadata server received
+  map<string, bytes> received_metadata = 103;
 }
 
 // A configuration to use for a GRPC call.
@@ -64,6 +71,9 @@ message CallConfig {
 
   // Authorization: Bearer token.
   string auth_token = 3;
+
+  // Additional metadata to send to server
+  map<string, bytes> metadata = 4;
 }
 
 // The outcome of a GRPC call.
@@ -97,6 +107,17 @@ message EchoTest {
 message EchoResult {
   // The result of test -- i.e. the returned text.
   string text = 1;
+
+  // The result of metadata -- only diff of actual and expected
+  message MetadataResult {
+    string key = 1;
+    bytes expected = 2;
+    bytes actual = 3;
+  }
+
+  repeated MetadataResult metadata_result = 2;
+
+  int32 verified_metadata = 3;
 }
 
 // Describes an echo stream test.

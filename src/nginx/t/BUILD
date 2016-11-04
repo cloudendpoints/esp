@@ -110,6 +110,7 @@ nginx_suite(
         "grpc_grpc_override.t",
         "grpc_large_request.t",
         "grpc_large_streaming.t",
+        "grpc_metadata.t",
         "grpc_reject_no_backend.t",
         "grpc_reject_non_grpc.t",
         "grpc_shared_port_ssl.t",
