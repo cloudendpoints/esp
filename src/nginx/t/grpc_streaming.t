@@ -139,9 +139,8 @@ my $expected_report_body = ServiceControl::gen_report_body({
   'log_message' => 'Method: test.grpc.Test.EchoStream',
   'response_code' => '200',
   'request_size' => ($^O eq 'darwin' ? 499 : 501),
-  'response_size' => 479,
   });
-ok(ServiceControl::compare_json($report_body, $expected_report_body), 'Report body is received.');
+ok(ServiceControl::compare_http2_report_json($report_body, $expected_report_body), 'Report body is received.');
 
 ################################################################################
 

@@ -38,7 +38,7 @@ use IPC::Open2;
 
 use Data::Dumper;
 
-my @random_metrics = (
+my @http1_random_metrics = (
     'serviceruntime.googleapis.com/api/consumer/total_latencies',
     'serviceruntime.googleapis.com/api/producer/total_latencies',
     'serviceruntime.googleapis.com/api/consumer/backend_latencies',
@@ -47,7 +47,11 @@ my @random_metrics = (
     'serviceruntime.googleapis.com/api/producer/request_overhead_latencies',
 );
 
-my %random_metric_map = map { $_ => 1 } @random_metrics;
+my @http2_random_metrics = (
+    @http1_random_metrics,
+    'serviceruntime.googleapis.com/api/consumer/response_sizes',
+    'serviceruntime.googleapis.com/api/producer/response_sizes',
+);
 
 sub gen_metric_int64 {
   my ($name, $value) = @_;
@@ -272,7 +276,10 @@ sub aggregate_report_body {
 }
 
 sub strip_random_metrics{
-  my ($json_obj) = @_;
+  my ($json_obj, @random_metrics) = @_;
+
+  my %random_metric_map = map { $_ => 1 } @random_metrics;
+
   if (exists $json_obj->{operations}) {
     my $operation = $json_obj->{operations}->[0];
     if (exists $operation->{metricValueSets}) {
@@ -303,13 +310,29 @@ sub compare_json {
   my ($json, $expected) = @_;
   my $json_obj = ApiManager::decode_json($json);
 
-  strip_random_metrics($json_obj);
+  strip_random_metrics($json_obj, @http1_random_metrics);
   sort_metrics_by_name($json_obj);
   sort_metrics_by_name($expected);
 
   print Dumper $json_obj if $ENV{TEST_NGINX_VERBOSE};
   my %ignore_keys = map { $_ => "1" } qw(
     startTime endTime timestamp operationId request_latency_in_ms);
+  return ApiManager::compare($json_obj, $expected, "", \%ignore_keys);
+}
+
+# HTTP2 header use a static huffman encoding. The mandatory date header
+# makes response size random, thus we ignore the response_size here
+sub compare_http2_report_json {
+  my ($json, $expected) = @_;
+  my $json_obj = ApiManager::decode_json($json);
+
+  strip_random_metrics($json_obj, @http2_random_metrics);
+  sort_metrics_by_name($json_obj);
+  sort_metrics_by_name($expected);
+
+  print Dumper $json_obj if $ENV{TEST_NGINX_VERBOSE};
+  my %ignore_keys = map { $_ => "1" } qw(
+    startTime endTime timestamp operationId request_latency_in_ms response_size);
   return ApiManager::compare($json_obj, $expected, "", \%ignore_keys);
 }
 
