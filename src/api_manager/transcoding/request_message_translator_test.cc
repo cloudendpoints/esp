@@ -450,6 +450,59 @@ TEST_F(RequestMessageTranslatorTest, PartialObject) {
   EXPECT_TRUE(ExpectMessageEq<CreateBookRequest>(expected));
 }
 
+TEST_F(RequestMessageTranslatorTest, UnexpectedScalarBody) {
+  LoadService("bookstore_service.pb.txt");
+  SetMessageType("Book");
+  Build();
+  Input().RenderString("", "History");
+
+  EXPECT_TRUE(Tester().ExpectStatusEq(
+      ::google::protobuf::util::error::INVALID_ARGUMENT));
+}
+
+TEST_F(RequestMessageTranslatorTest, UnexpectedList) {
+  LoadService("bookstore_service.pb.txt");
+  SetMessageType("Book");
+  Build();
+  Input().StartList("")->EndList();
+
+  EXPECT_TRUE(Tester().ExpectStatusEq(
+      ::google::protobuf::util::error::INVALID_ARGUMENT));
+}
+
+TEST_F(RequestMessageTranslatorTest, IgnoreUnkownFields) {
+  LoadService("bookstore_service.pb.txt");
+  SetMessageType("CreateShelfRequest");
+  Build();
+  Input()
+      .StartObject("")
+      ->StartObject("shelf")
+      ->RenderString("name", "3")
+      ->RenderString("theme", "Classics")
+      // Unkown field
+      ->RenderString("unknownField", "value")
+      ->EndObject()
+      // Unkown object
+      ->StartObject("unknownObject")
+      ->RenderString("field", "value")
+      ->EndObject()
+      // Unkown list
+      ->StartList("unknownList")
+      ->RenderString("field1", "value1")
+      ->RenderString("field2", "value2")
+      ->EndList()
+      ->EndObject();
+
+  auto expected = R"(
+    shelf : {
+      name : "3"
+      theme : "Classics"
+    }
+  )";
+
+  EXPECT_TRUE(ExpectMessageEq<CreateShelfRequest>(expected));
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace transcoding

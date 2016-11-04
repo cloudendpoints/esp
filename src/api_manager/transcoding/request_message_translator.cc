@@ -34,10 +34,26 @@
 #include "src/api_manager/transcoding/prefix_writer.h"
 #include "src/api_manager/transcoding/request_weaver.h"
 
+namespace pb = ::google::protobuf;
+namespace pbutil = ::google::protobuf::util;
+namespace pbconv = ::google::protobuf::util::converter;
+
 namespace google {
 namespace api_manager {
 
 namespace transcoding {
+
+namespace {
+
+pbconv::ProtoStreamObjectWriter::Options GetProtoWriterOptions() {
+  auto options = pbconv::ProtoStreamObjectWriter::Options::Defaults();
+  // Don't fail the translation if there are unknown fields in JSON.
+  // This will make sure that we allow backward and forward compatible APIs.
+  options.ignore_unknown_fields = true;
+  return options;
+}
+
+}  // namespace
 
 RequestMessageTranslator::RequestMessageTranslator(
     google::protobuf::util::TypeResolver& type_resolver, bool output_delimiter,
@@ -46,7 +62,7 @@ RequestMessageTranslator::RequestMessageTranslator(
       sink_(&message_),
       error_listener_(),
       proto_writer_(&type_resolver, *request_info.message_type, &sink_,
-                    &error_listener_),
+                    &error_listener_, GetProtoWriterOptions()),
       request_weaver_(),
       prefix_writer_(),
       writer_pipeline_(&proto_writer_),
@@ -120,6 +136,33 @@ void RequestMessageTranslator::WriteDelimiter() {
   // Asumming that the message_.size() - kDelimiterSize is less than UINT_MAX
   SizeToDelimiter(static_cast<unsigned>(message_.size() - kDelimiterSize),
                   reinterpret_cast<unsigned char*>(&message_[0]));
+}
+
+void RequestMessageTranslator::StatusErrorListener::InvalidName(
+    const ::google::protobuf::util::converter::LocationTrackerInterface& loc,
+    ::google::protobuf::StringPiece unknown_name,
+    ::google::protobuf::StringPiece message) {
+  status_ = ::google::protobuf::util::Status(
+      ::google::protobuf::util::error::INVALID_ARGUMENT,
+      loc.ToString() + ": " + message.ToString());
+}
+
+void RequestMessageTranslator::StatusErrorListener::InvalidValue(
+    const ::google::protobuf::util::converter::LocationTrackerInterface& loc,
+    ::google::protobuf::StringPiece type_name,
+    ::google::protobuf::StringPiece value) {
+  status_ = ::google::protobuf::util::Status(
+      ::google::protobuf::util::error::INVALID_ARGUMENT,
+      loc.ToString() + ": invalid value " + value.ToString() + " for type " +
+          type_name.ToString());
+}
+
+void RequestMessageTranslator::StatusErrorListener::MissingField(
+    const ::google::protobuf::util::converter::LocationTrackerInterface& loc,
+    ::google::protobuf::StringPiece missing_name) {
+  status_ = ::google::protobuf::util::Status(
+      ::google::protobuf::util::error::INVALID_ARGUMENT,
+      loc.ToString() + ": missing field " + missing_name.ToString());
 }
 
 }  // namespace transcoding

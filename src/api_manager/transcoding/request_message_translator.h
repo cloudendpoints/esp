@@ -121,8 +121,7 @@ class RequestMessageTranslator : public MessageStream {
   bool NextMessage(std::string* message);
   bool Finished() const;
   google::protobuf::util::Status Status() const {
-    // RequestMessageTranslator doesn't generate errors; always return OK.
-    return google::protobuf::util::Status::OK;
+    return error_listener_.status();
   }
 
  private:
@@ -142,10 +141,40 @@ class RequestMessageTranslator : public MessageStream {
   // this to the ProtoStreamObjectWriter for writing the translated message.
   google::protobuf::strings::StringByteSink sink_;
 
-  // ErrorListener implementation required by ProtoStreamObjectWriter. We
-  // currently use a NoopErrorListener. We will implement one if we need
-  // more granular errors.
-  google::protobuf::util::converter::NoopErrorListener error_listener_;
+  // StatusErrorListener converts the error events into a Status
+  class StatusErrorListener
+      : public ::google::protobuf::util::converter::ErrorListener {
+   public:
+    StatusErrorListener() : status_(::google::protobuf::util::Status::OK) {}
+    virtual ~StatusErrorListener() {}
+
+    ::google::protobuf::util::Status status() const { return status_; }
+
+    // ErrorListener implementation
+    void InvalidName(
+        const ::google::protobuf::util::converter::LocationTrackerInterface&
+            loc,
+        ::google::protobuf::StringPiece unknown_name,
+        ::google::protobuf::StringPiece message);
+    void InvalidValue(
+        const ::google::protobuf::util::converter::LocationTrackerInterface&
+            loc,
+        ::google::protobuf::StringPiece type_name,
+        ::google::protobuf::StringPiece value);
+    void MissingField(
+        const ::google::protobuf::util::converter::LocationTrackerInterface&
+            loc,
+        ::google::protobuf::StringPiece missing_name);
+
+   private:
+    ::google::protobuf::util::Status status_;
+
+    GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(StatusErrorListener);
+  };
+
+  // ErrorListener implementation that converts the error events into
+  // a status.
+  StatusErrorListener error_listener_;
 
   // The proto writer for writing the actual proto bytes
   google::protobuf::util::converter::ProtoStreamObjectWriter proto_writer_;
