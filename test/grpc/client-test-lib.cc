@@ -26,6 +26,7 @@
 //
 #include "test/grpc/client-test-lib.h"
 
+#include <sys/time.h>
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
@@ -287,7 +288,8 @@ class EchoStream {
         server_stub_(server_stub),
         cq_(cq),
         done_(done),
-        read_count_expected_(desc.count()) {
+        read_count_expected_(desc.count()),
+        start_time_(time(NULL)) {
     SetCallConfig(desc_.call_config(), &ctx_);
     for (auto request : *desc_.mutable_request()) {
       if (request.random_payload_max_size() > 0) {
@@ -333,7 +335,13 @@ class EchoStream {
                        StartRead(es);
                        es->read_count_++;
                        es->in_flight_--;
-                       if (es->write_count_ < es->desc_.count()) {
+                       int curr_time_sec = time(NULL);
+
+                       if ((es->desc_.count() > 0 &&
+                            es->write_count_ < es->desc_.count()) ||
+                           (es->desc_.duration_in_sec() > 0 &&
+                            (curr_time_sec - es->start_time_) <
+                                es->desc_.duration_in_sec())) {
                          StartWrite(es);
                        } else {
                          StartDone(es);
@@ -399,6 +407,7 @@ class EchoStream {
   Status status_expected_;
   std::unique_ptr<ClientAsyncReaderWriterInterface<EchoRequest, EchoResponse>>
       rpc_;
+  int start_time_;  // stream start time
 };
 
 class Parallel {

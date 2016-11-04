@@ -138,6 +138,9 @@ message EchoStreamTest {
 
   // The final RPC status to expect in the response.
   CallStatus expected_status = 5;
+
+  // The duration of the echo stream.
+  int32 duration_in_sec = 6;
 }
 
 message EchoStreamResult {

@@ -243,6 +243,8 @@ apis {
   }
   methods {
     name: "EchoStream"
+    request_streaming: true
+    response_streaming: true
   }
 }
 EOF

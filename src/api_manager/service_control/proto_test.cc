@@ -103,6 +103,9 @@ void FillReportRequestInfo(ReportRequestInfo* request) {
   request->compute_platform = compute_platform::GKE;
   request->auth_issuer = "auth-issuer";
   request->auth_audience = "auth-audience";
+
+  request->request_bytes = 100;
+  request->response_bytes = 1024 * 1024;
 }
 
 void SetFixTimeStamps(gasv1::Operation* op) {
@@ -211,6 +214,52 @@ TEST_F(ProtoTest, FillGoodReportRequestTest) {
 
   std::string text = ReportRequestToString(&request);
   std::string expected_text = ReadTestBaseline("report_request.golden");
+  ASSERT_EQ(expected_text, text);
+}
+
+TEST_F(ProtoTest, FillStartReportRequestTest) {
+  ReportRequestInfo info;
+  info.is_first_report = true;
+  info.is_final_report = false;
+  FillOperationInfo(&info);
+  FillReportRequestInfo(&info);
+
+  gasv1::ReportRequest request;
+  ASSERT_TRUE(scp_.FillReportRequest(info, &request).ok());
+
+  std::string text = ReportRequestToString(&request);
+  std::string expected_text = ReadTestBaseline("first_report_request.golden");
+  ASSERT_EQ(expected_text, text);
+}
+
+TEST_F(ProtoTest, FillIntermediateReportRequestTest) {
+  ReportRequestInfo info;
+  info.is_first_report = false;
+  info.is_final_report = false;
+  FillOperationInfo(&info);
+  FillReportRequestInfo(&info);
+
+  gasv1::ReportRequest request;
+  ASSERT_TRUE(scp_.FillReportRequest(info, &request).ok());
+
+  std::string text = ReportRequestToString(&request);
+  std::string expected_text =
+      ReadTestBaseline("intermediate_report_request.golden");
+  ASSERT_EQ(expected_text, text);
+}
+
+TEST_F(ProtoTest, FillFinalReportRequestTest) {
+  ReportRequestInfo info;
+  info.is_first_report = false;
+  info.is_final_report = true;
+  FillOperationInfo(&info);
+  FillReportRequestInfo(&info);
+
+  gasv1::ReportRequest request;
+  ASSERT_TRUE(scp_.FillReportRequest(info, &request).ok());
+
+  std::string text = ReportRequestToString(&request);
+  std::string expected_text = ReadTestBaseline("final_report_request.golden");
   ASSERT_EQ(expected_text, text);
 }
 
