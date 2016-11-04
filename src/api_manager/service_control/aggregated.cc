@@ -344,7 +344,7 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
                                    ? url_.check_url()
                                    : url_.report_url();
       env_->LogError(std::string("Failed to call ") + url + ", Error: " +
-                     status.ToString());
+                     status.ToString() + ", Response body: " + body);
 
       // Handle NGX error as opposed to pass-through error code
       if (status.code() < 0) {
