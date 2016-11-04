@@ -39,11 +39,27 @@ using google::devtools::cloudtrace::v1::Traces;
 namespace google {
 namespace api_manager {
 
+namespace {
+// The time window to send intermediate report for Grpc streaming (millisecond).
+const int kIntermediateTimeWindowInMS = 1000;
+}
+
 void RequestHandler::Check(std::function<void(Status status)> continuation) {
   auto interception = [continuation, this](Status status) {
     if (status.ok() && context_->cloud_trace()) {
       context_->StartBackendSpanAndSetTraceContext();
     }
+
+    if (status.ok() && context_->method_call()) {
+      if ((context_->method_call()->method_info->request_streaming() ||
+           context_->method_call()->method_info->response_streaming()) &&
+          (context_->service_context())) {
+        timer_ = context_->service_context()->env()->StartPeriodicTimer(
+            std::chrono::milliseconds(kIntermediateTimeWindowInMS),
+            [this]() { IntermediateReport(); });
+      }
+    }
+
     continuation(status);
   };
 
@@ -53,16 +69,45 @@ void RequestHandler::Check(std::function<void(Status status)> continuation) {
   check_workflow_->Run(context_);
 }
 
+void RequestHandler::IntermediateReport() {
+  // For grpc streaming calls, we send intermediate reports to represent
+  // streaming stats. Specifically:
+  // 1) We send request_count and response_count in the first report to
+  // indicate the start of a stream.
+  // 2) We send request_bytes, response_bytes and streaming_messages_counts in
+  // intermediate reports, which triggered by timer.
+  // 3) In the final report, we send all supported metrics similar to
+  // non-streaming
+  // case but excluding request_count and response_count which already sent in
+  // 1).
+  service_control::ReportRequestInfo info;
+  info.is_first_report = context_->IsFirstReport();
+  info.is_final_report = false;
+  context_->FillReportRequestInfo(NULL, &info);
+  // Calling service_control Report.
+  Status status = context_->service_context()->service_control()->Report(info);
+  if (!status.ok()) {
+    context_->service_context()->env()->LogError(
+        "Failed to send intermediate report to service control.");
+  } else {
+    context_->SetFirstReport(false);
+  }
+}
+
 // Sends a report.
 void RequestHandler::Report(std::unique_ptr<Response> response,
                             std::function<void(void)> continuation) {
   // Close backend trace span.
+  if (timer_) {
+    timer_->Stop();
+  }
   context_->EndBackendSpan();
 
   if (context_->service_context()->service_control()) {
     service_control::ReportRequestInfo info;
+    info.is_first_report = context_->IsFirstReport();
+    info.is_final_report = true;
     context_->FillReportRequestInfo(response.get(), &info);
-
     // Calling service_control Report.
     Status status =
         context_->service_context()->service_control()->Report(info);
