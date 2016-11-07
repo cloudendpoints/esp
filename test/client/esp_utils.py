@@ -24,6 +24,7 @@
 
 import httplib
 import json
+import ssl
 import subprocess
 
 def IssueCommand(cmd, force_info_log=False, suppress_warning=False,
