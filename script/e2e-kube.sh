@@ -31,17 +31,22 @@ ESP_ROOT="$(cd "${SCRIPT_PATH}/../" && pwd)"
 CLI="$ESP_ROOT/bazel-bin/test/src/espcli"
 YAML_FILE=${ESP_ROOT}/test/src/deploy/bookstore.yaml
 ESP_APP="esp"
+TEST_ID="gke-${COUPLING_OPTION}-${TEST_TYPE}-${BACKEND}"
 
 . ${ESP_ROOT}/script/jenkins-utilities || { echo "Cannot load Jenkins Bash utilities" ; exit 1 ; }
 
 function cleanup {
   if [[ "${SKIP_CLEANUP}" == 'false' ]]; then
     run kubectl delete namespace "${NAMESPACE}"
-    run gcloud beta service-management delete ${ESP_SERVICE} --quiet
+    # Uncomment this line when the limit on #services is lifted or increased to > 20
+    # run gcloud beta service-management delete ${ESP_SERVICE} --quiet
   fi
 }
 
 e2e_options "${@}"
+
+# Remove this line when the limit on #services is lifted or increased to > 20
+ESP_SERVICE="${TEST_ID}.${PROJECT_ID}.appspot.com"
 
 NAMESPACE="${UNIQUE_ID}"
 ARGS="\
@@ -95,7 +100,6 @@ run kubectl get services -o yaml            --namespace "${NAMESPACE}"
 run kubectl get deployments -o yaml         --namespace "${NAMESPACE}"
 
 LOG_DIR="$(mktemp -d /tmp/log.XXXX)"
-TEST_ID="gke-${COUPLING_OPTION}-${TEST_TYPE}-${BACKEND}"
 
 # Running Test
 run_nonfatal long_running_test \
