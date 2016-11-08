@@ -75,6 +75,9 @@ def fetch_service_config_id(metadata):
     client = urllib3.PoolManager()
     try:
         response = client.request("GET", url, headers=headers)
+        if response.status != 200:
+            message_template = "Fetching service config ID failed (url {}, status code {})"
+            raise FetchError(1, message_template.format(url, response.status))
     except:
         url = metadata + _METADATA_PATH + "/attributes/endpoints-service-version"
         try:
@@ -82,11 +85,9 @@ def fetch_service_config_id(metadata):
         except:
             raise FetchError(1,
                     "Failed to fetch service config ID from the metadata server: " + url)
-    status_code = response.status
-
-    if status_code != 200:
-        message_template = "Fetching service config ID failed (url {}, status code {})"
-        raise FetchError(1, message_template.format(url, status_code))
+        if response.status != 200:
+            message_template = "Fetching service config ID failed (url {}, status code {})"
+            raise FetchError(1, message_template.format(url, response.status))
 
     version = response.data
     logging.info("Service config ID:" + version)
