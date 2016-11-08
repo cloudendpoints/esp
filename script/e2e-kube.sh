@@ -31,7 +31,6 @@ ESP_ROOT="$(cd "${SCRIPT_PATH}/../" && pwd)"
 CLI="$ESP_ROOT/bazel-bin/test/src/espcli"
 YAML_FILE=${ESP_ROOT}/test/src/deploy/bookstore.yaml
 ESP_APP="esp"
-TEST_ID="gke-${COUPLING_OPTION}-${TEST_TYPE}-${BACKEND}"
 
 . ${ESP_ROOT}/script/jenkins-utilities || { echo "Cannot load Jenkins Bash utilities" ; exit 1 ; }
 
@@ -44,6 +43,8 @@ function cleanup {
 }
 
 e2e_options "${@}"
+
+TEST_ID="gke-${COUPLING_OPTION}-${TEST_TYPE}-${BACKEND}"
 
 # Remove this line when the limit on #services is lifted or increased to > 20
 ESP_SERVICE="${TEST_ID}.${PROJECT_ID}.appspot.com"
