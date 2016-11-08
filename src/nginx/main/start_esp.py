@@ -163,8 +163,8 @@ def fetch_service_config(args, service_config):
                 args.service = fetch.fetch_service_name(args.metadata)
 
             if args.version is None:
-                logging.info("Fetching the service version from the metadata service")
-                args.version = fetch.fetch_service_version(args.metadata)
+                logging.info("Fetching the service config ID from the metadata service")
+                args.version = fetch.fetch_service_config_id(args.metadata)
 
             service_mgmt_url = SERVICE_MGMT_URL_TEMPLATE.format(args.service,
                                                                 args.version)
@@ -181,7 +181,7 @@ def fetch_service_config(args, service_config):
         logging.info("Fetching the service configuration from the service management service")
         config = fetch.fetch_service_json(service_mgmt_url, token)
 
-        # Validate service config if we have service name version
+        # Validate service config if we have service name and version
         if args.service is not None and args.version is not None:
             fetch.validate_service_config(config, args.service, args.version)
 
@@ -265,8 +265,8 @@ def make_argparser():
         the service management service and configures ESP to expose the specified
         ports and proxy requests to the specified backend.
 
-        The service name and version are optional. If not supplied, the script
-        fetches the service name and version from the metadata service.
+        The service name and config ID are optional. If not supplied, the script
+        fetches the service name and config ID from the metadata service.
 
         The service account key file is used to generate an access token for the
         service management service. If the service account key file is not provided,
@@ -286,9 +286,9 @@ def make_argparser():
     Endpoints service.  If omitted and -c not specified, ESP contacts the
     metadata service to fetch the service name.  ''')
 
-    parser.add_argument('-v', '--version', help=''' Set the config version of
+    parser.add_argument('-v', '--version', help=''' Set the service config ID of
     the Endpoints service.  If omitted and -c not specified, ESP contacts the
-    metadata service to fetch the service version.  ''')
+    metadata service to fetch the service config ID.  ''')
 
     parser.add_argument('-n', '--nginx_config', help=''' Use a custom nginx
     config file instead of the config template {template}. If you specify this

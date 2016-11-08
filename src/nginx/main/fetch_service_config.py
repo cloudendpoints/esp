@@ -68,24 +68,28 @@ def fetch_service_name(metadata):
     return name
 
 
-def fetch_service_version(metadata):
-    """Fetch service version from metadata URL."""
-    url = metadata + _METADATA_PATH + "/attributes/endpoints-service-version"
+def fetch_service_config_id(metadata):
+    """Fetch service config ID from metadata URL."""
+    url = metadata + _METADATA_PATH + "/attributes/endpoints-service-config-id"
     headers = {"Metadata-Flavor": "Google"}
     client = urllib3.PoolManager()
     try:
         response = client.request("GET", url, headers=headers)
     except:
-        raise FetchError(1,
-            "Failed to fetch service version from the metadata server: " + url)
+        url = metadata + _METADATA_PATH + "/attributes/endpoints-service-version"
+        try:
+            response = client.request("GET", url, headers=headers)
+        except:
+            raise FetchError(1,
+                    "Failed to fetch service config ID from the metadata server: " + url)
     status_code = response.status
 
     if status_code != 200:
-        message_template = "Fetching service version failed (url {}, status code {})"
+        message_template = "Fetching service config ID failed (url {}, status code {})"
         raise FetchError(1, message_template.format(url, status_code))
 
     version = response.data
-    logging.info("Service version:" + version)
+    logging.info("Service config ID:" + version)
     return version
 
 
@@ -157,10 +161,10 @@ def validate_service_config(service_config, expected_service_name,
     service_version = service_config.get("id", None)
 
     if not service_version:
-        raise FetchError(2, "No service version in the service config")
+        raise FetchError(2, "No service config ID in the service config")
 
     if service_version != expected_service_version:
-        message_template = "Unexpected service version in service config: {}"
+        message_template = "Unexpected service config ID in service config: {}"
         raise FetchError(2, message_template.format(service_version))
 
     # WARNING: sandbox migration workaround

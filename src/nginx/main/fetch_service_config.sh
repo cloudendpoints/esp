@@ -53,10 +53,10 @@ Options:
         The Endpoints service name. If this flag is not provided,
         the script attempts to read the GCE metadata value
         "endpoints-service-name" instead.
-    -v ENDPOINTS_SERVICE_VERSION
-        The Endpoints service version. If this flag is not provided,
+    -v ENDPOINTS_SERVICE_CONFIG_ID
+        The Endpoints service config ID. If this flag is not provided,
         the script attempts to read the GCE metadata value
-        "endpoints-service-version" instead.
+        "endpoints-service-config-id" instead.
 
 END_USAGE
   exit 1
@@ -86,17 +86,21 @@ if [[ -z "${SERVICE_NAME}" ]] ; then
     exit 1
   fi
 fi
-echo "Endpoints Service Name: ${SERVICE_NAME}"
+echo "Endpoints service name: ${SERVICE_NAME}"
 if [[ -z "${SERVICE_VERSION}" ]] ; then
   # Get the service version from metadata service
   SERVICE_VERSION=$(/usr/bin/curl ${CURL_FLAGS} -H "Metadata-Flavor: Google" \
-                    "${METADATA_URL_PREFIX}/attributes/endpoints-service-version")
+                    "${METADATA_URL_PREFIX}/attributes/endpoints-service-config-id")
   if [[ $? -ne 0 ]]; then
-    echo "Failed to read metadata with key endpoints-service-version from metadata server!!!"
-    exit 1
+    SERVICE_VERSION=$(/usr/bin/curl ${CURL_FLAGS} -H "Metadata-Flavor: Google" \
+                    "${METADATA_URL_PREFIX}/attributes/endpoints-service-version")
+    if [[ $? -ne 0 ]]; then
+      echo "Failed to read metadata with key endpoints-service-config-id from metadata server!!!"
+      exit 1
+    fi
   fi
 fi
-echo "Endpoints Service Version: ${SERVICE_VERSION}"
+echo "Endpoints service config ID: ${SERVICE_VERSION}"
 
 function validateOutputFileContents() {
   local retrieved_svc_name=$(
