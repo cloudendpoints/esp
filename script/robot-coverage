@@ -103,12 +103,12 @@ fi
 
   # ASAN Tests
   bazel test --test_output=errors --config=asan --test_tag_filters=-no_asan \
-    //src/... //test/src/... //third_party:all \
+    //src/... //tools/src/... //third_party:all \
     || error_exit "Failed to run ASAN tests"
 
   # TSAN Tests
   bazel test --test_output=errors --config=tsan --test_tag_filters=-no_tsan \
-    //src/... //test/src/... //third_party:all \
+    //src/... //tools/src/... //third_party:all \
     || error_exit "Failed to run TSAN tests"
 
 ) || error_exit "Sanitizer Bazel test failed."

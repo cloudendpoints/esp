@@ -65,12 +65,12 @@ function build_and_test() {
   fi
   echo "${message}..."
   retry -n 3 ${BAZEL} ${BAZEL_ARGS} fetch \
-    //src/... //test/src/... //third_party:all \
+    //src/... //tools/src/... //third_party:all \
     && retry -n 2 ${BAZEL} ${BAZEL_ARGS} build \
       ${BAZEL_BUILD_ARGS} ${config_flag} \
-      //src/... //test/src/... //third_party:all \
+      //src/... //tools/src/... //third_party:all \
     && ${BAZEL} ${BAZEL_ARGS} test --test_output=errors ${config_flag} \
-      //src/... //test/src/... //third_party:all \
+      //src/... //tools/src/... //third_party:all \
     || { echo "${error}..."; return 1; }
 }
 

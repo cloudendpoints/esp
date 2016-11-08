@@ -66,8 +66,8 @@ done
   bazel build //src/... \
     || error_exit "Bazel build failed for //src/..."
 
-  bazel build //test/src/... \
-    || error_exit "Bazel build failed for //test/src/..."
+  bazel build //tools/src/... \
+    || error_exit "Bazel build failed for //tools/src/..."
 
   # Test Perl test rules.
 
@@ -82,8 +82,8 @@ done
   bazel test --test_output=errors //src/... \
     || error_exit "Bazel test failed for //src/..."
 
-  bazel test --test_output=errors //test/src/... \
-    || error_exit "Bazel test failed for //test/src/..."
+  bazel test --test_output=errors //tools/src/... \
+    || error_exit "Bazel test failed for //tools/src/..."
 
   bazel test --test_output=errors //third_party:all \
     || error_exit "Bazel test failed for //third_party:all (nginx tests)."

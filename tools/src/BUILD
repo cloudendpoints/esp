@@ -42,16 +42,16 @@ go_prefix("github.com/cloudendpoints/esp")
 #   1) to leave intact the generated *.pb.go code (not to change the import
 #      paths)
 #   2) to be able to locally develop using native go tools( i.e. "go get" and
-#      "go run") by setting the GOPATH to the <esp_root>/test directory.
+#      "go run") by setting the GOPATH to the <esp_root>/tools directory.
 #      Notice that all go libraries in this file have the
-#      "vendor/<path_from_test_src>" form.
+#      "vendor/<path_from_src>" form.
 
 go_library(
     name = "vendor/google/protobuf",
     srcs = glob(
         ["google/protobuf/*.pb.go"],
     ),
-    go_prefix = "//test/src:go_prefix",
+    go_prefix = "//tools/src:go_prefix",
     deps = [
         "@github_com_golang_protobuf//:proto",
         "@github_com_golang_protobuf//:ptypes/any",
@@ -63,7 +63,7 @@ go_library(
     srcs = glob(
         ["google/api/*.pb.go"],
     ),
-    go_prefix = "//test/src:go_prefix",
+    go_prefix = "//tools/src:go_prefix",
     deps = [
         ":vendor/google/protobuf",
         "@github_com_golang_protobuf//:proto",
@@ -78,7 +78,7 @@ go_library(
     srcs = glob(
         ["google/rpc/*.pb.go"],
     ),
-    go_prefix = "//test/src:go_prefix",
+    go_prefix = "//tools/src:go_prefix",
     deps = [
         ":vendor/google/protobuf",
         "@github_com_golang_protobuf//:proto",
@@ -92,7 +92,7 @@ go_library(
     srcs = glob(
         ["google/type/*.pb.go"],
     ),
-    go_prefix = "//test/src:go_prefix",
+    go_prefix = "//tools/src:go_prefix",
     deps = [
         ":vendor/google/protobuf",
         "@github_com_golang_protobuf//:proto",
@@ -104,7 +104,7 @@ go_library(
     srcs = glob(
         ["google/logging/type/*.pb.go"],
     ),
-    go_prefix = "//test/src:go_prefix",
+    go_prefix = "//tools/src:go_prefix",
     deps = [
         "@github_com_golang_protobuf//:proto",
     ],
@@ -115,7 +115,7 @@ go_library(
     srcs = glob(
         ["google/api/servicecontrol/v1/*.pb.go"],
     ),
-    go_prefix = "//test/src:go_prefix",
+    go_prefix = "//tools/src:go_prefix",
     visibility = [
         "//visibility:public",
     ],
@@ -141,9 +141,9 @@ go_library(
         "fakes/request_data.go",
         "fakes/request_parser.go",
     ],
-    go_prefix = "//test/src:go_prefix",
+    go_prefix = "//tools/src:go_prefix",
     deps = [
-        "//test/src:vendor/google/api/servicecontrol/v1",
+        "//tools/src:vendor/google/api/servicecontrol/v1",
         "@github_com_golang_protobuf//:proto",
     ],
 )
@@ -154,7 +154,7 @@ go_library(
         "deploy/service.go",
         "deploy/default_service_config.go",
     ],
-    go_prefix = "//test/src:go_prefix",
+    go_prefix = "//tools/src:go_prefix",
     deps = [
         ":vendor/google/api",
         "@golang_oauth2//:oauth2/google",
@@ -172,10 +172,10 @@ go_library(
     srcs = glob([
         "cli/*.go",
     ]),
-    go_prefix = "//test/src:go_prefix",
+    go_prefix = "//tools/src:go_prefix",
     deps = [
-        ":vendor/utils",
         ":vendor/deploy",
+        ":vendor/utils",
         "@google_api_go_client//:logging/v2beta1",
         "@golang_oauth2//:oauth2/google",
         "@github_com_x_net//:context",
@@ -201,7 +201,7 @@ go_library(
         "controller/queue.go",
         "controller/utils.go",
     ],
-    go_prefix = "//test/src:go_prefix",
+    go_prefix = "//tools/src:go_prefix",
     deps = [
         ":vendor/deploy",
         ":vendor/utils",
@@ -226,7 +226,7 @@ go_binary(
     srcs = [
         "espcli.go",
     ],
-    go_prefix = "//test/src:go_prefix",
+    go_prefix = "//tools/src:go_prefix",
     deps = [
         ":vendor/cli",
         "@github_com_spf13_cobra//:cobra",
@@ -238,7 +238,7 @@ go_binary(
     srcs = [
         "service_config.go",
     ],
-    go_prefix = "//test/src:go_prefix",
+    go_prefix = "//tools/src:go_prefix",
     deps = [
         ":vendor/deploy",
         "@google_api_go_client//:servicemanagement/v1",
@@ -254,7 +254,7 @@ go_binary(
     data = [
         "//src/nginx/main:nginx-esp",
     ],
-    go_prefix = "//test/src:go_prefix",
+    go_prefix = "//tools/src:go_prefix",
     deps = [
         ":vendor/controller",
         "@github_com_kubernetes_client_go//:kubernetes",
@@ -271,7 +271,7 @@ go_binary(
     srcs = [
         "fakes/server/main.go",
     ],
-    go_prefix = "//test/src:go_prefix",
+    go_prefix = "//tools/src:go_prefix",
     deps = [
         ":vendor/fakes",
     ],
@@ -282,7 +282,7 @@ go_library(
     srcs = [
         "deploy/deploy-local/deploy-local.go",
     ],
-    go_prefix = "//test/src:go_prefix",
+    go_prefix = "//tools/src:go_prefix",
 )
 
 go_library(
@@ -300,11 +300,8 @@ go_library(
         "//include:version",
         "//src/nginx/t:testdata/logs_metrics.pb.txt",
         "//src/tools:auth_token_gen",
-        "utils/nginx.crt",
-        "utils/nginx.key",
-        "utils/credentials.json",
     ],
-    go_prefix = "//test/src:go_prefix",
+    go_prefix = "//tools/src:go_prefix",
     deps = [
         ":vendor/google/api/servicecontrol/v1",
         ":vendor/google/logging/type",
@@ -319,8 +316,12 @@ go_test(
     srcs = ["controller/config_test.go"],
     data = [
         "//src/nginx/main:nginx-esp",
+        ":controller/nginx.tmpl",
+        ":testdata/credentials.json",
+        ":testdata/nginx.key",
+        ":testdata/nginx.crt",
     ],
-    go_prefix = "//test/src:go_prefix",
+    go_prefix = "//tools/src:go_prefix",
     deps = [
         ":vendor/controller",
         ":vendor/utils",
@@ -344,7 +345,7 @@ go_test(
         "//src/nginx/t:matching-client-secret.json",
         "//src/tools:auth_token_gen",
     ],
-    go_prefix = "//test/src:go_prefix",
+    go_prefix = "//tools/src:go_prefix",
     deps = [
         ":vendor/deploy/deploy-local",
         ":vendor/fakes",

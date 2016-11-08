@@ -90,18 +90,14 @@ func TestConfig(t *testing.T) {
 		},
 	}
 
-	data, err := utils.GetTestDataRootPath()
-	check(t, err)
-	bin, err := utils.GetTestBinRootPath()
-	check(t, err)
 	pwd, err := os.Getwd()
 	check(t, err)
 
-	tmpl := data + "/test/src/controller/nginx.tmpl"
+	tmpl := pwd + "/controller/nginx.tmpl"
 	nginxConf := pwd + "/nginx.conf"
 	tmp := pwd + "/tmp"
 	os.Mkdir(tmp, 0700)
-	esp := bin + "/src/nginx/main/nginx-esp"
+	esp := pwd + "/../../src/nginx/main/nginx-esp"
 	serviceJson := pwd + "/service.json"
 	serviceConfig, err := utils.ServiceConfig("test.appspot.com", "servicecontrol.googleapis.com", nil)
 	check(t, err)
@@ -119,7 +115,7 @@ func TestConfig(t *testing.T) {
 					Upstream:          up1,
 					StripPrefix:       false,
 					ServiceConfigFile: serviceJson,
-					CredentialsFile:   utils.CredentialsFile(),
+					CredentialsFile:   pwd + "/testdata/credentials.json",
 				},
 				&controller.Location{
 					Path:              "/https",
@@ -133,8 +129,8 @@ func TestConfig(t *testing.T) {
 				HTTP:  9000,
 				HTTP2: 9001,
 			},
-			SSLCertificate:    utils.SSLCertFile(),
-			SSLCertificateKey: utils.SSLKeyFile(),
+			SSLCertificate:    pwd + "/testdata/nginx.crt",
+			SSLCertificateKey: pwd + "/testdata/nginx.key",
 		},
 		&controller.Server{
 			Name: "",

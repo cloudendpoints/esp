@@ -28,7 +28,6 @@ package utils
 
 import (
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 )
@@ -77,28 +76,4 @@ func GetVersion() (string, error) {
 		return "", err
 	}
 	return strings.TrimSpace(string(ver)), nil
-}
-
-func SSLKeyFile() string {
-	path, err := GetTestDataRootPath()
-	if err != nil {
-		log.Fatalln("Cannot find data root path")
-	}
-	return path + "/test/src/utils/nginx.key"
-}
-
-func SSLCertFile() string {
-	path, err := GetTestDataRootPath()
-	if err != nil {
-		log.Fatalln("Cannot find data root path")
-	}
-	return path + "/test/src/utils/nginx.crt"
-}
-
-func CredentialsFile() string {
-	path, err := GetTestDataRootPath()
-	if err != nil {
-		log.Fatalln("Cannot find data root path")
-	}
-	return path + "/test/src/utils/credentials.json"
 }

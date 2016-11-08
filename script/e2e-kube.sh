@@ -28,7 +28,7 @@
 #
 SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ESP_ROOT="$(cd "${SCRIPT_PATH}/../" && pwd)"
-CLI="$ESP_ROOT/bazel-bin/test/src/espcli"
+CLI="$ESP_ROOT/bazel-bin/tools/src/espcli"
 YAML_FILE=${ESP_ROOT}/test/src/deploy/bookstore.yaml
 ESP_APP="esp"
 

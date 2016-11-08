@@ -74,6 +74,13 @@ OpenAPI, Google Service Config, or proto descriptor.
 			fmt.Print(string(bytes))
 		},
 	}
+	var delete = &cobra.Command{
+		Use: "delete",
+		Run: func(cmd *cobra.Command, args []string) {
+			check(s.Connect())
+			check(s.Delete())
+		},
+	}
 	var undelete = &cobra.Command{
 		Use: "undelete",
 		Run: func(cmd *cobra.Command, args []string) {
@@ -97,6 +104,6 @@ OpenAPI, Google Service Config, or proto descriptor.
 		"project", "p", "",
 		"Service producer project")
 
-	root.AddCommand(deploy, fetch, undelete)
+	root.AddCommand(deploy, fetch, delete, undelete)
 	root.Execute()
 }
