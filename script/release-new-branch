@@ -35,12 +35,12 @@ function usage() {
   cat <<EOF
 usage: ${BASH_SOURCE[0]} -s <release SHA> -n <next version number>"
 
-This script will create a release branch with the SHA.
+This script will create a new release branch with the SHA.
 Then update the version number for next release and push for review.
 
 example:
 ${BASH_SOURCE[0]} \\
-    -n 0.3.1 \\
+    -n 1.2.0 \\
     -s be2eb101f1b1b3e671e852656066c2909c41049b
 EOF
   exit 1
@@ -60,22 +60,26 @@ done
 
 [[ -n "${NEXT_VERSION}" ]] \
   || usage "Please provide the next release version."
-[[ "${NEXT_VERSION}" =~ [0-9]\.[0-9]\.[0-9]+ ]] \
+# The version format is: 1.2.0
+[[ "${NEXT_VERSION}" =~ [0-9]+\.[0-9]+\.0 ]] \
   || usage "Invalid version number: ${NEXT_VERSION}."
 [[ -n "${SHA}" ]] \
   || usage "Please provide the release SHA."
 
 CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 VERSION="$(command cat ${ROOT}/include/version)"
+# If version name is 1.0.0, the release branch name is: v1.0.x
+RELEASE_BRANCH=v${VERSION%.0}.x
 echo "Current branch: ${CURRENT_BRANCH}."
+echo "New release branch: ${RELEASE_BRANCH}."
 [[ -z $(git diff --name-only) ]] \
   || error_exit "Current branch is not clean."
 
 git fetch origin \
   || error_exit "Could not fetch origin."
-git branch release-${VERSION} ${SHA} \
+git branch ${RELEASE_BRANCH} ${SHA} \
   || error_exit "Could not create a local release branch."
-git push origin ${SHA}:refs/heads/release/${VERSION} \
+git push origin ${SHA}:refs/heads/${RELEASE_BRANCH} \
   || error_exit "Failed to create a remote release branch."
 
 # Update the version number and push for review.
@@ -85,7 +89,7 @@ git add ${ROOT}/include/version
 git commit -m "Update version number to ${NEXT_VERSION}."
 git push origin HEAD:refs/for/refs/heads/master
 
-git checkout release-${VERSION}
+git checkout ${RELEASE_BRANCH}
 
 printf '\e[31m
 ***************************************************************************
