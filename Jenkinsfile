@@ -154,10 +154,11 @@ node('master') {
         performance(nodeLabel)
       }
     }
-    if (runStage(ALL_STAGES)) {
+    def releaseQualJob = getParam('RELEASE_QUAL_JOB')
+    if (releaseQualJob != '') {
       // If all stages passed, queue up a release qualification.
       build(
-          job: 'esp/esp-release-qual',
+          job: releaseQualJob,
           parameters: [[$class: 'StringParameterValue', name: 'GIT_COMMIT', value: GIT_SHA],
                        [$class: 'StringParameterValue', name: 'DURATION_HOUR', value: '10'],
                        [$class: 'StringParameterValue', name: 'STAGE', value: 'E2E'],
