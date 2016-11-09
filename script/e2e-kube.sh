@@ -29,7 +29,7 @@
 SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ESP_ROOT="$(cd "${SCRIPT_PATH}/../" && pwd)"
 CLI="$ESP_ROOT/bazel-bin/tools/src/espcli"
-YAML_FILE=${ESP_ROOT}/test/src/deploy/bookstore.yaml
+YAML_FILE=${ESP_ROOT}/test/bookstore/bookstore.yaml
 ESP_APP="esp"
 
 . ${ESP_ROOT}/script/jenkins-utilities || { echo "Cannot load Jenkins Bash utilities" ; exit 1 ; }
@@ -56,8 +56,8 @@ ARGS="\
   --service ${ESP_SERVICE} \
   --project ${PROJECT_ID} \
   --image ${ESP_IMAGE} \
-  --sslCert ${ESP_ROOT}/test/src/utils/nginx.crt \
-  --sslKey ${ESP_ROOT}/test/src/utils/nginx.key \
+  --sslCert ${ESP_ROOT}/tools/src/testdata/nginx.crt \
+  --sslKey ${ESP_ROOT}/tools/src/testdata/nginx.key \
 "
 run sed_i "s|image:.*|image: ${BOOKSTORE_IMAGE}|g" ${YAML_FILE}
 run cat ${YAML_FILE}
