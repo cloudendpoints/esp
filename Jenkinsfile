@@ -510,6 +510,9 @@ def updateGerrit(flow, success = false) {
   if (gerritUrl == '') {
     return
   }
+  if (CHANGE_ID == '') {
+    error('CHANGE_ID must be set.')
+  }
   def successFlag = success ? '--success' : ''
   retry(3) {
     sh("script/update-gerrit.py " +
@@ -829,7 +832,7 @@ def stashSourceCode() {
   // Setting source code related global variable once so it can be reused.
   GIT_SHA = failIfNullOrEmpty(getRevision(), 'GIT_SHA must be set')
   ESP_RUNTIME_VERSION = failIfNullOrEmpty(getEndpointsRuntimeVersion(), 'ESP_RUNTIME_VERSION must be set')
-  CHANGE_ID = failIfNullOrEmpty(getChangeId(), 'CHANGE_ID must be set')
+  CHANGE_ID = getWithDefault(getChangeId())
   echo('Stashing source code')
   fastStash('src-code', '.')
 }
