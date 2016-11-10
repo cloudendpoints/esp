@@ -154,7 +154,12 @@ if __name__ == "__main__":
 
                 print '=== Metric:'
                 for k in metrics.keys():
-                    print k, metrics[k][0], metrics[k][1]
+                    # For print in negative test, replace some metric name
+                    # For easy result parsing.
+                    nn = k
+                    if FLAGS.test == 'negative' && k == 'Non-2xx responses':
+                        nn = 'Non-2xx-3xx responses'
+                    print nn, metrics[k][0], metrics[k][1]
 
                 print '=== Metadata:'
                 metadata = {
