@@ -537,7 +537,7 @@ def updateGerrit(flow, success = false) {
       default:
         error('flow can only be run or verify')
     }
-    setGitHubPullRequestStatus(context: 'esp-presubmits', message: message, state: state)
+    setGitHubPullRequestStatus(context: env.JOB_NAME, message: message, state: state)
   }
 }
 
