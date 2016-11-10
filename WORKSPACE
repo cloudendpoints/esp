@@ -46,9 +46,10 @@ bind(
 # and run ./tools/buildgen/generate_projects.sh in GRPC repo.
 new_git_repository(
     name = "grpc_git",
-    commit = "3808b6efe66b87269d43847bc113e94e2d3d28fb",
+    commit = "d28417c856366df704200f544e72d31056931bce",
     remote = "https://github.com/grpc/grpc.git",
     build_file = "third_party/BUILD.grpc",
+    init_submodules = True,
 )
 
 bind(
