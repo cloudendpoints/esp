@@ -507,24 +507,38 @@ def testCleanup(daysOld, project, flags) {
 // flow can be run or verify
 def updateGerrit(flow, success = false) {
   def gerritUrl = getParam('GERRIT_URL')
-  if (gerritUrl == '') {
-    return
+  if (gerritUrl != '') {
+    if (CHANGE_ID == '') {
+      error('CHANGE_ID must be set.')
+    }
+    def successFlag = success ? '--success' : ''
+    retry(3) {
+      sh("script/update-gerrit.py " +
+          "--build_url=\"${env.BUILD_URL}\" " +
+          "--change_id=\"${CHANGE_ID}\" " +
+          "--gerrit_url=\"${gerritUrl}\" " +
+          "--commit=\"${GIT_SHA}\" " +
+          "--flow=\"${flow}\" " +
+          "${successFlag}")
+      sleep(5)
+    }
+  } else {
+    // Github
+    switch (flow) {
+      case 'run':
+        state = 'PENDING'
+        message = "Running presubmits at ${env.BUILD_URL} ..."
+        break
+      case 'verify':
+        state = success ? 'SUCCESS' : 'FAILURE'
+        message = "${success ? 'Successful' : 'Failed'} presubmits. " +
+            "Details at ${env.BUILD_URL}."
+        break
+      default:
+        error('flow can only be run or verify')
+    }
+    setGitHubPullRequestStatus(context: 'esp-presubmits', message: message, state: state)
   }
-  if (CHANGE_ID == '') {
-    error('CHANGE_ID must be set.')
-  }
-  def successFlag = success ? '--success' : ''
-  retry(3) {
-    sh("script/update-gerrit.py " +
-        "--build_url=\"${env.BUILD_URL}\" " +
-        "--change_id=\"${CHANGE_ID}\" " +
-        "--gerrit_url=\"${gerritUrl}\" " +
-        "--commit=\"${GIT_SHA}\" " +
-        "--flow=\"${flow}\" " +
-        "${successFlag}")
-    sleep(5)
-  }
-
 }
 
 def buildNewDockerSlave(nodeLabel) {
@@ -926,7 +940,6 @@ def initialize(setup = false, authDaemon = true) {
     sh('script/setup && script/obliterate')
   }
 }
-
 
 
 def setGitAuthDaemon() {
