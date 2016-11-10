@@ -153,13 +153,12 @@ if __name__ == "__main__":
                 metrics, errors = ret
 
                 print '=== Metric:'
+                # Add prefix for negative metrics to be filtered in result analysis.
+                prefix = ''
+                if FLAGS.test == 'negative':
+                    prefix = '='
                 for k in metrics.keys():
-                    # For print in negative test, replace some metric name
-                    # For easy result parsing.
-                    nn = k
-                    if FLAGS.test == 'negative' && k == 'Non-2xx responses':
-                        nn = 'Non-2xx-3xx responses'
-                    print nn, metrics[k][0], metrics[k][1]
+                    print '%s%s %s %s' % (prefix, k, metrics[k][0], metrics[k][1])
 
                 print '=== Metadata:'
                 metadata = {
