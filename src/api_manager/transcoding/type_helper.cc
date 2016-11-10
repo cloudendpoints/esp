@@ -52,6 +52,9 @@ class SimpleTypeResolver : public pbutil::TypeResolver {
 
   void AddType(const pb::Type& t) {
     type_map_.emplace(url_prefix_ + t.name(), &t);
+    // A temporary workaround for service configs that use
+    // "proto2.MessageOptions.*" options.
+    ReplaceProto2WithGoogleProtobufInOptionNames(const_cast<pb::Type*>(&t));
   }
 
   void AddEnum(const pb::Enum& e) {
@@ -90,6 +93,22 @@ class SimpleTypeResolver : public pbutil::TypeResolver {
   }
 
  private:
+  void ReplaceProto2WithGoogleProtobufInOptionNames(pb::Type* type) {
+    // As a temporary workaround for service configs that use
+    // "proto2.MessageOptions.*" options instead of
+    // "google.protobuf.MessageOptions.*", we replace the option names to make
+    // protobuf library recognize them.
+    for (auto& option : *type->mutable_options()) {
+      if (option.name() == "proto2.MessageOptions.map_entry") {
+        option.set_name("google.protobuf.MessageOptions.map_entry");
+      } else if (option.name() ==
+                 "proto2.MessageOptions.message_set_wire_format") {
+        option.set_name(
+            "google.protobuf.MessageOptions.message_set_wire_format");
+      }
+    }
+  }
+
   std::string url_prefix_;
   std::unordered_map<std::string, const pb::Type*> type_map_;
   std::unordered_map<std::string, const pb::Enum*> enum_map_;
