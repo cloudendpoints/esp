@@ -172,7 +172,7 @@ node('master') {
     step([
         $class: 'Mailer',
         notifyEveryUnstableBuild: false,
-        recipients: '',
+        recipients: 'esp-alerts-jenkins@google.com',
         sendToIndividuals: true])
   }
 }
