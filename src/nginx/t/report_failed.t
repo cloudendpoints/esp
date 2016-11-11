@@ -42,7 +42,7 @@ my $NginxPort = ApiManager::pick_port();
 my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(18);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(14);
 
 # Save service name in the service configuration protocol buffer file.
 my $config = ApiManager::get_bookstore_service_config_allow_unregistered .
@@ -112,22 +112,12 @@ like($response2_headers, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200 after failed 
 like($response2_body, qr/Shelves 0 data/, 'Received response data after failed report');
 
 my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
-is(scalar @servicecontrol_requests, 4, 'Service control was called four times.');
+is(scalar @servicecontrol_requests, 2, 'Service control was called two times.');
 
 my $r = shift @servicecontrol_requests;
-is($r->{verb}, 'POST', ':check was a POST');
-is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:check',
-   ':check was called');
-
-$r = shift @servicecontrol_requests;
 is($r->{verb}, 'POST', ':report was a POST');
 is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:report',
    ':report was called');
-
-$r = shift @servicecontrol_requests;
-is($r->{verb}, 'POST', ':check was a POST');
-is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:check',
-   ':check was called');
 
 $r = shift @servicecontrol_requests;
 is($r->{verb}, 'POST', ':report was a POST');
@@ -147,15 +137,6 @@ sub servicecontrol {
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
   my $report_counter = 1;
-
-  $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:check', sub {
-    my ($headers, $body, $client) = @_;
-    print $client <<'EOF';
-HTTP/1.1 200 OK
-Connection: close
-
-EOF
-  });
 
   $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:report', sub {
     my ($headers, $body, $client) = @_;

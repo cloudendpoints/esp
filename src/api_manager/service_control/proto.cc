@@ -786,15 +786,9 @@ void SetOperationCommonFields(const OperationInfo& info,
   if (!info.operation_name.empty()) {
     op->set_operation_name(info.operation_name);
   }
-
-  // Sets api_key for consumer_id if it exists and is valid. Otherwise use
-  // info.producer_project_id as the consumer_id.
   if (!info.api_key.empty()) {
     op->set_consumer_id(std::string(kConsumerIdApiKey) +
                         std::string(info.api_key));
-  } else if (!info.producer_project_id.empty()) {
-    op->set_consumer_id(std::string(kConsumerIdProject) +
-                        std::string(info.producer_project_id));
   }
   *op->mutable_start_time() = CreateTimestamp(info.request_start_time);
   *op->mutable_end_time() = current_time;

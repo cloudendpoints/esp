@@ -185,8 +185,6 @@ sub gen_report_body {
   $operation->{operationName} = $in->{api_method};
   if (exists $in->{api_key}) {
     $operation->{consumerId} = 'api_key:' . $in->{api_key};
-  } elsif (exists $in->{producer_project_id}) {
-    $operation->{consumerId} = 'project:' . $in->{producer_project_id};
   }
 
   my $ll = gen_report_labels($in);

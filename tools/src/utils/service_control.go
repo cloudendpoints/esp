@@ -307,8 +307,6 @@ func CreateReport(er *ExpectedReport) servicecontrol.ReportRequest {
 
 	if er.ApiKey != "" {
 		op.ConsumerId = "api_key:" + er.ApiKey
-	} else if er.ProducerProjectID != "" {
-		op.ConsumerId = "project:" + er.ProducerProjectID
 	}
 	op.Labels = createReportLabels(er)
 

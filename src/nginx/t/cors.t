@@ -42,7 +42,7 @@ my $NginxPort = ApiManager::pick_port();
 my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(17);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(15);
 
 # Save service name in the service configuration protocol buffer file.
 my $config = ApiManager::get_bookstore_service_config .
@@ -128,7 +128,7 @@ is($response_body2, <<'EOF', 'Empty body returned in the response body2.');
 EOF
 
 my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
-is(scalar @servicecontrol_requests, 4, 'Service control was called 4 times');
+is(scalar @servicecontrol_requests, 3, 'Service control was called 3 times');
 
 # :check 1
 my $r = shift @servicecontrol_requests;
@@ -173,30 +173,9 @@ my $expected_report_body1 = ServiceControl::gen_report_body({
   });
 ok(ServiceControl::compare_json($report_body1, $expected_report_body1), 'Report body 1 is received.');
 
-# :check 2
-$r = shift @servicecontrol_requests;
-like($r->{uri}, qr/:check$/, 'Third call was a :check');
-
-my $check_body2 = ServiceControl::convert_proto($r->{body}, 'check_request', 'json');
-my $expected_check_body2 = {
-  'serviceName' => 'endpoints-test.cloudendpointsapis.com',
-  'serviceConfigId' => '2016-08-25r1',
-  'operation' => {
-     'consumerId' => 'project:esp-project-id',
-     'operationName' => 'CORS',
-     'labels' => {
-        'servicecontrol.googleapis.com/caller_ip' => '127.0.0.1',
-        'servicecontrol.googleapis.com/service_agent' => ServiceControl::service_agent(),
-        'servicecontrol.googleapis.com/user_agent' => 'ESP',
-        'servicecontrol.googleapis.com/referer' => 'http://google.com/bookstore/root',
-     }
-  }
-};
-ok(ServiceControl::compare_json($check_body2, $expected_check_body2), 'Check body 2 is received.');
-
 # :report 2
 $r = shift @servicecontrol_requests;
-like($r->{uri}, qr/:report$/, 'Fouth call was a :report');
+like($r->{uri}, qr/:report$/, 'Last call was a :report');
 
 my $report_body2 = ServiceControl::convert_proto($r->{body}, 'report_request', 'json');
 my $expected_report_body2 = ServiceControl::gen_report_body({

@@ -90,7 +90,7 @@ $t->run();
 
 ################################################################################
 
-my $response = ApiManager::http_get($NginxPort,'/shelves');
+my $response = ApiManager::http_get($NginxPort,'/shelves?key=api-key');
 
 is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');
 $t->stop_daemons();
@@ -120,7 +120,7 @@ my $expected_check_body = {
   'serviceName' => 'endpoints-test.cloudendpointsapis.com',
   'serviceConfigId' => '2016-08-25r1',
   'operation' => {
-     'consumerId' => 'project:endpoints-test',
+     'consumerId' => 'api_key:api-key',
      'operationName' => 'ListShelves',
      'labels' => {
         'servicecontrol.googleapis.com/caller_ip' => '127.0.0.1',
@@ -141,15 +141,15 @@ my $report_body = ServiceControl::convert_proto($r->{body}, 'report_request', 'j
 my $expected_report_body = ServiceControl::gen_report_body({
   'serviceConfigId' => '2016-08-25r1',
   'serviceName' =>  'endpoints-test.cloudendpointsapis.com',
-  'url' => '/shelves',
+  'url' => '/shelves?key=api-key',
+  'api_key' => 'api-key',
   'producer_project_id' => 'endpoints-test',
-  'no_consumer_data' => 1,
   'location' => 'us-central1',
   'api_method' =>  'ListShelves',
   'http_method' => 'GET',
   'log_message' => 'Method: ListShelves',
   'response_code' => '200',
-  'request_size' => 39,
+  'request_size' => 51,
   'response_size' => 208,
   });
 

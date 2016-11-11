@@ -45,7 +45,7 @@ my $GrpcBackendPort = ApiManager::pick_port();
 my $GrpcFallbackPort = ApiManager::pick_port();
 my $HttpBackendPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(10);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(8);
 
 $t->write_file(
     'service.pb.txt',
@@ -114,16 +114,10 @@ EOF
 is($test_results, $test_results_expected, 'Client tests completed as expected.');
 
 my @requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
-is(scalar @requests, 2, 'Service control received 2 requests.');
-
-# :check
-my $r = shift @requests;
-like($r->{uri}, qr/:check$/, ':check was called');
-my $check_body = decode_json(ServiceControl::convert_proto($r->{body}, 'check_request', 'json'));
-is($check_body->{operation}->{operationName}, 'Default.Post', ':check used default post method.');
+is(scalar @requests, 1, 'Service control received 1 request.');
 
 # :report
-$r = shift @requests;
+my $r = shift @requests;
 like($r->{uri}, qr/:report$/, ':report was called');
 my $report_body = decode_json(ServiceControl::convert_proto($r->{body}, 'report_request', 'json'));
 is($report_body->{operations}[0]->{operationName}, 'Default.Post', ':report used default post method.');

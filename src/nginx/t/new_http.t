@@ -112,7 +112,7 @@ $t->run();
 
 my $token = Auth::get_auth_token('./src/nginx/t/matching-client-secret.json');
 my $response = ApiManager::http($NginxPort,<<"EOF");
-GET /shelves HTTP/1.0
+GET /shelves?key=api-key HTTP/1.0
 Authorization: Bearer $token
 Host: localhost
 
@@ -161,8 +161,8 @@ is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:check',
 
 # Verify the :check body contents.
 my $check_json = decode_json(ServiceControl::convert_proto($r->{body}, 'check_request', 'json'));
-is($check_json->{operation}->{consumerId}, 'project:esp-test-app',
-   'Project ID from metadata server was used for :check.');
+is($check_json->{operation}->{consumerId}, 'api_key:api-key',
+   'ConsumerID is correct for :check.');
 
 # :report
 $r = shift @servicecontrol_requests;
@@ -171,15 +171,15 @@ is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:report',
    ':report uri was correct');
 
 my $report_json = decode_json(ServiceControl::convert_proto($r->{body}, 'report_request', 'json'));
-is($report_json->{operations}[0]->{consumerId}, 'project:esp-test-app',
-   'Project ID from metadata server was used for :report.');
+is($report_json->{operations}[0]->{consumerId}, 'api_key:api-key',
+   'ConsumerID is correct for :report.');
 
 # Verify backend was called.
 my @backend_requests = ApiManager::read_http_stream($t, 'bookstore.log');
 is(scalar @backend_requests, 1, 'Backend was called once.');
 $r = shift @backend_requests;
 is($r->{verb}, 'GET', 'Backend call was a GET');
-is($r->{uri}, '/shelves', '/shelves was called');
+is($r->{uri}, '/shelves?key=api-key', '/shelves was called');
 is($r->{headers}->{authorization}, "Bearer ${token}", 'Backend received authorization header');
 
 ################################################################################
