@@ -2,7 +2,6 @@ service_name: "test_service"
 operation {
   operation_id: "operation_id"
   operation_name: "operation_name"
-  consumer_id: "project:project_id"
   start_time {
     seconds: 100000
     nanos: 100000

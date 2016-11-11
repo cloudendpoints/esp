@@ -33,31 +33,6 @@ using ::google::protobuf::util::error::Code;
 namespace google {
 namespace api_manager {
 
-namespace {
-
-// If api_key is not provided, check if it is allowed.
-Status CheckCallerIdentity(context::RequestContext *context) {
-  if (!context->api_key().empty()) {
-    // API Key was provided.
-    return Status::OK;
-  }
-
-  const MethodInfo *method_info = context->method();
-  if (method_info != nullptr && method_info->allow_unregistered_calls() &&
-      !context->service_context()->project_id().empty()) {
-    // Project ID is available.
-    return Status::OK;
-  }
-
-  return Status(Code::UNAUTHENTICATED,
-                "Method doesn't allow unregistered callers (callers without "
-                "established identity). Please use API Key or other form of "
-                "API consumer identity to call this API.",
-                Status::SERVICE_CONTROL);
-}
-
-}  // namespace
-
 void CheckServiceControl(std::shared_ptr<context::RequestContext> context,
                          std::function<void(Status status)> continuation) {
   std::shared_ptr<cloud_trace::CloudTraceSpan> trace_span(
@@ -75,10 +50,21 @@ void CheckServiceControl(std::shared_ptr<context::RequestContext> context,
     return;
   }
 
-  Status status = CheckCallerIdentity(context.get());
-  if (!status.ok()) {
+  if (context->api_key().empty()) {
+    if (context->method()->allow_unregistered_calls()) {
+      // Not need to call Check.
+      TRACE(trace_span) << "Service control check is not needed";
+      continuation(Status::OK);
+      return;
+    }
+
     TRACE(trace_span) << "Failed at checking caller identity.";
-    continuation(status);
+    continuation(
+        Status(Code::UNAUTHENTICATED,
+               "Method doesn't allow unregistered callers (callers without "
+               "established identity). Please use API Key or other form of "
+               "API consumer identity to call this API.",
+               Status::SERVICE_CONTROL));
     return;
   }
 

@@ -102,7 +102,7 @@ $t->run();
 
 ################################################################################
 
-my $response = ApiManager::http_get($NginxPort,'/shelves');
+my $response = ApiManager::http_get($NginxPort,'/shelves?key=api-key');
 is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');
 $t->stop_daemons();
 

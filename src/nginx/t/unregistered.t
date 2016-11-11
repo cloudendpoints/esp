@@ -44,7 +44,7 @@ my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $MetadataPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(29);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(26);
 
 # Use JSON configuration.
 ApiManager::write_file_expand($t, 'service.json', <<"EOF");
@@ -156,7 +156,7 @@ $t->stop_daemons();
 #  my $json_body = ;
 
 my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
-is(scalar @servicecontrol_requests, 4, 'Service control was called four times.');
+is(scalar @servicecontrol_requests, 3, 'Service control was called 3 times.');
 
 my $report_request = pop @servicecontrol_requests;
 like($report_request->{uri}, qr/^.*:report$/, 'Report was called.');
@@ -183,16 +183,9 @@ is($report->{consumerId}, 'api_key:this-is-an-api-key-1',
 like($response2, qr/HTTP\/1\.1 200 OK/, 'Allow unregistered, no API key - 200 OK');
 like($response2, qr/Shelf 2\.$/, 'Allow unregistered, no API key - body');
 
-$r = shift @servicecontrol_requests;
-like($r->{uri}, qr/:check$/, 'Check was called for /shelves/2');
-$check = decode_json(ServiceControl::convert_proto($r->{body}, 'check_request', 'json'));
-is($check->{operation}->{operationName}, 'GetShelf',
-   'Allow unregistered, no API key - method name');
-is($check->{operation}->{consumerId}, 'project:esp-test-app',
-   'Allow unregistered, no API key - consumer id is correct');
+# Check is NOT called for this one.
 $report = shift @operations;
-is($report->{consumerId}, 'project:esp-test-app',
-   'Allow unregistered, no API key - report_body has correct consumerId');
+ok((not exists($report->{consumerId})), 'Allow unregistered, no API key - empty consumerId');
 
 # /shelves/3/books?key=this-is-an-api-key-3
 like($response3, qr/HTTP\/1\.1 200 OK/, 'Disallow unregistered, provide API key - 200 OK');
@@ -217,8 +210,7 @@ like($response4, qr/"message": "Method doesn't allow unregistered callers/,
 is(scalar @servicecontrol_requests, 0,
    'Disallow unregistered, no API key - check service control not called.');
 $report = shift @operations;
-is($report->{consumerId}, 'project:esp-test-app',
-   'Disallow unregistered, no API key - report_body has correct consumerId');
+ok((not exists($report->{consumerId})), 'Disallow unregistered, no API key - empty consumerId');
 
 ################################################################################
 
