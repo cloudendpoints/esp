@@ -452,6 +452,8 @@ def buildPackages() {
       '//test/grpc:interop-metrics-client',
       '//test/grpc:interop-server',
       '//test/grpc:interop-stress-client',
+      '//test/grpc:grpc-test_descriptor',
+      '//test/grpc:grpc-interop_descriptor',
   ]
   def stashPaths = [
       'bazel-bin/src/tools/auth_token_gen',
@@ -461,6 +463,8 @@ def buildPackages() {
       'bazel-bin/test/grpc/interop-metrics-client',
       'bazel-bin/test/grpc/interop-server',
       'bazel-bin/test/grpc/interop-stress-client',
+      'bazel-genfiles/test/grpc/grpc-test.descriptor',
+      'bazel-genfiles/test/grpc/grpc-interop.descriptor',
   ]
   buildAndStash(
       tools.join(' '),
