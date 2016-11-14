@@ -1,3 +1,17 @@
+# Release 1.0.0 11-11-2016
+
+- Fix for rename version => config_id
+- Usability improvements to the fetching script
+- Add support for HTTPS upstream to the start script
+- Adds support for binding request fields using query parameters.
+- Add health endpoint to application port
+- Change the prefix for /credential_id label to lowercase.
+- Fixed wrong protocol value in Report for grpc pass-though
+- Send service_config_id to service control server.
+- Upgrade nginx to 1.11.5
+- Upgrade GPRC and protobuf
+- Enable padding when base64 "X-Endpoints-API-UserInfo" HTTP header
+
 # Release 0.3.10 19-10-2016
 
 - Fail open for method with `allow_unregistered_calls`.

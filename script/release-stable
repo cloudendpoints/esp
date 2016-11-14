@@ -34,11 +34,17 @@ function usage() {
   [[ -n "${1}" ]] && echo "${1}"
   cat << END_USAGE
 
-Usage: ${BASH_SOURCE[0]} -g <path_to_gcloud>
+Usage: ${BASH_SOURCE[0]} -g <path_to_gcloud> -r <DIRECT_REPO>
 
 This script will release stable ESP docker image with format of:
-  b.gcr.io/endpoints/endpoints-runtime:\${BASE_VERSION}
-where BASE_VERSION=major.minor
+  b.gcr.io/endpoints/endpoints-runtime:\${MINOR_BASE_VERSION}
+  b.gcr.io/endpoints/endpoints-runtime:\${MAJOR_BASE_VERSION}
+  b.gcr.io/endpoints/endpoints-runtime:lastest
+where:
+  MINOR_BASE_VERSION=major.minor
+  MAJOR_BASE_VERSION=major
+
+And mark debian package <DIRECT_REPO> in rapture as stable.
 
 END_USAGE
   exit 1
@@ -66,26 +72,27 @@ which rapture > /dev/null 2>&1 \
 set -x
 
 VERSION="$(command cat ${ROOT}/include/version)"
-BASE_VERSION="$(echo ${VERSION} | cut -d . -f -2)"
+# Minor base is 1.0  if version is 1.0.0
+MINOR_BASE_VERSION=${VERSION%.*}
+# Major base is 1  if version is 1.0.0
+MAJOR_BASE_VERSION=${MINOR_BASE_VERSION%.*}
 
 function tag_stable_image() {
   local image="${1}"
   local stable="${2}"
-  local latest="${3}"
 
   docker_tag_f "${image}" "${stable}"
-  docker_tag_f "${image}" "${latest}"
 
   retry "${GCLOUD}" docker push "${stable}" \
     || error_exit "ERROR: failed to push '${stable}'"
-  retry "${GCLOUD}" docker push "${latest}" \
-    || error_exit "ERROR: failed to push '${latest}'"
 }
 
-tag_stable_image \
+
+for target in ${MINOR_BASE_VERSION} ${MAJOR_BASE_VERSION} latest; do
+  tag_stable_image \
     "b.gcr.io/endpoints/endpoints-runtime:${VERSION}" \
-    "b.gcr.io/endpoints/endpoints-runtime:${BASE_VERSION}" \
-    "b.gcr.io/endpoints/endpoints-runtime:latest"
+    "b.gcr.io/endpoints/endpoints-runtime:${target}";
+done
 
 rapture --universe=cloud-apt settag ${DEBIAN_PACKAGE_REPOSITORY} \
   endpoints-dev.stable:true \
