@@ -123,14 +123,14 @@ node('master') {
         ws {
           def success = true
           checkoutSourceCode()
-          updateGerrit('run')
+          updatePresubmit('run')
           try {
             presubmit(buildNodeLabel)
           } catch (Exception e) {
             success = false
             throw e
           } finally {
-            updateGerrit('verify', success)
+            updatePresubmit('verify', success)
           }
         }
       }
@@ -506,7 +506,8 @@ def testCleanup(daysOld, project, flags) {
 }
 
 // flow can be run or verify
-def updateGerrit(flow, success = false) {
+def updatePresubmit(flow, success = false) {
+  if (getParam('STAGE') != PRESUBMIT) return
   def gerritUrl = getParam('GERRIT_URL')
   if (gerritUrl != '') {
     if (CHANGE_ID == '') {
