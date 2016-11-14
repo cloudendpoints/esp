@@ -105,10 +105,6 @@ set -x
 git push origin ${VERSION}
 { set +x; } 2>/dev/null
 
-# Delete the release branch.
-git push origin :refs/heads/release/${VERSION} \
-  || error_exit "Failed to delete the release branch."
-
 printf '\e[31m
 ***************************************************************************
 *      Please paste the script output verbatim into the release bug.      *
