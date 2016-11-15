@@ -1,4 +1,4 @@
-// Copyright (C) Endpoints Server Proxy Authors
+// Copyright (C) Extensible Service Proxy Authors
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 //
-// An Endpoints Server Proxy error handling.
+// An Extensible Service Proxy error handling.
 //
 
 #include "src/nginx/error.h"

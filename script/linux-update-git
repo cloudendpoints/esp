@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (C) Endpoints Server Proxy Authors
+# Copyright (C) Extensible Service Proxy Authors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -57,7 +57,7 @@ echo "Waiting for authentication."
 until [[ -s .git-credential-cache/cookie ]]; do sleep 1; done
 
 if [[ ! -d ./esp ]]; then
-  echo "Cloning Endpoints Server Proxy source."
+  echo "Cloning Extensible Service Proxy source."
   git clone https://gcp-apis.googlesource.com/esp
 else
   echo "Clearing submodules."
@@ -65,7 +65,7 @@ else
      && git submodule deinit --force . \
      && rm -rf .git/modules/*
   )
-  echo "Updating Endpoints Server Proxy source."
+  echo "Updating Extensible Service Proxy source."
   (cd ./esp \
      && git fetch origin \
      && git checkout master \

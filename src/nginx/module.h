@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Endpoints Server Proxy Authors
+ * Copyright (C) Extensible Service Proxy Authors
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,7 +51,7 @@ namespace api_manager {
 namespace nginx {
 
 // ********************************************************
-// * Endpoints Server Proxy - Configuration declarations. *
+// * Extensible Service Proxy - Configuration declarations. *
 // ********************************************************
 
 //
@@ -119,7 +119,7 @@ typedef struct {
   ngx_str_t endpoints_config;  // API Configuration file name.
   ngx_flag_t endpoints_api;    // Does this location host an Endpoints API?
 
-  // Endpoints Server Proxy library interface.
+  // Extensible Service Proxy library interface.
   std::shared_ptr<ApiManager> esp;
 
   unsigned endpoints_block : 1;  // location has `endpoints` block
@@ -169,7 +169,7 @@ typedef struct {
 } ngx_esp_loc_conf_t;
 
 // **************************************************
-// * Endpoints Server Proxy - Runtime declarations. *
+// * Extensible Service Proxy - Runtime declarations. *
 // **************************************************
 
 typedef struct ngx_esp_request_ctx_s ngx_esp_request_ctx_t;
