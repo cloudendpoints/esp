@@ -50,7 +50,6 @@ namespace service_control {
 
 namespace {
 void FillOperationInfo(OperationInfo* op) {
-  op->service_name = "test_service";
   op->operation_id = "operation_id";
   op->operation_name = "operation_name";
   op->api_key = "api_key_x";
@@ -103,13 +102,6 @@ class AggregatedTestWithMockedClient : public ::testing::Test {
   std::unique_ptr<Interface> sc_lib_;
 };
 
-TEST_F(AggregatedTestWithMockedClient, FailedReportRequiredFieldTest) {
-  ReportRequestInfo info;
-  FillOperationInfo(&info);
-  info.service_name = nullptr;  // Missing service_name
-  ASSERT_EQ(Code::INVALID_ARGUMENT, sc_lib_->Report(info).code());
-}
-
 TEST_F(AggregatedTestWithMockedClient, ReportTest) {
   EXPECT_CALL(*mock_client_, Report(_, _, _))
       .WillOnce(Invoke(this, &AggregatedTestWithMockedClient::Report));
@@ -135,7 +127,7 @@ TEST_F(AggregatedTestWithMockedClient, FailedReportTest) {
 TEST_F(AggregatedTestWithMockedClient, FailedCheckRequiredFieldTest) {
   CheckRequestInfo info;
   FillOperationInfo(&info);
-  info.service_name = nullptr;  // Missing service_name
+  info.operation_name = nullptr;  // Missing operation_name
   sc_lib_->Check(info, nullptr,
                  [](Status status, const CheckResponseInfo& info) {
                    ASSERT_EQ(Code::INVALID_ARGUMENT, status.code());

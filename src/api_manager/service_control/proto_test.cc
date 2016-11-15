@@ -75,7 +75,6 @@ std::string ReadTestBaseline(const char* input_file_name) {
 }
 
 void FillOperationInfo(OperationInfo* op) {
-  op->service_name = "test_service";
   op->operation_id = "operation_id";
   op->operation_name = "operation_name";
   op->api_key = "api_key_x";
@@ -141,7 +140,7 @@ std::string ReportRequestToString(gasv1::ReportRequest* request) {
 
 class ProtoTest : public ::testing::Test {
  protected:
-  ProtoTest() : scp_({"local_test_log"}, "2016-09-19r0") {}
+  ProtoTest() : scp_({"local_test_log"}, "test_service", "2016-09-19r0") {}
 
   Proto scp_;
 };
@@ -171,7 +170,6 @@ TEST_F(ProtoTest, FillGoodCheckRequestTest) {
 
 TEST_F(ProtoTest, FillNoApiKeyCheckRequestTest) {
   CheckRequestInfo info;
-  info.service_name = "test_service";
   info.operation_id = "operation_id";
   info.operation_name = "operation_name";
   info.producer_project_id = "project_id";
@@ -185,19 +183,8 @@ TEST_F(ProtoTest, FillNoApiKeyCheckRequestTest) {
   ASSERT_EQ(expected_text, text);
 }
 
-TEST_F(ProtoTest, CheckRequestMissingServiceNameTest) {
-  CheckRequestInfo info;
-  info.operation_name = "operation_name";
-  info.operation_id = "operation_id";
-
-  gasv1::CheckRequest request;
-  ASSERT_EQ(Code::INVALID_ARGUMENT,
-            scp_.FillCheckRequest(info, &request).code());
-}
-
 TEST_F(ProtoTest, CheckRequestMissingOperationNameTest) {
   CheckRequestInfo info;
-  info.service_name = "test_service";
   info.operation_id = "operation_id";
 
   gasv1::CheckRequest request;
@@ -207,7 +194,6 @@ TEST_F(ProtoTest, CheckRequestMissingOperationNameTest) {
 
 TEST_F(ProtoTest, CheckRequestMissingOperationIdTest) {
   CheckRequestInfo info;
-  info.service_name = "test_service";
   info.operation_name = "operation_name";
 
   gasv1::CheckRequest request;
