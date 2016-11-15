@@ -719,7 +719,6 @@ const int supported_labels_count =
 
 // Define Service Control constant strings
 const char kConsumerIdApiKey[] = "api_key:";
-const char kConsumerIdProject[] = "project:";
 
 // Following names for for Log struct_playload field names:
 const char kLogFieldNameTimestamp[] = "timestamp";
@@ -755,10 +754,6 @@ Timestamp GetCurrentTimestamp() {
 }
 
 Status VerifyRequiredCheckFields(const OperationInfo& info) {
-  if (info.service_name.empty()) {
-    return Status(Code::INVALID_ARGUMENT, "service_name is required.",
-                  Status::SERVICE_CONTROL);
-  }
   if (info.operation_id.empty()) {
     return Status(Code::INVALID_ARGUMENT, "operation_id is required.",
                   Status::SERVICE_CONTROL);
@@ -771,10 +766,6 @@ Status VerifyRequiredCheckFields(const OperationInfo& info) {
 }
 
 Status VerifyRequiredReportFields(const OperationInfo& info) {
-  if (info.service_name.empty()) {
-    return Status(Code::INVALID_ARGUMENT, "service_name is required.",
-                  Status::SERVICE_CONTROL);
-  }
   return Status::OK;
 }
 
@@ -872,7 +863,7 @@ std::vector<const Element*> FilterPointers(
 
 }  // namespace
 
-Proto::Proto(const std::set<std::string>& logs,
+Proto::Proto(const std::set<std::string>& logs, const std::string& service_name,
              const std::string& service_config_id)
     : logs_(logs.begin(), logs.end()),
       metrics_(FilterPointers<SupportedMetric>(
@@ -881,11 +872,13 @@ Proto::Proto(const std::set<std::string>& logs,
       labels_(FilterPointers<SupportedLabel>(
           supported_labels, supported_labels + supported_labels_count,
           [](const struct SupportedLabel* l) { return l->set != nullptr; })),
+      service_name_(service_name),
       service_config_id_(service_config_id) {}
 
 Proto::Proto(const std::set<std::string>& logs,
              const std::set<std::string>& metrics,
              const std::set<std::string>& labels,
+             const std::string& service_name,
              const std::string& service_config_id)
     : logs_(logs.begin(), logs.end()),
       metrics_(FilterPointers<SupportedMetric>(
@@ -899,6 +892,7 @@ Proto::Proto(const std::set<std::string>& logs,
             return l->set && (l->kind == SupportedLabel::SYSTEM ||
                               labels.find(l->name) != labels.end());
           })),
+      service_name_(service_name),
       service_config_id_(service_config_id) {}
 
 Status Proto::FillCheckRequest(const CheckRequestInfo& info,
@@ -907,7 +901,7 @@ Status Proto::FillCheckRequest(const CheckRequestInfo& info,
   if (!status.ok()) {
     return status;
   }
-  request->set_service_name(info.service_name);
+  request->set_service_name(service_name_);
   request->set_service_config_id(service_config_id_);
 
   Timestamp current_time = GetCurrentTimestamp();
@@ -932,7 +926,7 @@ Status Proto::FillReportRequest(const ReportRequestInfo& info,
   if (!status.ok()) {
     return status;
   }
-  request->set_service_name(info.service_name);
+  request->set_service_name(service_name_);
   request->set_service_config_id(service_config_id_);
 
   Timestamp current_time = GetCurrentTimestamp();

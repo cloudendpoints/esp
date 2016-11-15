@@ -39,13 +39,13 @@ namespace service_control {
 class Proto final {
  public:
   // Initializes Proto with all supported metrics and labels.
-  Proto(const std::set<std::string>& logs,
+  Proto(const std::set<std::string>& logs, const std::string& service_name,
         const std::string& service_config_id);
 
   // Initializes Proto with specified (and supported) metrics and
   // labels.
   Proto(const std::set<std::string>& logs, const std::set<std::string>& metrics,
-        const std::set<std::string>& labels,
+        const std::set<std::string>& labels, const std::string& service_name,
         const std::string& service_config_id);
 
   // Fills the CheckRequest protobuf from info.
@@ -77,11 +77,14 @@ class Proto final {
 
   static bool IsMetricSupported(const ::google::api::MetricDescriptor& metric);
   static bool IsLabelSupported(const ::google::api::LabelDescriptor& label);
+  const std::string& service_name() const { return service_name_; }
+  const std::string& service_config_id() const { return service_config_id_; }
 
  private:
   const std::vector<std::string> logs_;
   const std::vector<const struct SupportedMetric*> metrics_;
   const std::vector<const struct SupportedLabel*> labels_;
+  const std::string service_name_;
   const std::string service_config_id_;
 };
 
