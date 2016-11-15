@@ -9,7 +9,7 @@ build:asan --linkopt -fsanitize=address
 # Thread sanitizer
 build:tsan --strip=never
 build:tsan --copt -fsanitize=thread
-build:tsan --copt -pie
+build:tsan --copt -fPIE
 build:tsan --copt -O2
 build:tsan --copt -g
 build:tsan --copt -fno-omit-frame-pointer
