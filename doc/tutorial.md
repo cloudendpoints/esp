@@ -102,7 +102,7 @@ Start the application using [npm](https://www.npmjs.com/):
 
 ## Call the backend ##
 
-Now we are ready to call the the backend via Endpoints Server Proxy, using curl:
+Now we are ready to call the the backend via Extensible Service Proxy, using curl:
 
     curl -v http://localhost:8090/shelves
     curl -v http://localhost:8090/shelves/1

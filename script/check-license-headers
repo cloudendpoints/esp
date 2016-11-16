@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (C) Endpoints Server Proxy Authors
+# Copyright (C) Extensible Service Proxy Authors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,7 +28,7 @@
 #
 # Checks the source code files for proper license headers.
 
-ESP_COPYRIGHT='Copyright (C) Endpoints Server Proxy Authors'
+ESP_COPYRIGHT='Copyright (C) Extensible Service Proxy Authors'
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . ${ROOT}/script/all-utilities \
