@@ -159,7 +159,7 @@ node('master') {
       // If all stages passed, queue up a release qualification.
       build(
           job: releaseQualJob,
-          parameters: [[$class: 'StringParameterValue', name: 'GIT_COMMIT', value: GIT_SHA],
+          parameters: [[$class: 'StringParameterValue', name: 'BRANCH_SPEC', value: GIT_SHA],
                        [$class: 'StringParameterValue', name: 'DURATION_HOUR', value: '10'],
                        [$class: 'StringParameterValue', name: 'STAGE', value: 'E2E'],
                        [$class: 'BooleanParameterValue', name: 'RELEASE_QUAL', value: true]],
@@ -169,6 +169,7 @@ node('master') {
     currentBuild.result = 'FAILURE'
     throw e
   } finally {
+
     step([
         $class: 'Mailer',
         notifyEveryUnstableBuild: false,
@@ -715,15 +716,6 @@ def getParam(name, defaultValue = '') {
   return getWithDefault(params.get(name), defaultValue)
 }
 
-def getGitCommit() {
-  // Using a parameterized build with GIT_COMMIT env variable
-  def gitCommit = getParam('GIT_COMMIT', 'HEAD')
-  if (gitCommit == 'INVALID') {
-    failBranch('You must specify a valid GIT_COMMIT.')
-  }
-  return gitCommit
-}
-
 def getDebianPackageRepo() {
   // Using a parameterized build with RAPTURE_REPO env variable
   debianPackageRepo = getParam('RAPTURE_REPO')
@@ -925,11 +917,6 @@ def initialize(setup = false, authDaemon = true) {
       checkout(scm)
     }
     sleep(5)
-  }
-  def gitCommit = getGitCommit()
-  if (gitCommit != 'HEAD') {
-    sh("git fetch origin ${gitCommit} && git checkout -f ${gitCommit}")
-
   }
   // Updating submodules and cleaning files.
   if (setup) {
