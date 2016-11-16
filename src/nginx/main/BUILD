@@ -138,7 +138,7 @@ cc_binary(
 load("@bazel_tools//tools/build_defs/pkg:pkg.bzl", "pkg_tar", "pkg_deb")
 
 genrule(
-    name = "rename-mginx-esp",
+    name = "rename-nginx-esp",
     srcs = [":nginx-esp"],
     outs = ["nginx"],
     cmd = "cp $< $@",
