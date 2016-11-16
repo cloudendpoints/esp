@@ -167,7 +167,6 @@ void RequestContext::CompleteCheck(Status status) {
 }
 
 void RequestContext::FillOperationInfo(service_control::OperationInfo *info) {
-  info->service_name = service_context_->service_name();
   if (method()) {
     info->operation_name = method()->selector();
   } else {

@@ -143,8 +143,11 @@ Aggregated::Aggregated(const ::google::api::Service& service,
       server_config_(server_config),
       env_(env),
       sa_token_(sa_token),
-      service_control_proto_(logs, metrics, labels, service.id()),
-      url_(service_, server_config) {
+      service_control_proto_(logs, metrics, labels, service.name(),
+                             service.id()),
+      url_(service_, server_config),
+      mismatched_check_config_id(service.id()),
+      mismatched_report_config_id(service.id()) {
   if (sa_token_) {
     sa_token_->SetAudience(
         auth::ServiceAccountToken::JWT_TOKEN_FOR_SERVICE_CONTROL,
@@ -159,7 +162,7 @@ Aggregated::Aggregated(const std::set<std::string>& logs,
       server_config_(nullptr),
       env_(env),
       sa_token_(nullptr),
-      service_control_proto_(logs, ""),
+      service_control_proto_(logs, "", ""),
       url_(service_, server_config_),
       client_(std::move(client)) {}
 
@@ -227,6 +230,17 @@ Status Aggregated::Report(const ReportRequestInfo& info) {
   client_->Report(
       *request, response,
       [this, response](const ::google::protobuf::util::Status& status) {
+        if (service_control_proto_.service_config_id() !=
+            response->service_config_id()) {
+          if (mismatched_report_config_id != response->service_config_id()) {
+            env_->LogWarning(
+                "Received non-matching report response service config ID: '" +
+                response->service_config_id() + "', requested: '" +
+                service_control_proto_.service_config_id() + "'");
+            mismatched_report_config_id = response->service_config_id();
+          }
+        }
+
         if (!status.ok() && env_) {
           env_->LogError(std::string("Service control report failed. " +
                                      status.ToString()));
@@ -259,17 +273,28 @@ void Aggregated::Check(
   }
 
   CheckResponse* response = new CheckResponse;
-  std::string service_name = info.service_name;
   bool allow_unregistered_calls = info.allow_unregistered_calls;
 
-  auto check_on_done = [response, service_name, allow_unregistered_calls,
-                        on_done, trace_span](
+  auto check_on_done = [this, response, allow_unregistered_calls, on_done,
+                        trace_span](
       const ::google::protobuf::util::Status& status) {
     TRACE(trace_span) << "Check returned with status: " << status.ToString();
     CheckResponseInfo response_info;
+
+    if (service_control_proto_.service_config_id() !=
+        response->service_config_id()) {
+      if (mismatched_check_config_id != response->service_config_id()) {
+        env_->LogWarning(
+            "Received non-matching check response service config ID: '" +
+            response->service_config_id() + "', requested: '" +
+            service_control_proto_.service_config_id() + "'");
+        mismatched_check_config_id = response->service_config_id();
+      }
+    }
+
     if (status.ok()) {
-      Status status =
-          Proto::ConvertCheckResponse(*response, service_name, &response_info);
+      Status status = Proto::ConvertCheckResponse(
+          *response, service_control_proto_.service_name(), &response_info);
       // If allow_unregistered_calls is true, it is always OK to proceed.
       if (allow_unregistered_calls) {
         on_done(Status::OK, response_info);

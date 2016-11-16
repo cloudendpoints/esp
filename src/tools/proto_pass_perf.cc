@@ -63,7 +63,6 @@ const int MAX_PROTO_PASS_SIZE = 1000000;
 }  //  namespace
 
 void FillOperationInfo(OperationInfo* op) {
-  op->service_name = kServiceName;
   op->operation_id = "operation_id";
   op->operation_name = "operation_name";
   op->api_key = "api_key_x";
@@ -96,7 +95,7 @@ std::string request_text;
 // 2. Re-use protobuf from a pool.
 // 3. Use proto arena allocation.
 int main() {
-  Proto scp({"local_test_log"}, kServiceConfigId);
+  Proto scp({"local_test_log"}, kServiceName, kServiceConfigId);
 
   std::unique_ptr<ServiceControlClient> client;
   // To set the cache, flush interval large enough for this test.
