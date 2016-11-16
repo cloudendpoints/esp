@@ -42,19 +42,23 @@ my $NginxPort = ApiManager::pick_port();
 my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(16);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(15);
 
 # Save service name in the service configuration protocol buffer file.
-my $config = ApiManager::get_bookstore_service_config_allow_unregistered .
+my $config = ApiManager::get_bookstore_service_config .
              ApiManager::read_test_file('testdata/logs_metrics.pb.txt') . <<"EOF";
-producer_project_id: "endpoints-test"
+producer_project_id: "esp-project-id"
 control {
   environment: "http://127.0.0.1:${ServiceControlPort}"
 }
 EOF
 $t->write_file('service.pb.txt', $config);
 
-ApiManager::write_file_expand($t, 'nginx.conf', <<"EOF");
+# Disable service control caching to guarantee consistent sequence of requests
+# to service control server
+$t->write_file('server_config.pb.txt', ApiManager::disable_service_control_cache);
+
+$t->write_file_expand('nginx.conf', <<"EOF");
 %%TEST_GLOBALS%%
 daemon off;
 events {
@@ -69,7 +73,7 @@ http {
     location / {
       endpoints {
         api service.pb.txt;
-        %%TEST_CONFIG%%
+        server_config server_config.pb.txt;
         on;
       }
       proxy_pass http://127.0.0.1:${BackendPort};
@@ -89,71 +93,107 @@ is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control soc
 $t->run();
 
 ################################################################################
+my $response1 = ApiManager::http($NginxPort,<<'EOF');
+OPTIONS /shelves?key=this-is-an-api-key HTTP/1.0
+Host: localhost
+Access-Control-Request-Method: GET
+Access-Control-Request-Headers: authorization
+Origin: http://google.com/bookstore/root
+Referer: http://google.com/bookstore/root
 
-my $response = ApiManager::http_get($NginxPort,'/shelves?key=api-key');
-
-is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');
-$t->stop_daemons();
-
-my ($response_headers, $response_body) = split /\r\n\r\n/, $response, 2;
-
-like($response_headers, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');
-is($response_body, <<'EOF', 'Shelves returned in the response body.');
-{ "shelves": [
-    { "name": "shelves/1", "theme": "Fiction" },
-    { "name": "shelves/2", "theme": "Fantasy" }
-  ]
-}
 EOF
 
-my @requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
-is(scalar @requests, 2, 'Service control received 2 requests.');
+my $response2 = ApiManager::http($NginxPort,<<'EOF');
+OPTIONS /shelves/1 HTTP/1.0
+Host: localhost
+Access-Control-Request-Method: GET
+Access-Control-Request-Headers: authorization
+Origin: http://google.com/bookstore/root
+Referer: http://google.com/bookstore/root
 
-my $r = shift @requests;
-is($r->{verb}, 'POST', 'Service control :check was post');
-is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:check', ':check was called');
-is($r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}", 'Host header was set for :check');
-is($r->{headers}->{'content-type'}, 'application/x-protobuf', ':check Content-Type was protocol buffer');
+EOF
 
-my $check_body = ServiceControl::convert_proto($r->{body}, 'check_request', 'json');
-my $expected_check_body = {
+is($t->waitforfile("$t->{_testdir}/${report_done}-1"), 1, 'First report is done.');
+is($t->waitforfile("$t->{_testdir}/${report_done}-2"), 1, 'Second report is done.');
+$t->stop_daemons();
+
+my ($response_headers1, $response_body1) = split /\r\n\r\n/, $response1, 2;
+my ($response_headers2, $response_body2) = split /\r\n\r\n/, $response2, 2;
+
+like($response_headers1, qr/HTTP\/1\.1 204 OK/, 'Returned 204 in the response1');
+is($response_body1, <<'EOF', 'Empty body returned in the response body1.');
+EOF
+like($response_headers2, qr/HTTP\/1\.1 403 Forbidden/, 'Returned 403 in the response');
+like($response_body2, qr/The service does not allow CORS traffic/, 'CORS not allowed return in response body');
+
+my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
+is(scalar @servicecontrol_requests, 3, 'Service control was called 3 times');
+
+# :check 1
+my $r = shift @servicecontrol_requests;
+like($r->{uri}, qr/:check$/, 'First call was a :check');
+
+my $check_body1 = ServiceControl::convert_proto($r->{body}, 'check_request', 'json');
+my $expected_check_body1 = {
   'serviceName' => 'endpoints-test.cloudendpointsapis.com',
   'serviceConfigId' => '2016-08-25r1',
   'operation' => {
-     'consumerId' => 'api_key:api-key',
-     'operationName' => 'ListShelves',
+     'consumerId' => 'api_key:this-is-an-api-key',
+     'operationName' => 'CorsShelves',
      'labels' => {
         'servicecontrol.googleapis.com/caller_ip' => '127.0.0.1',
         'servicecontrol.googleapis.com/service_agent' => ServiceControl::service_agent(),
         'servicecontrol.googleapis.com/user_agent' => 'ESP',
+        'servicecontrol.googleapis.com/referer' => 'http://google.com/bookstore/root',
      }
   }
 };
-ok(ServiceControl::compare_json($check_body, $expected_check_body), 'Check body is received.');
+ok(ServiceControl::compare_json($check_body1, $expected_check_body1), 'Check body 1 is received.');
 
-my $r = shift @requests;
-is($r->{verb}, 'POST', 'Service control :report was post');
-is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:report', ':report was called');
-is($r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}", 'Host header was set for :report');
-is($r->{headers}->{'content-type'}, 'application/x-protobuf', ':report Content-Type was protocol buffer');
+# :report 1
+$r = shift @servicecontrol_requests;
+like($r->{uri}, qr/:report$/, 'Second call was a :report');
 
-my $report_body = ServiceControl::convert_proto($r->{body}, 'report_request', 'json');
-my $expected_report_body = ServiceControl::gen_report_body({
+my $report_body1 = ServiceControl::convert_proto($r->{body}, 'report_request', 'json');
+my $expected_report_body1 = ServiceControl::gen_report_body({
   'serviceConfigId' => '2016-08-25r1',
   'serviceName' =>  'endpoints-test.cloudendpointsapis.com',
-  'url' => '/shelves?key=api-key',
-  'api_key' => 'api-key',
-  'producer_project_id' => 'endpoints-test',
+  'url' => '/shelves?key=this-is-an-api-key',
+  'api_key' => 'this-is-an-api-key',
+  'producer_project_id' => 'esp-project-id',
+  'referer' => 'http://google.com/bookstore/root',
   'location' => 'us-central1',
-  'api_method' =>  'ListShelves',
-  'http_method' => 'GET',
-  'log_message' => 'Method: ListShelves',
-  'response_code' => '200',
-  'request_size' => 51,
-  'response_size' => 208,
+  'api_method' =>  'CorsShelves',
+  'http_method' => 'OPTIONS',
+  'log_message' => 'Method: CorsShelves',
+  'response_code' => '204',
+  'request_size' => 230,
+  'response_size' => 229,
   });
+ok(ServiceControl::compare_json($report_body1, $expected_report_body1), 'Report body 1 is received.');
 
-ok(ServiceControl::compare_json($report_body, $expected_report_body), 'Report body is received.');
+# :report 2
+$r = shift @servicecontrol_requests;
+like($r->{uri}, qr/:report$/, 'Last call was a :report');
+
+my $report_body2 = ServiceControl::convert_proto($r->{body}, 'report_request', 'json');
+my $expected_report_body2 = ServiceControl::gen_report_body({
+  'serviceConfigId' => '2016-08-25r1',
+  'serviceName' =>  'endpoints-test.cloudendpointsapis.com',
+  'url' => '/shelves/1',
+  'producer_project_id' => 'esp-project-id',
+  'no_consumer_data' => 1,
+  'referer' => 'http://google.com/bookstore/root',
+  'location' => 'us-central1',
+  'http_method' => 'OPTIONS',
+  'log_message' => 'Endpoints management skipped for an unrecognized HTTP call: OPTIONS /shelves/1',
+  'response_code' => '403',
+  'request_size' => 209,
+  'response_size' => 362,
+  'error_type' => '4xx',
+  'error_cause' => 'service_control',
+  });
+ok(ServiceControl::compare_json($report_body2, $expected_report_body2), 'Report body 2 is received.');
 
 ################################################################################
 
@@ -162,6 +202,7 @@ sub servicecontrol {
   my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
+  my $report_counter = 1;
 
   $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:check', sub {
     my ($headers, $body, $client) = @_;
@@ -179,8 +220,8 @@ HTTP/1.1 200 OK
 Connection: close
 
 EOF
-
-    $t->write_file($done, ':report done');
+    $t->write_file("${done}-${report_counter}", ':report done');
+    ++$report_counter;
   });
 
   $server->run();
@@ -194,19 +235,19 @@ sub bookstore {
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
 
-  $server->on_sub('GET', '/shelves', sub {
+  $server->on_sub('OPTIONS', '/shelves', sub {
     my ($headers, $body, $client) = @_;
     print $client <<'EOF';
-HTTP/1.1 200 OK
+HTTP/1.1 204 OK
+Access-Control-Allow-Headers:authorization
+Access-Control-Allow-Methods:GET,HEAD,PUT,PATCH,POST,DELETE
+Access-Control-Allow-Origin:*
 Connection: close
 
-{ "shelves": [
-    { "name": "shelves/1", "theme": "Fiction" },
-    { "name": "shelves/2", "theme": "Fantasy" }
-  ]
-}
 EOF
+
   });
+
   $server->run();
 }
 

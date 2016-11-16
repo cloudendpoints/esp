@@ -1,4 +1,4 @@
-// Copyright (C) Endpoints Server Proxy Authors
+// Copyright (C) Extensible Service Proxy Authors
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -259,7 +259,6 @@ std::string UuidGen() {
   ::google::protobuf::Message* request = nullptr;
   if (proto_type == CHECK_REQUEST) {
     ::google::api_manager::service_control::CheckRequestInfo info;
-    info.service_name = service_name;
     info.operation_id = uuid.c_str();
     info.operation_name = operation_name;
     info.producer_project_id = producer_project_id;
@@ -267,13 +266,13 @@ std::string UuidGen() {
     info.referer = "referer";
     info.request_start_time = tv;
 
-    ::google::api_manager::service_control::Proto scp(logs, "2016-09-19r0");
+    ::google::api_manager::service_control::Proto scp(logs, service_name,
+                                                      "2016-09-19r0");
     scp.FillCheckRequest(info, &check_request);
     request = &check_request;
   }
   if (proto_type == REPORT_REQUEST) {
     ::google::api_manager::service_control::ReportRequestInfo info;
-    info.service_name = service_name;
     info.operation_id = uuid.c_str();
     info.operation_name = operation_name;
     info.producer_project_id = producer_project_id;
@@ -288,7 +287,8 @@ std::string UuidGen() {
     info.response_size = 1024 * 1024;
     info.log_message = "test-method is called";
 
-    ::google::api_manager::service_control::Proto scp(logs, "2016-09-19r0");
+    ::google::api_manager::service_control::Proto scp(logs, service_name,
+                                                      "2016-09-19r0");
     scp.FillReportRequest(info, &report_request);
     request = &report_request;
 

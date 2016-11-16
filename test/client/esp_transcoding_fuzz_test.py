@@ -1,6 +1,6 @@
 #!/usr/bin/python -u
 #
-# Copyright (C) Endpoints Server Proxy Authors
+# Copyright (C) Extensible Service Proxy Authors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -153,7 +153,7 @@ class EspTranscodingFuzzTest(object):
                     'ESP crashed. Initial & current start times do not match.'))
         print esp_utils.green('No crashes detected.')
 
-    def _request(self, url_path, query_params, json, expected_codes):
+    def _request(self, url_path, query_params, json, expected_codes, json_response):
         # Construct the URL using url_path, query_params and the api key
         url = url_path
         if FLAGS.api_key:
@@ -178,7 +178,7 @@ class EspTranscodingFuzzTest(object):
             print esp_utils.red('Invalid status code %d: url=%s, json=%s' % (
                                 response.status_code, url, json) )
             self._unexpected_errors += 1
-        elif not response.is_json():
+        elif json_response and not response.is_json():
             print esp_utils.red('Response is not json: url=%s, json=%s' % (url, json) )
             self._unexpected_errors += 1
 
@@ -190,18 +190,18 @@ class EspTranscodingFuzzTest(object):
 
     def _run_json_fuzz_tests(self, url, max_object_nest_level, max_list_nest_level):
         fuzzer = JsonFuzzer(max_object_nest_level, max_list_nest_level)
-        fuzzer.run(lambda json: self._request(url, None, json, [200, 400]))
+        fuzzer.run(lambda json: self._request(url, None, json, [200, 400], True))
 
     def _run_query_param_fuzzer(self, url_path):
         fuzzer = query_param_fuzzer()
         fuzzer.run(
-            lambda query_params: self._request(url_path, query_params, "{}", [200, 400]))
+            lambda query_params: self._request(url_path, query_params, "{}", [200, 400], True))
 
     def _run_url_path_fuzzer(self):
         fuzzer = url_path_fuzzer()
         # Url path fuzzer generated requests may return 404 Not Found in
         # addition to 200 OK and 400 Bad Request
-        fuzzer.run(lambda url_path: self._request(url_path, None, "{}", [200, 400, 404]))
+        fuzzer.run(lambda url_path: self._request(url_path, None, "{}", [200, 400, 404], False))
 
     def _run_fuzz_tests(self):
         print 'Running /echo JSON fuzz tests...'

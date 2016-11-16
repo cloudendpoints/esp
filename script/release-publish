@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (C) Endpoints Server Proxy Authors
+# Copyright (C) Extensible Service Proxy Authors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -79,8 +79,8 @@ set -x
 
 VERSION="$(command cat ${ROOT}/include/version)" \
   || error_exit "Cannot find release version (${ROOT}/include/version)"
-
-if RELEASE_BRANCH_SHA="$(git rev-parse origin/release/${VERSION})"; then
+CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+if RELEASE_BRANCH_SHA="$(git rev-parse origin/${CURRENT_BRANCH})"; then
   if [[ "${SHA}" != "${RELEASE_BRANCH_SHA}" ]]; then
     printf "\e[31m
 WARNING: Release branch commit (${RELEASE_BRANCH_SHA}) doesn't match ${SHA}.

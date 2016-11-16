@@ -1,4 +1,4 @@
-# Copyright (C) Endpoints Server Proxy Authors
+# Copyright (C) Extensible Service Proxy Authors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -40,6 +40,38 @@ cc_proto_library(
     deps = [
         "//external:servicecontrol",
     ],
+)
+
+genrule(
+    name = "grpc-test_descriptor",
+    srcs = [
+        "@googleapis_git//:google/rpc/status.proto",
+        "@protobuf_git//:well_known_protos",
+        "grpc-test.proto",
+    ],
+    outs = ["grpc-test.descriptor"],
+    cmd = """$(location //external:protoc) $(location :grpc-test.proto) \
+        -I$$(dirname $(location @googleapis_git//:google/rpc/status.proto))/../.. \
+        -Iexternal/protobuf_git/src \
+        -I$$(dirname $(location :grpc-test.proto)) \
+        --include_imports --descriptor_set_out=$@""",
+    tools = ["//external:protoc"],
+)
+
+genrule(
+    name = "grpc-interop_descriptor",
+    srcs = [
+        "@protobuf_git//:well_known_protos",
+        "@grpc_git//:src/proto/grpc/testing/test.proto",
+    ],
+    outs = ["grpc-interop.descriptor"],
+    cmd = """$(location //external:protoc) \
+        $(location @grpc_git//:src/proto/grpc/testing/test.proto) \
+        -Iexternal/protobuf_git/src \
+        -I$$(dirname $(location @grpc_git//:src/proto/grpc/testing/test.proto))/../../../.. \
+        -I$$(dirname $(location @grpc_git//:src/proto/grpc/testing/test.proto)) \
+        --include_imports --descriptor_set_out=$@""",
+    tools = ["//external:protoc"],
 )
 
 cc_library(

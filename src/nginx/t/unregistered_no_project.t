@@ -1,4 +1,4 @@
-# Copyright (C) Endpoints Server Proxy Authors
+# Copyright (C) Extensible Service Proxy Authors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -162,9 +162,8 @@ is($check->{operation}->{consumerId}, 'api_key:this-is-an-api-key-1',
    'Allow unregistered, provide API key - consumer id is correct');
 
 # /shelves/2
-like($response2, qr/HTTP\/1\.1 401 Unauthorized/, 'Allow unregistered, no API key - 401 Unauthorized');
-like($response2, qr/"message": "Method doesn't allow unregistered callers/,
-     'Allow unregistered, no API key - error body');
+like($response2, qr/HTTP\/1\.1 200 OK/, 'Allow unregistered, no API key - 200 OK');
+like($response2, qr/List of shelves 2\.$/, 'Allow unregistered, no API key - body');
 
 # /shelves/3/books?key=this-is-an-api-key-3
 like($response3, qr/HTTP\/1\.1 200 OK/, 'Disallow unregistered, provide API key - 200 OK');
@@ -203,6 +202,13 @@ HTTP/1.1 200 OK
 Connection: close
 
 List of shelves.
+EOF
+
+  $server->on('GET', '/shelves/2', <<'EOF');
+HTTP/1.1 200 OK
+Connection: close
+
+List of shelves 2.
 EOF
 
   $server->on('GET', '/shelves/3/books?key=this-is-an-api-key-3', <<'EOF');

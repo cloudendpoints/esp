@@ -1,4 +1,4 @@
-# Copyright (C) Endpoints Server Proxy Authors
+# Copyright (C) Extensible Service Proxy Authors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -42,7 +42,7 @@ my $NginxPort = ApiManager::pick_port();
 my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(11);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(9);
 
 # Save service name in the service configuration protocol buffer file.
 my $config = ApiManager::get_bookstore_service_config_allow_unregistered .
@@ -100,14 +100,9 @@ like($response_headers, qr/HTTP\/1\.1 304 Not Modified/, 'Returned HTTP 304.');
 is($response_body, '', 'Response body is empty.');
 
 my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
-is(scalar @servicecontrol_requests, 2, 'Service control was called twice.');
+is(scalar @servicecontrol_requests, 1, 'Service control was called once.');
 
 my $r = shift @servicecontrol_requests;
-is($r->{verb}, 'POST', ':check was a POST');
-is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:check',
-   ':check was called');
-
-$r = shift @servicecontrol_requests;
 is($r->{verb}, 'POST', ':report was a POST');
 is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:report',
    ':report was called');

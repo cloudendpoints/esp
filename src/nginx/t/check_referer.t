@@ -1,4 +1,4 @@
-# Copyright (C) Endpoints Server Proxy Authors
+# Copyright (C) Extensible Service Proxy Authors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -42,7 +42,7 @@ my $NginxPort = ApiManager::pick_port();
 my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(10);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(8);
 
 # Save service name in the service configuration protocol buffer file.
 my $config = ApiManager::get_bookstore_service_config_allow_unregistered .
@@ -112,32 +112,12 @@ is($response_body, <<'EOF', 'Shelves returned in the response body.');
 EOF
 
 my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
-is(scalar @servicecontrol_requests, 2, 'Service control was called twice');
-
-# :check
-my $r = shift @servicecontrol_requests;
-like($r->{uri}, qr/:check$/, 'First call was a :check');
-
-my $check_body = ServiceControl::convert_proto($r->{body}, 'check_request', 'json');
-my $expected_check_body = {
-  'serviceName' => 'endpoints-test.cloudendpointsapis.com',
-  'serviceConfigId' => '2016-08-25r1',
-  'operation' => {
-     'consumerId' => 'project:esp-project-id',
-     'operationName' => 'ListShelves',
-     'labels' => {
-        'servicecontrol.googleapis.com/caller_ip' => '127.0.0.1',
-        'servicecontrol.googleapis.com/service_agent' => ServiceControl::service_agent(),
-        'servicecontrol.googleapis.com/user_agent' => 'ESP',
-        'servicecontrol.googleapis.com/referer' => 'http://google.com/bookstore/root',
-     }
-  }
-};
-ok(ServiceControl::compare_json($check_body, $expected_check_body), 'Check body is received.');
+# Check was not called since no api_key and allow_unregisterd_call.
+is(scalar @servicecontrol_requests, 1, 'Service control was called once');
 
 # :report
-$r = shift @servicecontrol_requests;
-like($r->{uri}, qr/:report$/, 'Second call was a :report');
+my $r = shift @servicecontrol_requests;
+like($r->{uri}, qr/:report$/, 'The call was a :report');
 
 my $report_body = ServiceControl::convert_proto($r->{body}, 'report_request', 'json');
 my $expected_report_body = ServiceControl::gen_report_body({

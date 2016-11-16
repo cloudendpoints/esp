@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (C) Endpoints Server Proxy Authors
+# Copyright (C) Extensible Service Proxy Authors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -74,10 +74,12 @@ TAG_SHA=$(git rev-parse --verify "${TAG_REF}") \
 
 VERSION="$(command cat ${ROOT}/include/version)" \
   || usage "Cannot determine release version (${ROOT}/include/version)."
+# Prefix 'v' for the tag name
+VERSION_TAG="v${VERSION}"
 
 set -x
 
-git tag --annotate --force --file=- ${VERSION} ${TAG_SHA} <<EOF
+git tag --annotate --force --file=- ${VERSION_TAG} ${TAG_SHA} <<EOF
 Endpoints Runtime Release ${VERSION}
 
 The release build was produced at ${BUILD_SHA}.
@@ -86,12 +88,12 @@ The Docker image released is:
 EOF
 
 # Check the version is correct.
-git show -q ${VERSION}
+git show -q ${VERSION_TAG}
 
 { set +x; } 2>/dev/null
 
 printf "\\e[31m
-You are about to push the tag ${VERSION} for ${TAG_SHA} to origin.
+You are about to push the tag ${VERSION_TAG} for ${TAG_SHA} to origin.
 Once pushed, the tag cannot be removed. Are you sure? [Y/N] \\e[0m"
 
 read yn
@@ -102,12 +104,8 @@ fi
 
 # Push the tag to the server.
 set -x
-git push origin ${VERSION}
+git push origin ${VERSION_TAG}
 { set +x; } 2>/dev/null
-
-# Delete the release branch.
-git push origin :refs/heads/release/${VERSION} \
-  || error_exit "Failed to delete the release branch."
 
 printf '\e[31m
 ***************************************************************************

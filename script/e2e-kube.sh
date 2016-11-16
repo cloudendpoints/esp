@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (C) Endpoints Server Proxy Authors
+# Copyright (C) Extensible Service Proxy Authors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -64,24 +64,17 @@ run cat ${YAML_FILE}
 
 case "${BACKEND}" in
   'bookstore' )
-    SERVICE_IDL="${ESP_ROOT}/test/bookstore/swagger_template.json"
-    ARGS="$ARGS --config ${SERVICE_IDL}"
-    ;;
+    SERVICE_IDL="${ESP_ROOT}/test/bookstore/swagger_template.json";;
   'echo'      )
     SERVICE_IDL="${ESP_ROOT}/test/grpc/grpc-test.yaml"
-    # Uncomment this line when Service Management API stops producing proto2 fields
-    # ARGS="$ARGS -g --config ${SERVICE_IDL} --config ${ESP_ROOT}/test/grpc/grpc-test.descriptor"
-    ESP_SERVICE="test.endpoints-jenkins.appspot.com"
-    ARGS="$ARGS -g -s ${ESP_SERVICE} -v 2016-11-09r2"
-    # Delete above two lines after uncommenting
-    ;;
+    ARGS="$ARGS -g --config ${ESP_ROOT}/bazel-genfiles/test/grpc/grpc-test.descriptor";;
   'interop'   )
     SERVICE_IDL="${ESP_ROOT}/test/grpc/grpc-interop.yaml"
-    ARGS="$ARGS -g --config ${SERVICE_IDL} --config ${ESP_ROOT}/test/grpc/grpc-interop.descriptor"
-    ;;
+    ARGS="$ARGS -g --config ${ESP_ROOT}/bazel-genfiles/test/grpc/grpc-interop.descriptor";;
   *           ) e2e_usage "Invalid backend option";;
 esac
 run sed -i "s|\${ENDPOINT_SERVICE}|${ESP_SERVICE}|g" ${SERVICE_IDL}
+ARGS="$ARGS --config ${SERVICE_IDL}"
 
 case "${COUPLING_OPTION}" in
   'loose' ) ARGS="$ARGS -d loose";;

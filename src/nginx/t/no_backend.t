@@ -1,4 +1,4 @@
-# Copyright (C) Endpoints Server Proxy Authors
+# Copyright (C) Extensible Service Proxy Authors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -43,7 +43,7 @@ my $NginxPort = ApiManager::pick_port();
 my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(11);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(8);
 
 # Save service name in the service configuration protocol buffer file.
 my $config = ApiManager::get_bookstore_service_config_allow_unregistered .
@@ -114,22 +114,14 @@ EOF
 is($response_body, $expected_body, 'Return correct JSON of error message');
 
 my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
-is(scalar @servicecontrol_requests, 2, 'Service control was called twice.');
+is(scalar @servicecontrol_requests, 1, 'Service control was called once.');
 
 my $r = shift @servicecontrol_requests;
-is($r->{verb}, 'POST', ':check was a POST');
-is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:check',
-   ':check was called');
-
-$r = shift @servicecontrol_requests;
 is($r->{verb}, 'POST', ':report was a POST');
 is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:report',
    ':report was called');
 
 my $report_json = decode_json(ServiceControl::convert_proto($r->{body}, 'report_request', 'json'));
-
-is($report_json->{operations}[0]->{consumerId}, 'project:esp-backend-test',
-  'Project ID used for report log');
 
 my $log = $report_json->{operations}[0]->{logEntries}[0]->{structPayload};
 is($log->{error_cause}, 'application', 'Error cause is application');
@@ -142,14 +134,6 @@ sub servicecontrol {
   my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
-  $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:check', sub {
-    my ($headers, $body, $client) = @_;
-    print $client <<'EOF';
-HTTP/1.1 200 OK
-Connection: close
-
-EOF
-  });
 
   $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:report', sub {
     my ($headers, $body, $client) = @_;

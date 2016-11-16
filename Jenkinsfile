@@ -1,6 +1,6 @@
 #!groovy
 /*
-Copyright (C) Endpoints Server Proxy Authors
+Copyright (C) Extensible Service Proxy Authors
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -123,14 +123,14 @@ node('master') {
         ws {
           def success = true
           checkoutSourceCode()
-          updateGerrit('run')
+          updatePresubmit('run')
           try {
             presubmit(buildNodeLabel)
           } catch (Exception e) {
             success = false
             throw e
           } finally {
-            updateGerrit('verify', success)
+            updatePresubmit('verify', success)
           }
         }
       }
@@ -172,7 +172,7 @@ node('master') {
     step([
         $class: 'Mailer',
         notifyEveryUnstableBuild: false,
-        recipients: '',
+        recipients: 'esp-alerts-jenkins@google.com',
         sendToIndividuals: true])
   }
 }
@@ -452,6 +452,8 @@ def buildPackages() {
       '//test/grpc:interop-metrics-client',
       '//test/grpc:interop-server',
       '//test/grpc:interop-stress-client',
+      '//test/grpc:grpc-test_descriptor',
+      '//test/grpc:grpc-interop_descriptor',
   ]
   def stashPaths = [
       'bazel-bin/src/tools/auth_token_gen',
@@ -461,6 +463,8 @@ def buildPackages() {
       'bazel-bin/test/grpc/interop-metrics-client',
       'bazel-bin/test/grpc/interop-server',
       'bazel-bin/test/grpc/interop-stress-client',
+      'bazel-genfiles/test/grpc/grpc-test.descriptor',
+      'bazel-genfiles/test/grpc/grpc-interop.descriptor',
   ]
   buildAndStash(
       tools.join(' '),
@@ -502,23 +506,41 @@ def testCleanup(daysOld, project, flags) {
 }
 
 // flow can be run or verify
-def updateGerrit(flow, success = false) {
+def updatePresubmit(flow, success = false) {
+  if (getParam('STAGE') != PRESUBMIT) return
   def gerritUrl = getParam('GERRIT_URL')
-  if (gerritUrl == '') {
-    return
+  if (gerritUrl != '') {
+    if (CHANGE_ID == '') {
+      error('CHANGE_ID must be set.')
+    }
+    def successFlag = success ? '--success' : ''
+    retry(3) {
+      sh("script/update-gerrit.py " +
+          "--build_url=\"${env.BUILD_URL}\" " +
+          "--change_id=\"${CHANGE_ID}\" " +
+          "--gerrit_url=\"${gerritUrl}\" " +
+          "--commit=\"${GIT_SHA}\" " +
+          "--flow=\"${flow}\" " +
+          "${successFlag}")
+      sleep(5)
+    }
+  } else {
+    // Github
+    switch (flow) {
+      case 'run':
+        state = 'PENDING'
+        message = "Running presubmits at ${env.BUILD_URL} ..."
+        break
+      case 'verify':
+        state = success ? 'SUCCESS' : 'FAILURE'
+        message = "${success ? 'Successful' : 'Failed'} presubmits. " +
+            "Details at ${env.BUILD_URL}."
+        break
+      default:
+        error('flow can only be run or verify')
+    }
+    setGitHubPullRequestStatus(context: env.JOB_NAME, message: message, state: state)
   }
-  def successFlag = success ? '--success' : ''
-  retry(3) {
-    sh("script/update-gerrit.py " +
-        "--build_url=\"${env.BUILD_URL}\" " +
-        "--change_id=\"${CHANGE_ID}\" " +
-        "--gerrit_url=\"${gerritUrl}\" " +
-        "--commit=\"${GIT_SHA}\" " +
-        "--flow=\"${flow}\" " +
-        "${successFlag}")
-    sleep(5)
-  }
-
 }
 
 def buildNewDockerSlave(nodeLabel) {
@@ -820,7 +842,7 @@ def stashSourceCode() {
   // Setting source code related global variable once so it can be reused.
   GIT_SHA = failIfNullOrEmpty(getRevision(), 'GIT_SHA must be set')
   ESP_RUNTIME_VERSION = failIfNullOrEmpty(getEndpointsRuntimeVersion(), 'ESP_RUNTIME_VERSION must be set')
-  CHANGE_ID = failIfNullOrEmpty(getChangeId(), 'CHANGE_ID must be set')
+  CHANGE_ID = getWithDefault(getChangeId())
   echo('Stashing source code')
   fastStash('src-code', '.')
 }
@@ -914,7 +936,6 @@ def initialize(setup = false, authDaemon = true) {
     sh('script/setup && script/obliterate')
   }
 }
-
 
 
 def setGitAuthDaemon() {

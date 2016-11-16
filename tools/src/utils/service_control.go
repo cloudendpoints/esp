@@ -1,4 +1,4 @@
-// Copyright (C) Endpoints Server Proxy Authors
+// Copyright (C) Extensible Service Proxy Authors
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -307,8 +307,6 @@ func CreateReport(er *ExpectedReport) servicecontrol.ReportRequest {
 
 	if er.ApiKey != "" {
 		op.ConsumerId = "api_key:" + er.ApiKey
-	} else if er.ProducerProjectID != "" {
-		op.ConsumerId = "project:" + er.ProducerProjectID
 	}
 	op.Labels = createReportLabels(er)
 

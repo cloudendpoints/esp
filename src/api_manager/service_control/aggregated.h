@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Endpoints Server Proxy Authors
+ * Copyright (C) Extensible Service Proxy Authors
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -149,6 +149,12 @@ class Aggregated : public Interface {
   ProtoPool<::google::api::servicecontrol::v1::CheckRequest> check_pool_;
   // The protobuf pool to reuse ReportRequest protobuf.
   ProtoPool<::google::api::servicecontrol::v1::ReportRequest> report_pool_;
+
+  // Mismatched config ID received for a check request
+  std::string mismatched_check_config_id;
+
+  // Mismatched config ID received for a report request
+  std::string mismatched_report_config_id;
 };
 
 }  // namespace service_control

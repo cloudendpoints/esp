@@ -1,4 +1,4 @@
-# Copyright (C) Endpoints Server Proxy Authors
+# Copyright (C) Extensible Service Proxy Authors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -138,7 +138,7 @@ cc_binary(
 load("@bazel_tools//tools/build_defs/pkg:pkg.bzl", "pkg_tar", "pkg_deb")
 
 genrule(
-    name = "rename-mginx-esp",
+    name = "rename-nginx-esp",
     srcs = [":nginx-esp"],
     outs = ["nginx"],
     cmd = "cp $< $@",

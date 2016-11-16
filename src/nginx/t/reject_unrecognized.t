@@ -1,4 +1,4 @@
-# Copyright (C) Endpoints Server Proxy Authors
+# Copyright (C) Extensible Service Proxy Authors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -121,8 +121,7 @@ like($r->{uri}, qr/:report$/, ':report was called');
 # Verify the :report body contents.
 my $report_json = decode_json(ServiceControl::convert_proto($r->{body}, 'report_request', 'json'));
 
-is($report_json->{operations}[0]->{consumerId}, 'project:esp-test-app',
-   'Project ID from metadata server was used for :report.');
+ok((not exists($report_json->{operations}[0]->{consumerId})), 'ConsumerID not set');
 is($report_json->{operations}[0]->{operationName}, '<Unknown Operation Name>',
    'Method was not recognized.');
 
