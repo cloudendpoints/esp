@@ -1,4 +1,4 @@
-// Copyright (C) Endpoints Server Proxy Authors
+// Copyright (C) Extensible Service Proxy Authors
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 //
-// An Endpoints Server Proxy nginx module.
+// An Extensible Service Proxy nginx module.
 //
 #include "src/nginx/module.h"
 
@@ -87,7 +87,7 @@ namespace {
 const int kWaitCloseTime = 3;
 
 // ********************************************************
-// * Endpoints Server Proxy - Configuration declarations. *
+// * Extensible Service Proxy - Configuration declarations. *
 // ********************************************************
 
 //
@@ -114,7 +114,7 @@ char *ngx_esp_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child);
 ngx_int_t ngx_esp_postconfiguration(ngx_conf_t *cf);
 
 // **************************************************
-// * Endpoints Server Proxy - Runtime declarations. *
+// * Extensible Service Proxy - Runtime declarations. *
 // **************************************************
 
 //
@@ -492,7 +492,7 @@ ngx_int_t ngx_esp_postconfiguration(ngx_conf_t *cf) {
 }
 
 // ********************************************************
-// * Endpoints Server Proxy - Runtime.                    *
+// * Extensible Service Proxy - Runtime.                    *
 // ********************************************************
 
 void wakeup_event_handler(ngx_event_t *ev) {
