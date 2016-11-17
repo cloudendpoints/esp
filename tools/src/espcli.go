@@ -33,11 +33,12 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"version"
 )
 
 // TODO: add undeploy command
 func main() {
-	log.SetPrefix("[espcli] ")
+	log.SetPrefix("[espcli v" + version.Version + "] ")
 	log.SetFlags(0)
 	if err := cli.RootCmd.Execute(); err != nil {
 		fmt.Println(err)

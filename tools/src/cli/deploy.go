@@ -34,6 +34,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"version"
 
 	"github.com/spf13/cobra"
 
@@ -110,7 +111,7 @@ func init() {
 	RootCmd.AddCommand(deployCmd)
 	deployCmd.PersistentFlags().StringVar(&image,
 		"image",
-		"b.gcr.io/endpoints/endpoints-runtime:latest",
+		"b.gcr.io/endpoints/endpoints-runtime:"+version.Version,
 		"URL to ESP docker image")
 
 	deployCmd.PersistentFlags().StringVarP(&cfg.Name,
