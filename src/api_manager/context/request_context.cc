@@ -1,4 +1,4 @@
-// Copyright (C) Endpoints Server Proxy Authors
+// Copyright (C) Extensible Service Proxy Authors
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -166,7 +166,6 @@ void RequestContext::CompleteCheck(Status status) {
 }
 
 void RequestContext::FillOperationInfo(service_control::OperationInfo *info) {
-  info->service_name = service_context_->service_name();
   if (method()) {
     info->operation_name = method()->selector();
   } else {

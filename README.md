@@ -1,6 +1,6 @@
-# The Endpoints Server Proxy #
+# The Extensible Service Proxy #
 
-Endpoints Server Proxy, a.k.a. ESP is a proxy which enables API management
+Extensible Service Proxy, a.k.a. ESP is a proxy which enables API management
 capabilities for JSON/REST or gRPC API services. The current implementation is
 based on an [NGINX](http://nginx.org) HTTP reverse proxy server.
 
@@ -37,7 +37,7 @@ chain are:
 
 ## Getting ESP ##
 
-To download the Endpoints Server Proxy source code, clone the ESP repository:
+To download the Extensible Service Proxy source code, clone the ESP repository:
 
     # Clone ESP repository
     git clone https://github.com/cloudendpoints/esp
@@ -49,8 +49,8 @@ To download the Endpoints Server Proxy source code, clone the ESP repository:
 
 * [doc](/doc): Documentation
 * [docker](/docker): Scripts for packaging ESP in a Docker image.
-* [include](/include): Endpoints Server Proxy header files.
-* [src](/src): Endpoints Server Proxy source.
+* [include](/include): Extensible Service Proxy header files.
+* [src](/src): Extensible Service Proxy source.
 * [google](/google) and [third_party](/third_party): Git submodules containing
   dependencies of ESP, including NGINX.
 * [script](/script): Scripts used for build, test, and continuous integration.
