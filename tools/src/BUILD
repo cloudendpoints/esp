@@ -161,7 +161,11 @@ EOF
     """,
 )
 
-go_library(name="vendor/version", srcs=["version/version.go"], go_prefix="//tools/src:go_prefix")
+go_library(
+    name = "vendor/version",
+    srcs = ["version/version.go"],
+    go_prefix="//tools/src:go_prefix",
+)
 
 go_library(
     name = "vendor/deploy",
