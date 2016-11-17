@@ -84,6 +84,26 @@ std::string NgxEspRequest::GetClientIP() {
   return "";
 }
 
+int64_t NgxEspRequest::GetGrpcRequestMessageCounts() {
+  ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
+  return ctx->grpc_request_message_counts;
+}
+
+int64_t NgxEspRequest::GetGrpcResponseMessageCounts() {
+  ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
+  return ctx->grpc_response_message_counts;
+}
+
+int64_t NgxEspRequest::GetGrpcRequestBytes() {
+  ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
+  return ctx->grpc_request_bytes;
+}
+
+int64_t NgxEspRequest::GetGrpcResponseBytes() {
+  ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
+  return ctx->grpc_response_bytes;
+}
+
 bool NgxEspRequest::FindQuery(const std::string &name, std::string *query) {
   ngx_str_t out = ngx_null_string;
   ngx_http_arg(r_, reinterpret_cast<u_char *>(const_cast<char *>(name.data())),

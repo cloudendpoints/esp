@@ -29,8 +29,8 @@
 #include "google/protobuf/stubs/stringpiece.h"
 
 #include <string.h>
-#include <sys/time.h>
 #include <time.h>
+#include <chrono>
 #include <memory>
 #include <string>
 
@@ -69,7 +69,7 @@ struct OperationInfo {
 
   // The start time of the call. Used to set operation.start_time for both Check
   // and Report.
-  struct timeval request_start_time;
+  std::chrono::system_clock::time_point request_start_time;
 
   OperationInfo() {}
 };
@@ -154,7 +154,7 @@ struct ReportRequestInfo : public OperationInfo {
   // number of messages for a stream.
   int64_t streaming_response_message_counts;
 
-  // streaming duration (microsecond) between first message and last message.
+  // streaming duration (us) between first message and last message.
   int64_t streaming_durations;
 
   ReportRequestInfo()

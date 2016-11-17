@@ -26,8 +26,8 @@
 #ifndef API_MANAGER_CONTEXT_REQUEST_CONTEXT_H_
 #define API_MANAGER_CONTEXT_REQUEST_CONTEXT_H_
 
-#include <sys/time.h>
 #include <time.h>
+#include <chrono>
 #include <memory>
 
 #include "include/api_manager/request.h"
@@ -166,7 +166,7 @@ class RequestContext {
   std::shared_ptr<cloud_trace::CloudTraceSpan> backend_span_;
 
   // Start time of the request_context instantiation.
-  struct timeval start_time_;
+  std::chrono::system_clock::time_point start_time_;
 };
 
 }  // namespace context

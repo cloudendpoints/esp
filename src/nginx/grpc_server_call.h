@@ -74,6 +74,9 @@ class NgxEspGrpcServerCall : public grpc::ServerCall {
                      std::function<void(bool)> continuation);
   virtual void RecordBackendTime(int64_t backend_time);
 
+  virtual void UpdateRequestMessageStat(int64_t size);
+  virtual void UpdateResponseMessageStat(int64_t size);
+
  protected:
   // Converts the request body into gRPC messages and outputs the raw slices.
   // The output slices are appended to the specified out vector.

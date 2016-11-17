@@ -123,6 +123,8 @@ my $expected_report_body = ServiceControl::gen_report_body({
   'error_type' => '4xx',
   'request_size' => 39,
   'response_size' => 130,
+  'request_bytes' => 39,
+  'response_bytes' => 130,
   });
 
 ok(ServiceControl::compare_json($report_body, $expected_report_body), 'Report body is received.');

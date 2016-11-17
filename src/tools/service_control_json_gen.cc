@@ -27,6 +27,7 @@
 #include <getopt.h>
 #include <stdlib.h>
 #include <uuid/uuid.h>
+#include <chrono>
 #include <fstream>
 #include <iostream>
 
@@ -252,9 +253,7 @@ std::string UuidGen() {
 
 ::google::protobuf::Message* generate_proto() {
   const std::set<std::string> logs = {"local_test_log"};
-  struct timeval tv;
-  struct timezone tz;
-  gettimeofday(&tv, &tz);
+
   std::string uuid = UuidGen();
   ::google::protobuf::Message* request = nullptr;
   if (proto_type == CHECK_REQUEST) {
@@ -264,7 +263,7 @@ std::string UuidGen() {
     info.producer_project_id = producer_project_id;
     info.client_ip = "1.2.3.4";
     info.referer = "referer";
-    info.request_start_time = tv;
+    info.request_start_time = std::chrono::system_clock::now();
 
     ::google::api_manager::service_control::Proto scp(logs, service_name,
                                                       "2016-09-19r0");
@@ -278,7 +277,8 @@ std::string UuidGen() {
     info.producer_project_id = producer_project_id;
 
     info.referer = "referer";
-    info.request_start_time = tv;
+    info.request_start_time = std::chrono::system_clock::now();
+    ;
     info.response_code = 200;
     info.location = "us-central";
     info.api_name = "api-version";

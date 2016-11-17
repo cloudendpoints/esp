@@ -140,6 +140,8 @@ my $expected_report_body = ServiceControl::gen_report_body({
         'error_type' => '4xx',
         'request_size' => 62,
         'response_size' => 395,
+        'request_bytes' => 62,
+        'response_bytes' => 395,
         'no_consumer_data' => 1,
     });
 

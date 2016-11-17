@@ -45,7 +45,7 @@ my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $MetadataPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(55);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(59);
 
 $t->write_file('service.pb.txt',
                ApiManager::get_bookstore_service_config .
@@ -237,6 +237,18 @@ $metric = find_in_array('metricName', $mn, $metrics);
 isnt($metric, undef, "GetBook has $mn metric.");
 is($metric->{metricValues}[0]->{distributionValue}->{count}, '1',
    "GetBook $mn has 1 value.");
+
+$mn = 'serviceruntime.googleapis.com/api/producer/streaming_durations';
+$metric = find_in_array('metricName', $mn, $metrics);
+isnt($metric, undef, "GetBook has $mn metric.");
+is($metric->{metricValues}[0]->{distributionValue}->{count}, '1',
+    "GetBook $mn has 1 value.");
+
+$mn = 'serviceruntime.googleapis.com/api/consumer/streaming_durations';
+$metric = find_in_array('metricName', $mn, $metrics);
+isnt($metric, undef, "GetBook has $mn metric.");
+is($metric->{metricValues}[0]->{distributionValue}->{count}, '1',
+    "GetBook $mn has 1 value.");
 
 $mn = 'serviceruntime.googleapis.com/api/producer/total_latencies';
 $metric = find_in_array('metricName', $mn, $metrics);

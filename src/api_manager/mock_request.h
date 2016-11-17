@@ -47,6 +47,10 @@ class MockRequest : public Request {
   MOCK_METHOD0(GetInsecureCallerID, std::string());
   MOCK_METHOD0(GetClientIP, std::string());
   MOCK_METHOD0(GetRequestHeaders, std::multimap<std::string, std::string> *());
+  MOCK_METHOD0(GetGrpcRequestBytes, int64_t());
+  MOCK_METHOD0(GetGrpcResponseBytes, int64_t());
+  MOCK_METHOD0(GetGrpcRequestMessageCounts, int64_t());
+  MOCK_METHOD0(GetGrpcResponseMessageCounts, int64_t());
 };
 
 }  // namespace api_manager

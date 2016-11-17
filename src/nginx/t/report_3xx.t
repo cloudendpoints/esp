@@ -121,6 +121,8 @@ my $expected_report_body = ServiceControl::gen_report_body({
   'response_code' => '304',
   'request_size' => 39,
   'response_size' => 100,
+  'request_bytes' => 39,
+  'response_bytes' => 100,
   });
 
 ok(ServiceControl::compare_json($report_body, $expected_report_body), 'Report body is received.');
