@@ -148,6 +148,25 @@ go_library(
     ],
 )
 
+
+genrule(
+    name = "vendor/version.go",
+    srcs = ["//include:version"],
+    outs = ["version/version.go"],
+    cmd = """
+    cat <<EOF > $@
+package version
+const Version = "$$(cat $(location //include:version))"
+EOF
+    """,
+)
+
+go_library(
+    name = "vendor/version",
+    srcs = ["version/version.go"],
+    go_prefix="//tools/src:go_prefix",
+)
+
 go_library(
     name = "vendor/deploy",
     srcs = [
@@ -176,6 +195,7 @@ go_library(
     deps = [
         ":vendor/deploy",
         ":vendor/utils",
+        ":vendor/version",
         "@google_api_go_client//:logging/v2beta1",
         "@golang_oauth2//:oauth2/google",
         "@github_com_x_net//:context",
@@ -229,6 +249,7 @@ go_binary(
     go_prefix = "//tools/src:go_prefix",
     deps = [
         ":vendor/cli",
+        ":vendor/version",
         "@github_com_spf13_cobra//:cobra",
     ],
 )
