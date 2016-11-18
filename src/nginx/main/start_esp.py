@@ -392,7 +392,7 @@ if __name__ == '__main__':
     logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
     # Set credentials file from the environment variable
-    if args.service_account_key is not None:
+    if args.service_account_key is None:
         if GOOGLE_CREDS_KEY in os.environ:
             args.service_account_key = os.environ[GOOGLE_CREDS_KEY]
 
