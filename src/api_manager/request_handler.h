@@ -42,9 +42,14 @@ class RequestHandler : public RequestHandlerInterface {
                  std::unique_ptr<Request> request_data)
       : context_(new context::RequestContext(service_context,
                                              std::move(request_data))),
-        check_workflow_(check_workflow) {}
+        check_workflow_(check_workflow),
+        is_first_report_(true) {}
 
-  virtual ~RequestHandler(){};
+  virtual ~RequestHandler() {
+    if (timer_) {
+      timer_->Stop();
+    }
+  };
 
   virtual void Check(std::function<void(utils::Status status)> continuation);
 
@@ -70,6 +75,12 @@ class RequestHandler : public RequestHandlerInterface {
   std::shared_ptr<context::RequestContext> context_;
 
   std::shared_ptr<CheckWorkflow> check_workflow_;
+
+  // Timer to trigger intermediate report for Grpc streaming requests.
+  std::unique_ptr<google::api_manager::PeriodicTimer> timer_;
+
+  // Flag to indicate the first streaming report.
+  bool is_first_report_;
 };
 
 }  // namespace api_manager

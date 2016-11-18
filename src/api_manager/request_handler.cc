@@ -39,11 +39,39 @@ using google::devtools::cloudtrace::v1::Traces;
 namespace google {
 namespace api_manager {
 
+namespace {
+// The time window to send intermediate report for Grpc streaming (millisecond).
+const int kIntermediateTimeWindowInMS = 1000;
+}
+
 void RequestHandler::Check(std::function<void(Status status)> continuation) {
   auto interception = [continuation, this](Status status) {
     if (status.ok() && context_->cloud_trace()) {
       context_->StartBackendSpanAndSetTraceContext();
     }
+
+    if (status.ok()) {
+      if (context_->method_call()->method_info->request_streaming() ||
+          context_->method_call()->method_info->response_streaming()) {
+        timer_ = context_->service_context()->env()->StartPeriodicTimer(
+            std::chrono::milliseconds(kIntermediateTimeWindowInMS), [this]() {
+              service_control::ReportRequestInfo info;
+              info.is_first_report = is_first_report_;
+              info.is_final_report = false;
+              context_->FillReportRequestInfo(NULL, &info);
+              // Calling service_control Report.
+              Status status =
+                  context_->service_context()->service_control()->Report(info);
+              if (!status.ok()) {
+                context_->service_context()->env()->LogError(
+                    "Failed to send intermediate report to service control.");
+              } else {
+                is_first_report_ = false;
+              }
+            });
+      }
+    }
+
     continuation(status);
   };
 
@@ -57,12 +85,15 @@ void RequestHandler::Check(std::function<void(Status status)> continuation) {
 void RequestHandler::Report(std::unique_ptr<Response> response,
                             std::function<void(void)> continuation) {
   // Close backend trace span.
+  if (timer_) {
+    timer_->Stop();
+  }
   context_->EndBackendSpan();
 
   if (context_->service_context()->service_control()) {
     service_control::ReportRequestInfo info;
+    info.is_first_report = is_first_report_;
     context_->FillReportRequestInfo(response.get(), &info);
-
     // Calling service_control Report.
     Status status =
         context_->service_context()->service_control()->Report(info);

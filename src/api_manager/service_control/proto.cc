@@ -65,6 +65,8 @@ struct SupportedMetric {
   ::google::api::MetricDescriptor_ValueType value_type;
 
   enum Mark { PRODUCER = 0, CONSUMER = 1 };
+  enum Tag { START = 0, INTERMEDIATE = 1, FINAL = 2 };
+  Tag tag;
   Mark mark;
   Status (*set)(const SupportedMetric& m, const ReportRequestInfo& info,
                 Operation* operation);
@@ -248,117 +250,131 @@ const SupportedMetric supported_metrics[] = {
     {
         "serviceruntime.googleapis.com/api/consumer/request_count",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
-        ::google::api::MetricDescriptor_ValueType_INT64,
+        ::google::api::MetricDescriptor_ValueType_INT64, SupportedMetric::START,
         SupportedMetric::CONSUMER, set_int64_metric_to_constant_1,
     },
     {
         "serviceruntime.googleapis.com/api/producer/request_count",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
-        ::google::api::MetricDescriptor_ValueType_INT64,
+        ::google::api::MetricDescriptor_ValueType_INT64, SupportedMetric::START,
         SupportedMetric::PRODUCER, set_int64_metric_to_constant_1,
     },
     {
         "serviceruntime.googleapis.com/api/consumer/request_sizes",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::CONSUMER, set_distribution_metric_to_request_size,
+        SupportedMetric::FINAL, SupportedMetric::CONSUMER,
+        set_distribution_metric_to_request_size,
     },
     {
         "serviceruntime.googleapis.com/api/producer/request_sizes",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::PRODUCER, set_distribution_metric_to_request_size,
+        SupportedMetric::FINAL, SupportedMetric::PRODUCER,
+        set_distribution_metric_to_request_size,
     },
     {
         "serviceruntime.googleapis.com/api/consumer/response_sizes",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::CONSUMER, set_distribution_metric_to_response_size,
+        SupportedMetric::FINAL, SupportedMetric::CONSUMER,
+        set_distribution_metric_to_response_size,
     },
     {
         "serviceruntime.googleapis.com/api/producer/response_sizes",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::PRODUCER, set_distribution_metric_to_response_size,
+        SupportedMetric::FINAL, SupportedMetric::PRODUCER,
+        set_distribution_metric_to_response_size,
+    },
+    {
+        "serviceruntime.googleapis.com/api/consumer/request_bytes",
+        ::google::api::MetricDescriptor_MetricKind_DELTA,
+        ::google::api::MetricDescriptor_ValueType_INT64,
+        SupportedMetric::INTERMEDIATE, SupportedMetric::CONSUMER,
+        set_int64_metric_to_request_bytes,
+    },
+    {
+        "serviceruntime.googleapis.com/api/consumer/response_bytes",
+        ::google::api::MetricDescriptor_MetricKind_DELTA,
+        ::google::api::MetricDescriptor_ValueType_INT64,
+        SupportedMetric::INTERMEDIATE, SupportedMetric::CONSUMER,
+        set_int64_metric_to_response_bytes,
+    },
+    {
+        "serviceruntime.googleapis.com/api/producer/request_bytes",
+        ::google::api::MetricDescriptor_MetricKind_DELTA,
+        ::google::api::MetricDescriptor_ValueType_INT64,
+        SupportedMetric::INTERMEDIATE, SupportedMetric::PRODUCER,
+        set_int64_metric_to_request_bytes,
+    },
+    {
+        "serviceruntime.googleapis.com/api/producer/response_bytes",
+        ::google::api::MetricDescriptor_MetricKind_DELTA,
+        ::google::api::MetricDescriptor_ValueType_INT64,
+        SupportedMetric::INTERMEDIATE, SupportedMetric::PRODUCER,
+        set_int64_metric_to_response_bytes,
     },
     {
         "serviceruntime.googleapis.com/api/consumer/error_count",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
-        ::google::api::MetricDescriptor_ValueType_INT64,
+        ::google::api::MetricDescriptor_ValueType_INT64, SupportedMetric::FINAL,
         SupportedMetric::CONSUMER, set_int64_metric_to_constant_1_if_http_error,
     },
     {
         "serviceruntime.googleapis.com/api/producer/error_count",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
-        ::google::api::MetricDescriptor_ValueType_INT64,
+        ::google::api::MetricDescriptor_ValueType_INT64, SupportedMetric::FINAL,
         SupportedMetric::PRODUCER, set_int64_metric_to_constant_1_if_http_error,
     },
     {
         "serviceruntime.googleapis.com/api/consumer/total_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::CONSUMER, set_distribution_metric_to_request_time,
+        SupportedMetric::FINAL, SupportedMetric::CONSUMER,
+        set_distribution_metric_to_request_time,
     },
     {
         "serviceruntime.googleapis.com/api/producer/total_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::PRODUCER, set_distribution_metric_to_request_time,
+        SupportedMetric::FINAL, SupportedMetric::PRODUCER,
+        set_distribution_metric_to_request_time,
     },
     {
         "serviceruntime.googleapis.com/api/consumer/backend_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::CONSUMER, set_distribution_metric_to_backend_time,
+        SupportedMetric::FINAL, SupportedMetric::CONSUMER,
+        set_distribution_metric_to_backend_time,
     },
     {
         "serviceruntime.googleapis.com/api/producer/backend_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::PRODUCER, set_distribution_metric_to_backend_time,
+        SupportedMetric::FINAL, SupportedMetric::PRODUCER,
+        set_distribution_metric_to_backend_time,
     },
     {
         "serviceruntime.googleapis.com/api/consumer/request_overhead_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::CONSUMER, set_distribution_metric_to_overhead_time,
+        SupportedMetric::FINAL, SupportedMetric::CONSUMER,
+        set_distribution_metric_to_overhead_time,
     },
     {
         "serviceruntime.googleapis.com/api/producer/request_overhead_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::PRODUCER, set_distribution_metric_to_overhead_time,
-    },
-    {
-        "serviceruntime.googleapis.com/api/consumer/request_bytes",
-        ::google::api::MetricDescriptor_MetricKind_DELTA,
-        ::google::api::MetricDescriptor_ValueType_INT64,
-        SupportedMetric::CONSUMER, set_int64_metric_to_request_bytes,
-    },
-    {
-        "serviceruntime.googleapis.com/api/consumer/response_bytes",
-        ::google::api::MetricDescriptor_MetricKind_DELTA,
-        ::google::api::MetricDescriptor_ValueType_INT64,
-        SupportedMetric::CONSUMER, set_int64_metric_to_response_bytes,
-    },
-    {
-        "serviceruntime.googleapis.com/api/producer/request_bytes",
-        ::google::api::MetricDescriptor_MetricKind_DELTA,
-        ::google::api::MetricDescriptor_ValueType_INT64,
-        SupportedMetric::PRODUCER, set_int64_metric_to_request_bytes,
-    },
-    {
-        "serviceruntime.googleapis.com/api/producer/response_bytes",
-        ::google::api::MetricDescriptor_MetricKind_DELTA,
-        ::google::api::MetricDescriptor_ValueType_INT64,
-        SupportedMetric::PRODUCER, set_int64_metric_to_response_bytes,
+        SupportedMetric::FINAL, SupportedMetric::PRODUCER,
+        set_distribution_metric_to_overhead_time,
     },
     {
         "serviceruntime.googleapis.com/api/consumer/"
         "streaming_request_message_counts",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::CONSUMER,
+        SupportedMetric::FINAL, SupportedMetric::CONSUMER,
         set_distribution_metric_to_streaming_request_message_counts,
     },
     {
@@ -366,7 +382,7 @@ const SupportedMetric supported_metrics[] = {
         "streaming_request_message_counts",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::PRODUCER,
+        SupportedMetric::FINAL, SupportedMetric::PRODUCER,
         set_distribution_metric_to_streaming_request_message_counts,
     },
     {
@@ -374,7 +390,7 @@ const SupportedMetric supported_metrics[] = {
         "streaming_response_message_counts",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::CONSUMER,
+        SupportedMetric::FINAL, SupportedMetric::CONSUMER,
         set_distribution_metric_to_streaming_response_message_counts,
     },
     {
@@ -382,7 +398,7 @@ const SupportedMetric supported_metrics[] = {
         "streaming_response_message_counts",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::PRODUCER,
+        SupportedMetric::FINAL, SupportedMetric::PRODUCER,
         set_distribution_metric_to_streaming_response_message_counts,
     },
     {
@@ -390,7 +406,7 @@ const SupportedMetric supported_metrics[] = {
         "streaming_durations",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::CONSUMER,
+        SupportedMetric::FINAL, SupportedMetric::CONSUMER,
         set_distribution_metric_to_streaming_durations,
     },
     {
@@ -398,7 +414,7 @@ const SupportedMetric supported_metrics[] = {
         "streaming_durations",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::PRODUCER,
+        SupportedMetric::FINAL, SupportedMetric::PRODUCER,
         set_distribution_metric_to_streaming_durations,
     },
 
@@ -498,10 +514,12 @@ Status set_referer(const SupportedLabel& l, const ReportRequestInfo& info,
 // /response_code
 Status set_response_code(const SupportedLabel& l, const ReportRequestInfo& info,
                          Map<std::string, std::string>* labels) {
-  char response_code_buf[20];
-  snprintf(response_code_buf, sizeof(response_code_buf), "%d",
-           info.response_code);
-  (*labels)[l.name] = response_code_buf;
+  if (info.is_final_report) {
+    char response_code_buf[20];
+    snprintf(response_code_buf, sizeof(response_code_buf), "%d",
+             info.response_code);
+    (*labels)[l.name] = response_code_buf;
+  }
   return Status::OK;
 }
 
@@ -509,7 +527,10 @@ Status set_response_code(const SupportedLabel& l, const ReportRequestInfo& info,
 Status set_response_code_class(const SupportedLabel& l,
                                const ReportRequestInfo& info,
                                Map<std::string, std::string>* labels) {
-  (*labels)[l.name] = error_types[(info.response_code / 100) % 10];
+  if (info.is_final_report) {
+    (*labels)[l.name] = error_types[(info.response_code / 100) % 10];
+  }
+
   return Status::OK;
 }
 
@@ -954,22 +975,33 @@ Status Proto::FillReportRequest(const ReportRequestInfo& info,
         !info.check_response_info.service_is_activated) {
       send_consumer_metric = false;
     }
-    // Populate all metrics.
+    // Populate all metrics. If request_count has been sent in the first
+    // intermediate report, do not send it again.
     for (auto it = metrics_.begin(), end = metrics_.end(); it != end; it++) {
       const SupportedMetric* m = *it;
       if (send_consumer_metric || m->mark != SupportedMetric::CONSUMER) {
         if (m->set) {
-          status = (m->set)(*m, info, op);
-          if (!status.ok()) return status;
+          if ((info.is_first_report && m->tag == SupportedMetric::START) ||
+              (info.is_final_report &&
+               (m->tag == SupportedMetric::FINAL ||
+                m->tag == SupportedMetric::INTERMEDIATE)) ||
+              (!info.is_final_report &&
+               m->tag == SupportedMetric::INTERMEDIATE)) {
+            status = (m->set)(*m, info, op);
+            if (!status.ok()) return status;
+          }
         }
       }
     }
   }
 
   // Fill log entries.
-  for (auto it = logs_.begin(), end = logs_.end(); it != end; it++) {
-    FillLogEntry(info, *it, current_time, op->add_log_entries());
+  if (info.is_final_report) {
+    for (auto it = logs_.begin(), end = logs_.end(); it != end; it++) {
+      FillLogEntry(info, *it, current_time, op->add_log_entries());
+    }
   }
+
   return Status::OK;
 }
 
