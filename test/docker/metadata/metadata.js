@@ -42,7 +42,7 @@ function metadata() {
   metadata.get('/computeMetadata/v1/instance/attributes/endpoints-service-name', function(req, res) {
     res.send('bookstore-backend.endpointsv2.appspot.com');
   });
-  metadata.get('/computeMetadata/v1/instance/attributes/endpoints-service-version', function(req, res) {
+  metadata.get('/computeMetadata/v1/instance/attributes/endpoints-service-config-id', function(req, res) {
     res.send('2016-04-25R1');
   });
   metadata.get('/computeMetadata/v1/', function(req, res) {

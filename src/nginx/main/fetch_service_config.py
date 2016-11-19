@@ -30,14 +30,18 @@ import urllib3
 try:
   from oauth2client.service_account import ServiceAccountCredentials
 except ImportError:
-  logging.warning("Could not import service_account.")
+  logging.warning("""
+  Could not import service_account from oauth2client. Consider upgrading oauth2client library.
+  Cannot use service account credentials file.
+  """)
 
 _GOOGLE_API_SCOPE = (
     "https://www.googleapis.com/auth/service.management.readonly")
 
 # Metadata service path
 _METADATA_PATH = "/computeMetadata/v1/instance"
-
+_METADATA_SERVICE_NAME = "endpoints-service-name"
+_METADATA_SERVICE_CONFIG_ID = "endpoints-service-config-id"
 
 class FetchError(Exception):
     """Error class for fetching and validation errors."""
@@ -49,7 +53,7 @@ class FetchError(Exception):
 
 def fetch_service_name(metadata):
     """Fetch service name from metadata URL."""
-    url = metadata + _METADATA_PATH + "/attributes/endpoints-service-name"
+    url = metadata + _METADATA_PATH + "/attributes/" + _METADATA_SERVICE_NAME
     headers = {"Metadata-Flavor": "Google"}
     client = urllib3.PoolManager()
     try:
@@ -70,7 +74,7 @@ def fetch_service_name(metadata):
 
 def fetch_service_config_id(metadata):
     """Fetch service config ID from metadata URL."""
-    url = metadata + _METADATA_PATH + "/attributes/endpoints-service-config-id"
+    url = metadata + _METADATA_PATH + "/attributes/" + _METADATA_SERVICE_CONFIG_ID
     headers = {"Metadata-Flavor": "Google"}
     client = urllib3.PoolManager()
     try:
