@@ -84,6 +84,9 @@ DEFAULT_BACKEND = "127.0.0.1:8081"
 # PID file (for nginx as a daemon)
 PID_FILE = "/var/run/nginx.pid"
 
+# Google default application credentials environment variable
+GOOGLE_CREDS_KEY = "GOOGLE_APPLICATION_CREDENTIALS"
+
 Port = collections.namedtuple('Port',
         ['port', 'proto'])
 Location = collections.namedtuple('Location',
@@ -220,11 +223,11 @@ def make_ingress(service_config, args):
             logging.error("Port " + str(shared_port) + " is used more than once.")
             sys.exit(2)
 
-    if not args.http_port is None:
+    if args.http_port is not None:
         ports.append(Port(args.http_port, "http"))
-    if not args.http2_port is None:
+    if args.http2_port is not None:
         ports.append(Port(args.http2_port, "http2"))
-    if not args.ssl_port is None:
+    if args.ssl_port is not None:
         ports.append(Port(args.ssl_port, "ssl"))
 
     if args.backend.startswith(GRPC_PREFIX):
@@ -259,28 +262,36 @@ class ArgumentParser(argparse.ArgumentParser):
         self.exit(4, '%s: error: %s\n' % (self.prog, message))
 
 def make_argparser():
-    parser = ArgumentParser(
-        description = textwrap.dedent('''
-        ESP start-up script. This script fetches the service configuration from
-        the service management service and configures ESP to expose the specified
-        ports and proxy requests to the specified backend.
+    parser = ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
+            description = '''
+ESP start-up script. This script fetches the service configuration from the
+service management service and configures ESP to expose the specified ports and
+proxy requests to the specified backend.
 
-        The service name and config ID are optional. If not supplied, the script
-        fetches the service name and config ID from the metadata service.
+The service name and config ID are optional. If not supplied, the script
+fetches the service name and the config ID from the metadata service as
+attributes "{service_name}" and "{service_config_id}".
 
-        The service account key file is used to generate an access token for the
-        service management service. If the service account key file is not provided,
-        the script fetches an access token from the metadata service.
+ESP relies on the metadata service to fetch access tokens for Google services.
+If you deploy ESP outside of Google Cloud environment, you need to provide a
+service account credentials file by setting {creds_key}
+environment variable or by passing "-k" flag to this script.
 
-        If a custom nginx config file is provided (-n flag), the script launches ESP
-        with the provided config file. Otherwise, the script uses the exposed ports
-        (-p, -P, -S, -N) and the backend (-a) to generate an nginx config file.
-        '''))
+If a custom nginx config file is provided ("-n" flag), the script launches ESP
+with the provided config file. Otherwise, the script uses the exposed ports
+("-p", "-P", "-S", "-N" flags) and the backend ("-a" flag) to generate an nginx
+config file.'''.format(
+        service_name = fetch._METADATA_SERVICE_NAME,
+        service_config_id = fetch._METADATA_SERVICE_CONFIG_ID,
+        creds_key = GOOGLE_CREDS_KEY
+    ))
 
     parser.add_argument('-k', '--service_account_key', help=''' Use the service
     account key JSON file to access the service control and the service
-    management.  If the option is omitted, ESP contacts the metadata service to
-    fetch an access token.  ''')
+    management.  You can also set {creds_key} environment
+    variable to the location of the service account credentials JSON file. If
+    the option is omitted, ESP contacts the metadata service to fetch an access
+    token.  '''.format(creds_key = GOOGLE_CREDS_KEY))
 
     parser.add_argument('-s', '--service', help=''' Set the name of the
     Endpoints service.  If omitted and -c not specified, ESP contacts the
@@ -380,6 +391,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
     logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
+    # Set credentials file from the environment variable
+    if args.service_account_key is None:
+        if GOOGLE_CREDS_KEY in os.environ:
+            args.service_account_key = os.environ[GOOGLE_CREDS_KEY]
+
     # Write pid file for the supervising process
     write_pid_file()
 
@@ -395,7 +411,7 @@ if __name__ == '__main__':
         fetch_service_config(args, service_config)
 
     # Start NGINX
-    if args.nginx_config != None:
+    if args.nginx_config is not None:
         start_nginx(args.nginx, args.nginx_config)
     else:
         ingress = make_ingress(service_config, args)
