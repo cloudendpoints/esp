@@ -157,6 +157,12 @@ struct ReportRequestInfo : public OperationInfo {
   // streaming duration (us) between first message and last message.
   int64_t streaming_durations;
 
+  // Flag to indicate the first report
+  bool is_first_report;
+
+  // Flag to indicate the final report
+  bool is_final_report;
+
   ReportRequestInfo()
       : response_code(200),
         status(utils::Status::OK),
@@ -168,7 +174,9 @@ struct ReportRequestInfo : public OperationInfo {
         response_bytes(0),
         streaming_request_message_counts(0),
         streaming_response_message_counts(0),
-        streaming_durations(0) {}
+        streaming_durations(0),
+        is_first_report(true),
+        is_final_report(true) {}
 };
 
 }  // namespace service_control

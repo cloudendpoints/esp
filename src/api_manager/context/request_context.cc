@@ -79,7 +79,9 @@ using context::ServiceContext;
 
 RequestContext::RequestContext(std::shared_ptr<ServiceContext> service_context,
                                std::unique_ptr<Request> request)
-    : service_context_(service_context), request_(std::move(request)) {
+    : service_context_(service_context),
+      request_(std::move(request)),
+      is_first_report_(true) {
   start_time_ = std::chrono::system_clock::now();
   operation_id_ = GenerateUUID();
   const std::string &method = request_->GetRequestHTTPMethod();
@@ -241,40 +243,38 @@ void RequestContext::FillReportRequestInfo(
   info->url = request_->GetUnparsedRequestPath();
   info->method = request_->GetRequestHTTPMethod();
 
-  info->request_size = response->GetRequestSize();
-  info->response_size = response->GetResponseSize();
-
-  // GetGrpcRequestBytes/GetGrpcResponseBytes  returns the size of messages
-  // during intermediate grpc streaming call, and the headers are not counted.
-  // Thus it is less than request_size/response_size which include headers. Here
-  // we report the larger one to be consistent with non-streaming case.
-  info->request_bytes =
-      std::max(info->request_size, request_->GetGrpcRequestBytes());
-  info->response_bytes =
-      std::max(info->response_size, request_->GetGrpcResponseBytes());
-
-  info->streaming_request_message_counts =
-      request_->GetGrpcRequestMessageCounts();
-  info->streaming_response_message_counts =
-      request_->GetGrpcResponseMessageCounts();
-
-  info->streaming_durations =
-      std::chrono::duration_cast<std::chrono::microseconds>(
-          std::chrono::system_clock::now() - start_time_)
-          .count();
-
-  info->status = response->GetResponseStatus();
-  info->response_code = info->status.HttpCode();
   info->protocol = request_->GetRequestProtocol();
   info->check_response_info = check_response_info_;
 
   info->auth_issuer = auth_issuer_;
   info->auth_audience = auth_audience_;
 
-  // Must be after response_code and method are assigned.
-  FillLogMessage(info);
+  if (!info->is_final_report) {
+    info->request_bytes = request_->GetGrpcRequestBytes();
+    info->response_bytes = request_->GetGrpcResponseBytes();
+  } else {
+    info->request_size = response->GetRequestSize();
+    info->response_size = response->GetResponseSize();
+    info->request_bytes = info->request_size;
+    info->response_bytes = info->response_size;
 
-  response->GetLatencyInfo(&info->latency);
+    info->streaming_request_message_counts =
+        request_->GetGrpcRequestMessageCounts();
+    info->streaming_response_message_counts =
+        request_->GetGrpcResponseMessageCounts();
+
+    info->streaming_durations =
+        std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::system_clock::now() - start_time_)
+            .count();
+
+    info->status = response->GetResponseStatus();
+    info->response_code = info->status.HttpCode();
+
+    // Must be after response_code and method are assigned.
+    FillLogMessage(info);
+    response->GetLatencyInfo(&info->latency);
+  }
 }
 
 void RequestContext::StartBackendSpanAndSetTraceContext() {
