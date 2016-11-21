@@ -50,14 +50,13 @@ void RequestHandler::Check(std::function<void(Status status)> continuation) {
       context_->StartBackendSpanAndSetTraceContext();
     }
 
-    if (status.ok() && context_->method_call()) {
-      if ((context_->method_call()->method_info->request_streaming() ||
-           context_->method_call()->method_info->response_streaming()) &&
-          (context_->service_context())) {
-        timer_ = context_->service_context()->env()->StartPeriodicTimer(
-            std::chrono::milliseconds(kIntermediateTimeWindowInMS),
-            [this]() { IntermediateReport(); });
-      }
+    if (status.ok() && context_->method_call() &&
+        (context_->method_call()->method_info->request_streaming() ||
+         context_->method_call()->method_info->response_streaming()) &&
+        context_->service_context()->service_control()) {
+      timer_ = context_->service_context()->env()->StartPeriodicTimer(
+          std::chrono::milliseconds(kIntermediateTimeWindowInMS),
+          [this]() { IntermediateReport(); });
     }
 
     continuation(status);
@@ -77,11 +76,10 @@ void RequestHandler::IntermediateReport() {
   // 2) We send request_bytes, response_bytes and streaming_messages_counts in
   // intermediate reports, which triggered by timer.
   // 3) In the final report, we send all supported metrics similar to
-  // non-streaming
-  // case but excluding request_count and response_count which already sent in
-  // 1).
+  // non-streaming case but excluding request_count and response_count which
+  // already sent in 1).
   service_control::ReportRequestInfo info;
-  info.is_first_report = context_->IsFirstReport();
+  info.is_first_report = context_->is_first_report();
   info.is_final_report = false;
   context_->FillReportRequestInfo(NULL, &info);
   // Calling service_control Report.
@@ -90,7 +88,7 @@ void RequestHandler::IntermediateReport() {
     context_->service_context()->env()->LogError(
         "Failed to send intermediate report to service control.");
   } else {
-    context_->SetFirstReport(false);
+    context_->set_first_report(false);
   }
 }
 
@@ -99,13 +97,13 @@ void RequestHandler::Report(std::unique_ptr<Response> response,
                             std::function<void(void)> continuation) {
   // Close backend trace span.
   if (timer_) {
-    timer_->Stop();
+    timer_ = nullptr;
   }
   context_->EndBackendSpan();
 
   if (context_->service_context()->service_control()) {
     service_control::ReportRequestInfo info;
-    info.is_first_report = context_->IsFirstReport();
+    info.is_first_report = context_->is_first_report();
     info.is_final_report = true;
     context_->FillReportRequestInfo(response.get(), &info);
     // Calling service_control Report.

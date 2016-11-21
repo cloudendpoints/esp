@@ -110,8 +110,8 @@ class RequestContext {
 
   // In streaming calls, we send intermediate reports by timer. And the first
   // report marks the start of a stream.
-  bool IsFirstReport() { return is_first_report_; }
-  void SetFirstReport(bool is_first_report) {
+  const bool is_first_report() { return is_first_report_; }
+  void set_first_report(bool is_first_report) {
     is_first_report_ = is_first_report;
   }
 

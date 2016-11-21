@@ -24,10 +24,6 @@ operations {
     value: "referer"
   }
   labels {
-    key: "/status_code"
-    value: "0"
-  }
-  labels {
     key: "cloud.googleapis.com/location"
     value: "us-central"
   }

@@ -534,6 +534,7 @@ Status set_response_code_class(const SupportedLabel& l,
 // /status_code
 Status set_status_code(const SupportedLabel& l, const ReportRequestInfo& info,
                        Map<std::string, std::string>* labels) {
+  if (!info.is_final_report) return Status::OK;
   char status_code_buf[20];
   snprintf(status_code_buf, sizeof(status_code_buf), "%d",
            info.status.CanonicalCode());

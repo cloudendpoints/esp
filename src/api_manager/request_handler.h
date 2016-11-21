@@ -69,7 +69,7 @@ class RequestHandler : public RequestHandlerInterface {
  private:
   // In grpc streaming calls, we also send intermediate report to show the
   // streaming stats in UI.
-  virtual void IntermediateReport();
+  void IntermediateReport();
 
   // The context object needs to pass to the continuation function the check
   // handler as a lambda capture so it can be passed to the next check handler.
