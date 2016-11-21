@@ -56,7 +56,7 @@ void RequestHandler::Check(std::function<void(Status status)> continuation) {
         context_->service_context()->service_control()) {
       timer_ = context_->service_context()->env()->StartPeriodicTimer(
           std::chrono::milliseconds(kIntermediateTimeWindowInMS),
-          [this]() { IntermediateReport(); });
+          [this]() { SendIntermediateReport(); });
     }
 
     continuation(status);
@@ -68,16 +68,15 @@ void RequestHandler::Check(std::function<void(Status status)> continuation) {
   check_workflow_->Run(context_);
 }
 
-void RequestHandler::IntermediateReport() {
+void RequestHandler::SendIntermediateReport() {
   // For grpc streaming calls, we send intermediate reports to represent
   // streaming stats. Specifically:
-  // 1) We send request_count and response_count in the first report to
-  // indicate the start of a stream.
-  // 2) We send request_bytes, response_bytes and streaming_messages_counts in
-  // intermediate reports, which triggered by timer.
-  // 3) In the final report, we send all supported metrics similar to
-  // non-streaming case but excluding request_count and response_count which
-  // already sent in 1).
+  // 1) We send request_count in the first report to indicate the start of a
+  // stream.
+  // 2) We send request_bytes, response_bytes in intermediate reports, which
+  // triggered by timer.
+  // 3) In the final report, we send all metrics except request_count if it
+  // already sent.
   service_control::ReportRequestInfo info;
   info.is_first_report = context_->is_first_report();
   info.is_final_report = false;

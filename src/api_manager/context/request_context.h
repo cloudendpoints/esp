@@ -108,8 +108,7 @@ class RequestContext {
   // Marks the end of backend trace span.
   void EndBackendSpan() { backend_span_.reset(); }
 
-  // In streaming calls, we send intermediate reports by timer. And the first
-  // report marks the start of a stream.
+  // To indicate if the next report is the first_report or not.
   bool is_first_report() const { return is_first_report_; }
   void set_first_report(bool is_first_report) {
     is_first_report_ = is_first_report;
@@ -175,7 +174,7 @@ class RequestContext {
   // Start time of the request_context instantiation.
   std::chrono::system_clock::time_point start_time_;
 
-  // Flag to indicate the first streaming report.
+  // Flag to indicate the first report.
   bool is_first_report_;
 };
 
