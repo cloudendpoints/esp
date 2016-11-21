@@ -509,39 +509,20 @@ def testCleanup(daysOld, project, flags) {
 // flow can be run or verify
 def updatePresubmit(flow, success = false) {
   if (getParam('STAGE') != PRESUBMIT) return
-  def gerritUrl = getParam('GERRIT_URL')
-  if (gerritUrl != '') {
-    if (CHANGE_ID == '') {
-      error('CHANGE_ID must be set.')
-    }
-    def successFlag = success ? '--success' : ''
-    retry(3) {
-      sh("script/update-gerrit.py " +
-          "--build_url=\"${env.BUILD_URL}\" " +
-          "--change_id=\"${CHANGE_ID}\" " +
-          "--gerrit_url=\"${gerritUrl}\" " +
-          "--commit=\"${GIT_SHA}\" " +
-          "--flow=\"${flow}\" " +
-          "${successFlag}")
-      sleep(5)
-    }
-  } else {
-    // Github
-    switch (flow) {
-      case 'run':
-        state = 'PENDING'
-        message = "Running presubmits at ${env.BUILD_URL} ..."
-        break
-      case 'verify':
-        state = success ? 'SUCCESS' : 'FAILURE'
-        message = "${success ? 'Successful' : 'Failed'} presubmits. " +
-            "Details at ${env.BUILD_URL}."
-        break
-      default:
-        error('flow can only be run or verify')
-    }
-    setGitHubPullRequestStatus(context: env.JOB_NAME, message: message, state: state)
+  switch (flow) {
+    case 'run':
+      state = 'PENDING'
+      message = "Running presubmits at ${env.BUILD_URL} ..."
+      break
+    case 'verify':
+      state = success ? 'SUCCESS' : 'FAILURE'
+      message = "${success ? 'Successful' : 'Failed'} presubmits. " +
+          "Details at ${env.BUILD_URL}."
+      break
+    default:
+      error('flow can only be run or verify')
   }
+  setGitHubPullRequestStatus(context: env.JOB_NAME, message: message, state: state)
 }
 
 def buildNewDockerSlave(nodeLabel) {
@@ -830,11 +811,10 @@ Git Helper Methods
 // Stashing source code to make sure that all branches uses the same version.
 // See JENKINS-35245 bug for more info.
 def stashSourceCode() {
-  initialize(true)
+  initialize()
   // Setting source code related global variable once so it can be reused.
   GIT_SHA = failIfNullOrEmpty(getRevision(), 'GIT_SHA must be set')
   ESP_RUNTIME_VERSION = failIfNullOrEmpty(getEndpointsRuntimeVersion(), 'ESP_RUNTIME_VERSION must be set')
-  CHANGE_ID = getWithDefault(getChangeId())
   echo('Stashing source code')
   fastStash('src-code', '.')
 }
@@ -900,17 +880,7 @@ Find <a href='${url}'>artifacts</a> here
   archive artifactsHtml
 }
 
-def initialize(setup = false, authDaemon = true) {
-  setGit()
-  if (authDaemon) {
-    retry(10) {
-      // Timeout after 1 minute
-      timeout(1) {
-        setGitAuthDaemon()
-      }
-      sleep(5)
-    }
-  }
+def initialize() {
   retry(10) {
     // Timeout after 5 minute
     timeout(5) {
@@ -919,26 +889,6 @@ def initialize(setup = false, authDaemon = true) {
     sleep(5)
   }
   // Updating submodules and cleaning files.
-  if (setup) {
-    sh('script/setup && script/obliterate')
-  }
+  sh('script/setup && script/obliterate')
 }
 
-
-def setGitAuthDaemon() {
-  sh('''#!/bin/bash
-echo "Installing Git Auth Daemon."
-rm -rf ./gcompute-tools .git-credential-cache/cookie
-git clone https://gerrit.googlesource.com/gcompute-tools
-echo "Authenticating to googlesource.com."
-AUTH_DAEMON=0
-gcompute-tools/git-cookie-authdaemon --nofork & AUTH_DAEMON=$!
-echo "Waiting on authentication to googlesource: PID=${AUTH_DAEMON}."
-sleep 5
-[[ -s ${HOME}/.git-credential-cache/cookie ]] || \
-  { echo 'Failed to authenticate on google'; exit 1; }
-trap \'kill %gcompute-tools/git-cookie-authdaemon\' EXIT''')
-}
-
-def setGit() {
-}
