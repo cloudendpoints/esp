@@ -97,6 +97,7 @@ void RequestHandler::Report(std::unique_ptr<Response> response,
                             std::function<void(void)> continuation) {
   // Close backend trace span.
   if (timer_) {
+    timer_->Stop();
     timer_ = nullptr;
   }
   context_->EndBackendSpan();
