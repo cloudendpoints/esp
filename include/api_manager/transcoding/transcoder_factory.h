@@ -32,7 +32,7 @@
 #include "google/protobuf/io/zero_copy_stream.h"
 #include "google/protobuf/stubs/status.h"
 #include "include/api_manager/method_call_info.h"
-#include "include/api_manager/transcoder.h"
+#include "include/api_manager/transcoding/transcoder.h"
 #include "include/api_manager/transcoding/type_helper.h"
 
 namespace google {

@@ -39,6 +39,7 @@ extern "C" {
 #include <grpc++/grpc++.h>
 
 #include "include/api_manager/api_manager.h"
+#include "include/api_manager/transcoding/transcoder_factory.h"
 #include "include/api_manager/utils/status.h"
 #include "src/nginx/alloc.h"
 #include "src/nginx/grpc.h"
@@ -122,6 +123,9 @@ typedef struct {
 
   // Extensible Service Proxy library interface.
   std::shared_ptr<ApiManager> esp;
+
+  // Transcoder factory
+  std::shared_ptr<transcoding::TranscoderFactory> transcoder_factory;
 
   unsigned endpoints_block : 1;  // location has `endpoints` block
   unsigned grpc_pass : 1;        // location has `grpc_pass` directive
@@ -223,6 +227,9 @@ struct ngx_esp_request_ctx_s {
 
   // RequestHandlerInterface object
   std::unique_ptr<RequestHandlerInterface> request_handler;
+
+  // Transcoder factory
+  std::shared_ptr<transcoding::TranscoderFactory> transcoder_factory;
 
   // The backend request time in milliseconds. -1 if not available.
   int64_t backend_time;

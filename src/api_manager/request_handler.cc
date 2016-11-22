@@ -151,25 +151,5 @@ std::string RequestHandler::GetRpcMethodFullName() const {
   }
 }
 
-bool RequestHandler::CanBeTranscoded() const {
-  // Verify that all the necessary pieces exist and the method has RPC info
-  // configured
-  return context_ && context_->service_context() &&
-         context_->service_context()->transcoder_factory() &&
-         context_->method() &&
-         !context_->method()->rpc_method_full_name().empty() &&
-         !context_->method()->request_type_url().empty() &&
-         !context_->method()->response_type_url().empty();
-}
-
-Status RequestHandler::CreateTranscoder(
-    ::google::protobuf::io::ZeroCopyInputStream* request_in,
-    ::google::protobuf::io::ZeroCopyInputStream* response_in,
-    std::unique_ptr<transcoding::Transcoder>* transcoder) const {
-  auto status = context_->service_context()->transcoder_factory()->Create(
-      *context_->method_call(), request_in, response_in, transcoder);
-  return Status::FromProto(status);
-}
-
 }  // namespace api_manager
 }  // namespace google

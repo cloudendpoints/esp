@@ -55,7 +55,6 @@ ServiceContext::ServiceContext(std::unique_ptr<ApiManagerEnvInterface> env,
       service_account_token_(env_.get()),
       service_control_(CreateInterface()),
       cloud_trace_aggregator_(CreateCloudTraceAggregator()),
-      transcoder_factory_(config_->service()),
       is_auth_force_disabled_(config_->server_config() &&
                               config_->server_config()
                                   ->api_authentication_config()

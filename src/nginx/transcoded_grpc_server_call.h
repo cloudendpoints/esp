@@ -36,7 +36,7 @@ extern "C" {
 }
 
 #include "grpc++/support/byte_buffer.h"
-#include "include/api_manager/transcoder.h"
+#include "include/api_manager/transcoding/transcoder.h"
 #include "include/api_manager/utils/status.h"
 #include "src/grpc/zero_copy_stream.h"
 #include "src/nginx/grpc_server_call.h"

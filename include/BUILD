@@ -63,7 +63,7 @@ filegroup(
         "api_manager/request_handler_interface.h",
         "api_manager/response.h",
         "api_manager/service_control.h",
-        "api_manager/transcoder.h",
+        "api_manager/transcoding/transcoder.h",
         "api_manager/transcoding/transcoder_factory.h",
         "api_manager/transcoding/type_helper.h",
         "api_manager/utils/status.h",
