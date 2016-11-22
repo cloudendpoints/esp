@@ -79,10 +79,11 @@ utils::Status NgxEspTranscodedGrpcServerCall::Create(
 
   // Create the Transcoder
   std::unique_ptr<transcoding::Transcoder> transcoder;
-  auto status = ctx->request_handler->CreateTranscoder(
-      nginx_request_stream.get(), grpc_response_stream.get(), &transcoder);
-  if (!status.ok()) {
-    return status;
+  auto protoStatus = ctx->transcoder_factory->Create(
+      *ctx->request_handler->method_call(), nginx_request_stream.get(),
+      grpc_response_stream.get(), &transcoder);
+  if (!protoStatus.ok()) {
+    return utils::Status::FromProto(protoStatus);
   }
 
   // Create the NgxEspTranscodedGrpcServerCall instance
@@ -90,7 +91,7 @@ utils::Status NgxEspTranscodedGrpcServerCall::Create(
       new NgxEspTranscodedGrpcServerCall(r, std::move(nginx_request_stream),
                                          std::move(grpc_response_stream),
                                          std::move(transcoder)));
-  status = call->ProcessPrereadRequestBody();
+  auto status = call->ProcessPrereadRequestBody();
   if (!status.ok()) {
     return status;
   }

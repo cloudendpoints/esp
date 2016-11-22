@@ -26,9 +26,9 @@
 #ifndef API_MANAGER_REQUEST_HANDLER_INTERFACE_H_
 #define API_MANAGER_REQUEST_HANDLER_INTERFACE_H_
 
-#include "include/api_manager/request.h"
+#include "include/api_manager/method.h"
+#include "include/api_manager/method_call_info.h"
 #include "include/api_manager/response.h"
-#include "include/api_manager/transcoder.h"
 #include "include/api_manager/utils/status.h"
 
 namespace google {
@@ -59,14 +59,11 @@ class RequestHandlerInterface {
   // form.
   virtual std::string GetRpcMethodFullName() const = 0;
 
-  // Determines whether this request can be transcoded
-  virtual bool CanBeTranscoded() const = 0;
+  // Get the method info.
+  virtual const MethodInfo *method() const = 0;
 
-  // Create a Transcoder for transcoding this request
-  virtual utils::Status CreateTranscoder(
-      ::google::protobuf::io::ZeroCopyInputStream* request_in,
-      ::google::protobuf::io::ZeroCopyInputStream* response_in,
-      std::unique_ptr<transcoding::Transcoder>* transcoder) const = 0;
+  // Get the method info.
+  virtual const MethodCallInfo *method_call() const = 0;
 };
 
 }  // namespace api_manager

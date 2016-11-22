@@ -24,7 +24,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
-#include "include/api_manager/transcoding/type_helper.h"
+#include "src/grpc/transcoding/type_helper.h"
 
 #include "google/protobuf/stubs/strutil.h"
 #include "google/protobuf/type.pb.h"

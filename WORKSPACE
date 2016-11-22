@@ -192,7 +192,7 @@ bind(
 git_repository(
     name = "io_bazel_rules_perl",
     remote = "https://github.com/bazelbuild/rules_perl.git",
-    commit = "b081f8e57b6fb0dbb3991687abef00a9a7529343",
+    commit = "f6211c2db1e54d0a30bc3c3a718f2b5d45f02a22",
 )
 
 git_repository(

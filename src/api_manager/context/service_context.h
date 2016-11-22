@@ -27,8 +27,6 @@
 #define API_MANAGER_CONTEXT_SERVICE_CONTEXT_H_
 
 #include "include/api_manager/method.h"
-#include "include/api_manager/transcoder.h"
-#include "include/api_manager/transcoding/transcoder_factory.h"
 #include "src/api_manager/auth/certs.h"
 #include "src/api_manager/auth/jwt_cache.h"
 #include "src/api_manager/auth/service_account_token.h"
@@ -52,6 +50,8 @@ class ServiceContext {
   bool Enabled() const { return RequireAuth() || service_control_; }
 
   const std::string &service_name() const { return config_->service_name(); }
+
+  const ::google::api::Service &service() const { return config_->service(); }
 
   void SetMetadataServer(const std::string &server) {
     metadata_server_ = server;
@@ -95,10 +95,6 @@ class ServiceContext {
     return cloud_trace_aggregator_.get();
   }
 
-  transcoding::TranscoderFactory *transcoder_factory() {
-    return &transcoder_factory_;
-  }
-
   bool DisableLogStatus() {
     if (config_->server_config() &&
         config_->server_config()->has_experimental()) {
@@ -133,8 +129,6 @@ class ServiceContext {
   std::string metadata_server_;
   // GCE metadata
   GceMetadata gce_metadata_;
-  // Transcoder factory
-  transcoding::TranscoderFactory transcoder_factory_;
 
   // Is auth force-disabled
   bool is_auth_force_disabled_;

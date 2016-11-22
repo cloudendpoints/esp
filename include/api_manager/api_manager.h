@@ -31,7 +31,9 @@
 #include <memory>
 #include <string>
 
+#include "google/api/service.pb.h"
 #include "include/api_manager/env_interface.h"
+#include "include/api_manager/request.h"
 #include "include/api_manager/request_handler_interface.h"
 #include "include/api_manager/service_control.h"
 
@@ -54,6 +56,9 @@ class ApiManager {
 
   // Gets the service name.
   virtual const std::string &service_name() const = 0;
+
+  // Gets the service config
+  virtual const ::google::api::Service &service() const = 0;
 
   // Set the metadata server for GCP platforms.
   virtual void SetMetadataServer(const std::string &server) = 0;
