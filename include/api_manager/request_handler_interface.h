@@ -29,7 +29,6 @@
 #include "include/api_manager/method.h"
 #include "include/api_manager/method_call_info.h"
 #include "include/api_manager/response.h"
-#include "include/api_manager/transcoding/transcoder.h"
 #include "include/api_manager/utils/status.h"
 
 namespace google {

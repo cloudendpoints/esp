@@ -34,10 +34,10 @@
 #include "google/protobuf/type.pb.h"
 #include "google/protobuf/util/type_resolver.h"
 #include "gtest/gtest.h"
-#include "include/api_manager/transcoding/type_helper.h"
 #include "src/grpc/transcoding/message_stream.h"
 #include "src/grpc/transcoding/proto_stream_tester.h"
 #include "src/grpc/transcoding/request_message_translator.h"
+#include "src/grpc/transcoding/type_helper.h"
 
 namespace google {
 namespace api_manager {

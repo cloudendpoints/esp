@@ -23,8 +23,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#ifndef API_MANAGER_TRANSCODING_TYPE_HELPER_H_
-#define API_MANAGER_TRANSCODING_TYPE_HELPER_H_
+#ifndef GRPC_TRANSCODING_TYPE_HELPER_H_
+#define GRPC_TRANSCODING_TYPE_HELPER_H_
 
 #include "google/protobuf/type.pb.h"
 #include "google/protobuf/util/internal/type_info.h"

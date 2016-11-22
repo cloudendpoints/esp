@@ -35,11 +35,11 @@
 #include "gtest/gtest.h"
 #include "include/api_manager/method.h"
 #include "include/api_manager/method_call_info.h"
-#include "include/api_manager/transcoding/transcoder.h"
-#include "include/api_manager/transcoding/transcoder_factory.h"
 #include "src/grpc/transcoding/bookstore.pb.h"
 #include "src/grpc/transcoding/message_reader.h"
 #include "src/grpc/transcoding/test_common.h"
+#include "src/grpc/transcoding/transcoder.h"
+#include "src/grpc/transcoding/transcoder_factory.h"
 
 namespace google {
 namespace api_manager {
