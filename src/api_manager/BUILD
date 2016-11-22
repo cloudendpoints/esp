@@ -173,7 +173,7 @@ cc_test(
         ":api_manager",
         ":mock_api_manager_environment",
         "//external:googletest_main",
-        "//src/nginx/grpc/transcoding:transcoding",
+        "//src/grpc/transcoding:transcoding",
     ],
 )
 
@@ -269,7 +269,7 @@ cc_test(
         ":api_manager",
         ":mock_api_manager_environment",
         "//external:googletest_main",
-        "//src/nginx/grpc/transcoding:transcoding",
+        "//src/grpc/transcoding:transcoding",
     ],
 )
 
@@ -285,6 +285,6 @@ cc_test(
         ":api_manager",
         ":mock_api_manager_environment",
         "//external:googletest_main",
-        "//src/nginx/grpc/transcoding:transcoding",
+        "//src/grpc/transcoding:transcoding",
     ],
 )

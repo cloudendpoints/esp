@@ -26,7 +26,7 @@
 //
 #include "src/nginx/grpc.h"
 
-#include "src/nginx/grpc/proxy_flow.h"
+#include "src/grpc/proxy_flow.h"
 #include "src/nginx/environment.h"
 #include "src/nginx/error.h"
 #include "src/nginx/grpc_passthrough_server_call.h"
