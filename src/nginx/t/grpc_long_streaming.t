@@ -1,4 +1,4 @@
-# Copyright (C) Endpoints Server Proxy Authors
+# Copyright (C) Extensible Service Proxy Authors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,27 @@ use src::nginx::t::ServiceControl;
 use Test::Nginx;  # Imports Nginx's test module
 use Test::More;   # And the test framework
 use JSON::PP;
+my @streaming_bytes_metrics = (
+    'serviceruntime.googleapis.com/api/producer/request_bytes',
+    'serviceruntime.googleapis.com/api/consumer/request_bytes',
+    'serviceruntime.googleapis.com/api/consumer/response_bytes',
+    'serviceruntime.googleapis.com/api/producer/response_bytes',
+);
+
+my @final_metrics = (
+    'serviceruntime.googleapis.com/api/consumer/total_latencies',
+    'serviceruntime.googleapis.com/api/producer/total_latencies',
+    'serviceruntime.googleapis.com/api/consumer/backend_latencies',
+    'serviceruntime.googleapis.com/api/producer/backend_latencies',
+    'serviceruntime.googleapis.com/api/consumer/request_overhead_latencies',
+    'serviceruntime.googleapis.com/api/producer/request_overhead_latencies',
+    'serviceruntime.googleapis.com/api/consumer/streaming_durations',
+    'serviceruntime.googleapis.com/api/producer/streaming_durations',
+    "serviceruntime.googleapis.com/api/producer/streaming_request_message_counts",
+    "serviceruntime.googleapis.com/api/consumer/streaming_request_message_counts",
+    "serviceruntime.googleapis.com/api/producer/streaming_response_message_counts",
+    "serviceruntime.googleapis.com/api/consumer/streaming_response_message_counts",
+);
 
 ################################################################################
 
@@ -44,7 +65,7 @@ my $ServiceControlPort = ApiManager::pick_port();
 my $GrpcBackendPort = ApiManager::pick_port();
 my $GrpcFallbackPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(46);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(78);
 
 $t->write_file('service.pb.txt',
     ApiManager::get_grpc_test_service_config($GrpcBackendPort) .
@@ -114,7 +135,7 @@ is(scalar @servicecontrol_requests, 3, 'Service control was called 3 times.');
 my $r = shift @servicecontrol_requests;
 like($r->{uri}, qr/:check$/, 'First call was a :check');
 
-# :report
+# :intermediate report
 $r = shift @servicecontrol_requests;
 like($r->{uri}, qr/:report$/, 'Second call was a :report');
 
@@ -145,7 +166,7 @@ is($labels->{'/protocol'}, 'grpc', 'EchoStream protocol is grpc');
 $metrics = $echo_stream->{metricValueSets};
 isnt($metrics, undef, 'GetShelf has metrics');
 
-# request_count is sent in the first report
+# request_count is 1 in the first report
 my $mn = 'serviceruntime.googleapis.com/api/producer/request_count';
 $metric = find_in_array('metricName', $mn, $metrics);
 isnt($metric, undef, "First report has $mn metric.");
@@ -156,29 +177,22 @@ $metric = find_in_array('metricName', $mn, $metrics);
 isnt($metric, undef, "First report has $mn metric.");
 is($metric->{metricValues}[0]->{int64Value}, '1', "First report $mn is 1.");
 
-# request_bytes is greater than 0 in the first report
-$mn = 'serviceruntime.googleapis.com/api/consumer/request_bytes';
-$metric = find_in_array('metricName', $mn, $metrics);
-isnt($metric, undef, "First report has $mn metric.");
-cmp_ok($metric, 'gt',  0, "The metric value is great than 0.");
+# request_bytes/response_bytes are greater than 0 in the first report
+foreach $mn (@streaming_bytes_metrics)
+{
+    $metric = find_in_array('metricName', $mn, $metrics);
+    isnt($metric, undef, "First report has $mn metric.");
+    cmp_ok($metric, 'gt',  0, "The metric value is great than 0.");
+}
 
-$mn = 'serviceruntime.googleapis.com/api/producer/request_bytes';
-$metric = find_in_array('metricName', $mn, $metrics);
-isnt($metric, undef, "First report has $mn metric.");
-cmp_ok($metric, 'gt',  0, "The metric value is great than 0.");
+# There are no other metrics in the first report
+foreach $mn (@final_metrics)
+{
+    $metric = find_in_array('metricName', $mn, $metrics);
+    is($metric, undef, "First report does not have $mn metric.");
+}
 
-# response_bytes is greater than 0 in the first report
-$mn = 'serviceruntime.googleapis.com/api/consumer/response_bytes';
-$metric = find_in_array('metricName', $mn, $metrics);
-isnt($metric, undef, "First report has $mn metric.");
-cmp_ok($metric, 'gt',  0, "The metric value is great than 0.");
-
-$mn = 'serviceruntime.googleapis.com/api/producer/response_bytes';
-$metric = find_in_array('metricName', $mn, $metrics);
-isnt($metric, undef, "First report has $mn metric.");
-cmp_ok($metric, 'gt',  0, "The metric value is great than 0.");
-
-# :report
+# :final report
 $r = shift @servicecontrol_requests;
 like($r->{uri}, qr/:report$/, 'Third call was a :report');
 
@@ -197,47 +211,31 @@ is($labels->{'/response_code_class'}, '2xx', 'EchoStream response code class is 
 $metrics = $echo_stream->{metricValueSets};
 isnt($metrics, undef, 'GetShelf has metrics');
 
-# request_count is not in the second report as it is already sent in the first report.
+# request_count is not existed in the final report as it is already sent in the first report.
 my $mn = 'serviceruntime.googleapis.com/api/producer/request_count';
 $metric = find_in_array('metricName', $mn, $metrics);
-is($metric, undef, "Final report has $mn metric.");
+is($metric, undef, "Final report does not have $mn metric.");
 
 $mn = 'serviceruntime.googleapis.com/api/consumer/request_count';
 $metric = find_in_array('metricName', $mn, $metrics);
-is($metric, undef, "Final report has $mn metric.");
+is($metric, undef, "Final report does not have $mn metric.");
 
-# request_bytes is greater than 0 in the final report
-$mn = 'serviceruntime.googleapis.com/api/consumer/request_bytes';
-$metric = find_in_array('metricName', $mn, $metrics);
-isnt($metric, undef, "Final report has $mn metric.");
-cmp_ok($metric, 'gt',  0, "The metric value is great than 0.");
+# request_bytes/response_bytes are greater than 0 in the final report
+foreach $mn (@streaming_bytes_metrics)
+{
+    $metric = find_in_array('metricName', $mn, $metrics);
+    isnt($metric, undef, "Final report has $mn metric.");
+    cmp_ok($metric, 'gt',  0, "The metric value is great than 0.");
+}
 
-$mn = 'serviceruntime.googleapis.com/api/producer/request_bytes';
-$metric = find_in_array('metricName', $mn, $metrics);
-isnt($metric, undef, "Final report has $mn metric.");
-cmp_ok($metric, 'gt',  0, "The metric value is great than 0.");
-
-# response_bytes is greater than 0 in the final report
-$mn = 'serviceruntime.googleapis.com/api/consumer/response_bytes';
-$metric = find_in_array('metricName', $mn, $metrics);
-isnt($metric, undef, "Final report has $mn metric.");
-cmp_ok($metric, 'gt',  0, "The metric value is great than 0.");
-
-$mn = 'serviceruntime.googleapis.com/api/producer/response_bytes';
-$metric = find_in_array('metricName', $mn, $metrics);
-isnt($metric, undef, "Final report has $mn metric.");
-cmp_ok($metric, 'gt',  0, "The metric value is great than 0.");
-
-# streaming_durations is greater than 0 in the final report
-$mn = 'serviceruntime.googleapis.com/api/producer/streaming_durations';
-$metric = find_in_array('metricName', $mn, $metrics);
-isnt($metric, undef, "Final report has $mn metric.");
-cmp_ok($metric, 'gt',  0, "The metric value is great than 0.");
-
-$mn = 'serviceruntime.googleapis.com/api/consumer/streaming_durations';
-$metric = find_in_array('metricName', $mn, $metrics);
-isnt($metric, undef, "Final report has $mn metric.");
-cmp_ok($metric, 'gt',  0, "The metric value is great than 0.");
+# Other metrics are existed in the final report
+foreach $mn (@final_metrics)
+{
+    $metric = find_in_array('metricName', $mn, $metrics);
+    isnt($metric, undef, "Final report has $mn metric.");
+    is($metric->{metricValues}[0]->{distributionValue}->{count}, '1',
+        "Metric $mn has 1 value.");
+}
 ################################################################################
 
 sub service_control {
