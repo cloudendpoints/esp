@@ -37,7 +37,7 @@ extern "C" {
 #include "ngx_event.h"
 }
 
-#include "include/api_manager/async_grpc_queue.h"
+#include "src/grpc/async_grpc_queue.h"
 
 namespace google {
 namespace api_manager {

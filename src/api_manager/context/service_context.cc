@@ -27,7 +27,6 @@
 #include "src/api_manager/context/service_context.h"
 
 #include "src/api_manager/service_control/aggregated.h"
-#include "src/api_manager/transcoding/transcoder_factory.h"
 
 namespace google {
 namespace api_manager {

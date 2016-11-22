@@ -36,7 +36,6 @@ class MockApiManagerEnvironment : public ApiManagerEnvInterface {
  public:
   MOCK_METHOD2(Log, void(LogLevel, const char *));
   MOCK_METHOD1(MakeTag, void *(std::function<void(bool)>));
-  MOCK_METHOD0(GetAsyncQueue, AsyncGrpcQueue *());
   MOCK_METHOD2(StartPeriodicTimer,
                std::unique_ptr<PeriodicTimer>(std::chrono::milliseconds,
                                               std::function<void()>));
@@ -57,7 +56,6 @@ class MockApiManagerEnvironmentWithLog : public ApiManagerEnvInterface {
     std::cout << "LOG: " << message << std::endl;
   }
   void *MakeTag(std::function<void(bool)>) { return nullptr; }
-  AsyncGrpcQueue *GetAsyncQueue() { return nullptr; }
   std::unique_ptr<PeriodicTimer> StartPeriodicTimer(std::chrono::milliseconds,
                                                     std::function<void()>) {
     return std::unique_ptr<PeriodicTimer>();
