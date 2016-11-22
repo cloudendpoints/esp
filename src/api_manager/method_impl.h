@@ -30,7 +30,7 @@
 #include <memory>
 #include <set>
 
-#include "src/api_manager/method.h"
+#include "include/api_manager/method.h"
 #include "src/api_manager/utils/stl_util.h"
 
 namespace google {

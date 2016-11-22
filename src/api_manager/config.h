@@ -33,7 +33,7 @@
 
 #include "google/api/service.pb.h"
 #include "include/api_manager/env_interface.h"
-#include "src/api_manager/method_call_info.h"
+#include "include/api_manager/method_call_info.h"
 #include "src/api_manager/method_impl.h"
 #include "src/api_manager/path_matcher.h"
 #include "src/api_manager/proto/server_config.pb.h"

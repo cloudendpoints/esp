@@ -33,8 +33,8 @@
 namespace google {
 namespace api_manager {
 
-// Holds authentication results, used as a bridge between nginx and
-// grpc auth lib.
+// Holds authentication results, used as a bridge between host proxy
+// and grpc auth lib.
 struct UserInfo {
   // Unique ID of authenticated user.
   std::string id;
