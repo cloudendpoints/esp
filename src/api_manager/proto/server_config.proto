@@ -45,6 +45,9 @@ message ServerConfig {
   // Server config used for API authentication
   ApiAuthenticationConfig api_authentication_config = 5;
 
+  // Server config for for grpc intermediate streaming report
+  StreamingReportConfig streaming_report_config = 6;
+
   // Experimental flags
   Experimental experimental = 999;
 }
@@ -143,6 +146,15 @@ message ApiAuthenticationConfig {
   // Allows to disable the API authentication regardless of the auth
   // configuration in service config.
   bool force_disable = 1;
+}
+
+// Server config for for grpc intermediate streaming report
+message StreamingReportConfig {
+  // Override the time window for grpc intermediate streaming report (millisec).
+  int32 intermediate_time_window = 1;
+
+  // Override the data size threshold for grpc intermediate streaming report.
+  int32 threshold_in_bytes = 2;
 }
 
 message Experimental {

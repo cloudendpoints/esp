@@ -52,6 +52,10 @@ class RequestHandlerInterface {
   virtual void Report(std::unique_ptr<Response> response,
                       std::function<void(void)> continuation) = 0;
 
+  // In grpc streaming calls, we also send intermediate report to show the
+  // streaming stats in UI.
+  virtual void AttemptIntermediateReport() = 0;
+
   // Get the backend address.
   virtual std::string GetBackendAddress() const = 0;
 

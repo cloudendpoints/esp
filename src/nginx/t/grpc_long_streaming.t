@@ -75,7 +75,17 @@ control {
 }
 EOF
 
-$t->write_file('server_config.pb.txt', ApiManager::disable_service_control_cache);
+$t->write_file('server_config.pb.txt', <<"EOF");
+service_control_config {
+  report_aggregator_config {
+    cache_entries: 0
+  }
+}
+streaming_report_config {
+  intermediate_time_window: 1
+  threshold_in_bytes: 50
+}
+EOF
 
 ApiManager::write_file_expand($t, 'nginx.conf', <<"EOF");
 %%TEST_GLOBALS%%
