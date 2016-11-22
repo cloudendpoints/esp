@@ -55,12 +55,11 @@ class RequestHandler : public RequestHandlerInterface {
 
   virtual std::string GetRpcMethodFullName() const;
 
-  virtual bool CanBeTranscoded() const;
+  // Get the method info.
+  const MethodInfo *method() const { return context_->method(); }
 
-  virtual utils::Status CreateTranscoder(
-      ::google::protobuf::io::ZeroCopyInputStream* request_in,
-      ::google::protobuf::io::ZeroCopyInputStream* response_in,
-      std::unique_ptr<transcoding::Transcoder>* transcoder) const;
+  // Get the method info.
+  const MethodCallInfo *method_call() const { return context_->method_call(); }
 
  private:
   // The context object needs to pass to the continuation function the check

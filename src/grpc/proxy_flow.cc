@@ -28,7 +28,7 @@
 
 #include "grpc/grpc.h"
 #include "grpc/support/alloc.h"
-#include "src/api_manager/auth/lib/base64.h"
+#include "include/api_manager/utils/status.h"
 
 extern "C" {
 #include "src/core/lib/security/util/b64.h"
@@ -162,11 +162,19 @@ Status ProcessUpstreamHeaders(
     std::string key(it.first.data(), it.first.size());
     std::string value;
     if (grpc_is_binary_header(it.first.data(), it.first.length())) {
-      char *b64_value = auth::esp_base64_encode(
-          it.second.data(), it.second.size(), false, false, false);
+      char *b64_value =
+          grpc_base64_encode(it.second.data(), it.second.size(), 0, 0);
       if (b64_value == nullptr) {
         continue;
       }
+
+      // grpc_base64_encode may have added padding. If not needed, remove them.
+      size_t len = strlen(b64_value);
+      while (len > 0 && b64_value[len - 1] == '=') {
+        len--;
+      }
+      b64_value[len] = '\0';
+
       value = b64_value;
       gpr_free(b64_value);
     } else {

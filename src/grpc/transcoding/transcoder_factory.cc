@@ -24,7 +24,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
-#include "include/api_manager/transcoding/transcoder_factory.h"
+#include "src/grpc/transcoding/transcoder_factory.h"
 
 #include <memory>
 #include <string>
@@ -35,10 +35,10 @@
 #include "google/protobuf/stubs/common.h"
 #include "google/protobuf/stubs/status.h"
 #include "include/api_manager/method_call_info.h"
-#include "include/api_manager/transcoding/type_helper.h"
 #include "src/grpc/transcoding/json_request_translator.h"
 #include "src/grpc/transcoding/message_stream.h"
 #include "src/grpc/transcoding/response_to_json_translator.h"
+#include "src/grpc/transcoding/type_helper.h"
 
 namespace google {
 namespace api_manager {

@@ -38,7 +38,6 @@
 #include "google/protobuf/type.pb.h"
 #include "google/protobuf/util/internal/type_info.h"
 #include "gtest/gtest.h"
-#include "include/api_manager/transcoding/type_helper.h"
 #include "src/grpc/transcoding/message_stream.h"
 #include "src/grpc/transcoding/test_common.h"
 

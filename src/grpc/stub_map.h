@@ -23,8 +23,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#ifndef API_MANAGER_GRPC_STUB_MAP_H_
-#define API_MANAGER_GRPC_STUB_MAP_H_
+#ifndef GRPC_STUB_MAP_H_
+#define GRPC_STUB_MAP_H_
 
 #include <memory>
 #include <mutex>

@@ -59,6 +59,9 @@ cc_library(
     srcs = [
         "type_helper.cc",
     ],
+    hdrs = [
+        "type_helper.h",
+    ],
     deps = [
         "//external:protobuf",
         "//include:headers_only",
@@ -155,6 +158,10 @@ cc_library(
     name = "transcoding",
     srcs = [
         "transcoder_factory.cc",
+    ],
+    hdrs = [
+        "transcoder_factory.h",
+        "transcoder.h",
     ],
     visibility = ["//visibility:public"],
     deps = [

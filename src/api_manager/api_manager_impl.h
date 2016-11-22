@@ -47,6 +47,10 @@ class ApiManagerImpl : public ApiManager {
     return service_context_->service_name();
   }
 
+  virtual const ::google::api::Service &service() const {
+    return service_context_->service();
+  }
+
   virtual void SetMetadataServer(const std::string &server) {
     service_context_->SetMetadataServer(server);
   }

@@ -23,8 +23,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#ifndef API_MANAGER_TRANSCODING_TRANSODER_FACTORY_H_
-#define API_MANAGER_TRANSCODING_TRANSODER_FACTORY_H_
+#ifndef GRPC_TRANSCODING_TRANSODER_FACTORY_H_
+#define GRPC_TRANSCODING_TRANSODER_FACTORY_H_
 
 #include <memory>
 
@@ -32,8 +32,8 @@
 #include "google/protobuf/io/zero_copy_stream.h"
 #include "google/protobuf/stubs/status.h"
 #include "include/api_manager/method_call_info.h"
-#include "include/api_manager/transcoder.h"
-#include "include/api_manager/transcoding/type_helper.h"
+#include "src/grpc/transcoding/transcoder.h"
+#include "src/grpc/transcoding/type_helper.h"
 
 namespace google {
 namespace api_manager {

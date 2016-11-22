@@ -23,8 +23,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#ifndef API_MANAGER_TRANSCODER_H_
-#define API_MANAGER_TRANSCODER_H_
+#ifndef GRPC_TRANSCODING_TRANSCODER_H_
+#define GRPC_TRANSCODING_TRANSCODER_H_
 
 #include "google/protobuf/io/zero_copy_stream.h"
 #include "google/protobuf/stubs/status.h"

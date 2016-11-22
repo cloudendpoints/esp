@@ -42,7 +42,7 @@ cc_library(
         "//external:grpc++",
         "//external:protobuf",
         "//external:servicecontrol",
-        "//src/api_manager/auth/lib:lib",
+        "//include:headers_only",
     ],
 )
 
