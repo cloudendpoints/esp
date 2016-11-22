@@ -425,7 +425,7 @@ void AuthChecker::Unauthorized(const std::string &error) {
 }
 
 void AuthChecker::FetchFailure(const std::string &error, Status status) {
-  // Append HTTP response code for nginx upstream statuses
+  // Append HTTP response code for the upstream statuses
   trace_span_.reset();
   on_done_(
       Status(Code::UNAUTHENTICATED,

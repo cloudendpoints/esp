@@ -32,9 +32,6 @@
 #include <functional>
 #include <memory>
 
-#include "grpc++/grpc++.h"
-
-#include "include/api_manager/async_grpc_queue.h"
 #include "include/api_manager/http_request.h"
 #include "include/api_manager/periodic_timer.h"
 #include "include/api_manager/utils/status.h"
@@ -59,10 +56,6 @@ class ApiManagerEnvInterface {
   void LogError(const char *message) { Log(ERROR, message); }
 
   virtual void Log(LogLevel level, const char *message) = 0;
-
-  // Returns an AsyncGrpcQueue for use with asynchronous GRPC calls.
-  // The AsyncGrpcQueue is valid at least as long as the environment.
-  virtual AsyncGrpcQueue *GetAsyncQueue() = 0;
 
   // Simple periodic timer support. API Manager uses this method to get
   // called at regular intervals of wall-clock time.

@@ -42,14 +42,11 @@ namespace nginx {
 // The nginx implementation of ApiManagerEnvInterface.
 class NgxEspEnv : public ApiManagerEnvInterface {
  public:
-  NgxEspEnv(ngx_log_t *log, std::shared_ptr<AsyncGrpcQueue> grpc_cq)
-      : log_(log), grpc_cq_(std::move(grpc_cq)) {}
+  NgxEspEnv(ngx_log_t *log) : log_(log) {}
 
   virtual ~NgxEspEnv() {}
 
   virtual void Log(LogLevel level, const char *message);
-
-  virtual AsyncGrpcQueue *GetAsyncQueue() { return grpc_cq_.get(); }
 
   virtual std::unique_ptr<PeriodicTimer> StartPeriodicTimer(
       std::chrono::milliseconds interval, std::function<void()> continuation);
@@ -58,7 +55,6 @@ class NgxEspEnv : public ApiManagerEnvInterface {
 
  private:
   ngx_log_t *log_;
-  std::shared_ptr<AsyncGrpcQueue> grpc_cq_;
 };
 
 // The nginx implementation of PeriodicTimer.
