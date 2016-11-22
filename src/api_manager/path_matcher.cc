@@ -26,9 +26,9 @@
 //
 #include "src/api_manager/path_matcher.h"
 
+#include "include/api_manager/method.h"
+#include "include/api_manager/method_call_info.h"
 #include "src/api_manager/http_template.h"
-#include "src/api_manager/method.h"
-#include "src/api_manager/method_call_info.h"
 
 #include <algorithm>
 #include <sstream>
