@@ -426,7 +426,8 @@ ngx_int_t ngx_esp_postconfiguration(ngx_conf_t *cf) {
           std::unique_ptr<ApiManagerEnvInterface>(new NgxEspEnv(log)),
           ngx_str_to_std(file_contents), server_config);
 
-      lc->transcoder_factory = std::make_shared<transcoding::TranscoderFactory>(lc->esp->service());
+      lc->transcoder_factory =
+          std::make_shared<transcoding::TranscoderFactory>(lc->esp->service());
 
       if (!lc->esp) {
         ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
