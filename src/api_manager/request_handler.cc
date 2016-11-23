@@ -62,13 +62,11 @@ void RequestHandler::AttemptIntermediateReport() {
   // triggered by timer.
   // 3) In the final report, we send all metrics except request_count if it
   // already sent.
-  if (context_->send_intermediate_report()) {
+  if (context_->ShouldSendIntermediateReport()) {
     service_control::ReportRequestInfo info;
     info.is_first_report = context_->is_first_report();
     info.is_final_report = false;
     context_->FillReportRequestInfo(NULL, &info);
-    std::chrono::steady_clock::time_point now =
-        std::chrono::steady_clock::now();
 
     // Calling service_control Report.
     Status status =
@@ -78,7 +76,7 @@ void RequestHandler::AttemptIntermediateReport() {
           "Failed to send intermediate report to service control.");
     } else {
       context_->set_first_report(false);
-      context_->set_last_report_time(now);
+      context_->set_last_report_time(std::chrono::steady_clock::now());
     }
   }
 }

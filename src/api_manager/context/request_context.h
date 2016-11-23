@@ -125,7 +125,7 @@ class RequestContext {
 
   // We only send intermediate streaming report if the time_interval >
   // intermediate_report_interval().
-  bool send_intermediate_report() {
+  bool ShouldSendIntermediateReport() const {
     return std::chrono::duration_cast<std::chrono::seconds>(
                std::chrono::steady_clock::now() - last_report_time_)
                .count() >= service_context_->intermediate_report_interval();
