@@ -80,8 +80,6 @@ service_control_config {
   report_aggregator_config {
     cache_entries: 0
   }
-}
-streaming_report_config {
   intermediate_report_min_interval: 1
 }
 EOF

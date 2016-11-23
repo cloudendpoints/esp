@@ -45,9 +45,6 @@ message ServerConfig {
   // Server config used for API authentication
   ApiAuthenticationConfig api_authentication_config = 5;
 
-  // Server config for for grpc intermediate streaming report
-  StreamingReportConfig streaming_report_config = 6;
-
   // Experimental flags
   Experimental experimental = 999;
 }
@@ -75,6 +72,10 @@ message ServiceControlConfig {
   // Timeout in milliseconds on service control report requests.
   // If the value is <= 0, default timeout is 15000 milliseconds.
   int32 report_timeout_ms = 6;
+
+  // The intermediate reports for streaming calls should not be more frequent
+  // than this value (in seconds)
+  int32 intermediate_report_min_interval = 7;
 }
 
 // Check aggregator config
@@ -146,13 +147,6 @@ message ApiAuthenticationConfig {
   // Allows to disable the API authentication regardless of the auth
   // configuration in service config.
   bool force_disable = 1;
-}
-
-// Server config for for grpc intermediate streaming report
-message StreamingReportConfig {
-  // The intermediate reports for streaming calls should not be more frequent
-  // than this value (in seconds)
-  int32 intermediate_report_min_interval = 1;
 }
 
 message Experimental {

@@ -62,22 +62,27 @@ void RequestHandler::AttemptIntermediateReport() {
   // triggered by timer.
   // 3) In the final report, we send all metrics except request_count if it
   // already sent.
-  if (context_->ShouldSendIntermediateReport()) {
-    service_control::ReportRequestInfo info;
-    info.is_first_report = context_->is_first_report();
-    info.is_final_report = false;
-    context_->FillReportRequestInfo(NULL, &info);
+  // We only send intermediate streaming report if the time_interval >
+  // intermediate_report_interval().
+  if (std::chrono::duration_cast<std::chrono::seconds>(
+          std::chrono::steady_clock::now() - context_->last_report_time())
+          .count() <
+      context_->service_context()->intermediate_report_interval()) {
+    return;
+  }
+  service_control::ReportRequestInfo info;
+  info.is_first_report = context_->is_first_report();
+  info.is_final_report = false;
+  context_->FillReportRequestInfo(NULL, &info);
 
-    // Calling service_control Report.
-    Status status =
-        context_->service_context()->service_control()->Report(info);
-    if (!status.ok()) {
-      context_->service_context()->env()->LogError(
-          "Failed to send intermediate report to service control.");
-    } else {
-      context_->set_first_report(false);
-      context_->set_last_report_time(std::chrono::steady_clock::now());
-    }
+  // Calling service_control Report.
+  Status status = context_->service_context()->service_control()->Report(info);
+  if (!status.ok()) {
+    context_->service_context()->env()->LogError(
+        "Failed to send intermediate report to service control.");
+  } else {
+    context_->set_first_report(false);
+    context_->set_last_report_time(std::chrono::steady_clock::now());
   }
 }
 

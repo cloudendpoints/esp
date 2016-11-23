@@ -67,13 +67,13 @@ ServiceContext::ServiceContext(std::unique_ptr<ApiManagerEnvInterface> env,
 
   // Check server_config override.
   if (config_->server_config() &&
-      config_->server_config()->has_streaming_report_config()) {
-    proto::StreamingReportConfig streaming_report_config =
-        config_->server_config()->streaming_report_config();
-    if (streaming_report_config.intermediate_report_min_interval()) {
-      intermediate_report_interval_ =
-          streaming_report_config.intermediate_report_min_interval();
-    }
+      config_->server_config()->has_service_control_config() &&
+      config_->server_config()
+          ->service_control_config()
+          .intermediate_report_min_interval()) {
+    intermediate_report_interval_ = config_->server_config()
+                                        ->service_control_config()
+                                        .intermediate_report_min_interval();
   }
 }
 
