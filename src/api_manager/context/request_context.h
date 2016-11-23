@@ -115,26 +115,20 @@ class RequestContext {
   }
 
   // Get the last intermediate report time point.
-  std::chrono::system_clock::time_point get_last_report_time() {
+  std::chrono::steady_clock::time_point last_report_time() const {
     return last_report_time_;
   }
   // Set the last intermediate report time point.
-  void set_last_report_time(std::chrono::system_clock::time_point tp) {
+  void set_last_report_time(std::chrono::steady_clock::time_point tp) {
     last_report_time_ = tp;
   }
 
-  // Get request_bytes in the last intermediate report.
-  int64_t get_last_request_bytes() { return last_request_bytes_; }
-  // Set request_bytes in the last intermediate report.
-  void set_last_request_bytes(int64_t request_bytes) {
-    last_request_bytes_ = request_bytes;
-  }
-
-  // Get response_bytes in the last intermediate report.
-  int64_t get_last_response_bytes() { return last_response_bytes_; }
-  // Set response_bytes in the last intermediate report.
-  void set_last_response_bytes(int64_t response_bytes) {
-    last_response_bytes_ = response_bytes;
+  // We only send intermediate streaming report if the time_interval >
+  // intermediate_report_interval().
+  bool send_intermediate_report() {
+    return std::chrono::duration_cast<std::chrono::seconds>(
+               std::chrono::steady_clock::now() - last_report_time_)
+               .count() >= service_context_->intermediate_report_interval();
   }
 
  private:
@@ -201,13 +195,7 @@ class RequestContext {
   bool is_first_report_;
 
   // The time point of last intermediate report
-  std::chrono::system_clock::time_point last_report_time_;
-
-  // The request_bytes sent in the last intermediate report.
-  int64_t last_request_bytes_;
-
-  // The response_bytes sent in the last intermediate report.
-  int64_t last_response_bytes_;
+  std::chrono::steady_clock::time_point last_report_time_;
 };
 
 }  // namespace context

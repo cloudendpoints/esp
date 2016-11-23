@@ -39,47 +39,6 @@ using google::devtools::cloudtrace::v1::Traces;
 namespace google {
 namespace api_manager {
 
-namespace {
-// The time window to send intermediate report for Grpc streaming (second).
-// Default to 10s.
-const int kIntermediateReportInterval = 10;
-// The threshold of data size for grpc streaming intermediate report (bytes).
-// Default to 50KB.
-const int kIntermediateReportThreshold = 50000;
-}
-
-RequestHandler::RequestHandler(
-    std::shared_ptr<CheckWorkflow> check_workflow,
-    std::shared_ptr<context::ServiceContext> service_context,
-    std::unique_ptr<Request> request_data)
-    : context_(new context::RequestContext(service_context,
-                                           std::move(request_data))),
-      check_workflow_(check_workflow) {
-  intermediate_report_interval_ = kIntermediateReportInterval;
-  intermediate_report_threshold_ = kIntermediateReportThreshold;
-
-  // Check server_config override.
-  if (context_->service_context()->config()->server_config() &&
-      context_->service_context()
-          ->config()
-          ->server_config()
-          ->has_streaming_report_config()) {
-    proto::StreamingReportConfig streaming_report_config =
-        context_->service_context()
-            ->config()
-            ->server_config()
-            ->streaming_report_config();
-    if (streaming_report_config.intermediate_time_window()) {
-      intermediate_report_interval_ =
-          streaming_report_config.intermediate_time_window();
-    }
-    if (streaming_report_config.threshold_in_bytes()) {
-      intermediate_report_threshold_ =
-          streaming_report_config.threshold_in_bytes();
-    }
-  }
-}
-
 void RequestHandler::Check(std::function<void(Status status)> continuation) {
   auto interception = [continuation, this](Status status) {
     if (status.ok() && context_->cloud_trace()) {
@@ -103,22 +62,14 @@ void RequestHandler::AttemptIntermediateReport() {
   // triggered by timer.
   // 3) In the final report, we send all metrics except request_count if it
   // already sent.
-  service_control::ReportRequestInfo info;
-  info.is_first_report = context_->is_first_report();
-  info.is_final_report = false;
-  context_->FillReportRequestInfo(NULL, &info);
-  std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+  if (context_->send_intermediate_report()) {
+    service_control::ReportRequestInfo info;
+    info.is_first_report = context_->is_first_report();
+    info.is_final_report = false;
+    context_->FillReportRequestInfo(NULL, &info);
+    std::chrono::steady_clock::time_point now =
+        std::chrono::steady_clock::now();
 
-  // We only send intermediate streaming report if the transferred_data_size >
-  // intermediate_report_threshold_ and the time_interval >
-  // intermediate_report_interval_.
-  if ((info.request_bytes - context_->get_last_request_bytes() >=
-           intermediate_report_threshold_ ||
-       info.response_bytes - context_->get_last_response_bytes() >=
-           intermediate_report_threshold_) &&
-      std::chrono::duration_cast<std::chrono::seconds>(
-          now - context_->get_last_report_time())
-              .count() >= intermediate_report_interval_) {
     // Calling service_control Report.
     Status status =
         context_->service_context()->service_control()->Report(info);
@@ -128,8 +79,6 @@ void RequestHandler::AttemptIntermediateReport() {
     } else {
       context_->set_first_report(false);
       context_->set_last_report_time(now);
-      context_->set_last_request_bytes(info.request_bytes);
-      context_->set_last_response_bytes(info.response_bytes);
     }
   }
 }

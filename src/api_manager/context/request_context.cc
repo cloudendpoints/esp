@@ -81,11 +81,9 @@ RequestContext::RequestContext(std::shared_ptr<ServiceContext> service_context,
                                std::unique_ptr<Request> request)
     : service_context_(service_context),
       request_(std::move(request)),
-      is_first_report_(true),
-      last_request_bytes_(0),
-      last_response_bytes_(0) {
+      is_first_report_(true) {
   start_time_ = std::chrono::system_clock::now();
-  last_report_time_ = start_time_;
+  last_report_time_ = std::chrono::steady_clock::now();
   operation_id_ = GenerateUUID();
   const std::string &method = request_->GetRequestHTTPMethod();
   const std::string &path = request_->GetRequestPath();

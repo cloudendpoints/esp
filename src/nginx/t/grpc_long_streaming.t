@@ -82,8 +82,7 @@ service_control_config {
   }
 }
 streaming_report_config {
-  intermediate_time_window: 1
-  threshold_in_bytes: 50
+  intermediate_report_min_interval: 1
 }
 EOF
 

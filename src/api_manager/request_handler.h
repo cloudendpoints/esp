@@ -39,7 +39,10 @@ class RequestHandler : public RequestHandlerInterface {
  public:
   RequestHandler(std::shared_ptr<CheckWorkflow> check_workflow,
                  std::shared_ptr<context::ServiceContext> service_context,
-                 std::unique_ptr<Request> request_data);
+                 std::unique_ptr<Request> request_data)
+      : context_(new context::RequestContext(service_context,
+                                             std::move(request_data))),
+        check_workflow_(check_workflow) {}
 
   virtual ~RequestHandler(){};
 
@@ -68,12 +71,6 @@ class RequestHandler : public RequestHandlerInterface {
   std::shared_ptr<context::RequestContext> context_;
 
   std::shared_ptr<CheckWorkflow> check_workflow_;
-
-  // The time interval for grpc intermediate report.
-  int64_t intermediate_report_interval_;
-
-  // The data size threshold for grpc intermediate report.
-  int64_t intermediate_report_threshold_;
 };
 
 }  // namespace api_manager

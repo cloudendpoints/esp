@@ -104,6 +104,10 @@ class ServiceContext {
     return false;
   }
 
+  int64_t intermediate_report_interval() const {
+    return intermediate_report_interval_;
+  }
+
  private:
   std::unique_ptr<service_control::Interface> CreateInterface();
 
@@ -132,6 +136,9 @@ class ServiceContext {
 
   // Is auth force-disabled
   bool is_auth_force_disabled_;
+
+  // The time interval for grpc intermediate report.
+  int64_t intermediate_report_interval_;
 };
 
 }  // namespace context
