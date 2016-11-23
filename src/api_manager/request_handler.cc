@@ -82,8 +82,8 @@ void RequestHandler::AttemptIntermediateReport() {
         "Failed to send intermediate report to service control.");
   } else {
     context_->set_first_report(false);
-    context_->set_last_report_time(std::chrono::steady_clock::now());
   }
+  context_->set_last_report_time(std::chrono::steady_clock::now());
 }
 
 // Sends a report.
