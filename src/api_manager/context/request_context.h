@@ -114,6 +114,15 @@ class RequestContext {
     is_first_report_ = is_first_report;
   }
 
+  // Get the last intermediate report time point.
+  std::chrono::steady_clock::time_point last_report_time() const {
+    return last_report_time_;
+  }
+  // Set the last intermediate report time point.
+  void set_last_report_time(std::chrono::steady_clock::time_point tp) {
+    last_report_time_ = tp;
+  }
+
  private:
   // Fill OperationInfo
   void FillOperationInfo(service_control::OperationInfo *info);
@@ -176,6 +185,9 @@ class RequestContext {
 
   // Flag to indicate the first report.
   bool is_first_report_;
+
+  // The time point of last intermediate report
+  std::chrono::steady_clock::time_point last_report_time_;
 };
 
 }  // namespace context

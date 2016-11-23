@@ -52,6 +52,9 @@ class RequestHandlerInterface {
   virtual void Report(std::unique_ptr<Response> response,
                       std::function<void(void)> continuation) = 0;
 
+  // Attempt to send intermediate report in streaming calls.
+  virtual void AttemptIntermediateReport() = 0;
+
   // Get the backend address.
   virtual std::string GetBackendAddress() const = 0;
 

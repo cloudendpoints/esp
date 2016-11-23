@@ -72,6 +72,10 @@ message ServiceControlConfig {
   // Timeout in milliseconds on service control report requests.
   // If the value is <= 0, default timeout is 15000 milliseconds.
   int32 report_timeout_ms = 6;
+
+  // The intermediate reports for streaming calls should not be more frequent
+  // than this value (in seconds)
+  int32 intermediate_report_min_interval = 7;
 }
 
 // Check aggregator config

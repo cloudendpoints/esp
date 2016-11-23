@@ -39,26 +39,11 @@ using google::devtools::cloudtrace::v1::Traces;
 namespace google {
 namespace api_manager {
 
-namespace {
-// The time window to send intermediate report for Grpc streaming (millisecond).
-const int kIntermediateTimeWindowInMS = 1000;
-}
-
 void RequestHandler::Check(std::function<void(Status status)> continuation) {
   auto interception = [continuation, this](Status status) {
     if (status.ok() && context_->cloud_trace()) {
       context_->StartBackendSpanAndSetTraceContext();
     }
-
-    if (status.ok() && context_->method_call() &&
-        (context_->method_call()->method_info->request_streaming() ||
-         context_->method_call()->method_info->response_streaming()) &&
-        context_->service_context()->service_control()) {
-      timer_ = context_->service_context()->env()->StartPeriodicTimer(
-          std::chrono::milliseconds(kIntermediateTimeWindowInMS),
-          [this]() { SendIntermediateReport(); });
-    }
-
     continuation(status);
   };
 
@@ -68,7 +53,7 @@ void RequestHandler::Check(std::function<void(Status status)> continuation) {
   check_workflow_->Run(context_);
 }
 
-void RequestHandler::SendIntermediateReport() {
+void RequestHandler::AttemptIntermediateReport() {
   // For grpc streaming calls, we send intermediate reports to represent
   // streaming stats. Specifically:
   // 1) We send request_count in the first report to indicate the start of a
@@ -77,10 +62,19 @@ void RequestHandler::SendIntermediateReport() {
   // triggered by timer.
   // 3) In the final report, we send all metrics except request_count if it
   // already sent.
+  // We only send intermediate streaming report if the time_interval >
+  // intermediate_report_interval().
+  if (std::chrono::duration_cast<std::chrono::seconds>(
+          std::chrono::steady_clock::now() - context_->last_report_time())
+          .count() <
+      context_->service_context()->intermediate_report_interval()) {
+    return;
+  }
   service_control::ReportRequestInfo info;
   info.is_first_report = context_->is_first_report();
   info.is_final_report = false;
   context_->FillReportRequestInfo(NULL, &info);
+
   // Calling service_control Report.
   Status status = context_->service_context()->service_control()->Report(info);
   if (!status.ok()) {
@@ -89,16 +83,13 @@ void RequestHandler::SendIntermediateReport() {
   } else {
     context_->set_first_report(false);
   }
+  context_->set_last_report_time(std::chrono::steady_clock::now());
 }
 
 // Sends a report.
 void RequestHandler::Report(std::unique_ptr<Response> response,
                             std::function<void(void)> continuation) {
   // Close backend trace span.
-  if (timer_) {
-    timer_->Stop();
-    timer_ = nullptr;
-  }
   context_->EndBackendSpan();
 
   if (context_->service_context()->service_control()) {

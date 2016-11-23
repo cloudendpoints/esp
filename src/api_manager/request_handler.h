@@ -44,16 +44,14 @@ class RequestHandler : public RequestHandlerInterface {
                                              std::move(request_data))),
         check_workflow_(check_workflow) {}
 
-  virtual ~RequestHandler() {
-    if (timer_) {
-      timer_->Stop();
-    }
-  };
+  virtual ~RequestHandler(){};
 
   virtual void Check(std::function<void(utils::Status status)> continuation);
 
   virtual void Report(std::unique_ptr<Response> response,
                       std::function<void(void)> continuation);
+
+  virtual void AttemptIntermediateReport();
 
   virtual std::string GetBackendAddress() const;
 
@@ -66,10 +64,6 @@ class RequestHandler : public RequestHandlerInterface {
   const MethodCallInfo *method_call() const { return context_->method_call(); }
 
  private:
-  // In grpc streaming calls, we also send intermediate report to show the
-  // streaming stats in UI.
-  void SendIntermediateReport();
-
   // The context object needs to pass to the continuation function the check
   // handler as a lambda capture so it can be passed to the next check handler.
   // In order to control the life time of context object, a shared_ptr is used.
@@ -77,9 +71,6 @@ class RequestHandler : public RequestHandlerInterface {
   std::shared_ptr<context::RequestContext> context_;
 
   std::shared_ptr<CheckWorkflow> check_workflow_;
-
-  // Timer to trigger intermediate report for Grpc streaming requests.
-  std::unique_ptr<google::api_manager::PeriodicTimer> timer_;
 };
 
 }  // namespace api_manager

@@ -46,6 +46,10 @@ const int kDefaultTraceCacheMaxSize = 100;
 
 // Default trace sample rate, in QPS.
 const double kDefaultTraceSampleQps = 0.1;
+
+// The time window to send intermediate report for Grpc streaming (second).
+// Default to 10s.
+const int kIntermediateReportInterval = 10;
 }
 
 ServiceContext::ServiceContext(std::unique_ptr<ApiManagerEnvInterface> env,
@@ -58,7 +62,20 @@ ServiceContext::ServiceContext(std::unique_ptr<ApiManagerEnvInterface> env,
       is_auth_force_disabled_(config_->server_config() &&
                               config_->server_config()
                                   ->api_authentication_config()
-                                  .force_disable()) {}
+                                  .force_disable()) {
+  intermediate_report_interval_ = kIntermediateReportInterval;
+
+  // Check server_config override.
+  if (config_->server_config() &&
+      config_->server_config()->has_service_control_config() &&
+      config_->server_config()
+          ->service_control_config()
+          .intermediate_report_min_interval()) {
+    intermediate_report_interval_ = config_->server_config()
+                                        ->service_control_config()
+                                        .intermediate_report_min_interval();
+  }
+}
 
 MethodCallInfo ServiceContext::GetMethodCallInfo(
     const std::string& http_method, const std::string& url,
