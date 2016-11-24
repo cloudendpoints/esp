@@ -147,7 +147,8 @@ Aggregated::Aggregated(const ::google::api::Service& service,
                              service.id()),
       url_(service_, server_config),
       mismatched_check_config_id(service.id()),
-      mismatched_report_config_id(service.id()) {
+      mismatched_report_config_id(service.id()),
+      max_report_size_(0) {
   if (sa_token_) {
     sa_token_->SetAudience(
         auth::ServiceAccountToken::JWT_TOKEN_FOR_SERVICE_CONTROL,
@@ -394,7 +395,7 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
   std::string request_body;
   request.SerializeToString(&request_body);
 
-  if (!is_check && request_body.size() > max_report_size_) {
+  if (!is_check && (request_body.size() > max_report_size_)) {
     max_report_size_ = request_body.size();
   }
 
