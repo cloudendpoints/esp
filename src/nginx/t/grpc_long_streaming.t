@@ -65,7 +65,7 @@ my $ServiceControlPort = ApiManager::pick_port();
 my $GrpcBackendPort = ApiManager::pick_port();
 my $GrpcFallbackPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(78);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(77);
 
 $t->write_file('service.pb.txt',
     ApiManager::get_grpc_test_service_config($GrpcBackendPort) .
@@ -127,16 +127,17 @@ plans {
     request {
       text: "Hello, world!"
     }
-    duration_in_sec: 2
+    duration_in_sec: 3
   }
 }
 EOF
 
-is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');
+$t->stop();
 $t->stop_daemons();
 
 my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
-is(scalar @servicecontrol_requests, 3, 'Service control was called 3 times.');
+my $num_of_request = scalar @servicecontrol_requests;
+cmp_ok($num_of_request, 'ge',  3, 'Service control was called more than 3 times.');
 
 # :check
 my $r = shift @servicecontrol_requests;
@@ -200,8 +201,8 @@ foreach $mn (@final_metrics)
 }
 
 # :final report
-$r = shift @servicecontrol_requests;
-like($r->{uri}, qr/:report$/, 'Third call was a :report');
+$r = pop @servicecontrol_requests;
+like($r->{uri}, qr/:report$/, 'Final call was a :report');
 
 $report = decode_json(ServiceControl::convert_proto($r->{body}, 'report_request', 'json'));
 my $echo_stream = find_in_array('operationName', 'test.grpc.Test.EchoStream', $report->{operations});
@@ -267,10 +268,6 @@ HTTP/1.1 200 OK
 Connection: close
 
 EOF
-            $report_count++;
-            if($report_count == 2) {
-                $t->write_file($done, ':report done');
-            }
         });
 
     $server->run();
