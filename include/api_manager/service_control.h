@@ -53,6 +53,9 @@ struct Statistics {
   // send_report_operations / total_called_reports  will reflect report
   // aggregation rate.  send_report_operations may not reflect aggregation rate.
   uint64_t send_report_operations;
+
+  // Maximum report request size send to server.
+  uint64_t max_report_size;
 };
 
 // Per request latency statistics.

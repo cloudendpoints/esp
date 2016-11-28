@@ -147,7 +147,8 @@ Aggregated::Aggregated(const ::google::api::Service& service,
                              service.id()),
       url_(service_, server_config),
       mismatched_check_config_id(service.id()),
-      mismatched_report_config_id(service.id()) {
+      mismatched_report_config_id(service.id()),
+      max_report_size_(0) {
   if (sa_token_) {
     sa_token_->SetAudience(
         auth::ServiceAccountToken::JWT_TOKEN_FOR_SERVICE_CONTROL,
@@ -164,7 +165,8 @@ Aggregated::Aggregated(const std::set<std::string>& logs,
       sa_token_(nullptr),
       service_control_proto_(logs, "", ""),
       url_(service_, server_config_),
-      client_(std::move(client)) {}
+      client_(std::move(client)),
+      max_report_size_(0) {}
 
 Aggregated::~Aggregated() {}
 
@@ -344,6 +346,7 @@ Status Aggregated::GetStatistics(Statistics* esp_stat) const {
   esp_stat->send_reports_by_flush = client_stat.send_reports_by_flush;
   esp_stat->send_reports_in_flight = client_stat.send_reports_in_flight;
   esp_stat->send_report_operations = client_stat.send_report_operations;
+  esp_stat->max_report_size = max_report_size_;
 
   return Status::OK;
 }
@@ -391,6 +394,10 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
 
   std::string request_body;
   request.SerializeToString(&request_body);
+
+  if (!is_check && (request_body.size() > max_report_size_)) {
+    max_report_size_ = request_body.size();
+  }
 
   http_request->set_url(url)
       .set_method("POST")

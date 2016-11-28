@@ -51,6 +51,9 @@ message ServiceControlStatistics {
   // send_report_operations / total_called_reports  will reflect report
   // aggregation rate.  send_report_operations may not reflect aggregation rate.
   uint64 send_report_operations = 7;
+
+  // Maximum report size send to server.
+  uint64 max_report_size = 8;
 }
 
 // Status for ESP instances

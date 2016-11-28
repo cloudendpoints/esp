@@ -155,6 +155,9 @@ class Aggregated : public Interface {
 
   // Mismatched config ID received for a report request
   std::string mismatched_report_config_id;
+
+  // Maximum report size send to server.
+  uint64_t max_report_size_;
 };
 
 }  // namespace service_control
