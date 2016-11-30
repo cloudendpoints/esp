@@ -186,7 +186,19 @@ bind(
 )
 
 #
-# Go dependencies
+# Python rules
+#
+
+git_repository(
+    name = "io_bazel_rules_pex",
+    remote = "https://github.com/benley/bazel_rules_pex.git",
+    commit = "d4af3ca0a015e8b2d2a81a4df1df51bb0fa0bba0",
+)
+load("@io_bazel_rules_pex//pex:pex_rules.bzl", "pex_repositories")
+pex_repositories()
+
+#
+# Perl rules
 #
 
 git_repository(
@@ -194,6 +206,10 @@ git_repository(
     remote = "https://github.com/bazelbuild/rules_perl.git",
     commit = "f6211c2db1e54d0a30bc3c3a718f2b5d45f02a22",
 )
+
+#
+# Go rules
+#
 
 git_repository(
     name = "io_bazel_rules_go",
