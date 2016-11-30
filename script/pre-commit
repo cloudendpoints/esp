@@ -71,3 +71,10 @@ if [[ "${#SOURCE_FILES}" -ne 0 ]]; then
 else
   echo "No source files."
 fi
+
+BUILDIFIER="$(which buildifier)"
+if [[ -x "${BUILDIFIER}" ]]; then
+  ${BUILDIFIER} -showlog -mode=check $(find . -iname BUILD -type f)
+else
+  echo "Buildifier does not exist"
+fi

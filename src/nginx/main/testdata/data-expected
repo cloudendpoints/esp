@@ -23,11 +23,10 @@
 ./usr/
 ./usr/sbin/
 ./usr/sbin/debug_nginx.sh
-./usr/sbin/fetch_service_config.py
 ./usr/sbin/fetch_service_config.sh
 ./usr/sbin/nginx
 ./usr/sbin/nginx-debug
-./usr/sbin/start_esp.py
+./usr/sbin/start_esp
 ./usr/share/
 ./usr/share/doc/
 ./usr/share/doc/nginx-google/
