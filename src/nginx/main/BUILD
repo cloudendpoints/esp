@@ -307,6 +307,7 @@ pex_binary(
       "fetch_service_config.py",
     ],
     reqs = [
+      "certifi",
       "mako>=1.0.4",
       "oauth2client>=3.0.0",
       "pyasn1>=0.1.9",
