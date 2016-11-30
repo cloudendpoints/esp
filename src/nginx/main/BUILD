@@ -309,6 +309,8 @@ pex_binary(
     reqs = [
       "mako>=1.0.4",
       "oauth2client>=3.0.0",
+      "pyasn1>=0.1.9",
+      "pyasn1-modules>=0.0.8",
       "urllib3>=1.16",
     ],
 )
