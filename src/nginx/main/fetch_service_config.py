@@ -24,6 +24,7 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+import certifi
 import json
 import logging
 import urllib3
@@ -49,7 +50,7 @@ def fetch_service_name(metadata):
     """Fetch service name from metadata URL."""
     url = metadata + _METADATA_PATH + "/attributes/" + _METADATA_SERVICE_NAME
     headers = {"Metadata-Flavor": "Google"}
-    client = urllib3.PoolManager()
+    client = urllib3.PoolManager(ca_certs=certifi.where())
     try:
         response = client.request("GET", url, headers=headers)
     except:
@@ -70,7 +71,7 @@ def fetch_service_config_id(metadata):
     """Fetch service config ID from metadata URL."""
     url = metadata + _METADATA_PATH + "/attributes/" + _METADATA_SERVICE_CONFIG_ID
     headers = {"Metadata-Flavor": "Google"}
-    client = urllib3.PoolManager()
+    client = urllib3.PoolManager(ca_certs=certifi.where())
     try:
         response = client.request("GET", url, headers=headers)
         if response.status != 200:
@@ -107,7 +108,7 @@ def fetch_access_token(metadata):
     """Fetch access token from metadata URL."""
     access_token_url = metadata + _METADATA_PATH + "/service-accounts/default/token"
     headers = {"Metadata-Flavor": "Google"}
-    client = urllib3.PoolManager()
+    client = urllib3.PoolManager(ca_certs=certifi.where())
     try:
         response = client.request("GET", access_token_url, headers=headers)
     except:
@@ -130,7 +131,7 @@ def fetch_service_json(service_mgmt_url, access_token):
     else:
         headers = {"Authorization": "Bearer {}".format(access_token)}
 
-    client = urllib3.PoolManager()
+    client = urllib3.PoolManager(ca_certs=certifi.where())
     try:
         response = client.request("GET", service_mgmt_url, headers=headers)
     except:
