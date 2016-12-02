@@ -64,14 +64,6 @@ cc_library(
 )
 
 cc_library(
-    name = "method_call_info",
-    hdrs = [
-        "method.h",
-        "method_call_info.h",
-    ],
-)
-
-cc_library(
     name = "impl_headers",
     hdrs = [
         "api_manager_impl.h",
@@ -126,7 +118,6 @@ cc_library(
     deps = [
         ":auth_headers",
         ":impl_headers",
-        ":method_call_info",
         ":server_config_proto",
         "//external:cc_wkt_protos",
         "//external:googletest_prod",
@@ -136,7 +127,6 @@ cc_library(
         "//src/api_manager/cloud_trace",
         "//src/api_manager/context",
         "//src/api_manager/service_control",
-        "//src/api_manager/transcoding",
         "//src/api_manager/utils",
         "//external:cloud_trace",
         "//external:service_config",

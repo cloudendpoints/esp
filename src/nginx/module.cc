@@ -68,6 +68,7 @@ ngx_esp_request_ctx_s::ngx_esp_request_ctx_s(ngx_http_request_t *r,
   if (lc && lc->esp) {
     request_handler = lc->esp->CreateRequestHandler(
         std::unique_ptr<Request>(new NgxEspRequest(r)));
+    transcoder_factory = lc->transcoder_factory;
   }
 }
 
@@ -422,9 +423,11 @@ ngx_int_t ngx_esp_postconfiguration(ngx_conf_t *cf) {
       }
 
       lc->esp = mc->esp_factory.GetOrCreateApiManager(
-          std::unique_ptr<ApiManagerEnvInterface>(
-              new NgxEspEnv(log, NgxEspGrpcQueue::TryInstance())),
+          std::unique_ptr<ApiManagerEnvInterface>(new NgxEspEnv(log)),
           ngx_str_to_std(file_contents), server_config);
+
+      lc->transcoder_factory =
+          std::make_shared<transcoding::TranscoderFactory>(lc->esp->service());
 
       if (!lc->esp) {
         ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,

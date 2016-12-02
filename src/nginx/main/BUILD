@@ -190,11 +190,10 @@ pkg_tar(
     name = "esp-bin",
     files = [
         ":debug_nginx.sh",
-        ":fetch_service_config.py",
         ":fetch_service_config.sh",
         ":nginx",
         ":nginx-debug",
-        ":start_esp.py",
+        ":start_esp",
     ],
     mode = "0755",
     package_dir = "/usr/sbin",
@@ -271,9 +270,6 @@ pkg_deb(
         "lsb-base",
         "adduser",
         "python",
-        "python-oauth2client",
-        "python-mako",
-        "python-urllib3",
     ],
     description_file = "description",
     homepage = "g.co/endpoints",
@@ -299,5 +295,23 @@ sh_test(
         "testdata/data-expected",
         "testdata/deb-expected",
         ":endpoints-server-proxy.deb",
+    ],
+)
+
+load("@io_bazel_rules_pex//pex:pex_rules.bzl", "pex_binary")
+
+pex_binary(
+    name = "start_esp",
+    srcs = [
+      "start_esp.py",
+      "fetch_service_config.py",
+    ],
+    reqs = [
+      "certifi",
+      "mako>=1.0.4",
+      "oauth2client>=3.0.0",
+      "pyasn1>=0.1.9",
+      "pyasn1-modules>=0.0.8",
+      "urllib3>=1.16",
     ],
 )

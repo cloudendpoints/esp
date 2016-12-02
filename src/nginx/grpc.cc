@@ -26,7 +26,7 @@
 //
 #include "src/nginx/grpc.h"
 
-#include "src/api_manager/grpc/proxy_flow.h"
+#include "src/grpc/proxy_flow.h"
 #include "src/nginx/environment.h"
 #include "src/nginx/error.h"
 #include "src/nginx/grpc_passthrough_server_call.h"
@@ -117,6 +117,15 @@ std::multimap<std::string, std::string> ExtractMetadata(ngx_http_request_t *r) {
   return metadata;
 }
 
+bool CanBeTranscoded(ngx_esp_request_ctx_t *ctx) {
+  // Verify that all the necessary pieces exist and the method has RPC info
+  // configured
+  return ctx->transcoder_factory && ctx->request_handler->method() &&
+         !ctx->request_handler->method()->rpc_method_full_name().empty() &&
+         !ctx->request_handler->method()->request_type_url().empty() &&
+         !ctx->request_handler->method()->response_type_url().empty();
+}
+
 // The content handler for locations configured with grpc_pass.
 ngx_int_t GrpcBackendHandler(ngx_http_request_t *r) {
   ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
@@ -159,8 +168,7 @@ ngx_int_t GrpcBackendHandler(ngx_http_request_t *r) {
         return NGX_DONE;
       }
     }
-  } else if (ctx && ctx->request_handler &&
-             ctx->request_handler->CanBeTranscoded()) {
+  } else if (ctx && ctx->request_handler && CanBeTranscoded(ctx)) {
     // Same as the gRPC case. Check whether there's a GRPC backend defined for
     // this request to use.
     std::shared_ptr<::grpc::GenericStub> stub;

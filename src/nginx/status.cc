@@ -105,6 +105,7 @@ void fill_service_control_statistics(const Statistics &stat,
   pb->set_send_reports_by_flush(stat.send_reports_by_flush);
   pb->set_send_reports_in_flight(stat.send_reports_in_flight);
   pb->set_send_report_operations(stat.send_report_operations);
+  pb->set_max_report_size(stat.max_report_size);
 }
 
 void fill_process_stats(const ngx_esp_process_stats_t &stat,

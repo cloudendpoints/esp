@@ -146,6 +146,6 @@ message ApiAuthenticationConfig {
 }
 
 message Experimental {
-  // Disable log ESP status in nginx error log.
+  // Disable timed printouts of ESP status to the error log.
   bool disable_log_status = 1;
 }

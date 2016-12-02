@@ -42,24 +42,27 @@ cc_library(
     hdrs = [
         ":headers",
     ],
-    visibility = ["//src/api_manager:__subpackages__"],
+    visibility = [
+        "//src/api_manager:__subpackages__",
+        "//src/grpc:__subpackages__",
+    ],
 )
 
 filegroup(
     name = "headers",
     srcs = [
         "api_manager/api_manager.h",
-        "api_manager/async_grpc_queue.h",
         "api_manager/compute_platform.h",
         "api_manager/env_interface.h",
         "api_manager/http_request.h",
+        "api_manager/method.h",
+        "api_manager/method_call_info.h",
         "api_manager/periodic_timer.h",
         "api_manager/protocol.h",
         "api_manager/request.h",
         "api_manager/request_handler_interface.h",
         "api_manager/response.h",
         "api_manager/service_control.h",
-        "api_manager/transcoder.h",
         "api_manager/utils/status.h",
         "api_manager/version.h",
     ],

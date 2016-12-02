@@ -33,8 +33,8 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "src/api_manager/method.h"
-#include "src/api_manager/method_call_info.h"
+#include "include/api_manager/method.h"
+#include "include/api_manager/method_call_info.h"
 #include "src/api_manager/mock_method_info.h"
 #include "src/api_manager/utils/stl_util.h"
 

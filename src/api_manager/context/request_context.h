@@ -30,11 +30,11 @@
 #include <time.h>
 #include <memory>
 
+#include "include/api_manager/method.h"
 #include "include/api_manager/request.h"
 #include "include/api_manager/response.h"
 #include "src/api_manager/cloud_trace/cloud_trace.h"
 #include "src/api_manager/context/service_context.h"
-#include "src/api_manager/method.h"
 #include "src/api_manager/service_control/info.h"
 
 namespace google {
