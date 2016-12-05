@@ -28,10 +28,10 @@
 
 #include <memory>
 
+#include "contrib/endpoints/include/api_manager/method_call_info.h"
 #include "google/api/service.pb.h"
 #include "google/protobuf/io/zero_copy_stream.h"
 #include "google/protobuf/stubs/status.h"
-#include "include/api_manager/method_call_info.h"
 #include "src/grpc/transcoding/transcoder.h"
 #include "src/grpc/transcoding/type_helper.h"
 

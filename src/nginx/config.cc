@@ -29,11 +29,11 @@
 #include <fcntl.h>
 #include <string>
 
+#include "contrib/endpoints/src/api_manager/proto/server_config.pb.h"
 #include "google/protobuf/text_format.h"
 #include "google/protobuf/util/json_util.h"
 #include "google/protobuf/util/type_resolver.h"
 #include "google/protobuf/util/type_resolver_util.h"
-#include "src/api_manager/proto/server_config.pb.h"
 #include "src/nginx/module.h"
 #include "src/nginx/status.h"
 #include "src/nginx/util.h"

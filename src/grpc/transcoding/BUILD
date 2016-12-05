@@ -63,8 +63,8 @@ cc_library(
         "type_helper.h",
     ],
     deps = [
+        "//external:api_manager",
         "//external:protobuf",
-        "//include:headers_only",
     ],
 )
 
@@ -160,8 +160,8 @@ cc_library(
         "transcoder_factory.cc",
     ],
     hdrs = [
-        "transcoder_factory.h",
         "transcoder.h",
+        "transcoder_factory.h",
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -169,8 +169,8 @@ cc_library(
         ":message_stream",
         ":response_to_json_translator",
         ":type_helper",
+        "//external:api_manager",
         "//external:protobuf",
-        "//include:headers_only",
         "//external:service_config",
     ],
 )

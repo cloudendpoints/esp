@@ -26,9 +26,9 @@
 //
 #include "src/grpc/proxy_flow.h"
 
+#include "contrib/endpoints/include/api_manager/utils/status.h"
 #include "grpc/grpc.h"
 #include "grpc/support/alloc.h"
-#include "include/api_manager/utils/status.h"
 
 extern "C" {
 #include "src/core/lib/security/util/b64.h"

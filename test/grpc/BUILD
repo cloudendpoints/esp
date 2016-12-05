@@ -95,7 +95,7 @@ cc_library(
     visibility = ["//visibility:private"],
     deps = [
         ":grpc-test_proto",
-        "//src/api_manager/utils",
+        "//external:api_manager_utils",
     ],
 )
 
@@ -106,7 +106,7 @@ cc_binary(
     deps = [
         ":client-test-lib",
         ":grpc-test_proto",
-        "//src/api_manager/utils",
+        "//external:api_manager_utils",
     ],
 )
 

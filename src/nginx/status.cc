@@ -29,8 +29,8 @@
 #include <unistd.h>
 #include <fstream>
 
-#include "include/api_manager/version.h"
-#include "src/api_manager/utils/marshalling.h"
+#include "contrib/endpoints/include/api_manager/version.h"
+#include "contrib/endpoints/src/api_manager/utils/marshalling.h"
 #include "src/nginx/environment.h"
 #include "src/nginx/module.h"
 #include "src/nginx/proto/status.pb.h"

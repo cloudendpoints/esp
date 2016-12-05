@@ -34,6 +34,53 @@ git_repository(
 
 load("@nginx//:build.bzl", "nginx_repositories")
 
+git_repository(
+    name = "istio_proxy_git",
+    commit = "2eb22f9dd8bf75a3624e78dfe72eadbc65a8a248",
+    remote = "https://github.com/istio/proxy",
+)
+
+bind(
+    name = "api_manager",
+    actual = "@istio_proxy_git//contrib/endpoints/include:api_manager",
+)
+
+bind(
+    name = "api_manager_version",
+    actual = "@istio_proxy_git//contrib/endpoints/include:version",
+)
+
+bind(
+    name = "api_manager_status_proto",
+    actual = "@istio_proxy_git//contrib/endpoints/src/api_manager:status_proto",
+)
+
+bind(
+    name = "api_manager_status_proto_genproto",
+    actual = "@istio_proxy_git//contrib/endpoints/src/api_manager:status_proto_genproto",
+)
+
+bind(
+    name = "api_manager_auth_lib",
+    actual = "@istio_proxy_git//contrib/endpoints/src/api_manager/auth/lib",
+)
+
+bind(
+    name = "api_manager_utils",
+    actual = "@istio_proxy_git//contrib/endpoints/src/api_manager/utils",
+)
+
+git_repository(
+    name = "servicecontrol_client_git",
+    commit = "d739d755365c6a13d0b4164506fd593f53932f5d",
+    remote = "https://github.com/cloudendpoints/service-control-client-cxx.git",
+)
+
+bind(
+    name = "servicecontrol_client",
+    actual = "@servicecontrol_client_git//:service_control_client_lib",
+)
+
 nginx_repositories(
     bind = True,
     nginx = "@nginx//",

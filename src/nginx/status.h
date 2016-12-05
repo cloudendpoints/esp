@@ -28,7 +28,7 @@
 
 #include <chrono>
 
-#include "include/api_manager/api_manager.h"
+#include "contrib/endpoints/include/api_manager/api_manager.h"
 
 extern "C" {
 #include "src/http/ngx_http.h"
