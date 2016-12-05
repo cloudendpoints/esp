@@ -29,9 +29,9 @@
 #include <memory>
 #include <mutex>
 
+#include "contrib/endpoints/include/api_manager/utils/status.h"
 #include "grpc++/generic/async_generic_service.h"
 #include "grpc++/generic/generic_stub.h"
-#include "include/api_manager/utils/status.h"
 #include "src/grpc/async_grpc_queue.h"
 #include "src/grpc/server_call.h"
 

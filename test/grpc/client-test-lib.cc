@@ -39,8 +39,8 @@
 #include <grpc++/alarm.h>
 #include <grpc++/grpc++.h>
 
+#include "contrib/endpoints/src/api_manager/utils/marshalling.h"
 #include "google/protobuf/util/message_differencer.h"
-#include "src/api_manager/utils/marshalling.h"
 
 using ::google::api::servicecontrol::v1::ReportRequest;
 using ::google::protobuf::util::MessageDifferencer;

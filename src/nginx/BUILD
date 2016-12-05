@@ -34,8 +34,8 @@ cc_proto_library(
     default_runtime = "//external:protobuf",
     protoc = "//external:protoc",
     deps = [
+        "//external:api_manager_status_proto",
         "//external:cc_wkt_protos",
-        "//src/api_manager:status_proto",
     ],
 )
 
@@ -82,14 +82,14 @@ cc_library(
     visibility = [":__subpackages__"],
     deps = [
         ":status_proto",
+        "//external:api_manager",
         "//external:grpc",
         "//external:grpc++",
         "//external:protobuf",
-        "//include:api_manager",
-        "//src/grpc",
-        "//src/grpc/transcoding:transcoding",
-        "//src/grpc:zero_copy_stream",
         "//external:servicecontrol",
+        "//src/grpc",
+        "//src/grpc:zero_copy_stream",
+        "//src/grpc/transcoding",
         "//third_party/nginx:core",
         "//third_party/nginx:http",
     ],

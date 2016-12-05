@@ -31,7 +31,7 @@ cc_binary(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//include:api_manager",
+        "//external:api_manager",
         "//external:service_config",
         "//external:servicecontrol",
     ],
@@ -44,7 +44,7 @@ cc_binary(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//src/api_manager/auth/lib",
+        "//external:api_manager_auth_lib",
     ],
 )
 
@@ -55,7 +55,7 @@ cc_binary(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//include:api_manager",
+        "//external:api_manager",
         "//external:servicecontrol",
     ],
 )
@@ -66,7 +66,7 @@ cc_binary(
         "proto_pass_perf.cc",
     ],
     deps = [
-        "//include:api_manager",
-        "//third_party/service-control-client-cxx:service_control_client_lib",
+        "//external:api_manager",
+        "//external:servicecontrol_client",
     ],
 )

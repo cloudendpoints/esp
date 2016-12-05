@@ -30,9 +30,9 @@
 #include <memory>
 #include <vector>
 
+#include "contrib/endpoints/include/api_manager/utils/status.h"
 #include "google/protobuf/io/zero_copy_stream.h"
 #include "grpc++/support/byte_buffer.h"
-#include "include/api_manager/utils/status.h"
 
 extern "C" {
 #include "third_party/nginx/src/http/ngx_http.h"

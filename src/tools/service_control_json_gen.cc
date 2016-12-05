@@ -31,10 +31,10 @@
 #include <fstream>
 #include <iostream>
 
+#include "contrib/endpoints/src/api_manager/service_control/proto.h"
+#include "contrib/endpoints/src/api_manager/utils/marshalling.h"
 #include "google/protobuf/io/zero_copy_stream_impl.h"
 #include "google/protobuf/text_format.h"
-#include "src/api_manager/service_control/proto.h"
-#include "src/api_manager/utils/marshalling.h"
 
 const char* const DEFAULT_SERVICE_NAME =
     "endpoints-test.cloudendpointsapis.com";

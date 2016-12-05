@@ -30,7 +30,7 @@ extern "C" {
 #include "third_party/nginx/src/http/ngx_http.h"
 }
 
-#include "include/api_manager/response.h"
+#include "contrib/endpoints/include/api_manager/response.h"
 
 namespace google {
 namespace api_manager {
