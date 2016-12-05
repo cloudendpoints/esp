@@ -34,6 +34,11 @@ git_repository(
 
 load("@nginx//:build.bzl", "nginx_repositories")
 
+nginx_repositories(
+    bind = True,
+    nginx = "@nginx//",
+)
+
 git_repository(
     name = "istio_proxy_git",
     commit = "2eb22f9dd8bf75a3624e78dfe72eadbc65a8a248",
@@ -79,11 +84,6 @@ git_repository(
 bind(
     name = "servicecontrol_client",
     actual = "@servicecontrol_client_git//:service_control_client_lib",
-)
-
-nginx_repositories(
-    bind = True,
-    nginx = "@nginx//",
 )
 
 # Required by gRPC.

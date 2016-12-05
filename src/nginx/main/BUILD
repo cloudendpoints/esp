@@ -284,7 +284,7 @@ pkg_deb(
     prerm = "@nginx_pkgoss//:debian_prerm",
     priority = "extra",
     section = "httpd",
-    version_file = "//external:api_manager_version",
+    version_file = "//include:version",
 )
 
 sh_test(
