@@ -73,6 +73,8 @@ genrule(
     srcs = [
         "@protobuf_git//:well_known_protos",
         "@grpc_git//:src/proto/grpc/testing/test.proto",
+        "@grpc_git//:src/proto/grpc/testing/empty.proto",
+        "@grpc_git//:src/proto/grpc/testing/messages.proto",
     ],
     outs = ["grpc-interop.descriptor"],
     cmd = """$(location //external:protoc) \
