@@ -90,7 +90,7 @@ cc_library(
         "//src/grpc/transcoding:transcoding",
         "//src/grpc:zero_copy_stream",
         "//external:servicecontrol",
-        "//third_party/nginx:core",
-        "//third_party/nginx:http",
+        "@nginx//:core",
+        "@nginx//:http",
     ],
 )

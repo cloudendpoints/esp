@@ -29,8 +29,8 @@
 #include "include/api_manager/api_manager.h"
 
 extern "C" {
-#include "third_party/nginx/src/core/ngx_core.h"
-#include "third_party/nginx/src/http/ngx_http.h"
+#include "src/core/ngx_core.h"
+#include "src/http/ngx_http.h"
 }
 
 #include "src/nginx/grpc_queue.h"

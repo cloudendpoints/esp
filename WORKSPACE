@@ -26,11 +26,17 @@
 #
 # A Bazel (http://bazel.io) workspace for the Google Cloud Endpoints runtime.
 
-load("//third_party/nginx:build.bzl", "nginx_repositories")
+git_repository(
+    name = "nginx",
+    commit = "cfce863dbe786e61e0e7a33376906b337da70c19",
+    remote = "https://nginx.googlesource.com/nginx",
+)
+
+load("@nginx//:build.bzl", "nginx_repositories")
 
 nginx_repositories(
     bind = True,
-    nginx = "@//third_party/nginx",
+    nginx = "@nginx//",
 )
 
 # Required by gRPC.

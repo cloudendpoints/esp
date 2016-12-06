@@ -30,8 +30,8 @@
 #include <string>
 
 extern "C" {
-#include "third_party/nginx/src/http/ngx_http.h"
-#include "third_party/nginx/src/http/v2/ngx_http_v2_module.h"
+#include "src/http/ngx_http.h"
+#include "src/http/v2/ngx_http_v2_module.h"
 }
 
 #include "src/nginx/module.h"

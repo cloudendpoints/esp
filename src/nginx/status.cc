@@ -36,8 +36,8 @@
 #include "src/nginx/proto/status.pb.h"
 
 extern "C" {
-#include "third_party/nginx/src/core/ngx_string.h"
-#include "third_party/nginx/src/http/ngx_http_request.h"
+#include "src/core/ngx_string.h"
+#include "src/http/ngx_http_request.h"
 }
 
 namespace google {
