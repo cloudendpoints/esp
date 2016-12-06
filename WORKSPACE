@@ -83,6 +83,17 @@ bind(
     actual = "@grpc_git//:grpc++_reflection",
 )
 
+# Workaround for Bazel > 0.4.0 since it needs newer protobuf.bzl from:
+# https://github.com/google/protobuf/pull/2246
+# Do not use this git_repository for anything else than protobuf.bzl
+new_git_repository(
+    name = "protobuf_bzl",
+    commit = "05090726144b6e632c50f47720ff51049bfcbef6",
+    remote = "https://github.com/google/protobuf.git",
+    # Injecting an empty BUILD file to prevent using any build target
+    build_file_content = "",
+)
+
 git_repository(
     name = "protobuf_git",
     commit = "a428e42072765993ff674fda72863c9f1aa2d268",  # v3.1.0
