@@ -80,7 +80,7 @@ set -x
 VERSION="$(command cat ${ROOT}/include/version)" \
   || error_exit "Cannot find release version (${ROOT}/include/version)"
 CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
-if RELEASE_BRANCH_SHA="$(git rev-parse origin/${CURRENT_BRANCH})"; then
+if RELEASE_BRANCH_SHA="$(git rev-parse upstream/${CURRENT_BRANCH})"; then
   if [[ "${SHA}" != "${RELEASE_BRANCH_SHA}" ]]; then
     printf "\e[31m
 WARNING: Release branch commit (${RELEASE_BRANCH_SHA}) doesn't match ${SHA}.
@@ -100,7 +100,7 @@ function push_docker_image() {
     || { echo "Could not tag ${source_image} to ${target_image}."; return 1; }
 
   echo "Pushing ${target_image} to Cloud Container Registry."
-  "${GCLOUD}" docker push "${target_image}" \
+  "${GCLOUD}" docker -- push "${target_image}" \
     || { echo "Cloud Container Registry push of ${target_image} failed."; return 1; }
 
   return 0;
