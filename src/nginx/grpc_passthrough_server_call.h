@@ -31,7 +31,7 @@
 #include <vector>
 
 extern "C" {
-#include "third_party/nginx/src/http/ngx_http.h"
+#include "src/http/ngx_http.h"
 }
 
 #include "grpc++/support/byte_buffer.h"

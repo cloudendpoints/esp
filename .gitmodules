@@ -1,7 +1,3 @@
-[submodule "third_party/nginx"]
-	path = third_party/nginx
-	url = https://nginx.googlesource.com/nginx
-	ignore = untracked
 [submodule "third_party/nginx-tests"]
 	path = third_party/nginx-tests
 	url = https://nginx.googlesource.com/nginx-tests

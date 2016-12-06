@@ -27,7 +27,7 @@
 #define NGINX_NGX_ESP_GRPC_SERVER_CALL_H_
 
 extern "C" {
-#include "third_party/nginx/src/http/ngx_http.h"
+#include "src/http/ngx_http.h"
 }
 
 #include "src/grpc/server_call.h"
