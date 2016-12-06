@@ -40,7 +40,7 @@ exports_files(["LICENSE"])
 
 package(default_visibility = ["//visibility:public"])
 
-load("//third_party/protobuf:protobuf.bzl", "cc_proto_library")
+load("@protobuf_bzl//:protobuf.bzl", "cc_proto_library")
 
 cc_proto_library(
   name = "testing_messages_proto",

@@ -24,7 +24,7 @@
 #
 ################################################################################
 #
-load("@protobuf_git//:protobuf.bzl", "cc_proto_library")
+load("@protobuf_bzl//:protobuf.bzl", "cc_proto_library")
 
 cc_proto_library(
     name = "status_proto",
