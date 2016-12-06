@@ -1,14 +1,13 @@
 # Release 1.0.1 06-12-2016
 
-- Use GOOGLE_APPLICATION_CREDENTIALS in start-up script (#22)
-- service_control_client not to send large Report (<1MB). (#29)
-- Add max_report_size to statistics.
-- Package start-up script with Python PEX (#31)
+- Use GOOGLE_APPLICATION_CREDENTIALS in start-up script
+- service_control_client not to send large Report (<1MB)
+- Add max_report_size to statistics
+- Package start-up script with Python PEX
 - ESP CLI use same version for ESP docker image
 - A workaround for Proto2.MessageOptions.* options
-- Not call Check if api_key not provided.
-- Update grpc to contain RST_STREAM fix for cancellation
-- Respect allow_cors configuration.
+- Not call Check if api_key not provided
+- Respect allow_cors configuration
 - Log a warning if service control replies with a different service config
 
 # Release 1.0.0 11-11-2016
