@@ -407,7 +407,7 @@ def espDebianPackage() {
 
 def getEndpointsRuntimeVersion() {
   // Need to checkoutSourceCode() first
-  return readFile('include/version').trim()
+  return readFile('src/nginx/version').trim()
 }
 
 /*
