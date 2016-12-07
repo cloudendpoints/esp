@@ -309,6 +309,7 @@ pex_binary(
         "fetch_service_config.py",
         "start_esp.py",
     ],
+    main = "start_esp.py",
     reqs = [
         "certifi",
         "mako>=1.0.4",
