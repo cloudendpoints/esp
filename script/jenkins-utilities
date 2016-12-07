@@ -300,6 +300,11 @@ function save_vm_logs() {
   set_ssh_private_key
   [[ ${?} -eq 0 ]] || { echo 'Failed to download SSH private key'; return 1; }
 
+  # For GCE, remove huge access log before tar
+  ssh -i "${SSH_PRIVATE_KEY}" \
+    -o StrictHostKeyChecking=no \
+    "${vm}" sudo rm /var/log/nginx/access.log
+
   ssh -i "${SSH_PRIVATE_KEY}" \
     -o StrictHostKeyChecking=no \
     "${vm}" sudo tar czf - /var/log/ > "${tar_file}"
