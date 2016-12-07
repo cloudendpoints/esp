@@ -77,8 +77,8 @@ which rapture > /dev/null 2>&1 \
 
 set -x
 
-VERSION="$(command cat ${ROOT}/include/version)" \
-  || error_exit "Cannot find release version (${ROOT}/include/version)"
+VERSION="$(command cat ${ROOT}/src/nginx/version)" \
+  || error_exit "Cannot find release version (${ROOT}/src/nginx/version)"
 CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 if RELEASE_BRANCH_SHA="$(git rev-parse upstream/${CURRENT_BRANCH})"; then
   if [[ "${SHA}" != "${RELEASE_BRANCH_SHA}" ]]; then

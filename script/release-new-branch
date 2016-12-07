@@ -67,7 +67,7 @@ done
   || usage "Please provide the release SHA."
 
 CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
-VERSION="$(command cat ${ROOT}/include/version)"
+VERSION="$(command cat ${ROOT}/src/nginx/version)"
 # If version name is 1.0.0, the release branch name is: v1.0.x
 RELEASE_BRANCH=v${VERSION%.0}.x
 echo "Current branch: ${CURRENT_BRANCH}."
@@ -84,8 +84,8 @@ git push origin ${SHA}:refs/heads/${RELEASE_BRANCH} \
 
 # Update the version number and push for review.
 git checkout origin/master
-echo "${NEXT_VERSION}" > ${ROOT}/include/version
-git add ${ROOT}/include/version
+echo "${NEXT_VERSION}" > ${ROOT}/src/nginx/version
+git add ${ROOT}/src/nginx/version
 git commit -m "Update version number to ${NEXT_VERSION}."
 git push origin HEAD:refs/for/refs/heads/master
 

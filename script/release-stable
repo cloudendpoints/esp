@@ -71,7 +71,7 @@ which rapture > /dev/null 2>&1 \
 
 set -x
 
-VERSION="$(command cat ${ROOT}/include/version)"
+VERSION="$(command cat ${ROOT}/src/nginx/version)"
 # Minor base is 1.0  if version is 1.0.0
 MINOR_BASE_VERSION=${VERSION%.*}
 # Major base is 1  if version is 1.0.0

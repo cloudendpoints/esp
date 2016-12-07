@@ -81,7 +81,7 @@ if [[ "${SKIP_TESTS}" == 'false' ]]; then
     || error_exit 'Failed release tests.'
 fi
 
-read ENDPOINTS_RUNTIME_VERSION < ${ROOT}/include/version
+read ENDPOINTS_RUNTIME_VERSION < ${ROOT}/src/nginx/version
 BAZEL_VERSION="$(${BAZEL} ${BAZEL_ARGS} version \
   | grep '^Build label: ' | sed 's/^Build label: //')"
 echo "Bazel ${BAZEL_VERSION}" > "${ROOT}/src/nginx/main/built_using"

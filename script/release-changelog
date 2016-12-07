@@ -58,7 +58,7 @@ done
 [[ "${SHA}" =~ ^[0-9a-f]{40}$ ]] || usage "Invalid SHA: ${SHA}."
 [[ -n "${LAST_COMMIT}" ]] || usage "Must provide last commit sha or tag via '-l' parameter."
 
-VERSION=$(command cat ${ROOT}/include/version) \
+VERSION=$(command cat ${ROOT}/src/nginx/version) \
   || error_exit "Cannot determine release version."
 
 echo "The change logs from last commit: ${LAST_COMMIT}"
