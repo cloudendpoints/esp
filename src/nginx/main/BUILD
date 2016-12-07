@@ -22,7 +22,7 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 #
-################################################################################
+###############################################################################
 #
 cc_binary(
     name = "nginx-google",
@@ -149,13 +149,14 @@ genrule(
     srcs = [
         "//:LICENSE",
         "@nginx//:LICENSE",
-        "//third_party/service-control-client-cxx:LICENSE",
         "@boringssl//:LICENSE",
         "@grpc_git//:LICENSE",
         "@nanopb_git//:LICENSE.txt",
         "@nginx_pcre//:LICENCE",
         "@nginx_zlib//:README",
         "@protobuf_git//:LICENSE",
+        "@istio_proxy_git//:LICENSE",
+        "@servicecontrol_client_git//:LICENSE",
     ],
     outs = [
         "copyright",
@@ -164,7 +165,7 @@ genrule(
           "echo \"\n\" >> $(@);" +
           "echo \"This NGINX binary is statically linked against:\" >> $(@);" +
           "echo \"BoringSSL, gRPC, Nanopb, PCRE, Protocol Buffers," +
-          " Service Control Client & zlib.\" >> $(@);" +
+          " Istio Proxy, Service Control Client & zlib.\" >> $(@);" +
           "echo \"\n\nBoringSSL license:\n==================\n\" >> $(@);" +
           "cat $(location @boringssl//:LICENSE) >> $(@);" +
           "echo \"\n\ngRPC license:\n=============\n\" >> $(@);" +
@@ -178,10 +179,12 @@ genrule(
           "echo \"\n\nProtocol Buffers license:\" >> $(@);" +
           "echo \"=========================\n\" >> $(@);" +
           "cat $(location @protobuf_git//:LICENSE) >> $(@);" +
+          "echo \"\n\nIstio Proxy license:\" >> $(@);" +
+          "echo \"=========================\n\" >> $(@);" +
+          "cat $(location @istio_proxy_git//:LICENSE) >> $(@);" +
           "echo \"\n\nService Control Client license:\" >> $(@);" +
-          "echo \"===============================\n\" >> $(@);" +
-          "cat $(location //third_party/service-control-client-cxx:LICENSE)" +
-          " >> $(@);" +
+          "echo \"=========================\n\" >> $(@);" +
+          "cat $(location @servicecontrol_client_git//:LICENSE) >> $(@);" +
           "echo \"\n\nzlib license:\n=============\n\" >> $(@);" +
           "cat $(location @nginx_zlib//:README) | grep -A99 Copyright >> $(@)",
 )
@@ -303,15 +306,16 @@ load("@io_bazel_rules_pex//pex:pex_rules.bzl", "pex_binary")
 pex_binary(
     name = "start_esp",
     srcs = [
-      "start_esp.py",
-      "fetch_service_config.py",
+        "fetch_service_config.py",
+        "start_esp.py",
     ],
+    main = "start_esp.py",
     reqs = [
-      "certifi",
-      "mako>=1.0.4",
-      "oauth2client>=3.0.0",
-      "pyasn1>=0.1.9",
-      "pyasn1-modules>=0.0.8",
-      "urllib3>=1.16",
+        "certifi",
+        "mako>=1.0.4",
+        "oauth2client>=3.0.0",
+        "pyasn1>=0.1.9",
+        "pyasn1-modules>=0.0.8",
+        "urllib3>=1.16",
     ],
 )

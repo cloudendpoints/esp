@@ -29,12 +29,12 @@
 #include <string>
 #include <vector>
 
+#include "contrib/endpoints/include/api_manager/method.h"
+#include "contrib/endpoints/include/api_manager/method_call_info.h"
 #include "google/protobuf/io/zero_copy_stream.h"
 #include "google/protobuf/stubs/strutil.h"
 #include "google/protobuf/util/message_differencer.h"
 #include "gtest/gtest.h"
-#include "include/api_manager/method.h"
-#include "include/api_manager/method_call_info.h"
 #include "src/grpc/transcoding/bookstore.pb.h"
 #include "src/grpc/transcoding/message_reader.h"
 #include "src/grpc/transcoding/test_common.h"

@@ -236,8 +236,7 @@ def presubmit(nodeLabel) {
       },
       'build-and-test': {
         node(nodeLabel) {
-          presubmitTests('service-control')
-          presubmitTests('build-and-test', false)
+          presubmitTests('build-and-test')
         }
       },
       'release': {

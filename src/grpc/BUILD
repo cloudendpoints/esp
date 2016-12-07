@@ -38,11 +38,11 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "//external:api_manager",
         "//external:grpc",
         "//external:grpc++",
         "//external:protobuf",
         "//external:servicecontrol",
-        "//include:headers_only",
     ],
 )
 

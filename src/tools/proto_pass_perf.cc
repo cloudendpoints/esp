@@ -32,10 +32,10 @@
 #include <memory>
 #include <string>
 
+#include "contrib/endpoints/src/api_manager/service_control/info.h"
+#include "contrib/endpoints/src/api_manager/service_control/proto.h"
 #include "google/protobuf/text_format.h"
-#include "src/api_manager/service_control/info.h"
-#include "src/api_manager/service_control/proto.h"
-#include "third_party/service-control-client-cxx/include/service_control_client.h"
+#include "include/service_control_client.h"
 
 using google::api_manager::service_control::OperationInfo;
 using google::api_manager::service_control::ReportRequestInfo;

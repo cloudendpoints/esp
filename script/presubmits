@@ -41,18 +41,6 @@ function check_files() {
     || { echo 'Code style check failed.'; return 1; }
 }
 
-function test_service_control() {
-  echo 'Building, running integration tests for Service Control'
-  pushd "${ROOT}/third_party/service-control-client-cxx"
-  dirs
-
-  retry -n 3 ${BAZEL} ${BAZEL_ARGS} fetch :all \
-    && retry -n 2 ${BAZEL} ${BAZEL_ARGS} build ${BAZEL_BUILD_ARGS} :all \
-    && ${BAZEL} ${BAZEL_ARGS} test --test_output=errors :all \
-    || { echo 'Failed to run service control tests'; return 1; }
-  popd
-}
-
 function build_and_test() {
   local config="${1}"
   local config_flag=''
