@@ -148,15 +148,14 @@ go_library(
     ],
 )
 
-
 genrule(
     name = "vendor/version.go",
-    srcs = ["//include:version"],
+    srcs = ["//src/nginx:version"],
     outs = ["version/version.go"],
     cmd = """
     cat <<EOF > $@
 package version
-const Version = "$$(cat $(location //include:version))"
+const Version = "$$(cat $(location //src/nginx:version))"
 EOF
     """,
 )
@@ -164,25 +163,25 @@ EOF
 go_library(
     name = "vendor/version",
     srcs = ["version/version.go"],
-    go_prefix="//tools/src:go_prefix",
+    go_prefix = "//tools/src:go_prefix",
 )
 
 go_library(
     name = "vendor/deploy",
     srcs = [
-        "deploy/service.go",
         "deploy/default_service_config.go",
+        "deploy/service.go",
     ],
     go_prefix = "//tools/src:go_prefix",
     deps = [
         ":vendor/google/api",
-        "@golang_oauth2//:oauth2/google",
-        "@golang_oauth2//:oauth2/jwt",
-        "@github_com_x_net//:context",
-        "@google_api_go_client//:servicemanagement/v1",
         "@github_com_golang_protobuf//:jsonpb",
         "@github_com_golang_protobuf//:proto",
+        "@github_com_x_net//:context",
         "@go_yaml//:yaml.v2",
+        "@golang_oauth2//:oauth2/google",
+        "@golang_oauth2//:oauth2/jwt",
+        "@google_api_go_client//:servicemanagement/v1",
     ],
 )
 
@@ -196,17 +195,17 @@ go_library(
         ":vendor/deploy",
         ":vendor/utils",
         ":vendor/version",
-        "@google_api_go_client//:logging/v2beta1",
-        "@golang_oauth2//:oauth2/google",
-        "@github_com_x_net//:context",
-        "@github_com_spf13_cobra//:cobra",
         "@github_com_kubernetes_client_go//:kubernetes",
-        "@github_com_kubernetes_client_go//:pkg/labels",
-        "@github_com_kubernetes_client_go//:tools/clientcmd",
         "@github_com_kubernetes_client_go//:pkg/api",
         "@github_com_kubernetes_client_go//:pkg/api/v1",
-        "@github_com_kubernetes_client_go//:pkg/util/intstr",
         "@github_com_kubernetes_client_go//:pkg/apis/extensions/v1beta1",
+        "@github_com_kubernetes_client_go//:pkg/labels",
+        "@github_com_kubernetes_client_go//:pkg/util/intstr",
+        "@github_com_kubernetes_client_go//:tools/clientcmd",
+        "@github_com_spf13_cobra//:cobra",
+        "@github_com_x_net//:context",
+        "@golang_oauth2//:oauth2/google",
+        "@google_api_go_client//:logging/v2beta1",
     ],
 )
 
@@ -221,23 +220,23 @@ go_library(
         "controller/queue.go",
         "controller/utils.go",
     ],
+    data = [
+        "controller/nginx.tmpl",
+    ],
     go_prefix = "//tools/src:go_prefix",
     deps = [
         ":vendor/deploy",
         ":vendor/utils",
+        "@github_com_golang_glog//:glog",
         "@github_com_kubernetes_client_go//:kubernetes",
-        "@github_com_kubernetes_client_go//:tools/cache",
         "@github_com_kubernetes_client_go//:pkg/api",
         "@github_com_kubernetes_client_go//:pkg/api/v1",
         "@github_com_kubernetes_client_go//:pkg/apis/extensions/v1beta1",
-        "@github_com_kubernetes_client_go//:pkg/watch",
         "@github_com_kubernetes_client_go//:pkg/runtime",
         "@github_com_kubernetes_client_go//:pkg/util/flowcontrol",
         "@github_com_kubernetes_client_go//:pkg/util/intstr",
-        "@github_com_golang_glog//:glog",
-    ],
-    data = [
-        "controller/nginx.tmpl",
+        "@github_com_kubernetes_client_go//:pkg/watch",
+        "@github_com_kubernetes_client_go//:tools/cache",
     ],
 )
 
@@ -262,8 +261,8 @@ go_binary(
     go_prefix = "//tools/src:go_prefix",
     deps = [
         ":vendor/deploy",
-        "@google_api_go_client//:servicemanagement/v1",
         "@github_com_spf13_cobra//:cobra",
+        "@google_api_go_client//:servicemanagement/v1",
     ],
 )
 
@@ -278,14 +277,13 @@ go_binary(
     go_prefix = "//tools/src:go_prefix",
     deps = [
         ":vendor/controller",
+        "@github_com_golang_glog//:glog",
         "@github_com_kubernetes_client_go//:kubernetes",
         "@github_com_kubernetes_client_go//:pkg/api",
         "@github_com_kubernetes_client_go//:rest",
         "@github_com_kubernetes_client_go//:tools/clientcmd",
-        "@github_com_golang_glog//:glog",
     ],
 )
-
 
 go_binary(
     name = "fakes_server",
@@ -318,7 +316,7 @@ go_library(
         "utils/test_env_path.go",
     ],
     data = [
-        "//include:version",
+        "//src/nginx:version",
         "//src/nginx/t:testdata/logs_metrics.pb.txt",
         "//src/tools:auth_token_gen",
     ],
@@ -333,16 +331,16 @@ go_library(
 
 go_test(
     name = "config_test",
-    tags = ["exclusive"],
     srcs = ["controller/config_test.go"],
     data = [
-        "//src/nginx/main:nginx-esp",
         ":controller/nginx.tmpl",
         ":testdata/credentials.json",
-        ":testdata/nginx.key",
         ":testdata/nginx.crt",
+        ":testdata/nginx.key",
+        "//src/nginx/main:nginx-esp",
     ],
     go_prefix = "//tools/src:go_prefix",
+    tags = ["exclusive"],
     deps = [
         ":vendor/controller",
         ":vendor/utils",
