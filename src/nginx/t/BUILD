@@ -144,6 +144,23 @@ nginx_suite(
 )
 
 nginx_suite(
+    size = "small",
+    data = [
+        "//test/grpc:grpc-test-client",
+        "//test/grpc:grpc-test-server",
+        "//test/grpc:interop-client",
+        "//test/grpc:interop-server",
+    ],
+    nginx = "//src/nginx/main:nginx-esp",
+    tests = [
+        "grpc_multi_service.t",
+    ],
+    deps = [
+        ":perl_library",
+    ],
+)
+
+nginx_suite(
     size = "medium",
     data = [
         "//test/grpc:grpc-test-client",
