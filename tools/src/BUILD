@@ -53,8 +53,8 @@ go_library(
     ),
     go_prefix = "//tools/src:go_prefix",
     deps = [
-        "@github_com_golang_protobuf//:proto",
-        "@github_com_golang_protobuf//:ptypes/any",
+        "@com_github_golang_protobuf//proto:go_default_library",
+        "@com_github_golang_protobuf//ptypes/any:go_default_library",
     ],
 )
 
@@ -66,10 +66,10 @@ go_library(
     go_prefix = "//tools/src:go_prefix",
     deps = [
         ":vendor/google/protobuf",
-        "@github_com_golang_protobuf//:proto",
-        "@github_com_golang_protobuf//:ptypes/any",
-        "@github_com_golang_protobuf//:ptypes/timestamp",
-        "@github_com_golang_protobuf//:ptypes/wrappers",
+        "@com_github_golang_protobuf//proto:go_default_library",
+        "@com_github_golang_protobuf//ptypes/any:go_default_library",
+        "@com_github_golang_protobuf//ptypes/timestamp:go_default_library",
+        "@com_github_golang_protobuf//ptypes/wrappers:go_default_library",
     ],
 )
 
@@ -81,9 +81,9 @@ go_library(
     go_prefix = "//tools/src:go_prefix",
     deps = [
         ":vendor/google/protobuf",
-        "@github_com_golang_protobuf//:proto",
-        "@github_com_golang_protobuf//:ptypes/any",
-        "@github_com_golang_protobuf//:ptypes/duration",
+        "@com_github_golang_protobuf//proto:go_default_library",
+        "@com_github_golang_protobuf//ptypes/any:go_default_library",
+        "@com_github_golang_protobuf//ptypes/duration:go_default_library",
     ],
 )
 
@@ -95,7 +95,7 @@ go_library(
     go_prefix = "//tools/src:go_prefix",
     deps = [
         ":vendor/google/protobuf",
-        "@github_com_golang_protobuf//:proto",
+        "@com_github_golang_protobuf//proto:go_default_library",
     ],
 )
 
@@ -106,7 +106,7 @@ go_library(
     ),
     go_prefix = "//tools/src:go_prefix",
     deps = [
-        "@github_com_golang_protobuf//:proto",
+        "@com_github_golang_protobuf//proto:go_default_library",
     ],
 )
 
@@ -125,11 +125,11 @@ go_library(
         ":vendor/google/protobuf",
         ":vendor/google/rpc",
         ":vendor/google/type",
-        "@github_com_golang_protobuf//:jsonpb",
-        "@github_com_golang_protobuf//:proto",
-        "@github_com_golang_protobuf//:ptypes/any",
-        "@github_com_golang_protobuf//:ptypes/struct",
-        "@github_com_golang_protobuf//:ptypes/timestamp",
+        "@com_github_golang_protobuf//jsonpb:go_default_library",
+        "@com_github_golang_protobuf//proto:go_default_library",
+        "@com_github_golang_protobuf//ptypes/any:go_default_library",
+        "@com_github_golang_protobuf//ptypes/struct:go_default_library",
+        "@com_github_golang_protobuf//ptypes/timestamp:go_default_library",
     ],
 )
 
@@ -144,7 +144,7 @@ go_library(
     go_prefix = "//tools/src:go_prefix",
     deps = [
         "//tools/src:vendor/google/api/servicecontrol/v1",
-        "@github_com_golang_protobuf//:proto",
+        "@com_github_golang_protobuf//proto:go_default_library",
     ],
 )
 
@@ -176,13 +176,13 @@ go_library(
     go_prefix = "//tools/src:go_prefix",
     deps = [
         ":vendor/google/api",
-        "@golang_oauth2//:oauth2/google",
-        "@golang_oauth2//:oauth2/jwt",
-        "@github_com_x_net//:context",
-        "@google_api_go_client//:servicemanagement/v1",
-        "@github_com_golang_protobuf//:jsonpb",
-        "@github_com_golang_protobuf//:proto",
-        "@go_yaml//:yaml.v2",
+        "@org_golang_x_oauth2//google:go_default_library",
+        "@org_golang_x_oauth2//jwt:go_default_library",
+        "@org_golang_x_net//context:go_default_library",
+        "@org_golang_google_api//servicemanagement/v1:go_default_library",
+        "@com_github_golang_protobuf//jsonpb:go_default_library",
+        "@com_github_golang_protobuf//proto:go_default_library",
+        "@in_gopkg_yaml_v2//:go_default_library",
     ],
 )
 
@@ -196,17 +196,17 @@ go_library(
         ":vendor/deploy",
         ":vendor/utils",
         ":vendor/version",
-        "@google_api_go_client//:logging/v2beta1",
-        "@golang_oauth2//:oauth2/google",
-        "@github_com_x_net//:context",
-        "@github_com_spf13_cobra//:cobra",
-        "@github_com_kubernetes_client_go//:kubernetes",
-        "@github_com_kubernetes_client_go//:pkg/labels",
-        "@github_com_kubernetes_client_go//:tools/clientcmd",
-        "@github_com_kubernetes_client_go//:pkg/api",
-        "@github_com_kubernetes_client_go//:pkg/api/v1",
-        "@github_com_kubernetes_client_go//:pkg/util/intstr",
-        "@github_com_kubernetes_client_go//:pkg/apis/extensions/v1beta1",
+        "@org_golang_google_api//logging/v2beta1:go_default_library",
+        "@org_golang_x_oauth2//google:go_default_library",
+        "@org_golang_x_net//context:go_default_library",
+        "@com_github_spf13_cobra//:go_default_library",
+        "@io_k8s_client_go//1.5/kubernetes:go_default_library",
+        "@io_k8s_client_go//1.5/pkg/labels:go_default_library",
+        "@io_k8s_client_go//1.5/tools/clientcmd:go_default_library",
+        "@io_k8s_client_go//1.5/pkg/api:go_default_library",
+        "@io_k8s_client_go//1.5/pkg/api/v1:go_default_library",
+        "@io_k8s_client_go//1.5/pkg/util/intstr:go_default_library",
+        "@io_k8s_client_go//1.5/pkg/apis/extensions/v1beta1:go_default_library",
     ],
 )
 
@@ -225,16 +225,16 @@ go_library(
     deps = [
         ":vendor/deploy",
         ":vendor/utils",
-        "@github_com_kubernetes_client_go//:kubernetes",
-        "@github_com_kubernetes_client_go//:tools/cache",
-        "@github_com_kubernetes_client_go//:pkg/api",
-        "@github_com_kubernetes_client_go//:pkg/api/v1",
-        "@github_com_kubernetes_client_go//:pkg/apis/extensions/v1beta1",
-        "@github_com_kubernetes_client_go//:pkg/watch",
-        "@github_com_kubernetes_client_go//:pkg/runtime",
-        "@github_com_kubernetes_client_go//:pkg/util/flowcontrol",
-        "@github_com_kubernetes_client_go//:pkg/util/intstr",
-        "@github_com_golang_glog//:glog",
+        "@io_k8s_client_go//1.5/kubernetes:go_default_library",
+        "@io_k8s_client_go//1.5/tools/cache:go_default_library",
+        "@io_k8s_client_go//1.5/pkg/api:go_default_library",
+        "@io_k8s_client_go//1.5/pkg/api/v1:go_default_library",
+        "@io_k8s_client_go//1.5/pkg/apis/extensions/v1beta1:go_default_library",
+        "@io_k8s_client_go//1.5/pkg/watch:go_default_library",
+        "@io_k8s_client_go//1.5/pkg/runtime:go_default_library",
+        "@io_k8s_client_go//1.5/pkg/util/flowcontrol:go_default_library",
+        "@io_k8s_client_go//1.5/pkg/util/intstr:go_default_library",
+        "@com_github_golang_glog//:go_default_library",
     ],
     data = [
         "controller/nginx.tmpl",
@@ -250,7 +250,7 @@ go_binary(
     deps = [
         ":vendor/cli",
         ":vendor/version",
-        "@github_com_spf13_cobra//:cobra",
+        "@com_github_spf13_cobra//:go_default_library",
     ],
 )
 
@@ -262,8 +262,8 @@ go_binary(
     go_prefix = "//tools/src:go_prefix",
     deps = [
         ":vendor/deploy",
-        "@google_api_go_client//:servicemanagement/v1",
-        "@github_com_spf13_cobra//:cobra",
+        "@org_golang_google_api//servicemanagement/v1:go_default_library",
+        "@com_github_spf13_cobra//:go_default_library",
     ],
 )
 
@@ -278,11 +278,11 @@ go_binary(
     go_prefix = "//tools/src:go_prefix",
     deps = [
         ":vendor/controller",
-        "@github_com_kubernetes_client_go//:kubernetes",
-        "@github_com_kubernetes_client_go//:pkg/api",
-        "@github_com_kubernetes_client_go//:rest",
-        "@github_com_kubernetes_client_go//:tools/clientcmd",
-        "@github_com_golang_glog//:glog",
+        "@io_k8s_client_go//1.5/kubernetes:go_default_library",
+        "@io_k8s_client_go//1.5/pkg/api:go_default_library",
+        "@io_k8s_client_go//1.5/rest:go_default_library",
+        "@io_k8s_client_go//1.5/tools/clientcmd:go_default_library",
+        "@com_github_golang_glog//:go_default_library",
     ],
 )
 
@@ -326,8 +326,8 @@ go_library(
     deps = [
         ":vendor/google/api/servicecontrol/v1",
         ":vendor/google/logging/type",
-        "@github_com_golang_protobuf//:proto",
-        "@github_com_golang_protobuf//:ptypes/struct",
+        "@com_github_golang_protobuf//proto:go_default_library",
+        "@com_github_golang_protobuf//ptypes/struct:go_default_library",
     ],
 )
 
