@@ -104,7 +104,7 @@ fi
 
 # Push the tag to the server.
 set -x
-git push origin ${VERSION_TAG}
+git push https://github.com/cloudendpoints/esp ${VERSION_TAG}
 { set +x; } 2>/dev/null
 
 printf '\e[31m
