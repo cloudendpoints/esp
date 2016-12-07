@@ -384,7 +384,7 @@ sub service_agent {
 }
 
 sub get_version {
-  my $version_file = "./include/version";
+  my $version_file = "./src/nginx/version";
   open F, '<', $version_file or die "Can't open ${version_file}: $!";
   my $content = <F>;
   close F;

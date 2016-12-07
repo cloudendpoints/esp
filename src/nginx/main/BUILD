@@ -97,6 +97,7 @@ cc_binary(
     ],
     deps = [
         "//src/nginx:ngx_esp",
+        "//src/nginx:version_header",
         "@nginx//:http",
         "@nginx//:http_access",
         "@nginx//:http_addition",
@@ -284,7 +285,7 @@ pkg_deb(
     prerm = "@nginx_pkgoss//:debian_prerm",
     priority = "extra",
     section = "httpd",
-    version_file = "//include:version",
+    version_file = "//src/nginx:version",
 )
 
 sh_test(

@@ -26,6 +26,30 @@
 #
 load("@protobuf_bzl//:protobuf.bzl", "cc_proto_library")
 
+exports_files(["version"])
+
+genrule(
+    name = "version_header_gen",
+    srcs = [
+        ":version",
+    ],
+    outs = [
+        "version.h",
+    ],
+    cmd = "$(location //tools:create_version) $(location :version) > $@",
+    tools = [
+        "//tools:create_version",
+    ],
+)
+
+cc_library(
+    name = "version_header",
+    srcs = [
+        "version.h",
+    ],
+    visibility = [":__subpackages__"],
+)
+
 cc_proto_library(
     name = "status_proto",
     srcs = [
@@ -82,6 +106,7 @@ cc_library(
     visibility = [":__subpackages__"],
     deps = [
         ":status_proto",
+        ":version_header",
         "//external:api_manager",
         "//external:grpc",
         "//external:grpc++",
