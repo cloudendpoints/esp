@@ -29,11 +29,11 @@
 #include <unistd.h>
 #include <fstream>
 
-#include "contrib/endpoints/include/api_manager/version.h"
 #include "contrib/endpoints/src/api_manager/utils/marshalling.h"
 #include "src/nginx/environment.h"
 #include "src/nginx/module.h"
 #include "src/nginx/proto/status.pb.h"
+#include "src/nginx/version.h"
 
 extern "C" {
 #include "src/core/ngx_string.h"

@@ -71,7 +71,7 @@ func GetVersion() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	ver, err := ioutil.ReadFile(path + "/include/version")
+	ver, err := ioutil.ReadFile(path + "/src/nginx/version")
 	if err != nil {
 		return "", err
 	}

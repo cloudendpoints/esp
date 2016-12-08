@@ -72,8 +72,8 @@ BUILD_SHA=$(git rev-parse --verify "${BUILD_REF}") \
 TAG_SHA=$(git rev-parse --verify "${TAG_REF}") \
   || usage "Invalid Git reference \"${TAG_REF}\"."
 
-VERSION="$(command cat ${ROOT}/include/version)" \
-  || usage "Cannot determine release version (${ROOT}/include/version)."
+VERSION="$(command cat ${ROOT}/src/nginx/version)" \
+  || usage "Cannot determine release version (${ROOT}/src/nginx/version)."
 # Prefix 'v' for the tag name
 VERSION_TAG="v${VERSION}"
 

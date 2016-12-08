@@ -41,18 +41,13 @@ nginx_repositories(
 
 git_repository(
     name = "istio_proxy_git",
-    commit = "2eb22f9dd8bf75a3624e78dfe72eadbc65a8a248",
+    commit = "4ac0064bac5fd23968733945ab50d95cdee06ef1",
     remote = "https://github.com/istio/proxy",
 )
 
 bind(
     name = "api_manager",
     actual = "@istio_proxy_git//contrib/endpoints/include:api_manager",
-)
-
-bind(
-    name = "api_manager_version",
-    actual = "@istio_proxy_git//contrib/endpoints/include:version",
 )
 
 bind(

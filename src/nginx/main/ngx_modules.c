@@ -29,7 +29,7 @@
 #include <ngx_modules.h>
 
 #if (NGX_HTTP_ENDPOINTS_RUNTIME)
-#include "contrib/endpoints/include/api_manager/version.h"
+#include "src/nginx/version.h"
 #endif
 
 /* clang-format off */

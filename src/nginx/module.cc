@@ -32,6 +32,7 @@
 #include <core/ngx_string.h>
 #include <memory>
 
+#include "contrib/endpoints/include/api_manager/utils/version.h"
 #include "module.h"
 #include "src/nginx/config.h"
 #include "src/nginx/environment.h"
@@ -39,6 +40,7 @@
 #include "src/nginx/response.h"
 #include "src/nginx/status.h"
 #include "src/nginx/util.h"
+#include "src/nginx/version.h"
 
 using ::google::protobuf::util::error::Code;
 using ::google::api_manager::utils::Status;
@@ -370,6 +372,9 @@ ngx_int_t ngx_esp_postconfiguration(ngx_conf_t *cf) {
   if (mc->upstream_resolver.data == nullptr) {
     mc->upstream_resolver = google_dns;
   }
+
+  // Set the version to api_manager library.
+  utils::Version::instance().set(API_MANAGER_VERSION_STRING);
 
   bool endpoints_enabled = false;
 
