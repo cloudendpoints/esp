@@ -38,21 +38,6 @@ function update_workspace() {
     || error_exit "Could not update WORKSPACE for ${key}."
 }
 
-
-function set_git() {
-  if [[ ! -e "${HOME}/.gitconfig" ]]; then
-    cat > "${HOME}/.gitconfig" << EOF
-[user]
-  name = Jenkins
-  email = hudson.jenkins.esp@gmail.com
-EOF
-  fi
-  # In order to have bazel fetch PRs
-  git config --global --add remote.origin.fetch \
-    "+refs/pull/*/head:refs/remotes/origin/pr/*" \
-    || error_exit 'Cannot set git config.'
-}
-
 function commit_workspace() {
   local key="${1}"
 

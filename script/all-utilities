@@ -52,6 +52,20 @@ set_bazel
 set_gcloud
 set_wrk
 
+function set_git() {
+  if [[ ! -e "${HOME}/.gitconfig" ]]; then
+    cat > "${HOME}/.gitconfig" << EOF
+[user]
+  name = Jenkins
+  email = hudson.jenkins.esp@gmail.com
+EOF
+  fi
+  # In order to have bazel fetch PRs
+  git config --global --add remote.origin.fetch \
+    "+refs/pull/*/head:refs/remotes/origin/pr/*" \
+    || error_exit 'Cannot set git config.'
+}
+
 # Exit with a message and an exit code.
 # Arguments:
 #   $1 - string with an error message
