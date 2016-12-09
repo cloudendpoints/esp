@@ -27,24 +27,40 @@
 ################################################################################
 #
 
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-. ${DIR}/jenkins-utilities \
-  || { echo "Cannot load Bash utilities" ; exit 1 ; }
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+. ${ROOT}/script/all-utilities || { echo "Cannot load Bash utilities"; exit 1; }
 
-while getopts :c:z: arg; do
+function update_workspace() {
+  local key="${1}"
+  local sha="${2}"
+
+  sed -i -e "s|${key}\s=.*|${key} = \"${sha}\"|" "${ROOT}/WORKSPACE" \
+    || error_exit "Could not update WORKSPACE for ${key}."
+}
+
+function commit_workspace() {
+  local key="${1}"
+
+  git add "${ROOT}/WORKSPACE" \
+    && git commit -m "Updates ${key} in WORKSPACE" \
+    || error_exit "Could not create commit for ${key} update in WORKSPACE."
+}
+
+while getopts :s: arg; do
   case ${arg} in
-    c) CLUSTER="${OPTARG}";;
-    z) ZONE="${OPTARG}";;
-    *) error_exit "Invalid option: -${OPTARG}";;
+    s) SUBMODULES="${OPTARG}";;
+    *) echo "Invalid option: -${OPTARG}";;
   esac
 done
 
-[[ -z "${CLUSTER}" ]] && error_exit 'CLUSTER should be set.'
-[[ -z "${ZONE}" ]] && error_exit 'ZONE should be set.'
-
 set_git
-script/linux-prep-machine || error_exit 'Could not prep machine.'
-script/linux-install-software || error_exit 'Could not update the tools.'
-retry -n 5 ${GCLOUD} config set compute/zone "${ZONE}"
-retry -n 5 ${GCLOUD} container clusters get-credentials "${CLUSTER}"
+
+# SUBMODULES if of the form KEY1:SHA1,KEY2:SHA2
+IFS=',' read -ra SUBMODULES <<< "${SUBMODULES}"
+for submodule in "${SUBMODULES[@]}"; do
+  key="${submodule%:*}"
+  sha="${submodule##*:}"
+  update_workspace "${key}" "${sha}"
+  commit_workspace "${key}"
+done
 

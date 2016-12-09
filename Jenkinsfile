@@ -507,7 +507,7 @@ def testCleanup(daysOld, project, flags) {
 
 // flow can be run or verify
 def updatePresubmit(flow, success = false) {
-  if (getParam('STAGE') != PRESUBMIT) return
+  if (getParam('STAGE') != PRESUBMIT || !getParam('UPDATE_PR', true)) return
   switch (flow) {
     case 'run':
       state = 'PENDING'
@@ -811,6 +811,13 @@ Git Helper Methods
 // See JENKINS-35245 bug for more info.
 def stashSourceCode() {
   initialize()
+  // Testing new sub-modules.
+  // This script creates new commit for each sub-module.
+  // GIT_SHA will use the last commit.
+  submodules_update = getParam('SUBMODULES_UPDATE')
+  if (submodules_update != '') {
+    sh("script/update-submodules -s ${submodules_update}")
+  }
   // Setting source code related global variable once so it can be reused.
   GIT_SHA = failIfNullOrEmpty(getRevision(), 'GIT_SHA must be set')
   ESP_RUNTIME_VERSION = failIfNullOrEmpty(getEndpointsRuntimeVersion(), 'ESP_RUNTIME_VERSION must be set')
@@ -859,13 +866,6 @@ def fastUnstash(name) {
 def getRevision() {
   // Code needs to be checked out for this.
   return sh(returnStdout: true, script: 'git rev-parse --verify HEAD').trim()
-}
-
-def getChangeId() {
-  // Code needs to be checked out for this.
-  return sh(
-      returnStdout: true,
-      script: "git log --format=%B -n 1 HEAD | awk '/^Change-Id: / {print \$2}'").trim()
 }
 
 def setArtifactsLink() {
