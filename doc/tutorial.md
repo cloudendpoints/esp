@@ -58,6 +58,27 @@ The ESP binary location is:
 
     ./bazel-bin/src/nginx/main/nginx-esp
 
+
+# Make code change in istio/proxy #
+
+The key part of api_manager codes is in a separate github repositoy: istio/proxy.
+Here are the steps to make change to api_manager code.
+
+* Clone istio/proxy in a separate local folder.
+* Make change there and make sure it pass "bazel test //contrib/endpoints/src/..."
+* Change to ESP local folder, change its WORKSPACE to use local_repository
+  for istio_proxy_git. It should look something like this:
+
+     local_repository(
+        name = "istio_proxy_git",
+        path = "absolute path to your istio/proxy folder",
+     )
+
+* Then test it by "bazel test //src/..."
+* After the test passed, submit istio/proxy change.
+* After istio/proxy change is submitted, revert WORKSPACE change in ESP.
+* Update its istio_proxy_git to the new commit, submit the change.
+
 # Running ESP #
 
 For the remainder of the tutorial we'll use Shell environment variable
