@@ -39,6 +39,7 @@ if [[ ! -f $CLI ]]; then
   OSNAME=`uname | tr "[:upper:]" "[:lower:]"`
   URL="https://storage.googleapis.com/endpoints-release/v1.0.2/bin/${OSNAME}/amd64/espcli"
   curl -o ${CLI} ${URL}
+  chmod +x ${CLI}
 fi
 
 function cleanup {
