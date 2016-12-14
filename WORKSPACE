@@ -72,6 +72,11 @@ bind(
     actual = "@istio_proxy_git//contrib/endpoints/src/api_manager/utils",
 )
 
+bind(
+    name = "grpc_transcoding",
+    actual = "@istio_proxy_git//contrib/endpoints/src/grpc/transcoding",
+)
+
 git_repository(
     name = "servicecontrol_client_git",
     commit = "d739d755365c6a13d0b4164506fd593f53932f5d",

@@ -36,8 +36,8 @@ extern "C" {
 }
 
 #include "contrib/endpoints/include/api_manager/utils/status.h"
+#include "contrib/endpoints/src/grpc/transcoding/transcoder.h"
 #include "grpc++/support/byte_buffer.h"
-#include "src/grpc/transcoding/transcoder.h"
 #include "src/grpc/zero_copy_stream.h"
 #include "src/nginx/grpc_server_call.h"
 #include "src/nginx/zero_copy_stream.h"

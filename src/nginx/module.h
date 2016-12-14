@@ -40,7 +40,7 @@ extern "C" {
 
 #include "contrib/endpoints/include/api_manager/api_manager.h"
 #include "contrib/endpoints/include/api_manager/utils/status.h"
-#include "src/grpc/transcoding/transcoder_factory.h"
+#include "contrib/endpoints/src/grpc/transcoding/transcoder_factory.h"
 #include "src/nginx/alloc.h"
 #include "src/nginx/grpc.h"
 #include "src/nginx/grpc_queue.h"
