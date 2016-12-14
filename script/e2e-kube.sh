@@ -28,11 +28,19 @@
 #
 SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ESP_ROOT="$(cd "${SCRIPT_PATH}/../" && pwd)"
-CLI="$ESP_ROOT/bazel-bin/tools/src/espcli"
+CLI="$ESP_ROOT/espcli"
 YAML_FILE=${ESP_ROOT}/test/bookstore/bookstore.yaml
 ESP_APP="esp"
 
 . ${ESP_ROOT}/script/jenkins-utilities || { echo "Cannot load Jenkins Bash utilities" ; exit 1 ; }
+
+# Fetch CLI tool if it is not available
+if [[ ! -f $CLI ]]; then
+  OSNAME=`uname | tr "[:upper:]" "[:lower:]"`
+  URL="https://storage.googleapis.com/endpoints-release/v1.0.2/bin/${OSNAME}/amd64/espcli"
+  curl -o ${CLI} ${URL}
+  chmod +x ${CLI}
+fi
 
 function cleanup {
   if [[ "${SKIP_CLEANUP}" == 'false' ]]; then

@@ -446,7 +446,6 @@ def buildPackages() {
   // Building tools
   def tools = [
       '//src/tools:auth_token_gen',
-      '//tools/src:espcli',
       '//test/grpc:grpc-test-client',
       '//test/grpc:interop-client',
       '//test/grpc:interop-metrics-client',
@@ -457,7 +456,6 @@ def buildPackages() {
   ]
   def stashPaths = [
       'bazel-bin/src/tools/auth_token_gen',
-      'bazel-bin/tools/src/espcli',
       'bazel-bin/test/grpc/grpc-test-client',
       'bazel-bin/test/grpc/interop-client',
       'bazel-bin/test/grpc/interop-metrics-client',
