@@ -26,7 +26,7 @@
 #
 # A Bazel (http://bazel.io) workspace for the Google Cloud Endpoints runtime.
 
-ISTIO_PROXY = "4ac0064bac5fd23968733945ab50d95cdee06ef1"
+ISTIO_PROXY = "db51059faa238bd7af39b754834ecc6acd11cca0"
 
 git_repository(
     name = "nginx",
@@ -216,7 +216,7 @@ bind(
 new_git_repository(
     name = "googleapis_git",
     build_file = "third_party/BUILD.googleapis",
-    commit = "6c1d6d4067364a21f8ffefa3401b213d652bf121",
+    commit = "db1d4547dc56a798915e0eb2c795585385922165",
     remote = "https://github.com/googleapis/googleapis.git",
 )
 
