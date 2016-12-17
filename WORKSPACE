@@ -26,7 +26,7 @@
 #
 # A Bazel (http://bazel.io) workspace for the Google Cloud Endpoints runtime.
 
-ISTIO_PROXY = "db51059faa238bd7af39b754834ecc6acd11cca0"
+ISTIO_PROXY = "8257ff778d46c5117400cbfc233c4baff17e3c87"
 
 git_repository(
     name = "nginx",
@@ -41,11 +41,23 @@ nginx_repositories(
     nginx = "@nginx//",
 )
 
+# Required by gRPC.
+bind(
+    name = "libssl",
+    actual = "@boringssl//:ssl",
+)
+
 git_repository(
     name = "istio_proxy_git",
     commit = ISTIO_PROXY,
     remote = "https://github.com/istio/proxy",
 )
+
+load("@istio_proxy_git//contrib/endpoints:repositories.bzl",
+    "protobuf_repositories",
+    "grpc_repositories",
+    "servicecontrol_client_repositories",
+    "googletest_repositories")
 
 bind(
     name = "api_manager",
@@ -77,22 +89,10 @@ bind(
     actual = "@istio_proxy_git//contrib/endpoints/src/grpc/transcoding",
 )
 
-git_repository(
-    name = "servicecontrol_client_git",
-    commit = "d739d755365c6a13d0b4164506fd593f53932f5d",
-    remote = "https://github.com/cloudendpoints/service-control-client-cxx.git",
-)
-
-bind(
-    name = "servicecontrol_client",
-    actual = "@servicecontrol_client_git//:service_control_client_lib",
-)
-
-# Required by gRPC.
-bind(
-    name = "libssl",
-    actual = "@boringssl//:ssl",
-)
+servicecontrol_client_repositories()
+protobuf_repositories()
+googletest_repositories()
+grpc_repositories()
 
 # Though GRPC has BUILD file, our own BUILD.grpc file is needed since it contains
 # more targets including testing server and client.
@@ -100,36 +100,11 @@ bind(
 # https://github.com/grpc/grpc/pull/7556
 # and run ./tools/buildgen/generate_projects.sh in GRPC repo.
 new_git_repository(
-    name = "grpc_git",
+    name = "grpc_test_git",
     build_file = "third_party/BUILD.grpc",
     commit = "d28417c856366df704200f544e72d31056931bce",
     init_submodules = True,
     remote = "https://github.com/grpc/grpc.git",
-)
-
-bind(
-    name = "gpr",
-    actual = "@grpc_git//:gpr",
-)
-
-bind(
-    name = "grpc",
-    actual = "@grpc_git//:grpc",
-)
-
-bind(
-    name = "grpc_cpp_plugin",
-    actual = "@grpc_git//:grpc_cpp_plugin",
-)
-
-bind(
-    name = "grpc++",
-    actual = "@grpc_git//:grpc++",
-)
-
-bind(
-    name = "grpc_lib",
-    actual = "@grpc_git//:grpc++_reflection",
 )
 
 # Workaround for Bazel > 0.4.0 since it needs newer protobuf.bzl from:
@@ -141,103 +116,6 @@ new_git_repository(
     build_file_content = "",
     commit = "05090726144b6e632c50f47720ff51049bfcbef6",
     remote = "https://github.com/google/protobuf.git",
-)
-
-git_repository(
-    name = "protobuf_git",
-    commit = "a428e42072765993ff674fda72863c9f1aa2d268",  # v3.1.0
-    remote = "https://github.com/google/protobuf.git",
-)
-
-bind(
-    name = "protoc",
-    actual = "@protobuf_git//:protoc",
-)
-
-bind(
-    name = "protobuf",
-    actual = "@protobuf_git//:protobuf",
-)
-
-bind(
-    name = "cc_wkt_protos",
-    actual = "@protobuf_git//:cc_wkt_protos",
-)
-
-bind(
-    name = "cc_wkt_protos_genproto",
-    actual = "@protobuf_git//:cc_wkt_protos_genproto",
-)
-
-bind(
-    name = "protobuf_compiler",
-    actual = "@protobuf_git//:protoc_lib",
-)
-
-bind(
-    name = "protobuf_clib",
-    actual = "@protobuf_git//:protobuf_lite",
-)
-
-new_git_repository(
-    name = "nanopb_git",
-    build_file = "third_party/BUILD.nanopb",
-    commit = "f8ac463766281625ad710900479130c7fcb4d63b",
-    remote = "https://github.com/nanopb/nanopb.git",
-)
-
-bind(
-    name = "nanopb",
-    actual = "@nanopb_git//:nanopb",
-)
-
-new_git_repository(
-    name = "googletest_git",
-    build_file = "third_party/BUILD.googletest",
-    commit = "d225acc90bc3a8c420a9bcd1f033033c1ccd7fe0",
-    remote = "https://github.com/google/googletest.git",
-)
-
-bind(
-    name = "googletest",
-    actual = "@googletest_git//:googletest",
-)
-
-bind(
-    name = "googletest_main",
-    actual = "@googletest_git//:googletest_main",
-)
-
-bind(
-    name = "googletest_prod",
-    actual = "@googletest_git//:googletest_prod",
-)
-
-new_git_repository(
-    name = "googleapis_git",
-    build_file = "third_party/BUILD.googleapis",
-    commit = "db1d4547dc56a798915e0eb2c795585385922165",
-    remote = "https://github.com/googleapis/googleapis.git",
-)
-
-bind(
-    name = "servicecontrol",
-    actual = "@googleapis_git//:servicecontrol",
-)
-
-bind(
-    name = "servicecontrol_genproto",
-    actual = "@googleapis_git//:servicecontrol_genproto",
-)
-
-bind(
-    name = "service_config",
-    actual = "@googleapis_git//:service_config",
-)
-
-bind(
-    name = "cloud_trace",
-    actual = "@googleapis_git//:cloud_trace",
 )
 
 git_repository(

@@ -72,16 +72,16 @@ genrule(
     name = "grpc-interop_descriptor",
     srcs = [
         "@protobuf_git//:well_known_protos",
-        "@grpc_git//:src/proto/grpc/testing/test.proto",
-        "@grpc_git//:src/proto/grpc/testing/empty.proto",
-        "@grpc_git//:src/proto/grpc/testing/messages.proto",
+        "@grpc_test_git//:src/proto/grpc/testing/test.proto",
+        "@grpc_test_git//:src/proto/grpc/testing/empty.proto",
+        "@grpc_test_git//:src/proto/grpc/testing/messages.proto",
     ],
     outs = ["grpc-interop.descriptor"],
     cmd = """$(location //external:protoc) \
-        $(location @grpc_git//:src/proto/grpc/testing/test.proto) \
+        $(location @grpc_test_git//:src/proto/grpc/testing/test.proto) \
         -Iexternal/protobuf_git/src \
-        -I$$(dirname $(location @grpc_git//:src/proto/grpc/testing/test.proto))/../../../.. \
-        -I$$(dirname $(location @grpc_git//:src/proto/grpc/testing/test.proto)) \
+        -I$$(dirname $(location @grpc_test_git//:src/proto/grpc/testing/test.proto))/../../../.. \
+        -I$$(dirname $(location @grpc_test_git//:src/proto/grpc/testing/test.proto)) \
         --include_imports --descriptor_set_out=$@""",
     tools = ["//external:protoc"],
 )
@@ -131,7 +131,7 @@ cc_binary(
     name = "interop-server",
     testonly = 1,
     deps = [
-        "@grpc_git//:interop_server_main",
+        "@grpc_test_git//:interop_server_main",
     ],
 )
 
@@ -139,7 +139,7 @@ cc_binary(
     name = "interop-stress-client",
     testonly = 1,
     deps = [
-        "@grpc_git//:stress_test",
+        "@grpc_test_git//:stress_test",
     ],
 )
 
@@ -147,7 +147,7 @@ cc_binary(
     name = "interop-metrics-client",
     testonly = 1,
     deps = [
-        "@grpc_git//:metrics_client",
+        "@grpc_test_git//:metrics_client",
     ],
 )
 
@@ -158,7 +158,7 @@ cc_binary(
         "interop-client.cc",
     ],
     deps = [
-        "@grpc_git//:interop_client_main",
+        "@grpc_test_git//:interop_client_main",
     ],
 )
 
