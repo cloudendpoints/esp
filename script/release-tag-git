@@ -84,7 +84,7 @@ Endpoints Runtime Release ${VERSION}
 
 The release build was produced at ${BUILD_SHA}.
 The Docker image released is:
-  b.gcr.io/endpoints/endpoints-runtime:${VERSION}
+  gcr.io/endpoints-release/endpoints-runtime:${VERSION}
 EOF
 
 # Check the version is correct.

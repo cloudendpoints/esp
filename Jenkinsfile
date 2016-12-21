@@ -360,14 +360,14 @@ def espGenericDockerImage(suffix = '') {
   return "gcr.io/${PROJECT_ID}/endpoints-runtime${suffix}:debian-git-${GIT_SHA}"
 }
 
-def espDockerImage(suffix = '') {
+def espDockerImage() {
   if (isRelease()) {
     if (getParam('USE_LATEST_RELEASE', false)) {
-      return "b.gcr.io/endpoints/endpoints-runtime${suffix}:latest"
+      return "gcr.io/endpoints-release/endpoints-runtime:1"
     }
-    return "b.gcr.io/endpoints/endpoints-runtime${suffix}:${ESP_RUNTIME_VERSION}"
+    return "gcr.io/endpoints-release/endpoints-runtime:${ESP_RUNTIME_VERSION}"
   }
-  return espGenericDockerImage(suffix)
+  return espGenericDockerImage()
 }
 
 def espFlexDockerImage() {

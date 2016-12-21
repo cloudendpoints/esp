@@ -53,7 +53,7 @@ SERVICE_NAME='echo-dot-esp-grpc-load-test.appspot.com'
 SERVICE_VERSION='2016-08-25r1'
 PROJECT="esp-grpc-load-test"
 INSTANCE=grpc-test-server-gce-vm
-IMAGE="b.gcr.io/endpoints/endpoints-runtime"
+IMAGE="gcr.io/endpoints-release/endpoints-runtime"
 
 while getopts :i:d:n:p:v:z: arg; do
   case "${arg}" in
