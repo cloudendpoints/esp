@@ -108,7 +108,7 @@ function push_docker_image() {
 
 push_docker_image \
   "gcr.io/endpoints-jenkins/endpoints-runtime:debian-git-${SHA}" \
-  "b.gcr.io/endpoints/endpoints-runtime:${VERSION}" \
+  "gcr.io/endpoints-release/endpoints-runtime:${VERSION}" \
   || error_exit "Docker image push failed."
 
 SOURCE_PKG="gs://endpoints-jenkins.appspot.com/${SHA}/artifacts/endpoints-runtime-amd64.deb"

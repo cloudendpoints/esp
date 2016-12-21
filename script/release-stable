@@ -37,9 +37,8 @@ function usage() {
 Usage: ${BASH_SOURCE[0]} -g <path_to_gcloud> -r <DIRECT_REPO>
 
 This script will release stable ESP docker image with format of:
-  b.gcr.io/endpoints/endpoints-runtime:\${MINOR_BASE_VERSION}
-  b.gcr.io/endpoints/endpoints-runtime:\${MAJOR_BASE_VERSION}
-  b.gcr.io/endpoints/endpoints-runtime:lastest
+  gcr.io/endpoints-release/endpoints-runtime:\${MINOR_BASE_VERSION}
+  gcr.io/endpoints-release/endpoints-runtime:\${MAJOR_BASE_VERSION}
 where:
   MINOR_BASE_VERSION=major.minor
   MAJOR_BASE_VERSION=major
@@ -88,10 +87,10 @@ function tag_stable_image() {
 }
 
 
-for target in ${MINOR_BASE_VERSION} ${MAJOR_BASE_VERSION} latest; do
+for target in ${MINOR_BASE_VERSION} ${MAJOR_BASE_VERSION}; do
   tag_stable_image \
-    "b.gcr.io/endpoints/endpoints-runtime:${VERSION}" \
-    "b.gcr.io/endpoints/endpoints-runtime:${target}";
+    "gcr.io/endpoints-release/endpoints-runtime:${VERSION}" \
+    "gcr.io/endpoints-release/endpoints-runtime:${target}";
 done
 
 rapture --universe=cloud-apt settag ${DEBIAN_PACKAGE_REPOSITORY} \
