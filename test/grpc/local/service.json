@@ -1,6 +1,6 @@
 {
   "name": "echo-dot-esp-grpc-load-test.appspot.com",
-  "title": "Grpc echo test API",
+  "title": "GRPC Echo Test",
   "apis": [{
     "name": "test.grpc.Test",
     "methods": [{
@@ -3162,6 +3162,82 @@
         }
       }],
       "jsonName": "randomPayloadMaxSize"
+    }, {
+      "kind": "TYPE_MESSAGE",
+      "cardinality": "CARDINALITY_REPEATED",
+      "number": 4,
+      "name": "return_initial_metadata",
+      "typeUrl": "type.googleapis.com/test.grpc.EchoRequest.ReturnInitialMetadataEntry",
+      "options": [{
+        "name": "google.protobuf.FieldOptions.ctype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "STRING"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.jstype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "JS_NORMAL"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.lazy",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.weak",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }],
+      "jsonName": "returnInitialMetadata"
+    }, {
+      "kind": "TYPE_MESSAGE",
+      "cardinality": "CARDINALITY_REPEATED",
+      "number": 5,
+      "name": "return_trailing_metadata",
+      "typeUrl": "type.googleapis.com/test.grpc.EchoRequest.ReturnTrailingMetadataEntry",
+      "options": [{
+        "name": "google.protobuf.FieldOptions.ctype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "STRING"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.jstype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "JS_NORMAL"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.lazy",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.weak",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }],
+      "jsonName": "returnTrailingMetadata"
     }],
     "options": [{
       "name": "google.protobuf.MessageOptions.message_set_wire_format",
@@ -3180,6 +3256,218 @@
       "value": {
         "@type": "type.googleapis.com/google.protobuf.BoolValue",
         "value": false
+      }
+    }],
+    "sourceContext": {
+      "fileName": "grpc-test.proto"
+    },
+    "syntax": "SYNTAX_PROTO3"
+  }, {
+    "name": "test.grpc.EchoRequest.ReturnInitialMetadataEntry",
+    "fields": [{
+      "kind": "TYPE_STRING",
+      "cardinality": "CARDINALITY_OPTIONAL",
+      "number": 1,
+      "name": "key",
+      "options": [{
+        "name": "google.protobuf.FieldOptions.ctype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "STRING"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.jstype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "JS_NORMAL"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.lazy",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.weak",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }],
+      "jsonName": "key"
+    }, {
+      "kind": "TYPE_BYTES",
+      "cardinality": "CARDINALITY_OPTIONAL",
+      "number": 2,
+      "name": "value",
+      "options": [{
+        "name": "google.protobuf.FieldOptions.ctype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "STRING"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.jstype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "JS_NORMAL"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.lazy",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.weak",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }],
+      "jsonName": "value"
+    }],
+    "options": [{
+      "name": "google.protobuf.MessageOptions.message_set_wire_format",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.no_standard_descriptor_accessor",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.deprecated",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.map_entry",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": true
+      }
+    }],
+    "sourceContext": {
+      "fileName": "grpc-test.proto"
+    },
+    "syntax": "SYNTAX_PROTO3"
+  }, {
+    "name": "test.grpc.EchoRequest.ReturnTrailingMetadataEntry",
+    "fields": [{
+      "kind": "TYPE_STRING",
+      "cardinality": "CARDINALITY_OPTIONAL",
+      "number": 1,
+      "name": "key",
+      "options": [{
+        "name": "google.protobuf.FieldOptions.ctype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "STRING"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.jstype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "JS_NORMAL"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.lazy",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.weak",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }],
+      "jsonName": "key"
+    }, {
+      "kind": "TYPE_BYTES",
+      "cardinality": "CARDINALITY_OPTIONAL",
+      "number": 2,
+      "name": "value",
+      "options": [{
+        "name": "google.protobuf.FieldOptions.ctype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "STRING"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.jstype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "JS_NORMAL"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.lazy",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.weak",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }],
+      "jsonName": "value"
+    }],
+    "options": [{
+      "name": "google.protobuf.MessageOptions.message_set_wire_format",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.no_standard_descriptor_accessor",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.deprecated",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.map_entry",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": true
       }
     }],
     "sourceContext": {
@@ -3262,6 +3550,44 @@
         }
       }],
       "jsonName": "elapsedMicros"
+    }, {
+      "kind": "TYPE_MESSAGE",
+      "cardinality": "CARDINALITY_REPEATED",
+      "number": 103,
+      "name": "received_metadata",
+      "typeUrl": "type.googleapis.com/test.grpc.EchoResponse.ReceivedMetadataEntry",
+      "options": [{
+        "name": "google.protobuf.FieldOptions.ctype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "STRING"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.jstype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "JS_NORMAL"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.lazy",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.weak",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }],
+      "jsonName": "receivedMetadata"
     }],
     "options": [{
       "name": "google.protobuf.MessageOptions.message_set_wire_format",
@@ -3280,6 +3606,112 @@
       "value": {
         "@type": "type.googleapis.com/google.protobuf.BoolValue",
         "value": false
+      }
+    }],
+    "sourceContext": {
+      "fileName": "grpc-test.proto"
+    },
+    "syntax": "SYNTAX_PROTO3"
+  }, {
+    "name": "test.grpc.EchoResponse.ReceivedMetadataEntry",
+    "fields": [{
+      "kind": "TYPE_STRING",
+      "cardinality": "CARDINALITY_OPTIONAL",
+      "number": 1,
+      "name": "key",
+      "options": [{
+        "name": "google.protobuf.FieldOptions.ctype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "STRING"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.jstype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "JS_NORMAL"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.lazy",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.weak",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }],
+      "jsonName": "key"
+    }, {
+      "kind": "TYPE_BYTES",
+      "cardinality": "CARDINALITY_OPTIONAL",
+      "number": 2,
+      "name": "value",
+      "options": [{
+        "name": "google.protobuf.FieldOptions.ctype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "STRING"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.jstype",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.StringValue",
+          "value": "JS_NORMAL"
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.lazy",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.deprecated",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }, {
+        "name": "google.protobuf.FieldOptions.weak",
+        "value": {
+          "@type": "type.googleapis.com/google.protobuf.BoolValue",
+          "value": false
+        }
+      }],
+      "jsonName": "value"
+    }],
+    "options": [{
+      "name": "google.protobuf.MessageOptions.message_set_wire_format",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.no_standard_descriptor_accessor",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.deprecated",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": false
+      }
+    }, {
+      "name": "google.protobuf.MessageOptions.map_entry",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.BoolValue",
+        "value": true
       }
     }],
     "sourceContext": {
@@ -3676,322 +4108,6 @@
   "configVersion": 3,
   "control": {
     "environment": "servicecontrol.googleapis.com"
-  },
-  "producerProjectId": "esp-grpc-load-test",
-  "logs": [{
-    "name": "endpoints_log"
-  }],
-  "metrics": [{
-    "name": "serviceruntime.googleapis.com/api/consumer/request_count",
-    "labels": [{
-      "key": "/credential_id"
-    }, {
-      "key": "/protocol"
-    }, {
-      "key": "/response_code"
-    }, {
-      "key": "/response_code_class"
-    }, {
-      "key": "/status_code"
-    }],
-    "metricKind": "DELTA",
-    "valueType": "INT64"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/consumer/error_count",
-    "labels": [{
-      "key": "/credential_id"
-    }, {
-      "key": "/error_type"
-    }],
-    "metricKind": "DELTA",
-    "valueType": "INT64"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/consumer/total_latencies",
-    "labels": [{
-      "key": "/credential_id"
-    }],
-    "metricKind": "DELTA",
-    "valueType": "DISTRIBUTION"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/producer/request_count",
-    "labels": [{
-      "key": "/protocol"
-    }, {
-      "key": "/response_code"
-    }, {
-      "key": "/response_code_class"
-    }, {
-      "key": "/status_code"
-    }],
-    "metricKind": "DELTA",
-    "valueType": "INT64"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/producer/error_count",
-    "labels": [{
-      "key": "/error_type"
-    }],
-    "metricKind": "DELTA",
-    "valueType": "INT64"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/producer/total_latencies",
-    "metricKind": "DELTA",
-    "valueType": "DISTRIBUTION"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/consumer/top_request_count_by_end_user",
-    "labels": [{
-      "key": "/credential_id"
-    }, {
-      "key": "/end_user"
-    }],
-    "metricKind": "DELTA",
-    "valueType": "INT64"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/consumer/top_request_count_by_end_user_country",
-    "labels": [{
-      "key": "/credential_id"
-    }, {
-      "key": "/end_user_country"
-    }],
-    "metricKind": "DELTA",
-    "valueType": "INT64"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/consumer/top_request_count_by_referer",
-    "labels": [{
-      "key": "/credential_id"
-    }, {
-      "key": "/referer"
-    }],
-    "metricKind": "DELTA",
-    "valueType": "INT64"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/producer/top_request_count_by_consumer",
-    "labels": [{
-      "key": "/protocol"
-    }, {
-      "key": "/response_code"
-    }, {
-      "key": "/consumer_id"
-    }, {
-      "key": "/status_code"
-    }],
-    "metricKind": "DELTA",
-    "valueType": "INT64"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/consumer/quota_used_count",
-    "labels": [{
-      "key": "/credential_id"
-    }, {
-      "key": "/quota_group_name"
-    }],
-    "metricKind": "DELTA",
-    "valueType": "INT64"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/consumer/quota_billable_count",
-    "labels": [{
-      "key": "/quota_group_name"
-    }],
-    "metricKind": "DELTA",
-    "valueType": "INT64"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/consumer/request_overhead_latencies",
-    "labels": [{
-      "key": "/credential_id"
-    }],
-    "metricKind": "DELTA",
-    "valueType": "DISTRIBUTION"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/consumer/backend_latencies",
-    "labels": [{
-      "key": "/credential_id"
-    }],
-    "metricKind": "DELTA",
-    "valueType": "DISTRIBUTION"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/consumer/request_sizes",
-    "labels": [{
-      "key": "/credential_id"
-    }],
-    "metricKind": "DELTA",
-    "valueType": "DISTRIBUTION"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/consumer/response_sizes",
-    "labels": [{
-      "key": "/credential_id"
-    }],
-    "metricKind": "DELTA",
-    "valueType": "DISTRIBUTION"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/producer/request_overhead_latencies",
-    "metricKind": "DELTA",
-    "valueType": "DISTRIBUTION"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/producer/backend_latencies",
-    "metricKind": "DELTA",
-    "valueType": "DISTRIBUTION"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/producer/request_sizes",
-    "metricKind": "DELTA",
-    "valueType": "DISTRIBUTION"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/producer/response_sizes",
-    "metricKind": "DELTA",
-    "valueType": "DISTRIBUTION"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/producer/top_request_sizes_by_consumer",
-    "labels": [{
-      "key": "/consumer_id"
-    }],
-    "metricKind": "DELTA",
-    "valueType": "DISTRIBUTION"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/producer/top_response_sizes_by_consumer",
-    "labels": [{
-      "key": "/consumer_id"
-    }],
-    "metricKind": "DELTA",
-    "valueType": "DISTRIBUTION"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/producer/by_consumer/request_count",
-    "labels": [{
-      "key": "/credential_id"
-    }, {
-      "key": "/protocol"
-    }, {
-      "key": "/response_code"
-    }, {
-      "key": "/response_code_class"
-    }, {
-      "key": "/status_code"
-    }],
-    "metricKind": "DELTA",
-    "valueType": "INT64"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/producer/by_consumer/error_count",
-    "labels": [{
-      "key": "/credential_id"
-    }, {
-      "key": "/error_type"
-    }],
-    "metricKind": "DELTA",
-    "valueType": "INT64"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/producer/by_consumer/total_latencies",
-    "labels": [{
-      "key": "/credential_id"
-    }],
-    "metricKind": "DELTA",
-    "valueType": "DISTRIBUTION"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/producer/by_consumer/quota_used_count",
-    "labels": [{
-      "key": "/credential_id"
-    }, {
-      "key": "/quota_group_name"
-    }],
-    "metricKind": "DELTA",
-    "valueType": "INT64"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/producer/by_consumer/request_overhead_latencies",
-    "labels": [{
-      "key": "/credential_id"
-    }],
-    "metricKind": "DELTA",
-    "valueType": "DISTRIBUTION"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/producer/by_consumer/backend_latencies",
-    "labels": [{
-      "key": "/credential_id"
-    }],
-    "metricKind": "DELTA",
-    "valueType": "DISTRIBUTION"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/producer/by_consumer/request_sizes",
-    "labels": [{
-      "key": "/credential_id"
-    }],
-    "metricKind": "DELTA",
-    "valueType": "DISTRIBUTION"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/producer/by_consumer/response_sizes",
-    "labels": [{
-      "key": "/credential_id"
-    }],
-    "metricKind": "DELTA",
-    "valueType": "DISTRIBUTION"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/producer/streaming_request_message_counts",
-    "metricKind": "DELTA",
-    "valueType": "DISTRIBUTION"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/producer/streaming_response_message_counts",
-    "metricKind": "DELTA",
-    "valueType": "DISTRIBUTION"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/consumer/streaming_request_message_counts",
-    "metricKind": "DELTA",
-    "valueType": "DISTRIBUTION"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/consumer/streaming_response_message_counts",
-    "metricKind": "DELTA",
-    "valueType": "DISTRIBUTION"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/producer/streaming_durations",
-    "metricKind": "DELTA",
-    "valueType": "DISTRIBUTION"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/consumer/streaming_durations",
-    "metricKind": "DELTA",
-    "valueType": "DISTRIBUTION"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/producer/request_bytes",
-    "metricKind": "DELTA",
-    "valueType": "INT64"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/producer/response_bytes",
-    "metricKind": "DELTA",
-    "valueType": "INT64"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/consumer/request_bytes",
-    "metricKind": "DELTA",
-    "valueType": "INT64"
-  }, {
-    "name": "serviceruntime.googleapis.com/api/consumer/response_bytes",
-    "metricKind": "DELTA",
-    "valueType": "INT64"
-  }],
-  "monitoredResources": [{
-    "type": "api",
-    "labels": [{
-      "key": "cloud.googleapis.com/location"
-    }, {
-      "key": "cloud.googleapis.com/uid"
-    }, {
-      "key": "serviceruntime.googleapis.com/api_version"
-    }, {
-      "key": "serviceruntime.googleapis.com/api_method"
-    }, {
-      "key": "serviceruntime.googleapis.com/consumer_project"
-    }, {
-      "key": "cloud.googleapis.com/project"
-    }, {
-      "key": "cloud.googleapis.com/service"
-    }]
-  }],
-  "logging": {
-    "producerDestinations": [{
-      "logs": ["endpoints_log"],
-      "monitoredResource": "api"
-    }]
-  },
-  "monitoring": {
-    "producerDestinations": [{
-      "monitoredResource": "api",
-      "metrics": ["serviceruntime.googleapis.com/api/producer/request_count", "serviceruntime.googleapis.com/api/producer/error_count", "serviceruntime.googleapis.com/api/producer/total_latencies", "serviceruntime.googleapis.com/api/producer/request_overhead_latencies", "serviceruntime.googleapis.com/api/producer/backend_latencies", "serviceruntime.googleapis.com/api/producer/request_sizes", "serviceruntime.googleapis.com/api/producer/response_sizes", "serviceruntime.googleapis.com/api/producer/top_request_count_by_consumer", "serviceruntime.googleapis.com/api/producer/top_request_sizes_by_consumer", "serviceruntime.googleapis.com/api/producer/top_response_sizes_by_consumer", "serviceruntime.googleapis.com/api/producer/streaming_request_message_counts", "serviceruntime.googleapis.com/api/producer/streaming_response_message_counts", "serviceruntime.googleapis.com/api/producer/streaming_durations", "serviceruntime.googleapis.com/api/producer/request_bytes", "serviceruntime.googleapis.com/api/producer/response_bytes", "serviceruntime.googleapis.com/api/producer/by_consumer/request_count", "serviceruntime.googleapis.com/api/producer/by_consumer/error_count", "serviceruntime.googleapis.com/api/producer/by_consumer/total_latencies", "serviceruntime.googleapis.com/api/producer/by_consumer/quota_used_count", "serviceruntime.googleapis.com/api/producer/by_consumer/request_overhead_latencies", "serviceruntime.googleapis.com/api/producer/by_consumer/backend_latencies", "serviceruntime.googleapis.com/api/producer/by_consumer/request_sizes", "serviceruntime.googleapis.com/api/producer/by_consumer/response_sizes"]
-    }],
-    "consumerDestinations": [{
-      "monitoredResource": "api",
-      "metrics": ["serviceruntime.googleapis.com/api/consumer/request_count", "serviceruntime.googleapis.com/api/consumer/error_count", "serviceruntime.googleapis.com/api/consumer/quota_used_count", "serviceruntime.googleapis.com/api/consumer/total_latencies", "serviceruntime.googleapis.com/api/consumer/request_overhead_latencies", "serviceruntime.googleapis.com/api/consumer/backend_latencies", "serviceruntime.googleapis.com/api/consumer/request_sizes", "serviceruntime.googleapis.com/api/consumer/response_sizes", "serviceruntime.googleapis.com/api/consumer/top_request_count_by_end_user", "serviceruntime.googleapis.com/api/consumer/top_request_count_by_end_user_country", "serviceruntime.googleapis.com/api/consumer/top_request_count_by_referer", "serviceruntime.googleapis.com/api/consumer/streaming_request_message_counts", "serviceruntime.googleapis.com/api/consumer/streaming_response_message_counts", "serviceruntime.googleapis.com/api/consumer/streaming_durations", "serviceruntime.googleapis.com/api/consumer/request_bytes", "serviceruntime.googleapis.com/api/consumer/response_bytes"]
-    }]
   },
   "systemParameters": {
   }
