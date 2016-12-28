@@ -21,31 +21,17 @@ with `producer_project_id:` in the YAML service configs.
 ## Service Config: service.json
 
 The `service.json` service config file is generated from
-`grpc-test.proto` and `grpc-test.yaml` using
-[API Compiler](https://github.com/googleapis/api-compiler).
+`grpc-test.proto` and `grpc-test.yaml` using gcloud.
 
  - At top folder run:
 
-   protoc test/grpc/grpc-test.proto -Itest/grpc -I$(bazel info output_base)/external/googleapis_git/ --include_imports --descriptor_set_out=out.descriptors
+   protoc test/grpc/grpc-test.proto -Itest/grpc -I$(bazel info output_base)/external/googleapis_git/ --include_imports --descriptor_set_out=out.pb
 
- - Follow the [API Compiler](https://github.com/googleapis/api-compiler)
-   instructions to build it.
+   gcloud beta service-management deploy out.pb test/grpc/grpc-test.yaml
 
- - Copy endpoints.yaml to that api-compiler folder.
+ - Download the service.json to this local folder. You might need [oauth2l](https://github.com/google/oauth2l) and a service account secret file.
 
- - At api-compiler folder, run:
-
-   SRC=SOURCE_CODE_TOP_LEVEL_FOLDER
-
-   ./run.sh --configs $SRC/test/grpc/grpc-test.yaml --configs endpoints.yaml --descriptor $SRC/out.descriptors --json_out service.json
-
-
- - Copy the service.json to this local folder.
-
- - Push it to service-managment.
-
-   gcloud alpha service-management deploy service.json
-
+   curl -H "`oauth2l -json service_account.json header cloud-platform`" 'https://servicemanagement.googleapis.com/v1/services/SERVICE_NAME/config?configId=SERVICE_CONFIG_ID' > test/grpc/local/service.json
 
 ## Service Config: interop_service.json
 
