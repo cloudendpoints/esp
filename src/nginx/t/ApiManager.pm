@@ -223,9 +223,7 @@ sub get_echo_service_config {
 
 sub get_grpc_test_service_config {
   my ($GrpcBackendPort) = @_;
-  return <<EOF
-name: "endpoints-grpc-test.cloudendpointsapis.com"
-producer_project_id: "endpoints-grpc-test"
+  return read_test_file("testdata/grpc_echo_service.pb.txt") . <<EOF
 backend {
   rules {
     selector: "test.grpc.Test.Echo"
@@ -234,17 +232,6 @@ backend {
   rules {
     selector: "test.grpc.Test.EchoStream"
     address: "127.0.0.1:$GrpcBackendPort"
-  }
-}
-apis {
-  name: "test.grpc.Test"
-  methods {
-    name: "Echo"
-  }
-  methods {
-    name: "EchoStream"
-    request_streaming: true
-    response_streaming: true
   }
 }
 EOF
