@@ -50,7 +50,7 @@ EOF
 }
 
 SERVICE_NAME='echo-dot-esp-grpc-load-test.appspot.com'
-SERVICE_VERSION='2016-08-25r1'
+SERVICE_VERSION='2016-12-27r2'
 PROJECT="esp-grpc-load-test"
 INSTANCE=grpc-test-server-gce-vm
 IMAGE="gcr.io/endpoints-release/endpoints-runtime"
