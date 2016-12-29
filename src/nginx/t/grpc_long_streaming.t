@@ -43,12 +43,6 @@ my @streaming_bytes_metrics = (
 );
 
 my @final_metrics = (
-    'serviceruntime.googleapis.com/api/consumer/total_latencies',
-    'serviceruntime.googleapis.com/api/producer/total_latencies',
-    'serviceruntime.googleapis.com/api/consumer/backend_latencies',
-    'serviceruntime.googleapis.com/api/producer/backend_latencies',
-    'serviceruntime.googleapis.com/api/consumer/request_overhead_latencies',
-    'serviceruntime.googleapis.com/api/producer/request_overhead_latencies',
     'serviceruntime.googleapis.com/api/consumer/streaming_durations',
     'serviceruntime.googleapis.com/api/producer/streaming_durations',
     "serviceruntime.googleapis.com/api/producer/streaming_request_message_counts",
@@ -65,7 +59,7 @@ my $ServiceControlPort = ApiManager::pick_port();
 my $GrpcBackendPort = ApiManager::pick_port();
 my $GrpcFallbackPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(77);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(59);
 
 $t->write_file('service.pb.txt',
     ApiManager::get_grpc_test_service_config($GrpcBackendPort) .
