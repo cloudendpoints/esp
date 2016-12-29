@@ -1,7 +1,7 @@
 # Testing ESP with Bazel #
 
 ESP is built using [Bazel](http://bazel.io) build tool. Install
-[Bazel](http://bazel.io) version 0.4.1, following the [Bazel
+[Bazel](http://bazel.io) version 0.4.3, following the [Bazel
 documentation](http://bazel.io/docs/install.html).
 
 # Building ESP #
@@ -44,4 +44,3 @@ ASAN works on both Linux and Mac, but TSAN only works on Linux.
 If you know a test is not going to work under TSAN or ASAN, please add the
 `no_tsan` or `no_asan` flags to your test targets as well as a reference
 to the existing bug.
-
