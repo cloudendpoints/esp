@@ -108,6 +108,8 @@ void NgxEspEnv::RunHTTPRequest(std::unique_ptr<HTTPRequest> request) {
   ngx_esp_send_http_request(std::move(request));
 }
 
+void NgxEspEnv::RunGRPCRequest(std::unique_ptr<GRPCRequest> request) {}
+
 }  // namespace nginx
 }  // namespace api_manager
 }  // namespace google

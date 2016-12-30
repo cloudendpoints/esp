@@ -53,6 +53,8 @@ class NgxEspEnv : public ApiManagerEnvInterface {
 
   virtual void RunHTTPRequest(std::unique_ptr<HTTPRequest> request);
 
+  virtual void RunGRPCRequest(std::unique_ptr<GRPCRequest> request);
+
  private:
   ngx_log_t *log_;
 };
