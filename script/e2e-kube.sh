@@ -37,7 +37,7 @@ ESP_APP="esp"
 # Fetch CLI tool if it is not available
 if [[ ! -f $CLI ]]; then
   OSNAME=`uname | tr "[:upper:]" "[:lower:]"`
-  URL="https://storage.googleapis.com/endpoints-release/v1.0.2/bin/${OSNAME}/amd64/espcli"
+  URL="https://storage.googleapis.com/endpoints-release/v1.0.3/bin/${OSNAME}/amd64/espcli"
   curl -o ${CLI} ${URL}
   chmod +x ${CLI}
 fi
