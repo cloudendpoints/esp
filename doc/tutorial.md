@@ -23,12 +23,12 @@ On Linux, install:
 ## Bazel ##
 
 ESP is built using [Bazel](http://bazel.io) build tool. Install
-[Bazel](http://bazel.io) version 0.4.1, following the [Bazel
+[Bazel](http://bazel.io) version 0.4.3, following the [Bazel
 documentation](http://bazel.io/docs/install.html).
 
 *Note:* Bazel is under active development and from time to time, ESP continuous
 integration systems are upgraded to a new version of Bazel. Currently, ESP
-requires Bazel 0.4.1.
+requires Bazel 0.4.3.
 
 The version of Bazel used by ESP continuous integration systems can be found in
 the [linux-install-software](/script/linux-install-software)

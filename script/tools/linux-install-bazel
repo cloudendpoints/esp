@@ -36,8 +36,8 @@ fi
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . ${DIR}/all-utilities || { echo "Cannot load Bash utilities" ; exit 1 ; }
 
-# Release 0.4.1 (2016-11-21)
-BAZEL_VERSION='ca0b20eb1b5f381c04ad2fad8e87d9fd66a48fe4'
+# Release 0.4.3 (2016-12-22)
+BAZEL_VERSION='1d2fb1ffb09bb58a3a697ef730c5e41de3ed258a'
 BAZEL_DIRECTORY="${TOOLS_DIR}/bazel"
 
 function clone_bazel() {
@@ -56,7 +56,7 @@ function build_bazel() {
   && git fetch origin \
   && git fetch origin --tags \
   && git reset --hard ${BAZEL_VERSION} \
-  && BAZEL_ARGS='' BAZEL='' ./compile.sh \
+  && BAZEL_ARGS='' ./compile.sh \
   && ./output/bazel shutdown \
   && rm -rf ${HOME}/.cache/bazel \
   && ${SUDO} cp ./output/bazel /usr/local/bin/bazel \
@@ -88,4 +88,3 @@ function update_bazel() {
   fi
   echo 'Bazel up-to-date.'
 }
-
