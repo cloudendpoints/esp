@@ -122,7 +122,6 @@ node('master') {
       stage('Unit / Integration Tests') {
         ws {
           def success = true
-          checkoutSourceCode()
           updatePresubmit('run')
           try {
             presubmit(buildNodeLabel)
