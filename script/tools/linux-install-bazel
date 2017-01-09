@@ -36,55 +36,28 @@ fi
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . ${DIR}/all-utilities || { echo "Cannot load Bash utilities" ; exit 1 ; }
 
-# Release 0.4.3 (2016-12-22)
-BAZEL_VERSION='1d2fb1ffb09bb58a3a697ef730c5e41de3ed258a'
+BAZEL_VERSION='0.4.3'
+BAZEL_BASE_URL='https://github.com/bazelbuild/bazel/releases/download'
+BAZEL_SH="bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh"
+BAZEL_URL="${BAZEL_BASE_URL}/${BAZEL_VERSION}/${BAZEL_SH}"
 BAZEL_DIRECTORY="${TOOLS_DIR}/bazel"
 
-function clone_bazel() {
-  local dir="${1}"
-  echo "Cloning Bazel."
-  git clone https://github.com/bazelbuild/bazel.git "${dir}" \
-    || error_exit "Cannot clone Bazel repository."
-}
-
-function build_bazel() {
-  local dir="${1}"
-
-  echo 'Building Bazel'
-  pushd "$dir"
-  git clean -dffx \
-  && git fetch origin \
-  && git fetch origin --tags \
-  && git reset --hard ${BAZEL_VERSION} \
-  && BAZEL_ARGS='' ./compile.sh \
-  && ./output/bazel shutdown \
-  && rm -rf ${HOME}/.cache/bazel \
-  && ${SUDO} cp ./output/bazel /usr/local/bin/bazel \
-  || error_exit "Bazel build failed."
-
-  update_tool bazel "${BAZEL_VERSION}" ./output/bazel
-  set_bazel
-  popd
-}
-
 function update_bazel() {
-  local bazel_current='none'
+  local bazel_current="$(bazel version | grep -oh '[0-9]*\.[0-9]*\.[0-9]*')" \
+    || bazel_current='none'
+
   if [[ -d "${BAZEL_DIRECTORY}" ]]; then
-    bazel_current="$(git -C "${BAZEL_DIRECTORY}" log -n 1 --pretty=format:%H)"
+    mkdir -p "${BAZEL_DIRECTORY}"
   fi
 
   if [[ "${BAZEL_VERSION}" != "${bazel_current}" ]]; then
-    local build_needed=true
-    local bazel_tmp="$(mktemp /tmp/XXXXX.bazel.bin)"
-    get_tool bazel ${BAZEL_VERSION} "${bazel_tmp}" \
-    && ${SUDO} cp "${bazel_tmp}" /usr/local/bin/bazel \
-    && ${SUDO} chmod a+rx /usr/local/bin/bazel \
-    && build_needed=false
-
-    if [[ ${build_needed} == true ]]; then
-      clone_bazel "${BAZEL_DIRECTORY}"
-      build_bazel ${BAZEL_DIRECTORY}
-    fi
+    retry -n 3 wget -nc -P "${BAZEL_DIRECTORY}" "${BAZEL_URL}" \
+      || error_exit "Could not download bazel"
+    chmod +x "${BAZEL_DIRECTORY}/${BAZEL_SH}" \
+      || error_exit "Could not mark bazel shell as executable"
+    sh "${BAZEL_DIRECTORY}/${BAZEL_SH}" --user \
+      || error_exit "Could not install bazel"
   fi
   echo 'Bazel up-to-date.'
 }
+
