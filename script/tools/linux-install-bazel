@@ -53,7 +53,7 @@ function update_bazel() {
   if [[ "${BAZEL_VERSION}" != "${bazel_current}" ]]; then
     retry -n 3 wget -q -nc -P "${BAZEL_DIRECTORY}" "${BAZEL_URL}" \
       || error_exit "Could not download bazel"
-    chmod +x "${BAZEL_DIRECTORY}/${BAZEL_SH}" \
+    ${SUDO} chmod +x "${BAZEL_DIRECTORY}/${BAZEL_SH}" \
       || error_exit "Could not mark bazel shell as executable"
     ${SUDO} "${BAZEL_DIRECTORY}/${BAZEL_SH}" \
       || error_exit "Could not install bazel"

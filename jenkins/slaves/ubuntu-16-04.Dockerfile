@@ -45,7 +45,8 @@ ADD jenkins/slaves/entrypoint /usr/local/bin/entrypoint
 RUN chmod +rx /usr/local/bin/jenkins-slave /usr/local/bin/entrypoint
 
 USER jenkins
-VOLUME ${HOME}
+RUN mkdir ${HOME}/.jenkins
+VOLUME ${HOME}/.jenkins
 WORKDIR ${HOME}
 
 ENTRYPOINT ["entrypoint"]
