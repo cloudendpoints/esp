@@ -30,7 +30,7 @@ ISTIO_PROXY = "8b3a4429965ed1e792704e795e5d22782eca505b"
 
 git_repository(
     name = "nginx",
-    commit = "cfce863dbe786e61e0e7a33376906b337da70c19",
+    commit = "d801f6c43944add39368c5a927b4945ffda5e578",
     remote = "https://nginx.googlesource.com/nginx",
 )
 
