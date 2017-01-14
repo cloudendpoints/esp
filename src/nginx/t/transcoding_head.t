@@ -107,14 +107,6 @@ my @server_requests = split /\r\n\r\n/, $server_output;
 
 ok(ApiManager::compare_json($server_requests[0], $shelves_request_expected), 'Server received request');
 
-# Check responses
-my $shelves_response_expected = {
-  'shelves' => [
-    {'id' => '1', 'theme' => 'Fiction'},
-    {'id' => '2', 'theme' => 'Fantasy'},
-  ]
-};
-
 my ($headers, $actual_body) = split /\r\n\r\n/, $shelves_response, 2;
 like($headers, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');
 like($headers, qr/Content-Type: application\/json/, 'Returned Content-Type');
