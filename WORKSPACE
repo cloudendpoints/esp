@@ -140,10 +140,15 @@ bind(
     actual = "@gflags_git//:gflags",
 )
 
+git_repository(
+    name = "tools",
+    commit = "3327bae27498025ef8d33709f37182ae407fc517",
+    remote = "https://github.com/cloudendpoints/endpoints-tools",
+)
+
 #
 # Python rules
 #
-
 git_repository(
     name = "io_bazel_rules_pex",
     commit = "d4af3ca0a015e8b2d2a81a4df1df51bb0fa0bba0",

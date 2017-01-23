@@ -191,13 +191,9 @@ genrule(
 )
 
 pkg_tar(
-    name = "esp-bin",
+    name = "nginx-bin",
     files = [
-        ":debug_nginx.sh",
-        ":fetch_service_config.sh",
         ":nginx",
-        ":nginx-debug",
-        ":start_esp",
     ],
     mode = "0755",
     package_dir = "/usr/sbin",
@@ -215,36 +211,6 @@ pkg_tar(
 )
 
 pkg_tar(
-    name = "nginx-initd-override",
-    files = [
-        "nginx-init.d/nginx",
-    ],
-    mode = "0755",
-    package_dir = "/etc/init.d",
-)
-
-pkg_tar(
-    name = "nginx-conf-template",
-    files = [
-        "//src/nginx/main:nginx-auto.conf.template",
-        "//src/nginx/main:server_config.pb.txt",
-    ],
-    mode = "0644",
-    package_dir = "/etc/nginx",
-    strip_prefix = ".",
-)
-
-pkg_tar(
-    name = "trusted-ca-certificates",
-    files = [
-        "//src/nginx/main:trusted-ca-certificates.crt",
-    ],
-    mode = "0644",
-    package_dir = "/etc/nginx",
-    strip_prefix = ".",
-)
-
-pkg_tar(
     name = "esp-data",
     extension = "tar.gz",
     mode = "0644",
@@ -252,12 +218,13 @@ pkg_tar(
         # The first occurrence of the duplicate file will be picked. In other
         # words, /etc/nginx/nginx.conf from ":nginx-conf-override" will
         # override that from "@nginx_pkgoss//:debian_overlay".
-        ":nginx-conf-template",
-        ":nginx-initd-override",
+        "@tools//start_esp:nginx-conf-template",
+        "@tools//start_esp:nginx-initd-override",
         "@nginx_pkgoss//:debian_overlay",
-        ":esp-bin",
+        "@tools//start_esp:esp-bin",
+        ":nginx-bin",
         ":esp-copyright",
-        ":trusted-ca-certificates",
+        "@tools//start_esp:trusted-ca-certificates",
     ],
 )
 
@@ -299,24 +266,5 @@ sh_test(
         "testdata/data-expected",
         "testdata/deb-expected",
         ":endpoints-server-proxy.deb",
-    ],
-)
-
-load("@io_bazel_rules_pex//pex:pex_rules.bzl", "pex_binary")
-
-pex_binary(
-    name = "start_esp",
-    srcs = [
-        "fetch_service_config.py",
-        "start_esp.py",
-    ],
-    main = "start_esp.py",
-    reqs = [
-        "certifi",
-        "mako>=1.0.4",
-        "oauth2client>=3.0.0",
-        "pyasn1>=0.1.9",
-        "pyasn1-modules>=0.0.8",
-        "urllib3>=1.16",
     ],
 )
