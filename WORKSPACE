@@ -26,7 +26,7 @@
 #
 # A Bazel (http://bazel.io) workspace for the Google Cloud Endpoints runtime.
 
-ISTIO_PROXY = "decf6c670351d4db93858f238f430ab0151da73e"
+ISTIO_PROXY = "ee3cdeeb33b1de0b87c80809802de5246cbb3e25"
 
 git_repository(
     name = "nginx",
@@ -57,6 +57,7 @@ load(
     "@istio_proxy_git//contrib/endpoints:repositories.bzl",
     "grpc_repositories",
     "servicecontrol_client_repositories",
+    "mixerapi_repositories",
 )
 load(
     "@istio_proxy_git//:repositories.bzl",
@@ -95,6 +96,8 @@ bind(
 )
 
 servicecontrol_client_repositories()
+
+mixerapi_repositories()
 
 protobuf_repositories()
 

@@ -536,7 +536,7 @@ def buildNewDockerSlave(nodeLabel) {
       "-T \"${TOOLS_BUCKET}\"")
   echo("Testing ${testDockerImage}")
   node(getTestSlaveLabel(nodeLabel)) {
-    setupNode()
+    checkoutSourceCode()
     sh('jenkins/slaves/slave-test')
   }
   echo("Retagging ${testDockerImage} to ${dockerImage}")

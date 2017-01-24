@@ -37,23 +37,24 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . ${DIR}/all-utilities || { echo "Cannot load Bash utilities" ; exit 1 ; }
 
 NODE_JS_VERSION='4.6.1'
-NODE_JS_URL="https://nodejs.org/dist/v${NODE_JS_VERSION}/node-v${NODE_JS_VERSION}-linux-x64.tar.xz"
-
-function install_node_js() {
-  echo 'Installing Node.js and npm.'
-  local node_tar="$(mktemp /tmp/XXXX.tar.xz)"
-  wget "${NODE_JS_URL}" -O "${node_tar}" \
-  && ${SUDO} tar -C /usr/local --strip-components 1 -xf "${node_tar}" \
-  && rm -rf "${node_tar}" \
-  && return 0
-  return 1
-}
+NODE_JS_ARCHIVE="node-v${NODE_JS_VERSION}-linux-x64.tar.xz"
+NODE_JS_URL="https://nodejs.org/dist/v${NODE_JS_VERSION}/${NODE_JS_ARCHIVE}"
+NODE_JS_DIRECTORY="${TOOLS_DIR}/nodejs"
 
 function update_node_js() {
   local version="$(node --version | grep -oh '[0-9]*\.[0-9]*\.[0-9]*')"
+
+  if [[ -d "${NODE_JS_DIRECTORY}" ]]; then
+    mkdir -p "${NODE_JS_DIRECTORY}"
+  fi
+
   if [[ "${version}" != "${NODE_JS_VERSION}" ]]; then
-    retry install_node_js \
-      || error_exit 'Cannot install node.js.'
+    echo 'Installing Node.js and npmV.'
+    retry -n 3 wget -q -nc -P "${NODE_JS_DIRECTORY}" "${NODE_JS_URL}" \
+      || error_exit 'Could not download nodejs'
+    ${SUDO} tar -C /usr/local --strip-components 1 -xf \
+      "${NODE_JS_DIRECTORY}/${NODE_JS_ARCHIVE}" \
+      || error_exit 'Could not extract nodejs archive'
   fi
   echo 'Node.js is up to date.'
 }
