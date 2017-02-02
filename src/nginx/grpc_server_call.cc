@@ -78,6 +78,11 @@ void TrimFront(std::vector<gpr_slice> *slices, size_t count) {
 // returns NGX_AGAIN.
 ngx_int_t ngx_esp_write_output(ngx_http_request_t *r, ngx_chain_t *out,
                                ngx_http_event_handler_pt write_event_handler) {
+  // Don't write response body if the request is HEAD
+  if (r->header_only) {
+    return NGX_OK;
+  }
+
   ngx_int_t rc = ngx_http_output_filter(r, out);
 
   if (rc == NGX_OK) {

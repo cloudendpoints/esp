@@ -58,6 +58,8 @@ function update_bazel() {
     ${SUDO} "${BAZEL_DIRECTORY}/${BAZEL_SH}" \
       || error_exit "Could not install bazel"
     set_bazel
+    ${SUDO} ${BAZEL} shutdown
+    ${SUDO} rm -rf ${HOME}/.cache/bazel
   fi
   echo 'Bazel up-to-date.'
 }
