@@ -66,8 +66,8 @@ sub gen_metric_int64 {
 }
 
 my %time_distribution = (
-  buckets => 8,
-  growth => 10.0,
+  buckets => 29,
+  growth => 2.0,
   scale => 1e-6
 );
 
