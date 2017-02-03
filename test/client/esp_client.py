@@ -118,10 +118,12 @@ def count_failed_requests(out):
     """ Count failed and non-2xx responses """
     failed = 0
     non2xx = 0
+    completed = 0
     for metrics, _, _ in out:
         failed += metrics.get('Failed requests', [0])[0]
         non2xx += metrics.get('Non-2xx responses', [0])[0]
-    return failed, non2xx
+        completed += metrics.get('Complete requests', [0])[0]
+    return failed, non2xx, completed
 
 if __name__ == "__main__":
     try:
@@ -186,8 +188,8 @@ if __name__ == "__main__":
       if FLAGS.test_env:
         esp_perfkit_publisher.Publish(results, test_env)
 
-      failed, non2xx = count_failed_requests(results)
-      if failed + non2xx > 0:
+      failed, non2xx, completed = count_failed_requests(results)
+      if failed + non2xx > 0.005 * completed:
         sys.exit(
             ('Load test failed:\n'
              '  {} failed requests,\n'
