@@ -80,7 +80,7 @@ type distOptions struct {
 }
 
 var (
-	timeDistOptions = distOptions{8, 10.0, 1e-6}
+	timeDistOptions = distOptions{29, 2.0, 1e-6}
 	sizeDistOptions = distOptions{8, 10.0, 1}
 	randomMatrics   = map[string]bool{
 		"serviceruntime.googleapis.com/api/consumer/total_latencies":            true,
