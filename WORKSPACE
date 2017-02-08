@@ -26,7 +26,7 @@
 #
 # A Bazel (http://bazel.io) workspace for the Google Cloud Endpoints runtime.
 
-ISTIO_PROXY = "2c9c1af3d6ac5ab4d295444c30acd42599edfcb3"
+ISTIO_PROXY = "76355366e4adc6d4002d69d5aafa57e1606338ee"
 
 git_repository(
     name = "nginx",
@@ -57,7 +57,6 @@ load(
     "@istio_proxy_git//contrib/endpoints:repositories.bzl",
     "grpc_repositories",
     "servicecontrol_client_repositories",
-    "mixer_client_repositories",
 )
 load(
     "@istio_proxy_git//:repositories.bzl",
@@ -97,20 +96,11 @@ bind(
 
 servicecontrol_client_repositories()
 
-mixer_client_repositories()
-
 protobuf_repositories()
 
 googletest_repositories()
 
 grpc_repositories()
-
-load(
-    "@mixerclient_git//:repositories.bzl",
-    "mixerapi_repositories",
-)
-
-mixerapi_repositories(protobuf_repo="@protobuf_bzl//")
 
 # Though GRPC has BUILD file, our own BUILD.grpc file is needed since it contains
 # more targets including testing server and client.
