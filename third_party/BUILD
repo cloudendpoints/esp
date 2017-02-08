@@ -38,8 +38,6 @@ perl_library(
 # Nginx test suite containing all of the integration tests
 # included with Nginx.
 
-# limit_req.t is excluded due to https://nginx-review.googlesource.com/#/c/2522/
-
 # ssl_sni_reneg.t is excluded from the test suite because boring ssl
 # does not support renegotiation feature required by the test.
 
@@ -48,10 +46,7 @@ nginx_suite(
     tags = ["exclusive"],
     tests = glob(
         ["nginx-tests/*.t"],
-        exclude = [
-            "nginx-tests/limit_req.t",
-            "nginx-tests/ssl_sni_reneg.t",
-        ],
+        exclude = ["nginx-tests/ssl_sni_reneg.t"],
     ),
     deps = [
         ":nginx_test",
