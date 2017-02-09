@@ -93,6 +93,7 @@ cc_library(
     deps = [
         ":grpc-test_proto",
         "//external:api_manager_utils",
+        "//external:grpc++",
     ],
 )
 
@@ -121,7 +122,10 @@ cc_binary(
     name = "grpc-test-server",
     testonly = 1,
     srcs = ["grpc-test-server.cc"],
-    deps = [":grpc-test_proto"],
+    deps = [
+        ":grpc-test_proto",
+        "//external:grpc++",
+    ],
 )
 
 load(
