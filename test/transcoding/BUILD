@@ -45,7 +45,10 @@ cc_binary(
     name = "bookstore-server",
     testonly = 1,
     srcs = ["bookstore-server.cc"],
-    deps = [":bookstore"],
+    deps = [
+        ":bookstore",
+        "//external:grpc++",
+    ],
 )
 
 cc_binary(
@@ -57,6 +60,7 @@ cc_binary(
         ":bookstore",
         "//external:protobuf",
         "//external:gflags",
+        "//external:grpc++",
     ],
 )
 
