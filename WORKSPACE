@@ -171,11 +171,11 @@ git_repository(
 #
 git_repository(
     name = "io_bazel_rules_go",
-    commit = "3b13b2dba81e09ec213ccbd4da56ad332cb5d3dc",
+    commit = "76c63b5cd0d47c1f2b47ab4953db96c574af1c1d",
     remote = "https://github.com/bazelbuild/rules_go.git",
 )
 
-load("@io_bazel_rules_go//go:def.bzl", "go_repositories", "go_repository")
+load("@io_bazel_rules_go//go:def.bzl", "go_repositories", "go_repository", "new_go_repository")
 
 go_repositories()
 
@@ -185,3 +185,7 @@ new_git_repository(
     commit = "8616e8ee5e20a1704615e6c8d7afcdac06087a67",
     remote = "https://github.com/golang/protobuf.git",
 )
+
+load("//test/grpc:repositories.bzl", "grpc_go_repositories")
+
+grpc_go_repositories()

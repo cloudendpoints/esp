@@ -327,7 +327,7 @@ sub grpc_test_server {
 
 sub grpc_interop_server {
   my ($t, $port) = @_;
-  my $server = './test/grpc/interop-server';
+  my $server = './external/org_golang_google_grpc/interop/server/server';
   exec $server, "--port", $port;
 }
 
