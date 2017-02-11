@@ -58,7 +58,7 @@ function print_test_metrics() {
     sleep 10
     local curr_time=$(date +"%s")
     echo -n "QPS report at $((curr_time - start_time)) seconds:"
-    $ROOT/bazel-bin/test/grpc/interop-metrics-client --total_only
+    $ROOT/bazel-bin/external/org_golang_google_grpc/stress/metrics_client/metrics_client --total_only
   done
 }
 
@@ -91,7 +91,7 @@ while true; do
   echo "Test time: $((CURR_TIME - START_TIME)) seconds, success time: ${SUCCESS_TIME} seconds."
   ((RUN_COUNT++))
 
-  timeout $((RUN_LENGTH + 10)) $ROOT/bazel-bin/test/grpc/interop-stress-client \
+  timeout $((RUN_LENGTH + 10)) $ROOT/bazel-bin/external/org_golang_google_grpc/stress/client/client \
     --server_addresses "${HOST}" \
     --test_duration_secs "${RUN_LENGTH}" \
     --num_channels_per_server 200 \

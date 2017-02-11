@@ -127,28 +127,10 @@ cc_binary(
     deps = [":grpc-test_proto"],
 )
 
-cc_binary(
-    name = "interop-stress-client",
-    testonly = 1,
-    deps = [
-        "@grpc_test_git//:stress_test",
-    ],
-)
-
-cc_binary(
-    name = "interop-metrics-client",
-    testonly = 1,
-    deps = [
-        "@grpc_test_git//:metrics_client",
-    ],
-)
-
 load(
     "@io_bazel_rules_go//go:def.bzl",
     "go_prefix",
-    "go_library",
     "go_binary",
-    "go_test",
 )
 
 go_prefix("github.com/cloudendpoints/esp/test/grpc")
@@ -170,17 +152,6 @@ go_binary(
     go_prefix = ":go_prefix",
 )
 
-
-# cc_binary(
-#     name = "interop-client",
-#     testonly = 1,
-#     srcs = [
-#         "interop-client.cc",
-#     ],
-#     deps = [
-#         "@grpc_test_git//:interop_client_main",
-#     ],
-# )
 
 # Export service.json such that the tests can use it
 exports_files(["local/service.json"])
