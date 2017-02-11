@@ -46,7 +46,7 @@ cat << EOF > "${TEST_ENV}"
 {
   "test": "${TEST}",
   "run_id": "${ID}",
-  "run_description": "${SUBJECT}",
+  "run_description": "$(printf '%q' "${SUBJECT}")",
   "owner": "${AUTHOR}"
 }
 EOF
