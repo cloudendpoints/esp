@@ -72,16 +72,13 @@ genrule(
     name = "grpc-interop_descriptor",
     srcs = [
         "@protobuf_git//:well_known_protos",
-        "@grpc_test_git//:src/proto/grpc/testing/test.proto",
-        "@grpc_test_git//:src/proto/grpc/testing/empty.proto",
-        "@grpc_test_git//:src/proto/grpc/testing/messages.proto",
+        "@org_golang_google_grpc//interop/grpc_testing:go_default_library_protos",
     ],
     outs = ["grpc-interop.descriptor"],
     cmd = """$(location //external:protoc) \
-        $(location @grpc_test_git//:src/proto/grpc/testing/test.proto) \
+        $(location @org_golang_google_grpc//interop/grpc_testing:go_default_library_protos) \
+        -I$$(dirname $(location @org_golang_google_grpc//interop/grpc_testing:go_default_library_protos)) \
         -Iexternal/protobuf_git/src \
-        -I$$(dirname $(location @grpc_test_git//:src/proto/grpc/testing/test.proto))/../../../.. \
-        -I$$(dirname $(location @grpc_test_git//:src/proto/grpc/testing/test.proto)) \
         --include_imports --descriptor_set_out=$@""",
     tools = ["//external:protoc"],
 )

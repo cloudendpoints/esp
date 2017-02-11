@@ -102,19 +102,6 @@ googletest_repositories()
 
 grpc_repositories()
 
-# Though GRPC has BUILD file, our own BUILD.grpc file is needed since it contains
-# more targets including testing server and client.
-# To generate the BUILD.grpc file, cherry-pick
-# https://github.com/grpc/grpc/pull/7556
-# and run ./tools/buildgen/generate_projects.sh in GRPC repo.
-new_git_repository(
-    name = "grpc_test_git",
-    build_file = "third_party/BUILD.grpc",
-    commit = "d28417c856366df704200f544e72d31056931bce",
-    init_submodules = True,
-    remote = "https://github.com/grpc/grpc.git",
-)
-
 # Workaround for Bazel > 0.4.0 since it needs newer protobuf.bzl from:
 # https://github.com/google/protobuf/pull/2246
 # Do not use this git_repository for anything else than protobuf.bzl
