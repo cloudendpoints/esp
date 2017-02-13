@@ -44,7 +44,7 @@ my $ServiceControlPort = ApiManager::pick_port();
 my $GrpcBackendPort = ApiManager::pick_port();
 my $HttpBackendPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(5);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(4);
 
 $t->write_file(
     'service.pb.txt',
@@ -85,13 +85,14 @@ is($t->waitforsocket("127.0.0.1:${Http2NginxPort}"), 1, 'Nginx socket ready.');
 
 ################################################################################
 my @test_cases = (
-    'cancel_after_begin',
+# Temporary disabled per b/35314304
+#    'cancel_after_begin',
     'cancel_after_first_response',
 );
 
 foreach my $case (@test_cases) {
   my $result = &ApiManager::run_grpc_interop_test($t, $Http2NginxPort,
-      $case, '--global_metadata', 'x-api-key:api-key');
+      $case, '--api_key', 'api-key');
   is($result, 0, "${case} test completed as expected.");
 }
 

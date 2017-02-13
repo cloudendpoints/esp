@@ -38,14 +38,14 @@ GRPC_ROOT="${ROOT}/test/grpc"
 
 . "${ROOT}/script/all-utilities" || { echo "Cannot load Bash utilities"; exit 1; }
 
-TEST_SERVER_BIN='grpc-test-server'
+TEST_SERVER_BIN='server'
 TEST_SERVER_ARGS='0.0.0.0:8081'
 
 while getopts :i:o arg; do
   case ${arg} in
     i) IMAGE="${OPTARG}";;
     o)
-      TEST_SERVER_BIN='interop-server'
+      TEST_SERVER_BIN='server'
       TEST_SERVER_ARGS='--port=8081'
       ;;
     *) error_exit "Unrecognized argument -${OPTARG}";;
@@ -58,10 +58,10 @@ echo "Checking if docker image ${IMAGE} exists.."
 gcloud docker pull "${IMAGE}" \
   && { echo "Image ${IMAGE} already exists; skipping"; exit 0; }
 
-BAZEL_TARGET="${ROOT}/bazel-bin/test/grpc/${TEST_SERVER_BIN}"
+BAZEL_TARGET="${ROOT}/bazel-bin/external/org_golang_google_grpc/interop/server/${TEST_SERVER_BIN}"
 if ! [[ -e "${BAZEL_TARGET}" ]]; then
   echo "Building ${TEST_SERVER_BIN}"
-  bazel build --config=release "//test/grpc:${TEST_SERVER_BIN}" \
+  bazel build --config=release "@org_golang_google_grpc//interop/server:${TEST_SERVER_BIN}" \
     || error_exit 'Could not build ${TEST_SERVER_BIN}'
 fi
 

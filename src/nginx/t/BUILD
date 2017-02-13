@@ -128,7 +128,7 @@ nginx_suite(
     size = "small",
     data = [
         "//test/grpc:interop-client",
-        "//test/grpc:interop-server",
+        "@org_golang_google_grpc//interop/server",
     ],
     nginx = "//src/nginx/main:nginx-esp",
     tests = [
