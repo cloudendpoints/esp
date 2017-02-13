@@ -171,7 +171,7 @@ Status ProcessUpstreamHeaders(
         continue;
       }
 
-      // grpc_base64_encode may have adde//github.com/cloudendpoints/espd padding. If not needed, remove them.
+      // grpc_base64_encode may have added padding. If not needed, remove them.
       size_t len = strlen(b64_value);
       while (len > 0 && b64_value[len - 1] == '=') {
         len--;
