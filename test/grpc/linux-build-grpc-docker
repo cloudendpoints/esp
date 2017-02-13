@@ -38,14 +38,16 @@ GRPC_ROOT="${ROOT}/test/grpc"
 
 . "${ROOT}/script/all-utilities" || { echo "Cannot load Bash utilities"; exit 1; }
 
-TEST_SERVER_BIN='server'
+TEST_SERVER_TARGET='//test/grpc:grpc-test-server'
+TEST_SERVER_BIN='test/grpc/grpc-test-server'
 TEST_SERVER_ARGS='0.0.0.0:8081'
 
 while getopts :i:o arg; do
   case ${arg} in
     i) IMAGE="${OPTARG}";;
     o)
-      TEST_SERVER_BIN='server'
+      TEST_SERVER_TARGET='@org_golang_google_grpc//interop/server'
+      TEST_SERVER_BIN='external/org_golang_google_grpc/interop/server/server'
       TEST_SERVER_ARGS='--port=8081'
       ;;
     *) error_exit "Unrecognized argument -${OPTARG}";;
@@ -58,17 +60,17 @@ echo "Checking if docker image ${IMAGE} exists.."
 gcloud docker pull "${IMAGE}" \
   && { echo "Image ${IMAGE} already exists; skipping"; exit 0; }
 
-BAZEL_TARGET="${ROOT}/bazel-bin/external/org_golang_google_grpc/interop/server/${TEST_SERVER_BIN}"
+BAZEL_TARGET="${ROOT}/bazel-bin/${TEST_SERVER_BIN}"
 if ! [[ -e "${BAZEL_TARGET}" ]]; then
   echo "Building ${TEST_SERVER_BIN}"
-  bazel build --config=release "@org_golang_google_grpc//interop/server:${TEST_SERVER_BIN}" \
+  bazel build --config=release "${TEST_SERVER_TARGET}" \
     || error_exit 'Could not build ${TEST_SERVER_BIN}'
 fi
 
 cp -f "${BAZEL_TARGET}" "${GRPC_ROOT}" \
   || error_exit "Could not copy ${BAZEL_TARGET} to ${GRPC_ROOT}"
 
-sed -e "s|TEST_SERVER_BIN|${TEST_SERVER_BIN}|g" \
+sed -e "s|TEST_SERVER_BIN|$(basename ${TEST_SERVER_BIN})|g" \
     -e "s|TEST_SERVER_ARGS|${TEST_SERVER_ARGS}|g" \
     "${GRPC_ROOT}/Dockerfile.temp" > "${GRPC_ROOT}/Dockerfile"
 
