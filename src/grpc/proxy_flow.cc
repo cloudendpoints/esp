@@ -31,6 +31,7 @@
 #include "grpc/support/alloc.h"
 
 extern "C" {
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/security/util/b64.h"
 }
 
@@ -130,6 +131,8 @@ namespace {
 Status ProcessDownstreamHeaders(
     const std::multimap<std::string, std::string> &headers,
     ::grpc::ClientContext *context) {
+  static grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+
   for (const auto &it : headers) {
     // GRPC runtime libraries use "-bin" suffix to detect binary headers and
     // properly apply base64 encoding & decoding as headers are sent and
@@ -140,8 +143,8 @@ Status ProcessDownstreamHeaders(
         continue;
       }
       ::grpc::Slice value_slice(
-          grpc_base64_decode_with_len(it.second.c_str(), it.second.length(),
-                                      false),
+          grpc_base64_decode_with_len(&exec_ctx, it.second.c_str(),
+                                      it.second.length(), false),
           ::grpc::Slice::STEAL_REF);
       std::string binary_value(
           reinterpret_cast<const char *>(value_slice.begin()),

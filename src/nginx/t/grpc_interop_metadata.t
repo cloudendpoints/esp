@@ -89,6 +89,7 @@ my @test_cases = (
 );
 
 foreach my $case (@test_cases) {
+  <>;
   my $result = &ApiManager::run_grpc_interop_test($t, $Http2NginxPort,
       $case, '--api_key', 'api-key');
   is($result, 0, "${case} test completed as expected.");
