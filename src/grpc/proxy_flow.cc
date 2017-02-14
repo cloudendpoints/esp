@@ -280,11 +280,11 @@ void ProxyFlow::StartUpstreamWritesDone(std::shared_ptr<ProxyFlow> flow,
         if (!ok) {
           // Upstream is not writable, call finish to get status and
           // and finish the call
-          StartUpstreamFinish(flow, Status::OK);
+          StartUpstreamFinish(flow);
           return;
         }
         if (!status.ok()) {
-          StartUpstreamFinish(flow, status);
+          StartDownstreamFinish(flow, status);
           return;
         }
       }));
@@ -300,7 +300,7 @@ void ProxyFlow::StartUpstreamWriteMessage(std::shared_ptr<ProxyFlow> flow) {
         if (!ok) {
           // Upstream is not writable, call finish to get status and
           // and finish the call
-          StartUpstreamFinish(flow, Status::OK);
+          StartUpstreamFinish(flow);
           return;
         }
         // Now that the write has completed, it's safe to start the
@@ -362,7 +362,7 @@ void ProxyFlow::StartUpstreamReadMessage(std::shared_ptr<ProxyFlow> flow) {
       &flow->upstream_to_downstream_buffer_,
       flow->async_grpc_queue_->MakeTag([flow](bool ok) {
         if (!ok) {
-          StartUpstreamFinish(flow, Status::OK);
+          StartUpstreamFinish(flow);
           return;
         }
         StartDownstreamWriteMessage(flow);
@@ -392,8 +392,7 @@ void ProxyFlow::StartDownstreamWriteMessage(std::shared_ptr<ProxyFlow> flow) {
       });
 }
 
-void ProxyFlow::StartUpstreamFinish(std::shared_ptr<ProxyFlow> flow,
-                                    Status status) {
+void ProxyFlow::StartUpstreamFinish(std::shared_ptr<ProxyFlow> flow) {
   {
     std::lock_guard<std::mutex> lock(flow->mu_);
     if (flow->started_upstream_finish_) {
@@ -404,7 +403,7 @@ void ProxyFlow::StartUpstreamFinish(std::shared_ptr<ProxyFlow> flow,
   flow->upstream_reader_writer_->Finish(
       &flow->status_from_upstream_,
       flow->async_grpc_queue_->MakeTag(
-          [flow, status](bool ok) { StartDownstreamFinish(flow, status); }));
+          [flow](bool ok) { StartDownstreamFinish(flow, Status::OK); }));
 }
 
 void ProxyFlow::StartDownstreamFinish(std::shared_ptr<ProxyFlow> flow,
