@@ -272,16 +272,16 @@ void ProxyFlow::StartUpstreamWritesDone(std::shared_ptr<ProxyFlow> flow,
     }
     flow->sent_upstream_writes_done_ = true;
   }
-  if (!status.ok()) {
-    StartUpstreamFinish(flow, status);
-    return;
-  }
   flow->upstream_reader_writer_->WritesDone(
-      flow->async_grpc_queue_->MakeTag([flow](bool ok) {
+      flow->async_grpc_queue_->MakeTag([flow, status](bool ok) {
         if (!ok) {
           // Upstream is not writable, call finish to get status and
           // and finish the call
           StartUpstreamFinish(flow, Status::OK);
+          return;
+        }
+        if (status.code() == 413) {
+          StartUpstreamFinish(flow, status);
           return;
         }
       }));
