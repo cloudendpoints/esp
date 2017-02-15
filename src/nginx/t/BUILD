@@ -103,6 +103,7 @@ nginx_suite(
         "grpc_auth_pkey.t",
         "grpc_call_flow_control.t",
         "grpc_cloud_trace.t",
+        "grpc_compression.t",
         "grpc_config_addr.t",
         "grpc_downstream_flow_control.t",
         "grpc_errors.t",
