@@ -128,12 +128,20 @@ namespace grpc {
 // transition to "DownstreamFinish" in case of error.
 
 namespace {
+
+const char kGrpcEncoding[] = "grpc-encoding";
+const char kGrpcAcceptEncoding[] = "grpc-accept-encoding";
+
 Status ProcessDownstreamHeaders(
     const std::multimap<std::string, std::string> &headers,
     ::grpc::ClientContext *context) {
   static grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   for (const auto &it : headers) {
+    if (it.first == kGrpcEncoding || it.first == kGrpcAcceptEncoding) {
+      // GRPC lib will add this header, so not adding it to client_context_
+      continue;
+    }
     // GRPC runtime libraries use "-bin" suffix to detect binary headers and
     // properly apply base64 encoding & decoding as headers are sent and
     // received. So we decode here before passing it to GRPC runtime.
