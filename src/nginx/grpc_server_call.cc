@@ -26,9 +26,9 @@
 
 #include "src/nginx/grpc_server_call.h"
 
+#include <grpc/impl/codegen/gpr_types.h>
 #include <cassert>
 #include <utility>
-#include <grpc/impl/codegen/gpr_types.h>
 
 #include "contrib/endpoints/include/api_manager/utils/status.h"
 #include "grpc++/support/byte_buffer.h"
@@ -587,8 +587,6 @@ bool NgxEspGrpcServerCall::TryReadDownstreamMessage() {
     ++it;
   }
 
-
-
   // Copy the slices, logically transferring their reference counts to
   // the 'slices' vector (which will drop those reference counts as
   // the vector is destroyed).
@@ -603,8 +601,8 @@ bool NgxEspGrpcServerCall::TryReadDownstreamMessage() {
     gpr_slice_buffer output;
     gpr_slice_buffer_init(&output);
 
-    if (grpc_msg_decompress(&exec_ctx, GetCompressionAlgorithm(r_), &input, &output) !=
-        1) {
+    if (grpc_msg_decompress(&exec_ctx, GetCompressionAlgorithm(r_), &input,
+                            &output) != 1) {
       gpr_slice_buffer_destroy(&input);
       gpr_slice_buffer_destroy(&output);
       CompletePendingRead(false,
@@ -616,8 +614,8 @@ bool NgxEspGrpcServerCall::TryReadDownstreamMessage() {
     }
 
     slices.reserve(output.count);
-    std::transform(output.slices, output.slices + output.count, std::back_inserter(slices),
-                   [](gpr_slice &slice) {
+    std::transform(output.slices, output.slices + output.count,
+                   std::back_inserter(slices), [](gpr_slice &slice) {
                      return ::grpc::Slice(slice, ::grpc::Slice::ADD_REF);
                    });
 
