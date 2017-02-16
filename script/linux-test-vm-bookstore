@@ -69,7 +69,7 @@ function test_filename () {
 
 function cleanup() {
   # restore the original configs after we are done with the tests
-  git -C "${ROOT} checkout" \
+  git -C "${ROOT}" checkout \
       "${APP_DIR}/swagger.json" \
       "${APP_DIR}/app_esp.yaml" \
       "${APP_DIR}/bookstore.js"
