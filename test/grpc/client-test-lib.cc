@@ -197,6 +197,13 @@ class Echo {
             result.mutable_echo()->set_verified_metadata(verified_metadata);
             ok &= metadata_results->size() == 0;
           }
+
+          for (auto key : echo->desc_.expected_metadata_keys()) {
+            auto it = echo->response_.received_metadata().find(key);
+            if (it != echo->response_.received_metadata().end()) {
+              (*(result.mutable_additional_metadata()))[key] = it->second;
+            }
+          }
           done(ok, result);
         }));
   }
