@@ -96,7 +96,6 @@ while true; do
     --test_duration_secs "${RUN_LENGTH}" \
     --num_channels_per_server 200 \
     --num_stubs_per_channel 1 \
-    --do_not_abort_on_transient_failures false \
     --test_cases "${TEST_CASES}" \
   && ((SUCCESS_TIME += RUN_LENGTH))
 
