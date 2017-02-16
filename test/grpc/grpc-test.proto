@@ -110,6 +110,9 @@ message EchoTest {
 
   // The final RPC status to expect in the response.
   CallStatus expected_status = 3;
+
+  // The expected metadata keys that the grpc server should receive.
+  repeated string expected_metadata_keys = 4;
 }
 
 message EchoResult {
@@ -355,6 +358,9 @@ message TestResult {
     ProbeUpstreamMessageLimitResult probe_upstream_message_limit = 7;
     EchoReportResult echo_report = 8;
   }
+
+  // Additional metadata that can be added by ESP during the Check processing.
+  map<string, bytes> additional_metadata = 9;
 }
 
 // Test results.

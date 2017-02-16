@@ -30,6 +30,7 @@ use warnings;
 ################################################################################
 
 use src::nginx::t::ApiManager;   # Must be first (sets up import path to the Nginx test module)
+use src::nginx::t::Auth;
 use src::nginx::t::HttpServer;
 use src::nginx::t::ServiceControl;
 use Test::Nginx;  # Imports Nginx's test module
@@ -42,14 +43,29 @@ use JSON::PP;
 my $NginxPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $GrpcServerPort = ApiManager::pick_port();
+my $PubkeyPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(7);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(8);
 
 $t->write_file('service.pb.txt',
         ApiManager::get_grpc_test_service_config($GrpcServerPort) .
         ApiManager::read_test_file('testdata/logs_metrics.pb.txt') . <<"EOF");
 control {
   environment: "http://127.0.0.1:${ServiceControlPort}"
+}
+authentication {
+  providers {
+    id: "test_auth"
+    issuer: "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l\@developer.gserviceaccount.com"
+    jwks_uri: "http://127.0.0.1:${PubkeyPort}/pubkey"
+  }
+  rules {
+    selector: "test.grpc.Test.Echo"
+    requirements {
+      provider_id: "test_auth"
+      audiences: "ok_audience_1,ok_audience_2"
+    }
+  }
 }
 EOF
 
@@ -76,6 +92,10 @@ http {
 }
 EOF
 
+my $pkey_jwk = Auth::get_public_key_jwk;
+my $auth_token = Auth::get_auth_token('./src/nginx/t/matching-client-secret.json', 'ok_audience_1');
+
+$t->run_daemon(\&pubkey, $t, $PubkeyPort, $pkey_jwk, 'pubkey.log');
 $t->run_daemon(\&service_control, $t, $ServiceControlPort, 'servicecontrol.log');
 $t->run_daemon(\&ApiManager::grpc_test_server, $t, "127.0.0.1:${GrpcServerPort}");
 
@@ -100,6 +120,7 @@ my $content_length = length($request);
 my $response = ApiManager::http($NginxPort,<<EOF . $request);
 POST /echo?key=api-key HTTP/1.0
 Host: 127.0.0.1:${NginxPort}
+Authorization: Bearer $auth_token
 Content-Type: application/json
 Content-Length: $content_length
 client-text: text
@@ -112,9 +133,12 @@ $t->stop_daemons();
 my ($headers, $actual_body) = split /\r\n\r\n/, $response, 2;
 
 my $json_response = decode_json($actual_body);
+my $expected_userinfo = "ZXlKcGMzTjFaWElpT2lJMk1qZzJORFUzTkRFNE9ERXRibTloWW1sMU1qTm1OV0U0YlRodmRtUTRkV04yTmprNGJHbzNPSFoyTUd4QVpHVjJaV3h2Y0dWeUxtZHpaWEoyYVdObFlXTmpiM1Z1ZEM1amIyMGlMQ0pwWkNJNklqWXlPRFkwTlRjME1UZzRNUzF1YjJGaWFYVXlNMlkxWVRodE9HOTJaRGgxWTNZMk9UaHNhamM0ZG5Zd2JFQmtaWFpsYkc5d1pYSXVaM05sY25acFkyVmhZMk52ZFc1MExtTnZiU0o5";
 
 is('dGV4dA==', $json_response->{receivedMetadata}->{'client-text'}, "Received client-text metadata");
 is('YmluYXJ5', $json_response->{receivedMetadata}->{'client-binary-bin'}, "Received client-binary metadata");
+is($expected_userinfo, $json_response->{receivedMetadata}->{'x-endpoint-api-userinfo'}, "Received x-endpoint-api-userinfo");
+
 like($headers, qr/initial-text: text/, "Server returns initial text metadata");
 like($headers, qr/initial-binary-bin: YmluYXJ5/, "Server returns initial binary metadata");
 
@@ -143,3 +167,20 @@ EOF
 }
 
 ################################################################################
+
+sub pubkey {
+  my ($t, $port, $pkey, $file) = @_;
+  my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
+    or die "Can't create test server socket: $!\n";
+  local $SIG{PIPE} = 'IGNORE';
+
+  $server->on('GET', '/pubkey', <<"EOF");
+HTTP/1.1 200 OK
+Connection: close
+
+$pkey
+EOF
+
+  $server->run();
+}
+
