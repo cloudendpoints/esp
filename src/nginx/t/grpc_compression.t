@@ -34,27 +34,25 @@ use src::nginx::t::HttpServer;
 use src::nginx::t::ServiceControl;
 use Test::Nginx;  # Imports Nginx's test module
 use Test::More;   # And the test framework
-use JSON::PP;
 
 ################################################################################
 
-# Port assignment
-my $Http2NginxPort = ApiManager::pick_port();
+# Port assignments
 my $ServiceControlPort = ApiManager::pick_port();
+my $Http2NginxPort = ApiManager::pick_port();
 my $GrpcBackendPort = ApiManager::pick_port();
-my $HttpBackendPort = ApiManager::pick_port();
+my $GrpcFallbackPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(5);
-
-$t->write_file(
-    'service.pb.txt',
-    ApiManager::get_grpc_interop_service_config . <<"EOF");
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(9);
+$t->write_file('service.pb.txt',
+        ApiManager::get_grpc_test_service_config($GrpcBackendPort) .
+        ApiManager::read_test_file('testdata/logs_metrics.pb.txt') . <<"EOF");
 control {
   environment: "http://127.0.0.1:${ServiceControlPort}"
 }
 EOF
 
-$t->write_file_expand('nginx.conf', <<"EOF");
+ApiManager::write_file_expand($t, 'nginx.conf', <<"EOF");
 %%TEST_GLOBALS%%
 daemon off;
 events {
@@ -68,50 +66,107 @@ http {
     location / {
       endpoints {
         api service.pb.txt;
+        %%TEST_CONFIG%%
         on;
       }
-      grpc_pass 127.0.0.1:${GrpcBackendPort};
+      grpc_pass 127.0.0.2:${GrpcFallbackPort};
     }
   }
 }
 EOF
 
-$t->run_daemon(\&service_control, $t, $ServiceControlPort, 'servicecontrol.log');
-$t->run_daemon(\&ApiManager::grpc_interop_server, $t, "${GrpcBackendPort}");
+my $report_done = 'report_done';
+
+$t->run_daemon(\&service_control, $t, $ServiceControlPort, 'servicecontrol.log', $report_done);
+$t->run_daemon(\&ApiManager::grpc_test_server, $t, "127.0.0.1:${GrpcBackendPort}");
 is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control socket ready.');
 is($t->waitforsocket("127.0.0.1:${GrpcBackendPort}"), 1, 'GRPC test server socket ready.');
 $t->run();
 is($t->waitforsocket("127.0.0.1:${Http2NginxPort}"), 1, 'Nginx socket ready.');
 
 ################################################################################
-my @test_cases = (
-    'cancel_after_begin',
-    'cancel_after_first_response',
-);
-
-foreach my $case (@test_cases) {
-  my $result = &ApiManager::run_grpc_interop_test($t, $Http2NginxPort,
-      $case, '--api_key', 'api-key');
-  is($result, 0, "${case} test completed as expected.");
+my $test_results = &ApiManager::run_grpc_test($t, <<"EOF");
+server_addr: "127.0.0.1:${Http2NginxPort}"
+plans {
+  echo {
+    call_config {
+      api_key: "this-is-an-api-key"
+      compression: GZIP
+    }
+    request {
+      text: "This text must be long enough for GRPC library compress it. ______________________________________________________________"
+    }
+  }
 }
+EOF
 
+is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');
 $t->stop_daemons();
+
+my $test_results_expected = <<'EOF';
+results {
+  echo {
+    text: "This text must be long enough for GRPC library compress it. ______________________________________________________________"
+  }
+}
+EOF
+is($test_results, $test_results_expected, 'Client tests completed as expected.');
+
+my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
+is(scalar @servicecontrol_requests, 2, 'Service control was called twice');
+
+# :check
+my $r = shift @servicecontrol_requests;
+like($r->{uri}, qr/:check$/, 'First call was a :check');
+
+# :report
+$r = shift @servicecontrol_requests;
+like($r->{uri}, qr/:report$/, 'Second call was a :report');
+
+my $report_body = ServiceControl::convert_proto($r->{body}, 'report_request', 'json');
+my $expected_report_body = ServiceControl::gen_report_body({
+  'serviceName' =>  'endpoints-grpc-test.cloudendpointsapis.com',
+  'api_method' => 'test.grpc.Test.Echo',
+  'url' => '/test.grpc.Test/Echo',
+  'protocol' => 'grpc',
+  'api_key' => 'this-is-an-api-key',
+  'api_name' => 'test.grpc.Test',
+  'producer_project_id' => 'endpoints-grpc-test',
+  'location' => 'us-central1',
+  'http_method' => 'POST',
+  'log_message' => 'Method: test.grpc.Test.Echo',
+  'response_code' => '200',
+  'request_size' => ($^O eq 'darwin' ? 371 : 373),
+  'request_bytes' => ($^O eq 'darwin' ? 371 : 373),
+  'streaming_request_message_counts' => 1,
+  'streaming_response_message_counts' => 1,
+  });
+ok(ServiceControl::compare_http2_report_json($report_body, $expected_report_body), 'Report body is received.');
 
 ################################################################################
 
 sub service_control {
-  my ($t, $port, $file) = @_;
+  my ($t, $port, $file, $done) = @_;
   my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
     or die "Can't create test server socket: $!\n";
-  local $SIG{PIPE} = 'IGNORE';
 
-  $server->on_sub('POST', '/v1/services/endpoints-grpc-interop.cloudendpointsapis.com:check', sub {
+  $server->on_sub('POST', '/v1/services/endpoints-grpc-test.cloudendpointsapis.com:check', sub {
     my ($headers, $body, $client) = @_;
     print $client <<'EOF';
 HTTP/1.1 200 OK
 Connection: close
 
 EOF
+  });
+
+  $server->on_sub('POST', '/v1/services/endpoints-grpc-test.cloudendpointsapis.com:report', sub {
+    my ($headers, $body, $client) = @_;
+    print $client <<'EOF';
+HTTP/1.1 200 OK
+Connection: close
+
+EOF
+    $t->write_file($done, ':report done');
   });
 
   $server->run();

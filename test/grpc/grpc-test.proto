@@ -74,6 +74,14 @@ message CallConfig {
 
   // Additional metadata to send to server
   map<string, bytes> metadata = 4;
+
+  enum CompressionAlgorithm {
+    NONE = 0;
+    DEFLATE = 1;
+    GZIP = 2;
+  }
+  // Compression algorithm the request
+  CompressionAlgorithm compression = 5;
 }
 
 // The outcome of a GRPC call.
