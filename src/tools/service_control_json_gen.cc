@@ -46,6 +46,8 @@ enum OutputType { BINARY, TEXT, JSON };
 enum ProtoMessageType {
   CHECK_REQUEST,
   CHECK_RESPONSE,
+  QUOTA_REQUEST,
+  QUOTA_RESPONSE,
   REPORT_REQUEST,
   REPORT_RESPONSE
 };
@@ -69,12 +71,16 @@ const int kTextOutput = 4;
 const int kBinaryOutput = 5;
 const int kCheckRequstProto = 6;
 const int kCheckResponseProto = 7;
+const int kAllocateQuotaRequstProto = 11;
+const int kAllocateQuotaResponseProto = 12;
 const int kReportRequstProto = 8;
 const int kReportResponseProto = 9;
 const int kReportRequestSize = 10;
 
 ::google::api::servicecontrol::v1::CheckRequest check_request;
 ::google::api::servicecontrol::v1::CheckResponse check_response;
+::google::api::servicecontrol::v1::AllocateQuotaRequest quota_request;
+::google::api::servicecontrol::v1::AllocateQuotaResponse quota_response;
 ::google::api::servicecontrol::v1::ReportRequest report_request;
 ::google::api::servicecontrol::v1::ReportResponse report_response;
 
@@ -94,6 +100,8 @@ void ProcessCmdLine(int argc, char** argv) {
         {"binary", no_argument, nullptr, kBinaryOutput},
         {"check_request", no_argument, nullptr, kCheckRequstProto},
         {"check_response", no_argument, nullptr, kCheckResponseProto},
+        {"quota_request", no_argument, nullptr, kAllocateQuotaRequstProto},
+        {"quota_response", no_argument, nullptr, kAllocateQuotaResponseProto},
         {"report_request", no_argument, nullptr, kReportRequstProto},
         {"report_response", no_argument, nullptr, kReportResponseProto},
         {"report_request_size", required_argument, nullptr, kReportRequestSize},
@@ -133,6 +141,12 @@ void ProcessCmdLine(int argc, char** argv) {
       case kCheckResponseProto:
         proto_type = CHECK_RESPONSE;
         break;
+      case kAllocateQuotaRequstProto:
+        proto_type = QUOTA_REQUEST;
+        break;
+      case kAllocateQuotaResponseProto:
+        proto_type = QUOTA_RESPONSE;
+        break;
       case kReportRequstProto:
         proto_type = REPORT_REQUEST;
         break;
@@ -163,6 +177,8 @@ void ProcessCmdLine(int argc, char** argv) {
             "Protobuf message type:\n"
             "  --check_request:  CheckRequest protobuf message.\n"
             "  --check_response:  CheckResponse protobuf message.\n"
+            "  --quota_request:  AllocateQuotaRequest protobuf message.\n"
+            "  --quota_response:  AllocateQuotaResponse protobuf message.\n"
             "  --report_request:  ReportRequest protobuf message.\n"
             "  --report_response:  ReportResponse protobuf message.\n"
             "Input:\n"
@@ -315,6 +331,12 @@ int main(int argc, char** argv) {
       break;
     case CHECK_RESPONSE:
       request = &check_response;
+      break;
+    case QUOTA_REQUEST:
+      request = &quota_request;
+      break;
+    case QUOTA_RESPONSE:
+      request = &quota_response;
       break;
     case REPORT_REQUEST:
       request = &report_request;
