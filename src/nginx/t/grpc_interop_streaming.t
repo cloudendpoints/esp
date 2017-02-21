@@ -87,14 +87,14 @@ is($t->waitforsocket("127.0.0.1:${Http2NginxPort}"), 1, 'Nginx socket ready.');
 my @test_cases = (
     'client_streaming',
     'empty_stream',
-    'half_duplex',
     'ping_pong',
     'server_streaming',
+    'timeout_on_sleeping_server',
 );
 
 foreach my $case (@test_cases) {
   my $result = &ApiManager::run_grpc_interop_test($t, $Http2NginxPort,
-      $case, '--global_metadata', 'x-api-key:api-key');
+      $case, '--api_key', 'api-key');
   is($result, 0, "${case} test completed as expected.");
 }
 

@@ -30,22 +30,29 @@ use warnings;
 ################################################################################
 
 use src::nginx::t::ApiManager;   # Must be first (sets up import path to the Nginx test module)
-use src::nginx::t::HttpServer;
 use src::nginx::t::Auth;
+use src::nginx::t::HttpServer;
+use src::nginx::t::ServiceControl;
 use Test::Nginx;  # Imports Nginx's test module
 use Test::More;   # And the test framework
+use JSON::PP;
 
 ################################################################################
 
 # Port assignments
+my $NginxPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
-my $Http2NginxPort = ApiManager::pick_port();
-my $GrpcBackendPort = ApiManager::pick_port();
+my $GrpcServerPort = ApiManager::pick_port();
 my $PubkeyPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(5);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(8);
 
-$t->write_file('service.pb.txt', ApiManager::get_grpc_test_service_config($GrpcBackendPort) . <<"EOF");
+$t->write_file('service.pb.txt',
+        ApiManager::get_grpc_test_service_config($GrpcServerPort) .
+        ApiManager::read_test_file('testdata/logs_metrics.pb.txt') . <<"EOF");
+control {
+  environment: "http://127.0.0.1:${ServiceControlPort}"
+}
 authentication {
   providers {
     id: "test_auth"
@@ -60,12 +67,9 @@ authentication {
     }
   }
 }
-control {
-  environment: "http://127.0.0.1:${ServiceControlPort}"
-}
 EOF
 
-ApiManager::write_file_expand($t, 'nginx.conf', <<"EOF");
+$t->write_file_expand('nginx.conf', <<EOF);
 %%TEST_GLOBALS%%
 daemon off;
 events {
@@ -73,16 +77,16 @@ events {
 }
 http {
   %%TEST_GLOBALS_HTTP%%
+  server_tokens off;
   server {
-    listen 127.0.0.1:${Http2NginxPort} http2;
+    listen 127.0.0.1:${NginxPort};
     server_name localhost;
     location / {
       endpoints {
         api service.pb.txt;
-        %%TEST_CONFIG%%
         on;
       }
-      grpc_pass;
+      grpc_pass 127.0.0.1:${GrpcServerPort};
     }
   }
 }
@@ -91,93 +95,73 @@ EOF
 my $pkey_jwk = Auth::get_public_key_jwk;
 my $auth_token = Auth::get_auth_token('./src/nginx/t/matching-client-secret.json', 'ok_audience_1');
 
-$t->run_daemon(\&service_control, $t, $ServiceControlPort, 'requests.log');
 $t->run_daemon(\&pubkey, $t, $PubkeyPort, $pkey_jwk, 'pubkey.log');
-$t->run_daemon(\&ApiManager::grpc_test_server, $t, "127.0.0.1:${GrpcBackendPort}");
-is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control socket ready.');
-is($t->waitforsocket("127.0.0.1:${PubkeyPort}"), 1, 'Pubkey socket ready.');
-is($t->waitforsocket("127.0.0.1:${GrpcBackendPort}"), 1, 'GRPC test server socket ready.');
+$t->run_daemon(\&service_control, $t, $ServiceControlPort, 'servicecontrol.log');
+$t->run_daemon(\&ApiManager::grpc_test_server, $t, "127.0.0.1:${GrpcServerPort}");
+
+is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, "Service control socket ready.");
+is($t->waitforsocket("127.0.0.1:${GrpcServerPort}"), 1, "GRPC test server socket ready.");
 $t->run();
-is($t->waitforsocket("127.0.0.1:${Http2NginxPort}"), 1, 'Nginx socket ready.');
+is($t->waitforsocket("127.0.0.1:${NginxPort}"), 1, "Nginx socket ready.");
 
 ################################################################################
 
-my $test_results = &ApiManager::run_grpc_test($t, <<"EOF");
-server_addr: "127.0.0.1:${Http2NginxPort}"
-plans {
-  echo {
-    call_config {
-      api_key: "this-is-an-api-key"
-    }
-    request {
-      text: "Hello, world!"
-    }
+my $request = <<EOF;
+{
+  "returnInitialMetadata" : {
+    "initial-text": "dGV4dA==",
+    "initial-binary-bin": "YmluYXJ5"
   }
 }
-plans {
-  echo {
-    call_config {
-      api_key: "this-is-an-api-key"
-      auth_token: "invalid.token"
-    }
-    request {
-      text: "Hello, world!"
-    }
-  }
-}
-plans {
-  echo {
-    call_config {
-      api_key: "this-is-an-api-key"
-      auth_token: "${auth_token}"
-    }
-    request {
-      text: "Hello, world!"
-    }
-    expected_metadata_keys: ["x-endpoint-api-userinfo"]
-  }
-}
+EOF
+
+my $content_length = length($request);
+
+my $response = ApiManager::http($NginxPort,<<EOF . $request);
+POST /echo?key=api-key HTTP/1.0
+Host: 127.0.0.1:${NginxPort}
+Authorization: Bearer $auth_token
+Content-Type: application/json
+Content-Length: $content_length
+client-text: text
+client-binary-bin: YmluYXJ5
+
 EOF
 
 $t->stop_daemons();
 
-my $test_results_expected = <<'EOF';
-results {
-  status {
-    code: 16
-    details: "JWT validation failed: Missing or invalid credentials"
-  }
-}
-results {
-  status {
-    code: 16
-    details: "JWT validation failed: BAD_FORMAT"
-  }
-}
-results {
-  echo {
-    text: "Hello, world!"
-  }
-  additional_metadata {
-    key: "x-endpoint-api-userinfo"
-    value: "eyJpc3N1ZXIiOiI2Mjg2NDU3NDE4ODEtbm9hYml1MjNmNWE4bThvdmQ4dWN2Njk4bGo3OHZ2MGxAZGV2ZWxvcGVyLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJpZCI6IjYyODY0NTc0MTg4MS1ub2FiaXUyM2Y1YThtOG92ZDh1Y3Y2OThsajc4dnYwbEBkZXZlbG9wZXIuZ3NlcnZpY2VhY2NvdW50LmNvbSJ9"
-  }
-}
-EOF
-is($test_results, $test_results_expected, 'Client tests completed as expected.');
+my ($headers, $actual_body) = split /\r\n\r\n/, $response, 2;
+
+my $json_response = decode_json($actual_body);
+my $expected_userinfo = "ZXlKcGMzTjFaWElpT2lJMk1qZzJORFUzTkRFNE9ERXRibTloWW1sMU1qTm1OV0U0YlRodmRtUTRkV04yTmprNGJHbzNPSFoyTUd4QVpHVjJaV3h2Y0dWeUxtZHpaWEoyYVdObFlXTmpiM1Z1ZEM1amIyMGlMQ0pwWkNJNklqWXlPRFkwTlRjME1UZzRNUzF1YjJGaWFYVXlNMlkxWVRodE9HOTJaRGgxWTNZMk9UaHNhamM0ZG5Zd2JFQmtaWFpsYkc5d1pYSXVaM05sY25acFkyVmhZMk52ZFc1MExtTnZiU0o5";
+
+is('dGV4dA==', $json_response->{receivedMetadata}->{'client-text'}, "Received client-text metadata");
+is('YmluYXJ5', $json_response->{receivedMetadata}->{'client-binary-bin'}, "Received client-binary metadata");
+is($expected_userinfo, $json_response->{receivedMetadata}->{'x-endpoint-api-userinfo'}, "Received x-endpoint-api-userinfo");
+
+like($headers, qr/initial-text: text/, "Server returns initial text metadata");
+like($headers, qr/initial-binary-bin: YmluYXJ5/, "Server returns initial binary metadata");
+
 
 ################################################################################
 
 sub service_control {
   my ($t, $port, $file) = @_;
+
   my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
     or die "Can't create test server socket: $!\n";
 
-  $server->on('POST', '/v1/services/endpoints-grpc-test.cloudendpointsapis.com:check', <<'EOF');
+  local $SIG{PIPE} = 'IGNORE';
+
+  $server->on_sub('POST', '/v1/services/endpoints-grpc-test.cloudendpointsapis.com:check', sub {
+    my ($headers, $body, $client) = @_;
+    print $client <<EOF;
 HTTP/1.1 200 OK
+Content-Type: application/json
 Connection: close
 
 EOF
+  });
 
   $server->run();
 }
@@ -199,3 +183,4 @@ EOF
 
   $server->run();
 }
+

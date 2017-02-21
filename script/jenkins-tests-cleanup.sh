@@ -157,7 +157,7 @@ function list_instances() {
   local json_path="$(mktemp /tmp/XXXXX.json)"
   "${GCLOUD}" compute instances list \
     --project "${PROJECT}" \
-    --zone "${ZONE}" \
+    --zones "${ZONE}" \
     --format=json > "${json_path}"
   parse_gcloud_json "${json_path}" 'name' "${regex}"
   rm -f "${json_path}"

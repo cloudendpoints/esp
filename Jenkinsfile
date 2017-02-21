@@ -122,7 +122,6 @@ node('master') {
       stage('Unit / Integration Tests') {
         ws {
           def success = true
-          checkoutSourceCode()
           updatePresubmit('run')
           try {
             presubmit(buildNodeLabel)
@@ -448,9 +447,9 @@ def buildPackages() {
       '//src/tools:auth_token_gen',
       '//test/grpc:grpc-test-client',
       '//test/grpc:interop-client',
-      '//test/grpc:interop-metrics-client',
-      '//test/grpc:interop-server',
-      '//test/grpc:interop-stress-client',
+      '@org_golang_google_grpc//stress/metrics_client',
+      '@org_golang_google_grpc//interop/server',
+      '@org_golang_google_grpc//stress/client',
       '//test/grpc:grpc-test_descriptor',
       '//test/grpc:grpc-interop_descriptor',
   ]
@@ -458,9 +457,9 @@ def buildPackages() {
       'bazel-bin/src/tools/auth_token_gen',
       'bazel-bin/test/grpc/grpc-test-client',
       'bazel-bin/test/grpc/interop-client',
-      'bazel-bin/test/grpc/interop-metrics-client',
-      'bazel-bin/test/grpc/interop-server',
-      'bazel-bin/test/grpc/interop-stress-client',
+      'bazel-bin/external/org_golang_google_grpc/stress/metrics_client/metrics_client',
+      'bazel-bin/external/org_golang_google_grpc/interop/server/server',
+      'bazel-bin/external/org_golang_google_grpc/stress/client/client',
       'bazel-genfiles/test/grpc/grpc-test.descriptor',
       'bazel-genfiles/test/grpc/grpc-interop.descriptor',
   ]
@@ -537,7 +536,7 @@ def buildNewDockerSlave(nodeLabel) {
       "-T \"${TOOLS_BUCKET}\"")
   echo("Testing ${testDockerImage}")
   node(getTestSlaveLabel(nodeLabel)) {
-    setupNode()
+    checkoutSourceCode()
     sh('jenkins/slaves/slave-test')
   }
   echo("Retagging ${testDockerImage} to ${dockerImage}")
@@ -888,4 +887,3 @@ def initialize() {
   // Updating submodules and cleaning files.
   sh('script/setup && script/obliterate')
 }
-

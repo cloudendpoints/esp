@@ -103,6 +103,7 @@ nginx_suite(
         "grpc_auth_pkey.t",
         "grpc_call_flow_control.t",
         "grpc_cloud_trace.t",
+        "grpc_compression.t",
         "grpc_config_addr.t",
         "grpc_downstream_flow_control.t",
         "grpc_errors.t",
@@ -128,7 +129,7 @@ nginx_suite(
     size = "small",
     data = [
         "//test/grpc:interop-client",
-        "//test/grpc:interop-server",
+        "@org_golang_google_grpc//interop/server",
     ],
     nginx = "//src/nginx/main:nginx-esp",
     tests = [
@@ -280,8 +281,10 @@ nginx_suite(
         "transcoding_bindings.t",
         "transcoding_deep_struct.t",
         "transcoding_errors.t",
+        "transcoding_head.t",
         "transcoding_ignore_unknown_fields.t",
         "transcoding_large.t",
+        "transcoding_metadata.t",
         "transcoding_query_params.t",
         "transcoding_shared_port_ssl.t",
         "transcoding_streaming.t",

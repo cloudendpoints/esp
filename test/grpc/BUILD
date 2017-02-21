@@ -72,16 +72,13 @@ genrule(
     name = "grpc-interop_descriptor",
     srcs = [
         "@protobuf_git//:well_known_protos",
-        "@grpc_test_git//:src/proto/grpc/testing/test.proto",
-        "@grpc_test_git//:src/proto/grpc/testing/empty.proto",
-        "@grpc_test_git//:src/proto/grpc/testing/messages.proto",
+        "@org_golang_google_grpc//interop/grpc_testing:go_default_library_protos",
     ],
     outs = ["grpc-interop.descriptor"],
     cmd = """$(location //external:protoc) \
-        $(location @grpc_test_git//:src/proto/grpc/testing/test.proto) \
+        $(location @org_golang_google_grpc//interop/grpc_testing:go_default_library_protos) \
+        -I$$(dirname $(location @org_golang_google_grpc//interop/grpc_testing:go_default_library_protos)) \
         -Iexternal/protobuf_git/src \
-        -I$$(dirname $(location @grpc_test_git//:src/proto/grpc/testing/test.proto))/../../../.. \
-        -I$$(dirname $(location @grpc_test_git//:src/proto/grpc/testing/test.proto)) \
         --include_imports --descriptor_set_out=$@""",
     tools = ["//external:protoc"],
 )
@@ -96,6 +93,7 @@ cc_library(
     deps = [
         ":grpc-test_proto",
         "//external:api_manager_utils",
+        "//external:grpc++",
     ],
 )
 
@@ -124,41 +122,34 @@ cc_binary(
     name = "grpc-test-server",
     testonly = 1,
     srcs = ["grpc-test-server.cc"],
-    deps = [":grpc-test_proto"],
-)
-
-cc_binary(
-    name = "interop-server",
-    testonly = 1,
     deps = [
-        "@grpc_test_git//:interop_server_main",
+        ":grpc-test_proto",
+        "//external:grpc++",
     ],
 )
 
-cc_binary(
-    name = "interop-stress-client",
-    testonly = 1,
-    deps = [
-        "@grpc_test_git//:stress_test",
-    ],
+load(
+    "@io_bazel_rules_go//go:def.bzl",
+    "go_prefix",
+    "go_binary",
 )
 
-cc_binary(
-    name = "interop-metrics-client",
-    testonly = 1,
-    deps = [
-        "@grpc_test_git//:metrics_client",
-    ],
-)
+go_prefix("github.com/cloudendpoints/esp/test/grpc")
 
-cc_binary(
+go_binary(
     name = "interop-client",
-    testonly = 1,
     srcs = [
-        "interop-client.cc",
+        "interop-client.go",
     ],
+    go_prefix = ":go_prefix",
     deps = [
-        "@grpc_test_git//:interop_client_main",
+        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//credentials:go_default_library",
+        "@org_golang_google_grpc//credentials/oauth:go_default_library",
+        "@org_golang_google_grpc//grpclog:go_default_library",
+        "@org_golang_google_grpc//interop:go_default_library",
+        "@org_golang_google_grpc//interop/grpc_testing:go_default_library",
+        "@org_golang_x_net//context:go_default_library",
     ],
 )
 
