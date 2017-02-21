@@ -71,11 +71,11 @@ const int kTextOutput = 4;
 const int kBinaryOutput = 5;
 const int kCheckRequstProto = 6;
 const int kCheckResponseProto = 7;
-const int kAllocateQuotaRequstProto = 11;
-const int kAllocateQuotaResponseProto = 12;
-const int kReportRequstProto = 8;
-const int kReportResponseProto = 9;
-const int kReportRequestSize = 10;
+const int kAllocateQuotaRequstProto = 8;
+const int kAllocateQuotaResponseProto = 9;
+const int kReportRequstProto = 10;
+const int kReportResponseProto = 11;
+const int kReportRequestSize = 12;
 
 ::google::api::servicecontrol::v1::CheckRequest check_request;
 ::google::api::servicecontrol::v1::CheckResponse check_response;
