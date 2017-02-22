@@ -32,7 +32,8 @@ use Data::Dumper;
 
 ################################################################################
 
-use src::nginx::t::ApiManager;    # Must be first (sets up import path to the Nginx test module)
+use src::nginx::t::ApiManager;    # Must be first (sets up import path to
+                                  # the Nginx test module)
 use src::nginx::t::HttpServer;
 use src::nginx::t::ServiceControl;
 use Test::Nginx;    # Imports Nginx's test module
@@ -45,10 +46,20 @@ my $NginxPort          = ApiManager::pick_port();
 my $BackendPort        = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(5);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(6);
+
+# Save servce configuration that disables the report cache.
+# Report request will be sent for each client request
+$t->write_file('server.pb.txt', <<"EOF");
+service_control_config {
+  report_aggregator_config {
+    cache_entries: 0
+    flush_interval_ms: 1000
+  }
+}
+EOF
 
 # Save service name in the service configuration protocol buffer file.
-
 $t->write_file( 'service.pb.txt',
     ApiManager::get_bookstore_service_config . <<"EOF");
 control {
@@ -59,13 +70,13 @@ quota {
    {
      selector: "ListShelves"
      metric_costs: [
-       { 
+       {
          key: "metrics_first"
-         value: 2 
+         value: 2
        },
-       { 
+       {
          key: "metrics_second"
-         value: 1 
+         value: 1
        }
      ]
    }
@@ -88,6 +99,7 @@ http {
     location / {
       endpoints {
         api service.pb.txt;
+        server_config server.pb.txt;
         %%TEST_CONFIG%%
         on;
       }
@@ -133,6 +145,11 @@ EOF
 my @requests = ApiManager::read_http_stream( $t, 'bookstore.log' );
 is( scalar @requests, 0, 'Backend received empty request' );
 
+
+@requests = ApiManager::read_http_stream( $t, 'servicecontrol.log' );
+is( scalar @requests, 3, 'Service control received three requests' );
+
+
 ################################################################################
 
 sub bookstore {
@@ -162,7 +179,7 @@ sub servicecontrol {
     my $server = HttpServer->new( $port, $t->testdir() . '/' . $file )
       or die "Can't create test server socket: $!\n";
     local $SIG{PIPE} = 'IGNORE';
-    
+
     my $quota_response_exhausted =
       ServiceControl::convert_proto( <<'EOF', 'quota_response', 'binary' );
 operation_id: "006eaa26-5c2f-41bc-b6d8-0972eff8bdf6"
@@ -172,20 +189,28 @@ allocate_errors {
 }
 service_config_id: "2017-02-08r9"
 EOF
-    
+
     $server->on( 'POST',
         '/v1/services/endpoints-test.cloudendpointsapis.com:check', <<'EOF');
 HTTP/1.1 200 OK
 Connection: close
 
 EOF
-      
-    $server->on('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:allocateQuota', <<'EOF' . $quota_response_exhausted);
+
+    $server->on('POST',
+      '/v1/services/endpoints-test.cloudendpointsapis.com:allocateQuota',
+      <<'EOF' . $quota_response_exhausted);
 HTTP/1.1 200 OK
 Connection: close
 
 EOF
 
+  $server->on( 'POST',
+    '/v1/services/endpoints-test.cloudendpointsapis.com:report', <<'EOF');
+HTTP/1.1 200 OK
+Connection: close
+
+EOF
 
     $server->run();
 }

@@ -32,7 +32,8 @@ use Data::Dumper;
 
 ################################################################################
 
-use src::nginx::t::ApiManager;    # Must be first (sets up import path to the Nginx test module)
+use src::nginx::t::ApiManager;    # Must be first (sets up import path
+                                  # to the Nginx test module)
 use src::nginx::t::HttpServer;
 use src::nginx::t::ServiceControl;
 use Test::Nginx;    # Imports Nginx's test module
@@ -47,8 +48,18 @@ my $ServiceControlPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(9);
 
-# Save service name in the service configuration protocol buffer file.
+# Save servce configuration that disables the report cache.
+# Report request will be sent for each client request
+$t->write_file('server.pb.txt', <<"EOF");
+service_control_config {
+  report_aggregator_config {
+    cache_entries: 0
+    flush_interval_ms: 1000
+  }
+}
+EOF
 
+# Save service name in the service configuration protocol buffer file.
 $t->write_file( 'service.pb.txt',
     ApiManager::get_bookstore_service_config . <<"EOF");
 control {
@@ -59,13 +70,13 @@ quota {
    {
      selector: "ListShelves"
      metric_costs: [
-       { 
+       {
          key: "metrics_first"
-         value: 2 
+         value: 2
        },
-       { 
+       {
          key: "metrics_second"
-         value: 1 
+         value: 1
        }
      ]
    }
@@ -88,6 +99,7 @@ http {
     location / {
       endpoints {
         api service.pb.txt;
+        server_config server.pb.txt;
         %%TEST_CONFIG%%
         on;
       }
@@ -98,14 +110,18 @@ http {
 EOF
 
 $t->run_daemon( \&bookstore, $t, $BackendPort, 'bookstore.log' );
-$t->run_daemon( \&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log' );
-is( $t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'Bookstore socket ready.' );
-is( $t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control socket ready.' );
+$t->run_daemon( \&servicecontrol, $t, $ServiceControlPort,
+  'servicecontrol.log' );
+is( $t->waitforsocket("127.0.0.1:${BackendPort}"), 1,
+  'Bookstore socket ready.' );
+is( $t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1,
+  'Service control socket ready.' );
 $t->run();
 
 ################################################################################
 
-my $response = ApiManager::http_get( $NginxPort, '/shelves?key=this-is-an-api-key' );
+my $response = ApiManager::http_get( $NginxPort,
+  '/shelves?key=this-is-an-api-key' );
 
 $t->stop_daemons();
 
@@ -130,7 +146,7 @@ is( $r->{uri}, '/shelves?key=this-is-an-api-key', 'Backend uri was /shelves' );
 is( $r->{headers}->{host}, "127.0.0.1:${BackendPort}", 'Host header was set' );
 
 @requests = ApiManager::read_http_stream( $t, 'servicecontrol.log' );
-is( scalar @requests, 2, 'Service control received two requests' );
+is( scalar @requests, 3, 'Service control received three requests' );
 
 ################################################################################
 
@@ -161,16 +177,19 @@ sub servicecontrol {
     my $server = HttpServer->new( $port, $t->testdir() . '/' . $file )
       or die "Can't create test server socket: $!\n";
     local $SIG{PIPE} = 'IGNORE';
-    
+
     $server->on( 'POST',
         '/v1/services/endpoints-test.cloudendpointsapis.com:check', <<'EOF');
 HTTP/1.1 200 OK
 Connection: close
 
 EOF
-      
-    $server->on('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:allocateQuota', <<'EOF');
-HTTP/1.1 404 Not Found
+    # The allocateQuota request receives HTTP 404 Not Found error code.
+    # This simulates QuotaController is not available.
+
+  $server->on( 'POST',
+    '/v1/services/endpoints-test.cloudendpointsapis.com:report', <<'EOF');
+HTTP/1.1 200 OK
 Connection: close
 
 EOF

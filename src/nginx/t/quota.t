@@ -26,13 +26,12 @@
 #
 use strict;
 use warnings;
-
 use JSON::PP;
-use Data::Dumper;
 
 ################################################################################
 
-use src::nginx::t::ApiManager;    # Must be first (sets up import path to the Nginx test module)
+use src::nginx::t::ApiManager;    # Must be first (sets up import path to
+                                  # the Nginx test module)
 use src::nginx::t::HttpServer;
 use src::nginx::t::ServiceControl;
 use Test::Nginx;    # Imports Nginx's test module
@@ -47,7 +46,8 @@ my $ServiceControlPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(26);
 
-# Save service name in the service configuration protocol buffer file.
+# Save servce configuration that disables the report cache.
+# Report request will be sent for each client request
 $t->write_file('server.pb.txt', <<"EOF");
 service_control_config {
   report_aggregator_config {
@@ -57,6 +57,7 @@ service_control_config {
 }
 EOF
 
+# Save service name in the service configuration protocol buffer file.
 $t->write_file( 'service.pb.txt',
   ApiManager::get_bookstore_service_config . <<"EOF");
 control {
@@ -67,13 +68,13 @@ quota {
    {
      selector: "ListShelves"
      metric_costs: [
-       { 
+       {
          key: "metrics_first"
-         value: 2 
+         value: 2
        },
-       { 
+       {
          key: "metrics_second"
-         value: 1 
+         value: 1
        }
      ]
    }
@@ -109,12 +110,14 @@ EOF
 $t->run_daemon( \&bookstore, $t, $BackendPort, 'bookstore.log' );
 $t->run_daemon( \&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log' );
 is( $t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'Bookstore socket ready.' );
-is( $t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control socket ready.' );
+is( $t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1,
+  'Service control socket ready.' );
 $t->run();
 
 ################################################################################
 
-my $response = ApiManager::http_get( $NginxPort, '/shelves?key=this-is-an-api-key' );
+my $response = ApiManager::http_get(
+  $NginxPort, '/shelves?key=this-is-an-api-key' );
 
 $t->stop_daemons();
 
@@ -139,38 +142,58 @@ is( $r->{uri}, '/shelves?key=this-is-an-api-key', 'Backend uri was /shelves' );
 is( $r->{headers}->{host}, "127.0.0.1:${BackendPort}", 'Host header was set' );
 
 @requests = ApiManager::read_http_stream( $t, 'servicecontrol.log' );
-is( scalar @requests, 3, 'Service control received two requests' );
+is( scalar @requests, 3, 'Service control received three requests' );
 
+# check
 $r = shift @requests;
 is( $r->{verb}, 'POST', ':check verb was post' );
-is( $r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:check', ':check was called');
-is( $r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}", 'Host header was set');
-is( $r->{headers}->{'content-type'}, 'application/x-protobuf', ':check Content-Type was protocol buffer');
+is( $r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:check',
+  ':check was called');
+is( $r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}",
+  'Host header was set');
+is( $r->{headers}->{'content-type'}, 'application/x-protobuf',
+  ':check Content-Type was protocol buffer');
 
 # test allocateQuota request was requested
 $r = shift @requests;
 is( $r->{verb}, 'POST', ':allocateQuota verb was post' );
-is( $r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:allocateQuota', ':allocateQuota was called');
-is( $r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}", 'Host header was set');
-is( $r->{headers}->{'content-type'}, 'application/x-protobuf', ':check Content-Type was protocol buffer' );
+is( $r->{uri},
+  '/v1/services/endpoints-test.cloudendpointsapis.com:allocateQuota',
+  ':allocateQuota was called');
+is( $r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}",
+  'Host header was set');
+is( $r->{headers}->{'content-type'}, 'application/x-protobuf',
+  ':check Content-Type was protocol buffer' );
 
-my $allocate_quota_request = decode_json(ServiceControl::convert_proto( $r->{body}, 'quota_request', 'json' ) );
-my @quotaMetrics = @{ $allocate_quota_request->{allocateOperation}->{quotaMetrics} };
+my $allocate_quota_request = decode_json(ServiceControl::convert_proto(
+  $r->{body}, 'quota_request', 'json' ) );
+
+my @quotaMetrics =
+  @{ $allocate_quota_request->{allocateOperation}->{quotaMetrics} };
 is( @quotaMetrics, 2, "Quota metrics should have two elements" );
 
-my @sorted_quotaMetrics = sort { $a->{metricName} cmp $b->{metricName} } @quotaMetrics;
-is( $sorted_quotaMetrics[0]->{metricName}, "metrics_first", "Quota metric name is 'metrics_first'" );
-is( $sorted_quotaMetrics[0]->{metricValues}[0]->{int64Value}, 2, "Quota metric value is 2" );
-is( $sorted_quotaMetrics[1]->{metricName}, "metrics_second", "Quota metric name is 'metrics_second'" );
-is( $sorted_quotaMetrics[1]->{metricValues}[0]->{int64Value}, 1, "Quota metric value is 1" );
+my @sorted_quotaMetrics =
+  sort { $a->{metricName} cmp $b->{metricName} } @quotaMetrics;
+
+is( $sorted_quotaMetrics[0]->{metricName}, "metrics_first",
+  "Quota metric name is 'metrics_first'" );
+is( $sorted_quotaMetrics[0]->{metricValues}[0]->{int64Value}, 2,
+  "Quota metric value is 2" );
+is( $sorted_quotaMetrics[1]->{metricName}, "metrics_second",
+  "Quota metric name is 'metrics_second'" );
+is( $sorted_quotaMetrics[1]->{metricValues}[0]->{int64Value}, 1,
+  "Quota metric value is 1" );
 
 # check report
 $r = shift @requests;
 
 is( $r->{verb}, 'POST', ':report verb was post' );
-is( $r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:report', ':report was called');
-is( $r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}", 'Host header was set');
-is( $r->{headers}->{'content-type'}, 'application/x-protobuf', ':check Content-Type was protocol buffer' );
+is( $r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:report',
+  ':report was called');
+is( $r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}",
+  'Host header was set');
+is( $r->{headers}->{'content-type'}, 'application/x-protobuf',
+  ':check Content-Type was protocol buffer' );
 
 ################################################################################
 
@@ -209,7 +232,16 @@ Connection: close
 
 EOF
 
-  $server->on('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:allocateQuota', <<'EOF');
+  $server->on('POST',
+    '/v1/services/endpoints-test.cloudendpointsapis.com:allocateQuota',
+    <<'EOF');
+HTTP/1.1 200 OK
+Connection: close
+
+EOF
+
+  $server->on( 'POST',
+    '/v1/services/endpoints-test.cloudendpointsapis.com:report', <<'EOF');
 HTTP/1.1 200 OK
 Connection: close
 
