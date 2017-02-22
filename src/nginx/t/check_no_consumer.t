@@ -131,7 +131,6 @@ my $expected_report_body = ServiceControl::gen_report_body({
         'serviceName' =>  'endpoints-test.cloudendpointsapis.com',
         'url' => '/shelves?key=this-is-an-api-key',
         'location' => 'us-central1',
-        'api_key' => 'this-is-an-api-key',
         'api_method' =>  'ListShelves',
         'http_method' => 'GET',
         'log_message' => 'Method: ListShelves',
