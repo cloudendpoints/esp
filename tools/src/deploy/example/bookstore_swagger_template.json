@@ -91,23 +91,15 @@
             "description": "get message response"
           }
         },
-        "x-security": [
+        "security": [
           {
-            "test_jwk":  {
-              "audiences":[]
-            }
+            "test_jwk":  []
           },
           {
-            "test_x509": {
-              "audiences":[]
-            }
+            "test_x509": []
           },
           {
-            "test_symmetric": {
-              "audiences": [
-                "test.echo.audience"
-              ]
-            }
+            "test_symmetric": []
           }
         ]
       },
@@ -122,23 +114,15 @@
             "description": "post message response"
           }
         },
-        "x-security": [
+        "security": [
           {
-            "test_jwk":  {
-              "audiences":[]
-            }
+            "test_jwk":  []
           },
           {
-            "test_x509": {
-              "audiences":[]
-            }
+            "test_x509": []
           },
           {
-            "test_symmetric": {
-              "audiences": [
-                "test.echo.audience"
-              ]
-            }
+            "test_symmetric": []
           }
         ]
       }
@@ -185,52 +169,27 @@
             }
           }
         },
-        "x-security": [
+        "security": [
           {
-            "google_id_token": {
-              "audiences": [
-                "848149964201.apps.googleusercontent.com",
-                "841077041629.apps.googleusercontent.com",
-                "488010225785-g97tab3t7jdj51fr8vbqvmh4bfic3g5k.apps.googleusercontent.com",
-                "488010225785-qvp4qbiak296t4afcej35dh4maoufmhc.apps.googleusercontent.com"
-              ]
-            }
+            "google_id_token": []
           },
           {
-            "google_identity_toolkit": {
-              "audiences": []
-            }
+            "google_identity_toolkit": []
           },
           {
-            "auth0_symmetric": {
-              "audiences": [
-                "sI0N2qOcfYoizZtstfnkEbsUWt6bluT0"
-              ]
-            }
+            "auth0_symmetric": []
           },
           {
-            "auth0_jwk": {
-              "audiences": [
-                "Uuts8fJWf1yieO9Ocv0Uk6LBqsUTePQq"
-              ]
-            }
+            "auth0_jwk": []
           },
           {
-            "test_jwk": {
-              "audiences": []
-            }
+            "test_jwk": []
           },
           {
-            "test_x509": {
-              "audiences": []
-            }
+            "test_x509": []
           },
           {
-            "test_symmetric": {
-              "audiences": [
-                "test.esp.audience"
-              ]
-            }
+            "test_symmetric": []
           }
         ]
       }
@@ -261,54 +220,27 @@
           }
         },
         "security": [],
-        "x-security": [
+        "security": [
           {
-            "google_id_token": {
-              "audiences": [
-                "848149964201.apps.googleusercontent.com",
-                "841077041629.apps.googleusercontent.com",
-                "488010225785-g97tab3t7jdj51fr8vbqvmh4bfic3g5k.apps.googleusercontent.com",
-                "488010225785-qvp4qbiak296t4afcej35dh4maoufmhc.apps.googleusercontent.com"
-              ]
-            }
+            "google_id_token": []
           },
           {
-            "google_identity_toolkit": {
-              "audiences": [
-                "esp-test-client"
-              ]
-            }
+            "google_identity_toolkit": []
           },
           {
-            "auth0_symmetric": {
-              "audiences": [
-                "sI0N2qOcfYoizZtstfnkEbsUWt6bluT0"
-              ]
-            }
+            "auth0_symmetric": []
           },
           {
-            "auth0_jwk": {
-              "audiences": [
-                "Uuts8fJWf1yieO9Ocv0Uk6LBqsUTePQq"
-              ]
-            }
+            "auth0_jwk": []
           },
           {
-            "test_jwk": {
-              "audiences": []
-            }
+            "test_jwk": []
           },
           {
-            "test_x509": {
-              "audiences": []
-            }
+            "test_x509": []
           },
           {
-            "test_symmetric": {
-              "audiences": [
-                "test.esp.audience"
-              ]
-            }
+            "test_symmetric": []
           }
         ]
       },
@@ -426,54 +358,27 @@
             }
           }
         },
-        "x-security": [
+        "security": [
           {
-            "google_id_token": {
-              "audiences": [
-                "848149964201.apps.googleusercontent.com",
-                "841077041629.apps.googleusercontent.com",
-                "488010225785-g97tab3t7jdj51fr8vbqvmh4bfic3g5k.apps.googleusercontent.com",
-                "488010225785-qvp4qbiak296t4afcej35dh4maoufmhc.apps.googleusercontent.com"
-              ]
-            }
+            "google_id_token": []
           },
           {
-            "google_identity_toolkit": {
-              "audiences": [
-                "esp-test-client"
-              ]
-            }
+            "google_identity_toolkit": []
           },
           {
-            "auth0_symmetric": {
-              "audiences": [
-                "sI0N2qOcfYoizZtstfnkEbsUWt6bluT0"
-              ]
-            }
+            "auth0_symmetric": []
           },
           {
-            "auth0_jwk": {
-              "audiences": [
-                "Uuts8fJWf1yieO9Ocv0Uk6LBqsUTePQq"
-              ]
-            }
+            "auth0_jwk": []
           },
           {
-            "test_jwk": {
-              "audiences": []
-            }
+            "test_jwk": []
           },
           {
-            "test_x509": {
-              "audiences": []
-            }
+            "test_x509": []
           },
           {
-            "test_symmetric": {
-              "audiences": [
-                "test.esp.audience"
-              ]
-            }
+            "test_symmetric": []
           }
         ]
       },
@@ -608,50 +513,56 @@
       "authorizationUrl": "https://esp-jwk.auth0.com/authorize",
       "flow": "implicit",
       "type": "oauth2",
-      "x-issuer": "https://esp-jwk.auth0.com/",
-      "x-jwks_uri": "https://esp-jwk.auth0.com/.well-known/jwks.json"
+      "x-google-issuer": "https://esp-jwk.auth0.com/",
+      "x-google-jwks_uri": "https://esp-jwk.auth0.com/.well-known/jwks.json",
+      "x-google-audiences": "Uuts8fJWf1yieO9Ocv0Uk6LBqsUTePQq"
     },
     "auth0_symmetric": {
       "authorizationUrl": "https://esp-symmetric.auth0.com/authorize",
       "flow": "implicit",
       "type": "oauth2",
-      "x-issuer": "https://esp-symmetric.auth0.com/",
-      "x-jwks_uri": "http://169.254.169.254/computeMetadata/v1/project/attributes/auth-key-https_esp-symmetric_auth0_com"
+      "x-google-issuer": "https://esp-symmetric.auth0.com/",
+      "x-google-jwks_uri": "http://169.254.169.254/computeMetadata/v1/project/attributes/auth-key-https_esp-symmetric_auth0_com",
+      "x-google-audiences": "sI0N2qOcfYoizZtstfnkEbsUWt6bluT0"
     },
     "google_id_token": {
       "authorizationUrl": "",
       "flow": "implicit",
       "type": "oauth2",
-      "x-issuer": "https://accounts.google.com",
-      "x-jwks_uri": "https://www.googleapis.com/oauth2/v1/certs"
+      "x-google-issuer": "https://accounts.google.com",
+      "x-google-jwks_uri": "https://www.googleapis.com/oauth2/v1/certs",
+      "x-google-audiences": "848149964201.apps.googleusercontent.com, 841077041629.apps.googleusercontent.com, 488010225785-g97tab3t7jdj51fr8vbqvmh4bfic3g5k.apps.googleusercontent.com, 488010225785-qvp4qbiak296t4afcej35dh4maoufmhc.apps.googleusercontent.com"
+
     },
     "google_identity_toolkit": {
       "authorizationUrl": "",
       "flow": "implicit",
       "type": "oauth2",
-      "x-issuer": "https://securetoken.google.com",
-      "x-jwks_uri": "https://www.googleapis.com/service_accounts/v1/metadata/x509/securetoken@system.gserviceaccount.com"
+      "x-google-issuer": "https://securetoken.google.com",
+      "x-google-jwks_uri": "https://www.googleapis.com/service_accounts/v1/metadata/x509/securetoken@system.gserviceaccount.com",
+      "x-google-audiences": "esp-test-client"
     },
     "test_jwk": {
       "authorizationUrl": "",
       "flow": "implicit",
       "type": "oauth2",
-      "x-issuer": "loadtest@esp-test-client.iam.gserviceaccount.com",
-      "x-jwks_uri": "https://www.googleapis.com/service_accounts/v1/jwk/loadtest@esp-test-client.iam.gserviceaccount.com"
+      "x-google-issuer": "loadtest@esp-test-client.iam.gserviceaccount.com",
+      "x-google-jwks_uri": "https://www.googleapis.com/service_accounts/v1/jwk/loadtest@esp-test-client.iam.gserviceaccount.com"
     },
     "test_symmetric": {
       "authorizationUrl": "",
       "flow": "implicit",
       "type": "oauth2",
-      "x-issuer": "https://test.esp.client",
-      "x-jwks_uri": "http://169.254.169.254/computeMetadata/v1/project/attributes/auth-key-test_esp_client"
+      "x-google-issuer": "https://test.esp.client",
+      "x-google-jwks_uri": "http://169.254.169.254/computeMetadata/v1/project/attributes/auth-key-test_esp_client",
+      "x-google-audiences": "test.echo.audience, test.esp.audience"
     },
     "test_x509": {
       "authorizationUrl": "",
       "flow": "implicit",
       "type": "oauth2",
-      "x-issuer": "23028304136-fbju1j1cdfpc5q9q6s23gm56trn0c9ti@developer.gserviceaccount.com",
-      "x-jwks_uri": "https://www.googleapis.com/service_accounts/v1/metadata/x509/23028304136-fbju1j1cdfpc5q9q6s23gm56trn0c9ti@developer.gserviceaccount.com"
+      "x-google-issuer": "23028304136-fbju1j1cdfpc5q9q6s23gm56trn0c9ti@developer.gserviceaccount.com",
+      "x-google-jwks_uri": "https://www.googleapis.com/service_accounts/v1/metadata/x509/23028304136-fbju1j1cdfpc5q9q6s23gm56trn0c9ti@developer.gserviceaccount.com"
     }
   }
 }
