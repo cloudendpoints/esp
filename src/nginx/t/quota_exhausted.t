@@ -115,10 +115,10 @@ $t->stop_daemons();
 
 my ( $response_headers, $response_body ) = split /\r\n\r\n/, $response, 2;
 
-like( $response_headers, qr/HTTP\/1\.1 403 Forbidden/, 'Returned HTTP 403 Forbidden.' );
+like( $response_headers, qr/HTTP\/1\.1 429/, 'Returned HTTP 429.' );
 is( $response_body, <<'EOF', 'Shelves returned in the response body.' );
 {
- "code": 7,
+ "code": 8,
  "message": "Quota allocation failed.",
  "details": [
   {
@@ -163,28 +163,6 @@ sub servicecontrol {
       or die "Can't create test server socket: $!\n";
     local $SIG{PIPE} = 'IGNORE';
     
-    my $quota_response_success = sprintf(<<'EOF');
-HTTP/1.1 200 OK
-Connection: close
-    
-EOF
-
-    my $quota_response_success =
-      ServiceControl::convert_proto( <<'EOF', 'quota_response', 'binary' );
-
-operation_id: "a20ab01c-415e-46fb-953c-61c6768248ba"
-quota_metrics {
-  metric_name: "serviceruntime.googleapis.com/api/consumer/quota_used_count"
-  metric_values {
-    labels {
-      key: "/quota_name"
-      value: "metrics_first"
-    }
-    int64_value: 1
-  }
-}
-EOF
-
     my $quota_response_exhausted =
       ServiceControl::convert_proto( <<'EOF', 'quota_response', 'binary' );
 operation_id: "006eaa26-5c2f-41bc-b6d8-0972eff8bdf6"
@@ -202,7 +180,11 @@ Connection: close
 
 EOF
       
-    $server->on('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:allocateQuota', $quota_response_success . $quota_response_exhausted);
+    $server->on('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:allocateQuota', <<'EOF' . $quota_response_exhausted);
+HTTP/1.1 200 OK
+Connection: close
+
+EOF
 
 
     $server->run();
