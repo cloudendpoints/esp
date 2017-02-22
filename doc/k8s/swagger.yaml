@@ -65,12 +65,8 @@ paths:
           description: "Authenication info."
           schema:
             $ref: "#/definitions/authInfoResponse"
-      x-security:
-      - google_jwt:
-          audiences:
-          # This must match the "aud" field in the JWT. You can add multiple
-          # audiences to accept JWTs from multiple clients.
-          - "echo.endpoints.sample.google.com"
+      security:
+      - google_jwt: []
   "/auth/info/googleidtoken":
     get:
       description: "Returns the requests' authentication information."
@@ -82,12 +78,8 @@ paths:
           description: "Authenication info."
           schema:
             $ref: "#/definitions/authInfoResponse"
-      x-security:
-      - google_id_token:
-          audiences:
-          # Your OAuth2 client's Client ID must be added here. You can add
-          # multiple client IDs to accept tokens from multiple clients.
-          - "YOUR-CLIENT-ID"
+      security:
+      - google_id_token: []
 definitions:
   echoMessage:
     properties:
@@ -116,9 +108,13 @@ securityDefinitions:
     flow: "implicit"
     type: "oauth2"
     # This must match the 'iss' field in the JWT.
-    x-issuer: "jwt-client.endpoints.sample.google.com"
+    x-google-issuer: "jwt-client.endpoints.sample.google.com"
     # Update this with your service account's email address.
-    x-jwks_uri: "https://www.googleapis.com/service_accounts/v1/jwk/YOUR-SERVICE-ACCOUNT-EMAIL"
+    x-google-jwks_uri: "https://www.googleapis.com/service_accounts/v1/jwk/YOUR-SERVICE-ACCOUNT-EMAIL"
+    x-google-audiences:
+      # This must match the "aud" field in the JWT. You can add multiple
+      # audiences to accept JWTs from multiple clients.
+      - "echo.endpoints.sample.google.com"
   # This section configures authentication using Google OAuth2 ID Tokens.
   # ID Tokens can be obtained using OAuth2 clients, and can be used to access
   # your API on behalf of a particular user.
@@ -126,5 +122,9 @@ securityDefinitions:
     authorizationUrl: ""
     flow: "implicit"
     type: "oauth2"
-    x-issuer: "accounts.google.com"
-    x-jwks_uri: "https://www.googleapis.com/oauth2/v1/certs"
+    x-google-issuer: "accounts.google.com"
+    x-google-jwks_uri: "https://www.googleapis.com/oauth2/v1/certs"
+    x-google-audiences:
+      # Your OAuth2 client's Client ID must be added here. You can add
+      # multiple client IDs to accept tokens from multiple clients.
+      - "YOUR-CLIENT-ID"
