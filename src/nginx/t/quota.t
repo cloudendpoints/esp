@@ -202,28 +202,6 @@ sub servicecontrol {
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
 
-  my $quota_response_success =
-    ServiceControl::convert_proto( <<'EOF', 'quota_response', 'binary' );
-operation_id: "a20ab01c-415e-46fb-953c-61c6768248ba"
-quota_metrics {
-  metric_name: "serviceruntime.googleapis.com/api/consumer/quota_used_count"
-  metric_values {
-    labels {
-      key: "/quota_name"
-      value: "metrics_first"
-    }
-    int64_value: 2
-  }
-  metric_values {
-    labels {
-      key: "/quota_name"
-      value: "metrics_second"
-    }
-    int64_value: 1
-  }
-}
-EOF
-
   $server->on( 'POST',
     '/v1/services/endpoints-test.cloudendpointsapis.com:check', <<'EOF');
 HTTP/1.1 200 OK
@@ -231,7 +209,7 @@ Connection: close
 
 EOF
 
-  $server->on('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:allocateQuota', <<'EOF' . $quota_response_success);
+  $server->on('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:allocateQuota', <<'EOF');
 HTTP/1.1 200 OK
 Connection: close
 
