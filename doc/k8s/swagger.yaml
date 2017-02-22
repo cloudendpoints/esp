@@ -67,6 +67,7 @@ paths:
             $ref: "#/definitions/authInfoResponse"
       security:
       - google_jwt: []
+      - api_key: []
   "/auth/info/googleidtoken":
     get:
       description: "Returns the requests' authentication information."
@@ -80,6 +81,7 @@ paths:
             $ref: "#/definitions/authInfoResponse"
       security:
       - google_id_token: []
+      - api_key: []
 definitions:
   echoMessage:
     properties:

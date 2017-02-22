@@ -134,7 +134,10 @@
                     },
                     {
                         "test_symmetric": []
-                    }
+                    },
+		    {
+		    "api_key": []
+		    }
                 ]
             },
             "post": {
@@ -157,7 +160,10 @@
                     },
                     {
                         "test_symmetric": []
-                    }
+                    },
+		    {
+		    "api_key": []
+		    }
                 ]
             }
         }

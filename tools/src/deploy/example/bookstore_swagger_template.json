@@ -100,7 +100,10 @@
           },
           {
             "test_symmetric": []
-          }
+          },
+	  {
+	    "api_key": []
+	  }
         ]
       },
       "post": {
@@ -123,7 +126,10 @@
           },
           {
             "test_symmetric": []
-          }
+          },
+	  {
+	    "api_key": []
+	  }
         ]
       }
     },
@@ -190,7 +196,10 @@
           },
           {
             "test_symmetric": []
-          }
+          },
+	  {
+	    "api_key": []
+	  }
         ]
       }
     },
@@ -219,7 +228,6 @@
             }
           }
         },
-        "security": [],
         "security": [
           {
             "google_id_token": []
@@ -241,7 +249,10 @@
           },
           {
             "test_symmetric": []
-          }
+          },
+	  {
+	    "api_key": []
+	  }
         ]
       },
       "delete": {
@@ -379,7 +390,10 @@
           },
           {
             "test_symmetric": []
-          }
+          },
+	  {
+	    "api_key": []
+	  }
         ]
       },
       "delete": {

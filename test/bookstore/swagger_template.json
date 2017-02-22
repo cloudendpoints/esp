@@ -100,7 +100,10 @@
           },
           {
             "test_symmetric": []
-          }
+          },
+	  {
+	    "api_key": []
+	  }
         ]
       },
       "post": {
@@ -123,7 +126,10 @@
           },
           {
             "test_symmetric": []
-          }
+          },
+	  {
+	    "api_key": []
+	  }
         ]
       }
     },
@@ -190,7 +196,10 @@
           },
           {
             "test_symmetric": []
-          }
+          },
+	  {
+	    "api_key": []
+	  }
         ]
       }
     },
@@ -240,7 +249,10 @@
           },
           {
             "test_symmetric": []
-          }
+          },
+	  {
+	    "api_key": []
+	  }
         ]
       },
       "delete": {
@@ -378,7 +390,10 @@
           },
           {
             "test_symmetric": []
-          }
+          },
+	  {
+	    "api_key": []
+	  }
         ]
       },
       "delete": {

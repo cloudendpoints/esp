@@ -94,7 +94,10 @@
         "security": [
           {
             "test_jwk":  []
-          }
+          },
+	  {
+	    "api_key": []
+	  }
         ]
       },
       "post": {
@@ -111,7 +114,10 @@
         "security": [
           {
             "test_jwk":  []
-          }
+          },
+	  {
+	    "api_key": []
+	  }
         ]
       }
     },
