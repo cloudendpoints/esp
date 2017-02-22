@@ -16,22 +16,23 @@
             "type": "oauth2",
             "authorizationUrl": "",
             "flow": "implicit",
-            "x-issuer": "loadtest@esp-test-client.iam.gserviceaccount.com",
-            "x-jwks_uri": "https://www.googleapis.com/service_accounts/v1/jwk/loadtest@esp-test-client.iam.gserviceaccount.com"
+            "x-google-issuer": "loadtest@esp-test-client.iam.gserviceaccount.com",
+            "x-google-jwks_uri": "https://www.googleapis.com/service_accounts/v1/jwk/loadtest@esp-test-client.iam.gserviceaccount.com"
         },
         "test_x509": {
             "type": "oauth2",
             "authorizationUrl": "",
             "flow": "implicit",
-            "x-issuer": "account-1@esp-echo.iam.gserviceaccount.com",
-            "x-jwks_uri": "https://www.googleapis.com/service_accounts/v1/metadata/x509/account-1@esp-echo.iam.gserviceaccount.com"
+            "x-google-issuer": "account-1@esp-echo.iam.gserviceaccount.com",
+            "x-google-jwks_uri": "https://www.googleapis.com/service_accounts/v1/metadata/x509/account-1@esp-echo.iam.gserviceaccount.com"
         },
         "test_symmetric": {
             "type": "oauth2",
             "authorizationUrl": "",
             "flow": "implicit",
-            "x-issuer": "https://test.echo.client",
-            "x-jwks_uri": "http://169.254.169.254/computeMetadata/v1/project/attributes/auth-key-test_echo_client"
+            "x-google-issuer": "https://test.echo.client",
+            "x-google-jwks_uri": "http://169.254.169.254/computeMetadata/v1/project/attributes/auth-key-test_echo_client",
+            "x-google-audiences": "test.echo.audience"
         }
     },
     "security": [
@@ -124,23 +125,15 @@
                         "description": "get message response"
                     }
                 },
-                "x-security": [
+                "security": [
                     {
-                        "test_jwk":  {
-                            "audiences":[]
-                        }
+                        "test_jwk":  []
                     },
                     {
-                        "test_x509": {
-                            "audiences":[]
-                        }
+                        "test_x509": []
                     },
                     {
-                        "test_symmetric": {
-                            "audiences": [
-                                "test.echo.audience"
-                            ]
-                        }
+                        "test_symmetric": []
                     }
                 ]
             },
@@ -155,23 +148,15 @@
                         "description": "post message response"
                     }
                 },
-                "x-security": [
+                "security": [
                     {
-                        "test_jwk":  {
-                            "audiences":[]
-                        }
+                        "test_jwk":  []
                     },
                     {
-                        "test_x509": {
-                            "audiences":[]
-                        }
+                        "test_x509": []
                     },
                     {
-                        "test_symmetric": {
-                            "audiences": [
-                                "test.echo.audience"
-                            ]
-                        }
+                        "test_symmetric": []
                     }
                 ]
             }
