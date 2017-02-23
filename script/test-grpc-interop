@@ -107,7 +107,9 @@ echo "Total test count: ${RUN_COUNT}, failed count: ${FAIL_COUNT}."
 
 # If failure time is more than %5 of total test time, mark failed.
 RESULT=0
-[[ ${FAIL_COUNT} -gt $((RUN_COUNT / 20)) ]] && RESULT=1
+if [[ ${FAIL_COUNT} -gt $((RUN_COUNT / 20)) && ${FAIL_COUNT} -gt 1 ]] ; then
+    RESULT=1
+fi
 
 # We fail the test if memory increase is large.
 detect_memory_leak_final && MEMORY_LEAK=0 || MEMORY_LEAK=1
