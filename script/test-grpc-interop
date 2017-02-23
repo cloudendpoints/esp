@@ -96,8 +96,8 @@ while true; do
     --test_duration_secs "${RUN_LENGTH}" \
     --num_channels_per_server 200 \
     --num_stubs_per_channel 1 \
-    --test_cases "${TEST_CASES}" \
-  && ((SUCCESS_TIME += RUN_LENGTH))
+    --test_cases "${TEST_CASES}"
+  ((SUCCESS_TIME += RUN_LENGTH))
 
   detect_memory_leak_check ${RUN_COUNT}
 
