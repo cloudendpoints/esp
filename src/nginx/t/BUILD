@@ -181,6 +181,7 @@ nginx_suite(
         "cors.t",
         "cors_disabled.t",
         "failed_check.t",
+        "fail_wrong_api_key.t",
         "metadata.t",
         "metadata_fail.t",
         "metadata_timeout.t",
