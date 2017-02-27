@@ -127,16 +127,16 @@
                 },
                 "security": [
                     {
-                        "test_jwk":  []
+                        "test_jwk":  [],
+	                "api_key": []
                     },
                     {
-                        "test_x509": []
+                        "test_x509": [],
+	                "api_key": []
                     },
                     {
-                        "test_symmetric": []
-                    },
-                    {
-                        "api_key": []
+                        "test_symmetric": [],
+	                "api_key": []
                     }
                 ]
             },
@@ -153,16 +153,16 @@
                 },
                 "security": [
                     {
-                        "test_jwk":  []
+                        "test_jwk":  [],
+	                "api_key": []
                     },
                     {
-                        "test_x509": []
+                        "test_x509": [],
+	                "api_key": []
                     },
                     {
-                        "test_symmetric": []
-                    },
-                    {
-                        "api_key": []
+                        "test_symmetric": [],
+	                "api_key": []
                     }
                 ]
             }

@@ -93,15 +93,15 @@
         },
         "security": [
           {
-            "test_jwk":  []
+            "test_jwk":  [],
+            "api_key": []
           },
           {
-            "test_x509": []
+            "test_x509": [],
+            "api_key": []
           },
           {
-            "test_symmetric": []
-          },
-          {
+            "test_symmetric": [],
             "api_key": []
           }
         ]
@@ -119,15 +119,15 @@
         },
         "security": [
           {
-            "test_jwk":  []
+            "test_jwk":  [],
+            "api_key": []
           },
           {
-            "test_x509": []
+            "test_x509": [],
+            "api_key": []
           },
           {
-            "test_symmetric": []
-          },
-          {
+            "test_symmetric": [],
             "api_key": []
           }
         ]
@@ -177,27 +177,31 @@
         },
         "security": [
           {
-            "google_id_token": []
+            "google_id_token": [],
+            "api_key": []
           },
           {
-            "google_identity_toolkit": []
+            "google_identity_toolkit": [],
+            "api_key": []
           },
           {
-            "auth0_symmetric": []
+            "auth0_symmetric": [],
+            "api_key": []
           },
           {
-            "auth0_jwk": []
+            "auth0_jwk": [],
+            "api_key": []
           },
           {
-            "test_jwk": []
+            "test_jwk": [],
+            "api_key": []
           },
           {
-            "test_x509": []
+            "test_x509": [],
+            "api_key": []
           },
           {
-            "test_symmetric": []
-          },
-          {
+            "test_symmetric": [],
             "api_key": []
           }
         ]
@@ -249,9 +253,6 @@
           },
           {
             "test_symmetric": []
-          },
-          {
-            "api_key": []
           }
         ]
       },
