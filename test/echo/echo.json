@@ -128,15 +128,15 @@
                 "security": [
                     {
                         "test_jwk":  [],
-	                "api_key": []
+                        "api_key": []
                     },
                     {
                         "test_x509": [],
-	                "api_key": []
+                        "api_key": []
                     },
                     {
                         "test_symmetric": [],
-	                "api_key": []
+                        "api_key": []
                     }
                 ]
             },
@@ -154,15 +154,15 @@
                 "security": [
                     {
                         "test_jwk":  [],
-	                "api_key": []
+                        "api_key": []
                     },
                     {
                         "test_x509": [],
-	                "api_key": []
+                        "api_key": []
                     },
                     {
                         "test_symmetric": [],
-	                "api_key": []
+                        "api_key": []
                     }
                 ]
             }
