@@ -126,7 +126,7 @@ bind(
 
 git_repository(
     name = "tools",
-    commit = "3327bae27498025ef8d33709f37182ae407fc517",
+    commit = "1bcac83ed2dc9c5e0be156a4c1801d435667f642",
     remote = "https://github.com/cloudendpoints/endpoints-tools",
 )
 
