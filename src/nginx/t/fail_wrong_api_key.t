@@ -42,11 +42,10 @@ my $NginxPort = ApiManager::pick_port();
 my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(9);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(18);
 
 # Save service name in the service configuration protocol buffer file.
-my $config = ApiManager::get_bookstore_service_config .
-    ApiManager::read_test_file('testdata/logs_metrics.pb.txt') . <<"EOF";
+my $config = ApiManager::get_bookstore_service_config_allow_unregistered . <<"EOF";
 control {
   environment: "http://127.0.0.1:${ServiceControlPort}"
 }
@@ -77,10 +76,8 @@ http {
 }
 EOF
 
-my $report_done = 'report_done';
-
 $t->run_daemon(\&bookstore, $t, $BackendPort, 'bookstore.log');
-$t->run_daemon(\&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log', $report_done);
+$t->run_daemon(\&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log');
 
 is($t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'Bookstore socket ready.');
 is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control socket ready.');
@@ -89,73 +86,68 @@ $t->run();
 
 ################################################################################
 
-my $response = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key');
+# Use different api_key so service_control will not use its cache.
+my $response1 = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key1');
+my $response2 = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key2');
 
-is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');
 $t->stop_daemons();
 
-my ($response_headers, $response_body) = split /\r\n\r\n/, $response, 2;
+like($response1, qr/HTTP\/1\.1 403 Forbidden/, 'Response1 returned HTTP 403.');
+like($response1, qr/content-type: application\/json/i,
+    'Forbidden has application/json body.');
+like($response1, qr/API endpoints-test.cloudendpointsapis.com is not enabled for the project/i,
+    "Error body contains 'activation error'.");
 
-like($response, qr/HTTP\/1\.1 403 Forbidden/, 'Response1 returned HTTP 403.');
+like($response2, qr/HTTP\/1\.1 400 Bad Request/, 'Response2 returned HTTP 400.');
+like($response2, qr/content-type: application\/json/i,
+    'Forbidden has application/json body.');
+like($response2, qr/API key not valid/i,
+    "Error body contains 'API key error'.");
+
+
+my $bookstore_requests = $t->read_file('bookstore.log');
+is($bookstore_requests, '', 'Request did not reach the backend.');
 
 my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
-is(scalar @servicecontrol_requests, 2, 'Service control was called twice.');
+is(scalar @servicecontrol_requests, 2, 'Service control received 2 request.');
 
-# :check
+# :check #1
 my $r = shift @servicecontrol_requests;
-like($r->{uri}, qr/:check$/, ':check was called');
+is($r->{verb}, 'POST', ':check 1 was a post');
+is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:check',
+    ':check 1 uri is correct');
+is($r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}", ':check 1 Host header was set.');
+is($r->{headers}->{'content-type'}, 'application/x-protobuf', ':check 1 Content-Type is protocol buffer.');
 
-my $check_body = ServiceControl::convert_proto($r->{body}, 'check_request', 'json');
-my $expected_check_body = {
-  'serviceName' => 'endpoints-test.cloudendpointsapis.com',
-  'serviceConfigId' => '2016-08-25r1',
-  'operation' => {
-     'consumerId' => 'api_key:this-is-an-api-key',
-     'operationName' => 'ListShelves',
-     'labels' => {
-        'servicecontrol.googleapis.com/caller_ip' => '127.0.0.1',
-        'servicecontrol.googleapis.com/service_agent' => ServiceControl::service_agent(),
-        'servicecontrol.googleapis.com/user_agent' => 'ESP',
-     }
-  }
-};
-ok(ServiceControl::compare_json($check_body, $expected_check_body), 'Check body is received.');
-
-# :report
+# :check #2
 $r = shift @servicecontrol_requests;
-like($r->{uri}, qr/:report$/, ':report was called');
-
-my $report_body = ServiceControl::convert_proto($r->{body}, 'report_request', 'json');
-my $expected_report_body = ServiceControl::gen_report_body({
-        'serviceConfigId' => '2016-08-25r1',
-        'serviceName' =>  'endpoints-test.cloudendpointsapis.com',
-        'url' => '/shelves?key=this-is-an-api-key',
-        'location' => 'us-central1',
-        'api_method' =>  'ListShelves',
-        'http_method' => 'GET',
-        'log_message' => 'Method: ListShelves',
-        'response_code' => '403',
-        'error_cause' => 'service_control',
-        'error_type' => '4xx',
-        'request_size' => 62,
-        'response_size' => 395,
-        'request_bytes' => 62,
-        'response_bytes' => 395,
-        'no_consumer_data' => 1,
-    });
-
-ok(ServiceControl::compare_json($report_body, $expected_report_body), 'Report body is received.');
+is($r->{verb}, 'POST', ':check 2 was a post');
+is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:check',
+    ':check 2 uri is correct');
+is($r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}", ':check 2 Host header was set.');
+is($r->{headers}->{'content-type'}, 'application/x-protobuf', ':check 2 Content-Type is protocol buffer.');
 
 ################################################################################
 
+sub bookstore {
+    my ($t, $port, $file) = @_;
+    my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
+        or die "Can't create test server socket: $!\n";
+    local $SIG{PIPE} = 'IGNORE';
+
+    # Do not initialize any server state, requests won't reach backend anyway.
+
+    $server->run();
+}
+
 sub servicecontrol {
-    my ($t, $port, $file, $done) = @_;
+    my ($t, $port, $file) = @_;
     my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
         or die "Can't create test server socket: $!\n";
     local $SIG{PIPE} = 'IGNORE';
 
     # This is normal 200 HTTP response with error in CheckResponse Json
-    my $proto_response = ServiceControl::convert_proto(<<'EOF', 'check_response', 'binary');
+    my $proto_response1 = ServiceControl::convert_proto(<<'EOF', 'check_response', 'binary');
 {
   "operationId": "ListShelves:7b3f4c4f-f29c-4391-b35e-0a676427fec8",
   "checkErrors": [
@@ -166,32 +158,33 @@ sub servicecontrol {
   ]
 }
 EOF
-    $server->on('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:check', <<'EOF' . $proto_response);
+
+    $server->on('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:check', <<'EOF' . $proto_response1);
 HTTP/1.1 200 OK
 Connection: close
 
 EOF
 
-    $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:report', sub {
-            my ($headers, $body, $client) = @_;
-            print $client <<'EOF';
-HTTP/1.1 200 OK
-Connection: close
-
-EOF
-            $t->write_file($done, ':report done');
-        });
-
-    $server->run();
+    # This is normal 200 HTTP response with error in api key
+    my $proto_response2 = ServiceControl::convert_proto(<<'EOF', 'check_response', 'binary');
+{
+  "operationId": "ListShelves:7b3f4c4f-f29c-4391-b35e-0a676427fec9",
+  "checkErrors": [
+    {
+      "code": "API_KEY_INVALID",
+      "detail": "API is not valid."
+    }
+  ]
 }
+EOF
 
-################################################################################
+    $server->on('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:check', <<'EOF' . $proto_response2);
+HTTP/1.1 200 OK
+Connection: close
 
-sub bookstore {
-    my ($t, $port, $file) = @_;
-    my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
-        or die "Can't create test server socket: $!\n";
-    local $SIG{PIPE} = 'IGNORE';
+EOF
+
+
 
     $server->run();
 }

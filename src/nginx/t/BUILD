@@ -103,6 +103,7 @@ nginx_suite(
         "grpc_auth_pkey.t",
         "grpc_call_flow_control.t",
         "grpc_cloud_trace.t",
+        "grpc_compression.t",
         "grpc_config_addr.t",
         "grpc_downstream_flow_control.t",
         "grpc_errors.t",
@@ -128,7 +129,7 @@ nginx_suite(
     size = "small",
     data = [
         "//test/grpc:interop-client",
-        "//test/grpc:interop-server",
+        "@org_golang_google_grpc//interop/server",
     ],
     nginx = "//src/nginx/main:nginx-esp",
     tests = [
@@ -180,6 +181,7 @@ nginx_suite(
         "cors.t",
         "cors_disabled.t",
         "failed_check.t",
+        "fail_wrong_api_key.t",
         "metadata.t",
         "metadata_fail.t",
         "metadata_timeout.t",

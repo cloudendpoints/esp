@@ -134,6 +134,7 @@ plans {
     request {
       text: "Hello, world!"
     }
+    expected_metadata_keys: ["x-endpoint-api-userinfo"]
   }
 }
 EOF
@@ -156,6 +157,10 @@ results {
 results {
   echo {
     text: "Hello, world!"
+  }
+  additional_metadata {
+    key: "x-endpoint-api-userinfo"
+    value: "eyJpc3N1ZXIiOiI2Mjg2NDU3NDE4ODEtbm9hYml1MjNmNWE4bThvdmQ4dWN2Njk4bGo3OHZ2MGxAZGV2ZWxvcGVyLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJpZCI6IjYyODY0NTc0MTg4MS1ub2FiaXUyM2Y1YThtOG92ZDh1Y3Y2OThsajc4dnYwbEBkZXZlbG9wZXIuZ3NlcnZpY2VhY2NvdW50LmNvbSJ9"
   }
 }
 EOF
