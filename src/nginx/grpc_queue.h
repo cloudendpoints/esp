@@ -141,6 +141,7 @@ class NgxEspGrpcQueue : public AsyncGrpcQueue {
   std::unique_ptr<::grpc::CompletionQueue> cq_;
   std::deque<Finalizer> pending_;
   bool notified_;
+  bool shutting_down_;
 
   std::thread worker_thread_;
 };

@@ -95,6 +95,10 @@ namespace nginx {
 // GRPC team to create an API for integrating libgrpc into arbitrary
 // event loops.
 
+namespace {
+const std::chrono::seconds kShutdownTimeout(2);
+}
+
 std::weak_ptr<NgxEspGrpcQueue> NgxEspGrpcQueue::instance;
 
 std::shared_ptr<NgxEspGrpcQueue> NgxEspGrpcQueue::Instance() {
@@ -125,7 +129,17 @@ void NgxEspGrpcQueue::NginxTagHandler(ngx_event_t *) {
 void NgxEspGrpcQueue::WorkerThread(NgxEspGrpcQueue *queue) {
   void *tag;
   bool ok;
-  while (queue->cq_->Next(&tag, &ok)) {
+  while (true) {
+    auto status = queue->cq_->AsyncNext(
+        &tag, &ok, std::chrono::system_clock::now() + kShutdownTimeout);
+    if (status == ::grpc::CompletionQueue::NextStatus::SHUTDOWN ||
+        (status == ::grpc::CompletionQueue::NextStatus::TIMEOUT &&
+         queue->shutting_down_)) {
+      break;
+    }
+    if (status == ::grpc::CompletionQueue::NextStatus::TIMEOUT) {
+      continue;
+    }
     std::unique_ptr<Tag> cb(static_cast<Tag *>(tag));
     if (cb) {
       bool notify_nginx = false;
@@ -147,7 +161,9 @@ void NgxEspGrpcQueue::WorkerThread(NgxEspGrpcQueue *queue) {
 void NgxEspGrpcQueue::Deleter(NgxEspGrpcQueue *lib) { delete lib; }
 
 NgxEspGrpcQueue::NgxEspGrpcQueue()
-    : cq_(new ::grpc::CompletionQueue()), notified_(false) {
+    : cq_(new ::grpc::CompletionQueue()),
+      notified_(false),
+      shutting_down_(false) {
   worker_thread_ = std::thread(&NgxEspGrpcQueue::WorkerThread, this);
 }
 
@@ -175,6 +191,10 @@ NgxEspGrpcQueue::~NgxEspGrpcQueue() {
   //     has been shut down.
 
   cq_->Shutdown();
+
+  // TODO: This flag is a temporary workaround to force shutdown
+  // completing queue. To be removed.
+  shutting_down_ = true;
 
   // N.B. Joining on the worker thread is essential, as that thread
   // maintains a raw pointer to this datastructure.
