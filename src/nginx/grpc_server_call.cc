@@ -26,17 +26,21 @@
 
 #include "src/nginx/grpc_server_call.h"
 
+#include <grpc/impl/codegen/gpr_types.h>
 #include <cassert>
 #include <utility>
 
 #include "contrib/endpoints/include/api_manager/utils/status.h"
 #include "grpc++/support/byte_buffer.h"
+#include "grpc/compression.h"
 #include "src/nginx/error.h"
 #include "src/nginx/grpc_finish.h"
 #include "src/nginx/module.h"
 #include "src/nginx/util.h"
 
 extern "C" {
+#include "src/core/lib/compression/message_compress.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/http/v2/ngx_http_v2_module.h"
 }
 
@@ -106,6 +110,31 @@ ngx_int_t ngx_esp_write_output(ngx_http_request_t *r, ngx_chain_t *out,
   }
 
   return NGX_AGAIN;
+}
+
+u_char kGrpcEncoding[] = "grpc-encoding";
+
+grpc_compression_algorithm GetCompressionAlgorithm(ngx_http_request_t *r) {
+  auto header =
+      ngx_esp_find_headers_in(r, kGrpcEncoding, sizeof(kGrpcEncoding) - 1);
+
+  if (header == nullptr) {
+    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "GetCompressionAlgorithm: algorithm not in header");
+
+    return grpc_compression_algorithm::GRPC_COMPRESS_NONE;
+  }
+
+  ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                 "GetCompressionAlgorithm: algorithm=%V", &header->value);
+
+  grpc_compression_algorithm algorithm =
+      grpc_compression_algorithm::GRPC_COMPRESS_NONE;
+  grpc_compression_algorithm_parse(
+      reinterpret_cast<const char *>(header->value.data), header->value.len,
+      &algorithm);
+
+  return algorithm;
 }
 
 }  // namespace
@@ -488,6 +517,7 @@ void NgxEspGrpcServerCall::RunPendingRead() {
 }
 
 bool NgxEspGrpcServerCall::TryReadDownstreamMessage() {
+  static grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   // From http://www.grpc.io/docs/guides/wire.html, a GRPC message is:
   // * A one-byte compressed-flag
   // * A four-byte message length
@@ -508,7 +538,7 @@ bool NgxEspGrpcServerCall::TryReadDownstreamMessage() {
     return false;
   }
 
-  // TODO: Implement compressed-flag
+  uint8_t compressed_flag = GetByte(downstream_slices_, 0);
 
   // Decode the length.  Note that this is in network byte order.
   uint32_t msglen = 0;
@@ -561,11 +591,43 @@ bool NgxEspGrpcServerCall::TryReadDownstreamMessage() {
   // the 'slices' vector (which will drop those reference counts as
   // the vector is destroyed).
   std::vector<::grpc::Slice> slices;
-  slices.reserve(it - downstream_slices_.begin());
-  std::transform(downstream_slices_.begin(), it, std::back_inserter(slices),
-                 [](gpr_slice &slice) {
-                   return ::grpc::Slice(slice, ::grpc::Slice::STEAL_REF);
-                 });
+
+  if (compressed_flag == 1) {
+    gpr_slice_buffer input;
+    gpr_slice_buffer_init(&input);
+    gpr_slice_buffer_addn(&input, downstream_slices_.data(),
+                          it - downstream_slices_.begin());
+
+    gpr_slice_buffer output;
+    gpr_slice_buffer_init(&output);
+
+    if (grpc_msg_decompress(&exec_ctx, GetCompressionAlgorithm(r_), &input,
+                            &output) != 1) {
+      gpr_slice_buffer_destroy(&input);
+      gpr_slice_buffer_destroy(&output);
+      CompletePendingRead(false,
+                          utils::Status(google::protobuf::util::error::INTERNAL,
+                                        "Failed to decompress GRPC message",
+                                        utils::Status::INTERNAL));
+
+      return true;
+    }
+
+    slices.reserve(output.count);
+    std::transform(output.slices, output.slices + output.count,
+                   std::back_inserter(slices), [](gpr_slice &slice) {
+                     return ::grpc::Slice(slice, ::grpc::Slice::ADD_REF);
+                   });
+
+    gpr_slice_buffer_destroy(&input);
+    gpr_slice_buffer_destroy(&output);
+  } else {
+    slices.reserve(it - downstream_slices_.begin());
+    std::transform(downstream_slices_.begin(), it, std::back_inserter(slices),
+                   [](gpr_slice &slice) {
+                     return ::grpc::Slice(slice, ::grpc::Slice::STEAL_REF);
+                   });
+  }
 
   // Write the message byte buffer (giving the ByteBuffer its own
   // reference counts).

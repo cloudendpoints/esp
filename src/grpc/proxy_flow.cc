@@ -31,6 +31,7 @@
 #include "grpc/support/alloc.h"
 
 extern "C" {
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/security/util/b64.h"
 }
 
@@ -127,10 +128,20 @@ namespace grpc {
 // transition to "DownstreamFinish" in case of error.
 
 namespace {
+
+const char kGrpcEncoding[] = "grpc-encoding";
+const char kGrpcAcceptEncoding[] = "grpc-accept-encoding";
+
 Status ProcessDownstreamHeaders(
     const std::multimap<std::string, std::string> &headers,
     ::grpc::ClientContext *context) {
+  static grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+
   for (const auto &it : headers) {
+    if (it.first == kGrpcEncoding || it.first == kGrpcAcceptEncoding) {
+      // GRPC lib will add this header, so not adding it to client_context_
+      continue;
+    }
     // GRPC runtime libraries use "-bin" suffix to detect binary headers and
     // properly apply base64 encoding & decoding as headers are sent and
     // received. So we decode here before passing it to GRPC runtime.
@@ -140,8 +151,8 @@ Status ProcessDownstreamHeaders(
         continue;
       }
       ::grpc::Slice value_slice(
-          grpc_base64_decode_with_len(it.second.c_str(), it.second.length(),
-                                      false),
+          grpc_base64_decode_with_len(&exec_ctx, it.second.c_str(),
+                                      it.second.length(), false),
           ::grpc::Slice::STEAL_REF);
       std::string binary_value(
           reinterpret_cast<const char *>(value_slice.begin()),
@@ -277,11 +288,11 @@ void ProxyFlow::StartUpstreamWritesDone(std::shared_ptr<ProxyFlow> flow,
         if (!ok) {
           // Upstream is not writable, call finish to get status and
           // and finish the call
-          StartUpstreamFinish(flow, Status::OK);
+          StartUpstreamFinish(flow);
           return;
         }
         if (!status.ok()) {
-          StartUpstreamFinish(flow, status);
+          StartDownstreamFinish(flow, status);
           return;
         }
       }));
@@ -297,7 +308,7 @@ void ProxyFlow::StartUpstreamWriteMessage(std::shared_ptr<ProxyFlow> flow) {
         if (!ok) {
           // Upstream is not writable, call finish to get status and
           // and finish the call
-          StartUpstreamFinish(flow, Status::OK);
+          StartUpstreamFinish(flow);
           return;
         }
         // Now that the write has completed, it's safe to start the
@@ -359,7 +370,7 @@ void ProxyFlow::StartUpstreamReadMessage(std::shared_ptr<ProxyFlow> flow) {
       &flow->upstream_to_downstream_buffer_,
       flow->async_grpc_queue_->MakeTag([flow](bool ok) {
         if (!ok) {
-          StartUpstreamFinish(flow, Status::OK);
+          StartUpstreamFinish(flow);
           return;
         }
         StartDownstreamWriteMessage(flow);
@@ -389,8 +400,7 @@ void ProxyFlow::StartDownstreamWriteMessage(std::shared_ptr<ProxyFlow> flow) {
       });
 }
 
-void ProxyFlow::StartUpstreamFinish(std::shared_ptr<ProxyFlow> flow,
-                                    Status status) {
+void ProxyFlow::StartUpstreamFinish(std::shared_ptr<ProxyFlow> flow) {
   {
     std::lock_guard<std::mutex> lock(flow->mu_);
     if (flow->started_upstream_finish_) {
@@ -401,7 +411,7 @@ void ProxyFlow::StartUpstreamFinish(std::shared_ptr<ProxyFlow> flow,
   flow->upstream_reader_writer_->Finish(
       &flow->status_from_upstream_,
       flow->async_grpc_queue_->MakeTag(
-          [flow, status](bool ok) { StartDownstreamFinish(flow, status); }));
+          [flow](bool ok) { StartDownstreamFinish(flow, Status::OK); }));
 }
 
 void ProxyFlow::StartDownstreamFinish(std::shared_ptr<ProxyFlow> flow,

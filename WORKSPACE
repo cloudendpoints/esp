@@ -26,7 +26,7 @@
 #
 # A Bazel (http://bazel.io) workspace for the Google Cloud Endpoints runtime.
 
-ISTIO_PROXY = "b27d4b9fe2e5c17f0c4cdf92c73ee92a76ac02f8"
+ISTIO_PROXY = "df4b7e43aad8e8a25d83606389c41d06ecef32ac"
 
 git_repository(
     name = "nginx",
@@ -57,7 +57,6 @@ load(
     "@istio_proxy_git//contrib/endpoints:repositories.bzl",
     "grpc_repositories",
     "servicecontrol_client_repositories",
-    "mixer_client_repositories",
 )
 load(
     "@istio_proxy_git//:repositories.bzl",
@@ -97,33 +96,11 @@ bind(
 
 servicecontrol_client_repositories()
 
-mixer_client_repositories()
-
 protobuf_repositories()
 
 googletest_repositories()
 
 grpc_repositories()
-
-load(
-    "@mixerclient_git//:repositories.bzl",
-    "mixerapi_repositories",
-)
-
-mixerapi_repositories(protobuf_repo="@protobuf_bzl//")
-
-# Though GRPC has BUILD file, our own BUILD.grpc file is needed since it contains
-# more targets including testing server and client.
-# To generate the BUILD.grpc file, cherry-pick
-# https://github.com/grpc/grpc/pull/7556
-# and run ./tools/buildgen/generate_projects.sh in GRPC repo.
-new_git_repository(
-    name = "grpc_test_git",
-    build_file = "third_party/BUILD.grpc",
-    commit = "d28417c856366df704200f544e72d31056931bce",
-    init_submodules = True,
-    remote = "https://github.com/grpc/grpc.git",
-)
 
 # Workaround for Bazel > 0.4.0 since it needs newer protobuf.bzl from:
 # https://github.com/google/protobuf/pull/2246
@@ -149,7 +126,7 @@ bind(
 
 git_repository(
     name = "tools",
-    commit = "3327bae27498025ef8d33709f37182ae407fc517",
+    commit = "1bcac83ed2dc9c5e0be156a4c1801d435667f642",
     remote = "https://github.com/cloudendpoints/endpoints-tools",
 )
 
@@ -181,11 +158,11 @@ git_repository(
 #
 git_repository(
     name = "io_bazel_rules_go",
-    commit = "3b13b2dba81e09ec213ccbd4da56ad332cb5d3dc",
+    commit = "76c63b5cd0d47c1f2b47ab4953db96c574af1c1d",
     remote = "https://github.com/bazelbuild/rules_go.git",
 )
 
-load("@io_bazel_rules_go//go:def.bzl", "go_repositories", "go_repository")
+load("@io_bazel_rules_go//go:def.bzl", "go_repositories", "go_repository", "new_go_repository")
 
 go_repositories()
 
@@ -195,3 +172,7 @@ new_git_repository(
     commit = "8616e8ee5e20a1704615e6c8d7afcdac06087a67",
     remote = "https://github.com/golang/protobuf.git",
 )
+
+load("//test/grpc:repositories.bzl", "grpc_go_repositories")
+
+grpc_go_repositories()

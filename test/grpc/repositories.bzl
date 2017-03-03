@@ -1,5 +1,3 @@
-#!/bin/bash
-#
 # Copyright (C) Extensible Service Proxy Authors
 # All rights reserved.
 #
@@ -26,31 +24,42 @@
 #
 ################################################################################
 #
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-. ${ROOT}/script/all-utilities || { echo "Cannot load Bash utilities" ; exit 1 ; }
 
-while getopts :t:i: arg; do
-  case ${arg} in
-    t) TEST="${OPTARG}";;
-    i) ID="${OPTARG}";;
-    *) echo "Unknown argument -${OPTARG}"; exit 1;;
-  esac
-done
+load("@io_bazel_rules_go//go:def.bzl", "new_go_repository")
 
-AUTHOR="$(git --no-pager show -s --format='%an' ${SHA})"
-SUBJECT="$(git --no-pager show -s --format='%s' ${SHA})"
+def grpc_go_repositories():
+    new_go_repository(
+        name = "org_golang_google_grpc",
+        commit = "708a7f9f3283aa2d4f6132d287d78683babe55c8",
+        importpath = "google.golang.org/grpc",
+    )
 
-TEST_ENV="$(mktemp /tmp/XXXXX.test.env)"
+    new_go_repository(
+        name = "com_github_golang_protobuf",
+        commit = "8ee79997227bf9b34611aee7946ae64735e6fd93",
+        importpath = "github.com/golang/protobuf",
+    )
 
-cat << EOF > "${TEST_ENV}"
-{
-  "test": "${TEST}",
-  "run_id": "${ID}",
-  "run_description": $(python -c "import json; a='${SUBJECT}'; print json.dumps(a)"),
-  "owner": "${AUTHOR}"
-}
-EOF
+    new_go_repository(
+        name = "org_golang_x_net",
+        commit = "a689eb3bc4b53af70390acc3cf68c9f549b6b8d6",
+        importpath = "golang.org/x/net",
+    )
 
-echo "${TEST_ENV}"
+    new_go_repository(
+        name = "org_golang_x_oauth2",
+        commit = "de0725b330ab43c1a3d6c84d961cf01183783f1e",
+        importpath = "golang.org/x/oauth2",
+    )
 
-exit 0
+    new_go_repository(
+        name = "com_google_cloud_go",
+        commit = "513b07bb7468fa6d8c59519f35b66456bce959b5",
+        importpath = "cloud.google.com/go",
+    )
+
+    new_go_repository(
+        name = "com_github_googleapis_gax_go",
+        commit = "da06d194a00e19ce00d9011a13931c3f6f6887c7",
+        importpath = "github.com/googleapis/gax-go",
+    )
