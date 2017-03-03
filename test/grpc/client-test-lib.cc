@@ -106,6 +106,10 @@ void SetCallConfig(const CallConfig &call_config, ClientContext *ctx) {
   for (const auto &it : call_config.metadata()) {
     ctx->AddMetadata(it.first, it.second);
   }
+  if (call_config.compression()) {
+    ctx->set_compression_algorithm(
+        static_cast<grpc_compression_algorithm>(call_config.compression()));
+  }
 }
 
 template <class T1, class T2>
@@ -196,6 +200,13 @@ class Echo {
                 echo->ctx_.GetServerTrailingMetadata(), metadata_results);
             result.mutable_echo()->set_verified_metadata(verified_metadata);
             ok &= metadata_results->size() == 0;
+          }
+
+          for (auto key : echo->desc_.expected_metadata_keys()) {
+            auto it = echo->response_.received_metadata().find(key);
+            if (it != echo->response_.received_metadata().end()) {
+              (*(result.mutable_additional_metadata()))[key] = it->second;
+            }
           }
           done(ok, result);
         }));

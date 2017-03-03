@@ -91,13 +91,10 @@
             "description": "get message response"
           }
         },
-        "x-security": [
+        "security": [
           {
-            "test_jwk":  {
-              "audiences": [
-                "echo-${MY_PROJECT_ID}.appspot.com"
-              ]
-            }
+            "test_jwk":  [],
+            "api_key": []
           }
         ]
       },
@@ -112,13 +109,10 @@
             "description": "post message response"
           }
         },
-        "x-security": [
+        "security": [
           {
-            "test_jwk":  {
-              "audiences":[
-                "echo-${MY_PROJECT_ID}.appspot.com"
-              ]
-            }
+            "test_jwk":  [],
+            "api_key": []
           }
         ]
       }
@@ -169,8 +163,9 @@
       "authorizationUrl": "",
       "flow": "implicit",
       "type": "oauth2",
-      "x-issuer": "loadtest@esp-test-client.iam.gserviceaccount.com",
-      "x-jwks_uri": "https://www.googleapis.com/service_accounts/v1/jwk/loadtest@esp-test-client.iam.gserviceaccount.com"
+      "x-google-issuer": "loadtest@esp-test-client.iam.gserviceaccount.com",
+      "x-google-jwks_uri": "https://www.googleapis.com/service_accounts/v1/jwk/loadtest@esp-test-client.iam.gserviceaccount.com",
+      "x-google-audiences": "echo-${MY_PROJECT_ID}.appspot.com"
     }
   }
 }
