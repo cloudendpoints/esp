@@ -830,9 +830,8 @@ ngx_int_t ngx_esp_create_http_configuration(ngx_conf_t *cf,
   ngx_memzero(ssl, sizeof(ngx_ssl_t));
   ssl->log = cf->log;
 
-  if (ngx_ssl_create(ssl,
-                     NGX_SSL_SSLv2 | NGX_SSL_SSLv3 | NGX_SSL_TLSv1 |
-                         NGX_SSL_TLSv1_1 | NGX_SSL_TLSv1_2,
+  if (ngx_ssl_create(ssl, NGX_SSL_SSLv2 | NGX_SSL_SSLv3 | NGX_SSL_TLSv1 |
+                              NGX_SSL_TLSv1_1 | NGX_SSL_TLSv1_2,
                      nullptr) != NGX_OK) {
     return NGX_ERROR;
   }
