@@ -189,6 +189,7 @@ nginx_suite(
         "no_backend.t",
         "no_service_control.t",
         "quota.t",
+        "quota_aggregated.t",
         "quota_api_not_available.t",
         "quota_exhausted.t",
         "reject_unrecognized.t",
