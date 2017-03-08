@@ -43,12 +43,15 @@ using google::api_manager::service_control::Proto;
 
 using ::google::api::servicecontrol::v1::CheckRequest;
 using ::google::api::servicecontrol::v1::CheckResponse;
+using ::google::api::servicecontrol::v1::AllocateQuotaRequest;
+using ::google::api::servicecontrol::v1::AllocateQuotaResponse;
 using ::google::api::servicecontrol::v1::ReportRequest;
 using ::google::api::servicecontrol::v1::ReportResponse;
 using ::google::protobuf::Arena;
 using ::google::protobuf::util::Status;
 
 using ::google::service_control_client::CheckAggregationOptions;
+using ::google::service_control_client::QuotaAggregationOptions;
 using ::google::service_control_client::ReportAggregationOptions;
 using ::google::service_control_client::ServiceControlClient;
 using ::google::service_control_client::ServiceControlClientOptions;
@@ -87,6 +90,7 @@ void FillReportRequestInfo(ReportRequestInfo* request) {
 
 int total_called_checks = 0;
 int total_called_reports = 0;
+int total_called_quotas = 0;
 std::string request_text;
 
 // Compare the performance for passing Service Control Report protobuf to its
@@ -103,10 +107,14 @@ int main() {
       CheckAggregationOptions(1000000 /*entries*/,
                               1000000 /* refresh_interval_ms */,
                               1000000 /*flush_interval_ms*/),
+      QuotaAggregationOptions(1000000 /*entries*/,
+                              1000000 /* refresh_interval_ms */),
       ReportAggregationOptions(1000000 /*entries*/,
                                1000000 /* refresh_interval_ms */));
   options.check_transport = [](const CheckRequest&, CheckResponse*,
                                TransportDoneFunc) { ++total_called_checks; };
+  options.quota_transport = [](const AllocateQuotaRequest&, AllocateQuotaResponse*,
+                               TransportDoneFunc) { ++total_called_quotas; };
   options.report_transport = [](const ReportRequest&, ReportResponse*,
                                 TransportDoneFunc) { ++total_called_reports; };
   client = CreateServiceControlClient(kServiceName, kServiceConfigId, options);
