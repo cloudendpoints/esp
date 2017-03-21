@@ -82,7 +82,7 @@ function tag_stable_image() {
 
   docker_tag_f "${image}" "${stable}"
 
-  retry "${GCLOUD}" docker push "${stable}" \
+  retry "${GCLOUD}" docker -- push "${stable}" \
     || error_exit "ERROR: failed to push '${stable}'"
 }
 
