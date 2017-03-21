@@ -79,7 +79,7 @@ echo "Creating a GCE-VM ${INSTANCE}"
 
 function remote() {
   echo "Remotely run command: $*"
-  ${GCLOUD} compute ssh "${INSTANCE}" "${COMMON_ARGS[@]}" --command="$*" \
+  ${GCLOUD} compute ssh "${INSTANCE}" -- "${COMMON_ARGS[@]}" --command="$*" \
     || error_exit "Failed to remotely run command: $*"
 }
 

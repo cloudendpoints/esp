@@ -177,7 +177,7 @@ function download_nginx_logs() {
 
   retry -n 2 -s 10 \
     ${GCLOUD} compute ssh --project=${PROJECT} --zone=${vm_zone} ${vm_name} \
-        "sudo tar czf \"${remote_archive}\" /var/log/ ; sudo chmod 777 \"${remote_archive}\"" \
+        "-- sudo tar czf \"${remote_archive}\" /var/log/ ; sudo chmod 777 \"${remote_archive}\"" \
     || error_exit "Cannot tar backend VM logs."
 
   retry -n 2 -s 10 \
