@@ -43,4 +43,4 @@ cp $DEB                                 $ROOT/docker/ingress
 cp $ROOT/bazel-bin/test/src/ingress     $ROOT/docker/ingress
 cp $ROOT/test/src/controller/nginx.tmpl $ROOT/docker/ingress
 docker build -t ${IMAGE} $ROOT/docker/ingress || error_exit "Failed to build"
-gcloud docker push ${IMAGE}                   || error_exit "Failed to upload docker image"
+gcloud docker -- push ${IMAGE}                   || error_exit "Failed to upload docker image"

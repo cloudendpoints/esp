@@ -43,7 +43,7 @@ TOOLS_BUCKET=''
 function update_image() {
   local image="${1}"
   [[ ${FORCE} == true ]] && return 0
-  ${GCLOUD} docker pull "${image}"
+  ${GCLOUD} docker -- pull "${image}"
   local image_exists=${?}
   [[ ${image_exists} -eq 0 ]] && return 1
   return 0
@@ -75,7 +75,7 @@ if [[ "${BUILD}" == true ]]; then
     run retry -n 10 docker build --build-arg TOOLS_BUCKET="${TOOLS_BUCKET}" --no-cache -t ${IMAGE} \
       -f "${DOCKER_FILE}" . || error_exit "Could not build ${SLAVE}"
     echo "Pushing Docker image: ${IMAGE}"
-    retry -n 3 ${GCLOUD} docker push "${IMAGE}" \
+    retry -n 3 ${GCLOUD} docker -- push "${IMAGE}" \
       || error_exit "Failed to push tag ${IMAGE}."
   fi
 fi
@@ -86,7 +86,7 @@ if [[ -n "${TAG}" ]]; then
   retry -n 3 docker tag "${IMAGE}" ${TAG}
 
   echo "Pushing Docker image: ${TAG}"
-  retry -n 3 ${GCLOUD} docker push "${TAG}" \
+  retry -n 3 ${GCLOUD} docker -- push "${TAG}" \
     || error_exit "Failed to push tag ${TAG}."
 fi
 
