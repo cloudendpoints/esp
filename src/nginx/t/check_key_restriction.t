@@ -45,7 +45,7 @@ my $NginxPort          = ApiManager::pick_port();
 my $BackendPort        = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(21);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(22);
 
 # Save servce configuration that disables the report cache.
 # Report request will be sent for each client request
@@ -95,8 +95,11 @@ http {
 }
 EOF
 
+my $report_done = 'report_done';
+
 $t->run_daemon( \&bookstore, $t, $BackendPort, 'bookstore.log' );
-$t->run_daemon( \&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log' );
+$t->run_daemon( \&servicecontrol, $t, $ServiceControlPort,
+  'servicecontrol.log', $report_done);
 is( $t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'Bookstore socket ready.' );
 is( $t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1,
   'Service control socket ready.' );
@@ -115,6 +118,8 @@ X-Ios-Bundle-Identifier: 5b40ad6af9a806305a0a56d7cb91b82a27c26909
 
 EOF
 
+is($t->waitforfile("$t->{_testdir}/${report_done}"), 1,
+  'Report body file ready.');
 $t->stop_daemons();
 
 my ( $response_headers, $response_body ) = split /\r\n\r\n/, $response, 2;
@@ -209,24 +214,32 @@ EOF
 }
 
 sub servicecontrol {
-  my ( $t, $port, $file ) = @_;
+  my ( $t, $port, $file, $done) = @_;
   my $server = HttpServer->new( $port, $t->testdir() . '/' . $file )
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
 
-  $server->on( 'POST',
-    '/v1/services/endpoints-test.cloudendpointsapis.com:check', <<'EOF');
+  $server->on_sub('POST',
+    '/v1/services/endpoints-test.cloudendpointsapis.com:check', sub {
+    my ($headers, $body, $client) = @_;
+    print $client <<'EOF';
+HTTP/1.1 200 OK
+Connection: close
+
+EOF
+  });
+
+  $server->on_sub('POST',
+    '/v1/services/endpoints-test.cloudendpointsapis.com:report', sub {
+    my ($headers, $body, $client) = @_;
+    print $client <<'EOF';
 HTTP/1.1 200 OK
 Connection: close
 
 EOF
 
-  $server->on( 'POST',
-    '/v1/services/endpoints-test.cloudendpointsapis.com:report', <<'EOF');
-HTTP/1.1 200 OK
-Connection: close
-
-EOF
+    $t->write_file($done, ':report done');
+  });
 
   $server->run();
 }
