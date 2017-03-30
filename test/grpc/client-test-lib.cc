@@ -46,13 +46,14 @@ using ::google::api::servicecontrol::v1::ReportRequest;
 using ::google::protobuf::util::MessageDifferencer;
 using ::grpc::Alarm;
 using ::grpc::Channel;
+using ::grpc::ChannelArguments;
 using ::grpc::ChannelCredentials;
 using ::grpc::ClientContext;
 using ::grpc::ClientAsyncReaderWriterInterface;
 using ::grpc::ClientAsyncResponseReaderInterface;
 using ::grpc::ClientReaderWriter;
 using ::grpc::CompletionQueue;
-using ::grpc::CreateChannel;
+using ::grpc::CreateCustomChannel;
 using ::grpc::InsecureChannelCredentials;
 using ::grpc::SslCredentials;
 using ::grpc::SslCredentialsOptions;
@@ -92,7 +93,10 @@ std::shared_ptr<ChannelCredentials> GetCreds(const EchoStreamTest &desc) {
 template <class T>
 static std::unique_ptr<Test::Stub> GetStub(const std::string &addr,
                                            const T &desc) {
-  std::shared_ptr<Channel> channel(CreateChannel(addr, GetCreds(desc)));
+  ChannelArguments args;
+  args.SetMaxReceiveMessageSize(INT_MAX);
+  args.SetMaxSendMessageSize(INT_MAX);
+  std::shared_ptr<Channel> channel(CreateCustomChannel(addr, GetCreds(desc), args));
   return std::unique_ptr<Test::Stub>(Test::NewStub(channel));
 }
 
@@ -219,6 +223,10 @@ class Echo {
     if (desc_.request().random_payload_max_size() > 0) {
       desc_.mutable_request()->set_text(
           RandomString(desc_.request().random_payload_max_size()));
+    }
+    if (desc_.request().space_payload_size() > 0) {
+      desc_.mutable_request()->set_text(
+          std::string(desc_.request().space_payload_size(), ' '));
     }
   }
 

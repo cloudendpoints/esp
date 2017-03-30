@@ -44,6 +44,10 @@ message EchoRequest {
   // The payload size is random between 0 and value of this field.
   int32 random_payload_max_size = 3;
 
+  // If non 0, the text payload is generated with space characters
+  // The payload size is specified by the value of this field.
+  int32 space_payload_size = 6;
+
   // The metadata that server should return
   map<string, bytes> return_initial_metadata = 4;
   map<string, bytes> return_trailing_metadata = 5;
