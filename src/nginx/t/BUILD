@@ -171,6 +171,7 @@ nginx_suite(
         "check_custom_api_key.t",
         "check_default.t",
         "check_invalid_api_key.t",
+        "check_key_restriction.t",
         "check_no_consumer.t",
         "check_referer.t",
         "check_report_body.t",
