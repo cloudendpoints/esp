@@ -96,7 +96,8 @@ static std::unique_ptr<Test::Stub> GetStub(const std::string &addr,
   ChannelArguments args;
   args.SetMaxReceiveMessageSize(INT_MAX);
   args.SetMaxSendMessageSize(INT_MAX);
-  std::shared_ptr<Channel> channel(CreateCustomChannel(addr, GetCreds(desc), args));
+  std::shared_ptr<Channel> channel(
+      CreateCustomChannel(addr, GetCreds(desc), args));
   return std::unique_ptr<Test::Stub>(Test::NewStub(channel));
 }
 
