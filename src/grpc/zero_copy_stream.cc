@@ -68,7 +68,7 @@ void GrpcZeroCopyInputStream::BackUp(int count) {
   }
 }
 
-::google::protobuf::int64 GrpcZeroCopyInputStream::ByteCount() const {
+int64_t GrpcZeroCopyInputStream::BytesAvailable() const {
   return (current_buffer_size_ - position_) + serializer_.ByteCount();
 }
 

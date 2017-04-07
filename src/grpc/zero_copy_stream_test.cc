@@ -86,10 +86,10 @@ TEST_F(GrpcZeroCopyInputStreamTest, SimpleRead) {
   stream.AddMessage(CreateByteBuffer(SliceData{slice21, slice22}), true);
   stream.Finish();
 
-  // Test ByteCount()
+  // Test BytesAvailable()
   EXPECT_EQ(slice11.size() + slice12.size() + slice21.size() + slice22.size() +
                 10,  // +10 bytes for two delimiters
-            stream.ByteCount());
+            stream.BytesAvailable());
 
   // Test the message1 delimiter
   ASSERT_TRUE(stream.Next(&data, &size));
@@ -97,28 +97,28 @@ TEST_F(GrpcZeroCopyInputStreamTest, SimpleRead) {
   EXPECT_EQ(slice11.size() + slice12.size(),
             DelimiterToSize(reinterpret_cast<const unsigned char *>(data)));
 
-  // Test ByteCount()
+  // Test BytesAvailable()
   EXPECT_EQ(slice11.size() + slice12.size() + slice21.size() + slice22.size() +
                 5,  // +5 bytes for one delimiter
-            stream.ByteCount());
+            stream.BytesAvailable());
 
   // Test the slices
   ASSERT_TRUE(stream.Next(&data, &size));
   ASSERT_EQ(slice11.size(), size);
   EXPECT_EQ(slice11, std::string(reinterpret_cast<const char *>(data), size));
 
-  // Test ByteCount()
+  // Test BytesAvailable()
   EXPECT_EQ(slice12.size() + slice21.size() + slice22.size() +
                 5,  // +5 bytes for one delimiter
-            stream.ByteCount());
+            stream.BytesAvailable());
 
   ASSERT_TRUE(stream.Next(&data, &size));
   ASSERT_EQ(slice12.size(), size);
   EXPECT_EQ(slice12, std::string(reinterpret_cast<const char *>(data), size));
 
-  // Test ByteCount()
+  // Test BytesAvailable()
   EXPECT_EQ(slice21.size() + slice22.size() + 5,  // +5 bytes for one delimiter
-            stream.ByteCount());
+            stream.BytesAvailable());
 
   // Test the message2 delimiter
   ASSERT_TRUE(stream.Next(&data, &size));
@@ -126,23 +126,23 @@ TEST_F(GrpcZeroCopyInputStreamTest, SimpleRead) {
   EXPECT_EQ(slice21.size() + slice22.size(),
             DelimiterToSize(reinterpret_cast<const unsigned char *>(data)));
 
-  // Test ByteCount()
-  EXPECT_EQ(slice21.size() + slice22.size(), stream.ByteCount());
+  // Test BytesAvailable()
+  EXPECT_EQ(slice21.size() + slice22.size(), stream.BytesAvailable());
 
   // Test the slices
   ASSERT_TRUE(stream.Next(&data, &size));
   ASSERT_EQ(slice21.size(), size);
   EXPECT_EQ(slice21, std::string(reinterpret_cast<const char *>(data), size));
 
-  // Test ByteCount()
-  EXPECT_EQ(slice22.size(), stream.ByteCount());
+  // Test BytesAvailable()
+  EXPECT_EQ(slice22.size(), stream.BytesAvailable());
 
   ASSERT_TRUE(stream.Next(&data, &size));
   ASSERT_EQ(slice22.size(), size);
   EXPECT_EQ(slice22, std::string(reinterpret_cast<const char *>(data), size));
 
   // Test the end of the stream
-  EXPECT_EQ(0, stream.ByteCount());
+  EXPECT_EQ(0, stream.BytesAvailable());
   EXPECT_FALSE(stream.Next(&data, &size));
 }
 
@@ -167,9 +167,9 @@ TEST_F(GrpcZeroCopyInputStreamTest, Backups) {
   // Back up
   stream.BackUp(5);
 
-  // Test the ByteCount()
+  // Test the BytesAvailable()
   EXPECT_EQ(slice1.size() + slice2.size() + 5,  // +5 bytes for the delimiter
-            stream.ByteCount());
+            stream.BytesAvailable());
 
   // Test the slice again
   ASSERT_TRUE(stream.Next(&data, &size));
@@ -184,14 +184,14 @@ TEST_F(GrpcZeroCopyInputStreamTest, Backups) {
 
   // Back up & test again
   stream.BackUp(size);
-  EXPECT_EQ(slice1.size() + slice2.size(), stream.ByteCount());
+  EXPECT_EQ(slice1.size() + slice2.size(), stream.BytesAvailable());
   ASSERT_TRUE(stream.Next(&data, &size));
   ASSERT_EQ(slice1.size(), size);
   EXPECT_EQ(slice1, std::string(reinterpret_cast<const char *>(data), size));
 
   // Now Back up 10 bytes & test again
   stream.BackUp(10);
-  EXPECT_EQ(10 + slice2.size(), stream.ByteCount());
+  EXPECT_EQ(10 + slice2.size(), stream.BytesAvailable());
   ASSERT_TRUE(stream.Next(&data, &size));
   ASSERT_EQ(10, size);
   EXPECT_EQ(slice1.substr(slice1.size() - 10),
@@ -204,14 +204,14 @@ TEST_F(GrpcZeroCopyInputStreamTest, Backups) {
 
   // Back up and test again
   stream.BackUp(size);
-  EXPECT_EQ(slice2.size(), stream.ByteCount());
+  EXPECT_EQ(slice2.size(), stream.BytesAvailable());
   ASSERT_TRUE(stream.Next(&data, &size));
   ASSERT_EQ(slice2.size(), size);
   EXPECT_EQ(slice2, std::string(reinterpret_cast<const char *>(data), size));
 
   // Now Back up size - 1 bytes (all but 1) and check again
   stream.BackUp(size - 1);
-  EXPECT_EQ(slice2.size() - 1, stream.ByteCount());
+  EXPECT_EQ(slice2.size() - 1, stream.BytesAvailable());
   ASSERT_TRUE(stream.Next(&data, &size));
   ASSERT_EQ(slice2.size() - 1, size);
   EXPECT_EQ(slice2.substr(1),

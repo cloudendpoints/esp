@@ -26,7 +26,7 @@
 #
 # A Bazel (http://bazel.io) workspace for the Google Cloud Endpoints runtime.
 
-ISTIO_PROXY = "557d0c6a7f1136e98ca1a05494df0b51c5bad7d2"
+ISTIO_PROXY = "987223f6ce6998a8af0f3524545bed7f0d0a1ebb"
 
 git_repository(
     name = "nginx",
@@ -158,7 +158,7 @@ git_repository(
 #
 git_repository(
     name = "io_bazel_rules_go",
-    commit = "76c63b5cd0d47c1f2b47ab4953db96c574af1c1d",
+    commit = "2d9f328a9723baf2d037ba9db28d9d0e30683938", # Apr 6, 2017 (buildifier fix)
     remote = "https://github.com/bazelbuild/rules_go.git",
 )
 
