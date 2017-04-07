@@ -54,8 +54,8 @@ class GrpcZeroCopyInputStream
 
   bool Next(const void** data, int* size);
   void BackUp(int count);
-  bool Skip(int count) { return false; }  // not supported
-  ::google::protobuf::int64 ByteCount() const { return 0; } // Not implemented
+  bool Skip(int count) { return false; }                     // not supported
+  ::google::protobuf::int64 ByteCount() const { return 0; }  // Not implemented
   int64_t BytesAvailable() const;
 
  private:
