@@ -110,6 +110,7 @@ nginx_suite(
         "grpc_grpc_fallback.t",
         "grpc_grpc_override.t",
         "grpc_large_request.t",
+        "grpc_large_response.t",
         "grpc_large_streaming.t",
         "grpc_long_streaming.t",
         "grpc_metadata.t",

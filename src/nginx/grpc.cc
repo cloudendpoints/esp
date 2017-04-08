@@ -93,8 +93,14 @@ std::pair<Status, std::shared_ptr<::grpc::GenericStub>> GrpcGetStub(
     return std::make_pair(Status::OK, it->second);
   }
 
-  auto result = std::make_shared<::grpc::GenericStub>(
-      ::grpc::CreateChannel(address, ::grpc::InsecureChannelCredentials()));
+  ::grpc::ChannelArguments channel_arguments;
+
+  channel_arguments.SetMaxReceiveMessageSize(INT_MAX);
+  channel_arguments.SetMaxSendMessageSize(INT_MAX);
+
+  auto result =
+      std::make_shared<::grpc::GenericStub>(::grpc::CreateCustomChannel(
+          address, ::grpc::InsecureChannelCredentials(), channel_arguments));
 
   if (result) {
     espcf->grpc_stubs.emplace(address, result);
