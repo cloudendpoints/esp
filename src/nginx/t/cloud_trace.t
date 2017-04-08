@@ -44,7 +44,7 @@ my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $CloudTracePort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(27);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(29);
 
 my $config = ApiManager::get_bookstore_service_config_allow_unregistered .
     ApiManager::read_test_file('testdata/logs_metrics.pb.txt') . <<"EOF";
@@ -151,11 +151,15 @@ is($json_obj->{traces}->[0]->{spans}->[3]->{name}, 'Call ServiceControl server',
     'Next trace span is Call ServiceControl server');
 is($json_obj->{traces}->[0]->{spans}->[3]->{parentSpanId}, $check_service_control_cache_id,
     'Parent of Call ServiceControl sever span is CheckServiceControlCache');
-is($json_obj->{traces}->[0]->{spans}->[4]->{name}, 'Backend',
+is($json_obj->{traces}->[0]->{spans}->[4]->{name}, 'QuotaControl',
     'Next trace span is Backend');
 is($json_obj->{traces}->[0]->{spans}->[4]->{parentSpanId}, $rootid,
     'Parent of Beckend span is root');
-my $backend_span_id = $json_obj->{traces}->[0]->{spans}->[4]->{spanId};
+is($json_obj->{traces}->[0]->{spans}->[5]->{name}, 'Backend',
+    'Next trace span is Backend');
+is($json_obj->{traces}->[0]->{spans}->[5]->{parentSpanId}, $rootid,
+    'Parent of Beckend span is root');
+my $backend_span_id = $json_obj->{traces}->[0]->{spans}->[5]->{spanId};
 
 my @bookstore_requests = ApiManager::read_http_stream($t, 'bookstore.log');
 is(scalar @bookstore_requests, 1, 'Bookstore received 1 request.');
