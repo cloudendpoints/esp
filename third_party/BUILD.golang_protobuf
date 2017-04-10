@@ -15,6 +15,7 @@ go_library(
         "proto/lib.go",
         "proto/message_set.go",
         "proto/pointer_reflect.go",
+        "proto/pointer_unsafe.go",
         "proto/properties.go",
         "proto/text.go",
         "proto/text_parser.go",

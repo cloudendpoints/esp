@@ -28,6 +28,7 @@
 
 #include <deque>
 
+#include "contrib/endpoints/src/grpc/transcoding/transcoder_input_stream.h"
 #include "google/protobuf/io/zero_copy_stream.h"
 #include "grpc++/support/byte_buffer.h"
 #include "src/grpc/message_serializer.h"
@@ -38,7 +39,7 @@ namespace grpc {
 
 // ZeroCopyInputStream implementation over a stream of gRPC messages.
 class GrpcZeroCopyInputStream
-    : public ::google::protobuf::io::ZeroCopyInputStream {
+    : public ::google::api_manager::transcoding::TranscoderInputStream {
  public:
   GrpcZeroCopyInputStream();
 
@@ -53,8 +54,9 @@ class GrpcZeroCopyInputStream
 
   bool Next(const void** data, int* size);
   void BackUp(int count);
-  bool Skip(int count) { return false; }  // not supported
-  ::google::protobuf::int64 ByteCount() const;
+  bool Skip(int count) { return false; }                     // not supported
+  ::google::protobuf::int64 ByteCount() const { return 0; }  // Not implemented
+  int64_t BytesAvailable() const;
 
  private:
   GrpcMessageSerializer serializer_;
