@@ -182,8 +182,8 @@ nginx_suite(
         "config_missing.t",
         "cors.t",
         "cors_disabled.t",
-        "failed_check.t",
         "fail_wrong_api_key.t",
+        "failed_check.t",
         "metadata.t",
         "metadata_fail.t",
         "metadata_timeout.t",
@@ -206,7 +206,6 @@ nginx_suite(
         "unregistered.t",
         "unregistered_no_project.t",
         "unspecified_service_control.t",
-        "uri_rewrite.t",
     ],
     deps = [
         ":perl_library",
