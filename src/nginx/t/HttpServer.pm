@@ -86,6 +86,7 @@ sub handle_client {
 
   # Read the request.
   if ($request =~ /^(\S+)\s+(([^? ]+)(\?[^ ]+)?)\s+HTTP/i) {
+    my $verb = $1;
     my $uri = $2;
     my $path = $3;
     my $body = '';
@@ -109,7 +110,6 @@ sub handle_client {
       print $rh $chunk;
     }
 
-    my $verb = $headers{'X-HTTP-Method-Override'} || $1;
     my $method_uri = join($verb, $uri);
     my $method_path = join($verb, $path);
     if (exists($self->{_http_cb}{$method_uri})) {

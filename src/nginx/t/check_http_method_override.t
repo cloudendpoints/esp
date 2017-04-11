@@ -42,7 +42,7 @@ my $NginxPort = ApiManager::pick_port();
 my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(8);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(12);
 
 # Save service name in the service configuration protocol buffer file.
 my $config = ApiManager::get_bookstore_service_config_allow_unregistered .
@@ -138,6 +138,15 @@ my $expected_report_body = ServiceControl::gen_report_body({
   });
 ok(ServiceControl::compare_json($report_body, $expected_report_body), 'Report body is received.');
 
+my @bookstore_requests = ApiManager::read_http_stream($t, 'bookstore.log');
+is(scalar @bookstore_requests, 1, 'Bookstore received one request');
+
+# Check backend request.
+my $r = shift @bookstore_requests;
+is($r->{verb}, 'POST', 'backend received a post');
+is($r->{path}, '/shelves', 'backend received get /shelves');
+is($r->{headers}->{'x-http-method-override'}, 'GET', 'X-HTTP-Method-Override was received');
+
 ################################################################################
 
 sub servicecontrol {
@@ -177,7 +186,7 @@ sub bookstore {
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
 
-  $server->on_sub('GET', '/shelves', sub {
+  $server->on_sub('POST', '/shelves', sub {
     my ($headers, $body, $client) = @_;
     print $client <<'EOF';
 HTTP/1.1 200 OK
