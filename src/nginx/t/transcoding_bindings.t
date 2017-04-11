@@ -43,7 +43,7 @@ my $NginxPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $GrpcServerPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(20);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(22);
 
 $t->write_file('service.pb.txt',
   ApiManager::get_transcoding_test_service_config(
@@ -139,7 +139,25 @@ ok(ApiManager::verify_http_json_response(
     $response, {'id' => '4', 'author' => 'Mark Twain', 'title' => 'The Adventures of Huckleberry Finn'}),
     'Got the new book');
 
-# 5. Binding shelf=1 in ListBooksRequest
+# Specifically test escaped slash "/" in the URL path
+# 5. Binding shelf=1, book.id=5, book.author="Foo/Bar/Baz" and book.title=<post body>
+#    in CreateBookRequest.
+#    HTTP template:
+#      POST /shelves/{shelf}/books/{book.id}/{book.author}
+#      body: book.title
+$response = ApiManager::http($NginxPort,<<EOF);
+POST /shelves/1/books/5/Foo%2FBar%2FBaz?key=api-key HTTP/1.0
+Host: 127.0.0.1:${NginxPort}
+Content-Type: application/json
+Content-Length: 36
+
+"The Adventures of Huckleberry Finn"
+EOF
+ok(ApiManager::verify_http_json_response(
+    $response, {'id' => '5', 'author' => 'Foo/Bar/Baz', 'title' => 'The Adventures of Huckleberry Finn'}),
+    'Got the new book');
+
+# 6. Binding shelf=1 in ListBooksRequest
 #    HTTP template:
 #      GET /shelves/{shelf}/books
 $response = ApiManager::http_get($NginxPort,'/shelves/1/books?key=api-key');
@@ -148,10 +166,11 @@ ok(ApiManager::verify_http_json_response(
         {'id' => '1', 'author' => 'Neal Stephenson', 'title' => 'Readme'},
         {'id' => '3', 'author' => 'Leo Tolstoy', 'title' => 'War and Peace'},
         {'id' => '4', 'author' => 'Mark Twain', 'title' => 'The Adventures of Huckleberry Finn'},
+        {'id' => '5', 'author' => 'Foo/Bar/Baz', 'title' => 'The Adventures of Huckleberry Finn'},
       ] }),
     'Got all books for shelf 1');
 
-# 6. Binding shelf=1 and book=3 in DeleteBookRequest
+# 7. Binding shelf=1 and book=3 in DeleteBookRequest
 #    HTTP template:
 #      DELETE /shelves/{shelf}/books/{book}
 $response = ApiManager::http($NginxPort,<<EOF);
@@ -161,7 +180,7 @@ HOST: 127.0.0.1:${NginxPort}
 EOF
 ok(ApiManager::verify_http_json_response($response, {}), 'Got empty resonse for delete');
 
-# 7. Binding shelf=1 in ListBooksRequest
+# 8. Binding shelf=1 in ListBooksRequest
 #    HTTP template:
 #      GET /shelves/{shelf}/books
 $response = ApiManager::http_get($NginxPort,'/shelves/1/books?key=api-key');
@@ -169,6 +188,7 @@ ok(ApiManager::verify_http_json_response(
     $response, { 'books' => [
         {'id' => '1', 'author' => 'Neal Stephenson', 'title' => 'Readme'},
         {'id' => '4', 'author' => 'Mark Twain', 'title' => 'The Adventures of Huckleberry Finn'},
+        {'id' => '5', 'author' => 'Foo/Bar/Baz', 'title' => 'The Adventures of Huckleberry Finn'},
       ] }),
     'Got final list of books for shelf 1');
 
@@ -184,7 +204,7 @@ my $server_output = $t->read_file('server.log');
 my @translated_requests = split /\r\n\r\n/, $server_output;
 
 # Check the translated requests
-is (scalar @translated_requests, 7, 'The server got the expected requests');
+is (scalar @translated_requests, 8, 'The server got the expected requests');
 
 # 1. ListBooksRequest with shelf=1
 ok(ApiManager::compare_json($translated_requests[0], {'shelf'=>'1'}));
@@ -203,18 +223,25 @@ ok(ApiManager::compare_json(
     {'shelf'=>'1', book => {'id' => '4', 'author' => 'Mark Twain',
                             'title' => 'The Adventures of Huckleberry Finn'}} ));
 
-# 5. ListBooksRequest with shelf=1
-ok(ApiManager::compare_json($translated_requests[4], {'shelf'=>'1'}));
+# 5. CreateBookRequest with shelf=1 and book={"id" : "5", "author" : "Foo/Bar/Baz",
+#                                             "title" : "The Adventures of Huckleberry Finn"}
+ok(ApiManager::compare_json(
+    $translated_requests[4],
+    {'shelf'=>'1', book => {'id' => '5', 'author' => 'Foo/Bar/Baz',
+                            'title' => 'The Adventures of Huckleberry Finn'}} ));
 
-# 6. DeleteBookRequest with shelf=1 and book=3
-ok(ApiManager::compare_json($translated_requests[5], {'shelf'=>'1', 'book'=>'3'}));
+# 6. ListBooksRequest with shelf=1
+ok(ApiManager::compare_json($translated_requests[5], {'shelf'=>'1'}));
 
-# 7. ListBooksRequest with shelf=1
-ok(ApiManager::compare_json($translated_requests[6], {'shelf'=>'1'}));
+# 7. DeleteBookRequest with shelf=1 and book=3
+ok(ApiManager::compare_json($translated_requests[6], {'shelf'=>'1', 'book'=>'3'}));
 
-# Expect 14 service control calls for 7 requests.
+# 8. ListBooksRequest with shelf=1
+ok(ApiManager::compare_json($translated_requests[7], {'shelf'=>'1'}));
+
+# Expect 16 service control calls for 8 requests.
 my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
-is(scalar @servicecontrol_requests, 14, 'Service control was called 14 times');
+is(scalar @servicecontrol_requests, 16, 'Service control was called 16 times');
 
 ################################################################################
 
@@ -246,7 +273,7 @@ Connection: close
 
 EOF
     $request_count++;
-    if ($request_count == 7) {
+    if ($request_count == 8) {
       $t->write_file($done, ":report done");
     }
   });
