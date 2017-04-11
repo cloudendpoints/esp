@@ -163,8 +163,8 @@ sub gen_log_entry {
   $payload->{api_key} = $in->{api_key} if exists $in->{api_key};
   $payload->{referer} = $in->{referer} if exists $in->{referer};
   $payload->{location} = $in->{location} if exists $in->{location};
-  $payload->{request_size} = $in->{request_size} if exists $in->{request_size};
-  $payload->{response_size} = $in->{response_size} if exists $in->{response_size};
+  $payload->{request_size_in_bytes} = $in->{request_size} if exists $in->{request_size};
+  $payload->{response_size_in_bytes} = $in->{response_size} if exists $in->{response_size};
   $payload->{log_message} = $in->{log_message} if exists $in->{log_message};
   $payload->{url} = $in->{url} if exists $in->{url};
   $payload->{http_method} = $in->{http_method} if exists $in->{http_method};
@@ -375,7 +375,7 @@ sub compare_http2_report_json {
 
   print Dumper $json_obj if $ENV{TEST_NGINX_VERBOSE};
   my %ignore_keys = map { $_ => "1" } qw(
-    startTime endTime timestamp operationId request_latency_in_ms response_size);
+    startTime endTime timestamp operationId request_latency_in_ms response_size_in_bytes);
   return ApiManager::compare($json_obj, $expected, "", \%ignore_keys);
 }
 
