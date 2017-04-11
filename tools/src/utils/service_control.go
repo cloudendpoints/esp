@@ -191,10 +191,10 @@ func createLogEntry(er *ExpectedReport) *servicecontrol.LogEntry {
 		pl["location"] = makeStringValue(er.Location)
 	}
 	if er.RequestSize != 0 {
-		pl["request_size"] = makeNumberValue(er.RequestSize)
+		pl["request_size_in_bytes"] = makeNumberValue(er.RequestSize)
 	}
 	if er.ResponseSize != 0 {
-		pl["response_size"] = makeNumberValue(er.ResponseSize)
+		pl["response_size_in_bytes"] = makeNumberValue(er.ResponseSize)
 	}
 	if er.LogMessage != "" {
 		pl["log_message"] = makeStringValue(er.LogMessage)

@@ -231,8 +231,8 @@ my $expected_report_body = {
       'location' => 'us-central1',
       'log_message' => 'Method: test.Bookstore.ListShelves',
       'http_response_code' => 200,
-      'request_size' => 55,
-      'response_size' =>  90,
+      'request_size_in_bytes' => 55,
+      'response_size_in_bytes' =>  90,
       'http_method' => 'GET'
      },
      'name' => 'endpoints_log',
