@@ -44,7 +44,7 @@ my $NginxPort          = ApiManager::pick_port();
 my $BackendPort        = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(26);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(27);
 
 # Save servce configuration that disables the report cache.
 # Report request will be sent for each client request
@@ -107,8 +107,11 @@ http {
 }
 EOF
 
+my $report_done = 'report_done';
+
 $t->run_daemon( \&bookstore, $t, $BackendPort, 'bookstore.log' );
-$t->run_daemon( \&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log' );
+$t->run_daemon( \&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log',
+  $report_done);
 is( $t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'Bookstore socket ready.' );
 is( $t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1,
   'Service control socket ready.' );
@@ -118,6 +121,8 @@ $t->run();
 
 my $response = ApiManager::http_get(
   $NginxPort, '/shelves?key=this-is-an-api-key' );
+
+is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');
 
 $t->stop_daemons();
 
@@ -220,7 +225,7 @@ my @quota_responses      = ();
 my $quota_response_index = 0;
 
 sub servicecontrol {
-  my ( $t, $port, $file ) = @_;
+  my ( $t, $port, $file, $done) = @_;
   my $server = HttpServer->new( $port, $t->testdir() . '/' . $file )
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
@@ -240,12 +245,16 @@ Connection: close
 
 EOF
 
-  $server->on( 'POST',
-    '/v1/services/endpoints-test.cloudendpointsapis.com:report', <<'EOF');
+  $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:report', sub {
+    my ($headers, $body, $client) = @_;
+    print $client <<'EOF';
 HTTP/1.1 200 OK
 Connection: close
 
 EOF
+
+    $t->write_file($done, ':report done');
+  });
 
   $server->run();
 }
