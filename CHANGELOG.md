@@ -1,3 +1,14 @@
+# Release 1.2.0 12-04-2017
+
+- Support rate-limit.
+- Set 443 for the default port of https backend in start_esp.
+- Support escaped / in the URL path.
+- Support X-HTTP-Method-Override.
+- not to send api_key in Report if service is not activated.
+- Set gRPC max send/receive message size to unlimited.
+- Support apikey based traffic restriction.
+- Rename log entry name request_size to rewuest_size_in_bytes.
+
 # Release 1.1.0 01-03-2017
 
 - Start deprecation of OpenAPI x-security to security (#101)
