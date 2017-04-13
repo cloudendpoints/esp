@@ -7,7 +7,7 @@
 - not to send api_key in Report if service is not activated.
 - Set gRPC max send/receive message size to unlimited.
 - Support apikey based traffic restriction.
-- Rename log entry name request_size to rewuest_size_in_bytes.
+- Rename log entry name request_size to request_size_in_bytes.
 
 # Release 1.1.0 01-03-2017
 
