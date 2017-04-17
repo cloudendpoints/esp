@@ -22,4 +22,8 @@ RUN mkdir -p /var/lib/nginx/optional && \
 # Status port 8090 is exposed by default
 EXPOSE 8090
 
+# The default HTTP/1.x port is 8080. It might help to expose this port explicitly
+# since documentation still refers to using docker without additional EXPOSE step
+EXPOSE 8080
+
 ENTRYPOINT ["/usr/sbin/start_esp"]
