@@ -26,7 +26,7 @@
 #
 # A Bazel (http://bazel.io) workspace for the Google Cloud Endpoints runtime.
 
-ISTIO_PROXY = "81f6372cca88a35342fa105b5d65a4a82f0fe39e"
+ISTIO_PROXY = "41268658f9544cccd9c517ff6a727c7d449b629c"
 ESP_TOOL = "ff0d6df7f56ca1c2b229aaadd8abe62cb1d508fb"
 
 git_repository(
@@ -92,7 +92,7 @@ bind(
 
 bind(
     name = "grpc_transcoding",
-    actual = "@istio_proxy_git//contrib/endpoints/src/grpc/transcoding",
+    actual = "@istio_proxy_git//contrib/endpoints/src/grpc/transcoding:transcoding_endpoints",
 )
 
 servicecontrol_client_repositories()

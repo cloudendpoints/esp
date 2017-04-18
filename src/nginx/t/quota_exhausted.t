@@ -29,6 +29,7 @@ use warnings;
 
 use JSON::PP;
 use Data::Dumper;
+use Time::HiRes qw(usleep nanosleep);
 
 ################################################################################
 
@@ -46,15 +47,15 @@ my $NginxPort          = ApiManager::pick_port();
 my $BackendPort        = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(7);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(21);
 
 # Save servce configuration that disables the report cache.
 # Report request will be sent for each client request
 $t->write_file('server.pb.txt', <<"EOF");
 service_control_config {
   report_aggregator_config {
-    cache_entries: 0
-    flush_interval_ms: 1000
+    cache_entries: 10
+    flush_interval_ms: 100
   }
 }
 EOF
@@ -122,17 +123,32 @@ $t->run();
 
 ################################################################################
 
-my $response =
+my $ok_response =
+  ApiManager::http_get( $NginxPort, '/shelves?key=this-is-an-api-key' );
+
+my $error_response =
   ApiManager::http_get( $NginxPort, '/shelves?key=this-is-an-api-key' );
 
 is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');
 
 $t->stop_daemons();
 
-my ( $response_headers, $response_body ) = split /\r\n\r\n/, $response, 2;
+my ( $ok_response_headers, $ok_response_body ) = split /\r\n\r\n/, $ok_response, 2;
+like( $ok_response_headers, qr/HTTP\/1\.1 200 OK/,
+  'First request returns HTTP 200 OK.' );
+is( $ok_response_body, <<'EOF', 'Shelves returned in the response body.' );
+{ "shelves": [
+    { "name": "shelves/1", "theme": "Fiction" },
+    { "name": "shelves/2", "theme": "Fantasy" }
+  ]
+}
+EOF
 
-like( $response_headers, qr/HTTP\/1\.1 429/, 'Returned HTTP 429.' );
-is( $response_body, <<'EOF', 'Shelves returned in the response body.' );
+my ( $error_response_headers, $error_response_body ) = split /\r\n\r\n/,
+  $error_response, 2;
+like( $error_response_headers, qr/HTTP\/1\.1 429/,
+  'Second request returns HTTP 429.' );
+is( $error_response_body, <<'EOF', 'Shelves returned in the response body.' );
 {
  "code": 8,
  "message": "Quota allocation failed.",
@@ -146,13 +162,47 @@ is( $response_body, <<'EOF', 'Shelves returned in the response body.' );
 }
 EOF
 
+# Backend will got 1 request for the first request. The second one will
+# be blocked by ESP for exhausted qutoa
 my @requests = ApiManager::read_http_stream( $t, 'bookstore.log' );
-is( scalar @requests, 0, 'Backend received empty request' );
-
+is( scalar @requests, 1, 'Backend received empty request' );
 
 @requests = ApiManager::read_http_stream( $t, 'servicecontrol.log' );
-is( scalar @requests, 3, 'Service control received three requests' );
+is( scalar @requests, 3, 'Service control received four requests' );
 
+# :check triggered by the first request and cached, the second requst read from
+# cache
+my $r = shift @requests;
+is( $r->{verb}, 'POST', ':check verb was post' );
+is( $r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:check',
+  ':check was called');
+is( $r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}",
+  'Host header was set');
+is( $r->{headers}->{'content-type'}, 'application/x-protobuf',
+  ':check Content-Type was protocol buffer');
+
+# :allocateQuota request triggered by cache refresh module, then cached.
+# the second requst read from the cache
+$r = shift @requests;
+is( $r->{verb}, 'POST', ':allocateQuota verb was post' );
+is( $r->{uri},
+  '/v1/services/endpoints-test.cloudendpointsapis.com:allocateQuota',
+  ':allocateQuota was called');
+is( $r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}",
+  'Host header was set');
+is( $r->{headers}->{'content-type'}, 'application/x-protobuf',
+  ':allocateQuota Content-Type was protocol buffer' );
+
+# check report from the cache flush
+$r = shift @requests;
+
+is( $r->{verb}, 'POST', ':report verb was post' );
+is( $r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:report',
+  ':report was called');
+is( $r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}",
+  'Host header was set');
+is( $r->{headers}->{'content-type'}, 'application/x-protobuf',
+  ':report Content-Type was protocol buffer' );
 
 ################################################################################
 
