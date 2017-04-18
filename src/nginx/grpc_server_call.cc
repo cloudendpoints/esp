@@ -194,13 +194,13 @@ NgxEspGrpcServerCall::~NgxEspGrpcServerCall() {
 
 void NgxEspGrpcServerCall::UpdateRequestMessageStat(int64_t size) {
   ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
-  ctx->grpc_request_bytes += size;
+  ctx->grpc_request_bytes = size;
   ++ctx->grpc_request_message_counts;
   ctx->request_handler->AttemptIntermediateReport();
 }
 void NgxEspGrpcServerCall::UpdateResponseMessageStat(int64_t size) {
   ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
-  ctx->grpc_response_bytes += size;
+  ctx->grpc_response_bytes = size;
   ++ctx->grpc_response_message_counts;
   ctx->request_handler->AttemptIntermediateReport();
 }
