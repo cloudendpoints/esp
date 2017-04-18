@@ -92,7 +92,7 @@ bind(
 
 bind(
     name = "grpc_transcoding",
-    actual = "@istio_proxy_git//contrib/endpoints/src/grpc/transcoding_endpoints",
+    actual = "@istio_proxy_git//contrib/endpoints/src/grpc/transcoding:transcoding_endpoints",
 )
 
 servicecontrol_client_repositories()
