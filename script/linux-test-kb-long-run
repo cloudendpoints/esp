@@ -87,6 +87,7 @@ while true; do
       --api_key=${API_KEY} \
       --auth_token=${JWT_TOKEN} \
       --allow_unverified_cert=true \
+      --key_restriction_tests=../bookstore/test/key_restriction_test.json \
     || ((BOOKSTORE_FAILURES++))
 
   echo "Starting stress test at $(date)."

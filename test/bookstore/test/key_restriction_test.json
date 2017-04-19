@@ -1,0 +1,97 @@
+{
+  "ip": [{
+      "path": "/restricted",
+      "api_key": "AIzaSyCxC2_cFTxQ3yBpMwDkuXCsdZCikeUsJ_s",
+      "headers": {
+        "X-Forwarded-For": "192.16.31.84, 172.17.131.252, 172.17.131.251"
+      },
+      "status_code": 200
+    }, {
+      "path": "/restricted",
+      "api_key": "AIzaSyCxC2_cFTxQ3yBpMwDkuXCsdZCikeUsJ_s",
+      "headers": {
+        "X-Forwarded-For": "172.17.131.252, 172.17.131.251, 192.16.31.84"
+      },
+      "status_code": 403
+    }, {
+      "path": "/restricted",
+      "api_key": "AIzaSyCxC2_cFTxQ3yBpMwDkuXCsdZCikeUsJ_s",
+      "headers": {
+        "X-Forwarded-For": "172.17.131.252, 192.16.31.84, 172.17.131.251"
+      },
+      "status_code": 403
+    }, {
+      "description": "Match single IP address",
+      "path": "/restricted",
+      "api_key": "AIzaSyCxC2_cFTxQ3yBpMwDkuXCsdZCikeUsJ_s",
+      "headers": {
+        "X-Forwarded-For": "192.16.31.84"
+      },
+      "status_code": 200
+    }, {
+      "description": "mismatch single IP address",
+      "path": "/restricted",
+      "api_key": "AIzaSyCxC2_cFTxQ3yBpMwDkuXCsdZCikeUsJ_s",
+      "headers": {
+        "X-Forwarded-For": "192.16.31.88"
+      },
+      "status_code": 403
+    }, {
+      "path": "/restricted",
+      "api_key": "AIzaSyCxC2_cFTxQ3yBpMwDkuXCsdZCikeUsJ_s",
+      "headers": {
+      },
+      "status_code": 403
+    }],
+  "ios": [{
+      "path": "/restricted",
+      "api_key": "AIzaSyD8Wvc7-m3QLA4Jd_vtYvLd7xnS_WhBnq4",
+      "headers": {
+        "X-Ios-Bundle-Identifier": "com.google.cloud.esp.testApp"
+      },
+      "status_code": 200
+    }, {
+      "path": "/restricted",
+      "api_key": "AIzaSyD8Wvc7-m3QLA4Jd_vtYvLd7xnS_WhBnq4",
+      "headers": {
+        "X-Ios-Bundle-Identifier": "com.google.cloud.esp.testApp2"
+      },
+      "status_code": 403
+    }],
+  "referer": [{
+      "path": "/restricted",
+      "api_key": "AIzaSyA7PxRzQT0-ELMHBVbk8OAwPpjbnr42V2o",
+      "headers": {
+        "Referer": "myapp.google.com/good.html"
+      },
+      "status_code": 200
+    }, {
+      "path": "/restricted",
+      "api_key": "AIzaSyA7PxRzQT0-ELMHBVbk8OAwPpjbnr42V2o",
+      "headers": {
+        "Referer": "myapp.verizonwireless.com/bad.html"
+      },
+      "status_code": 403
+    }],
+  "android": [{
+      "description": "Positive Android key restriction",
+      "path": "/restricted",
+      "api_key": "AIzaSyB-pV1n2hbmlg1ShDuv15NEPXCumfv2BJY",
+      "headers": {
+        "X-Android-Package": "com.google.could.esp.myapplication",
+        "X-Android-Cert": "BCE5A76238D6AEE7F618B72DF356CDA02E50AA1E"
+      },
+      "status_code": 200
+    }, {
+      "description": "Invalid certificate",
+      "path": "/restricted",
+      "api_key": "AIzaSyB-pV1n2hbmlg1ShDuv15NEPXCumfv2BJY",
+      "headers": {
+        "X-Android-Package": "com.google.cloud.esp.myapplication",
+        "X-Android-Cert": "D8AA439759EEC595266A07EE1C378EF4F0C805C9"
+      },
+      "status_code": 403
+    }]
+}
+
+

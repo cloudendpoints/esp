@@ -88,7 +88,8 @@ class EspBookstoreTest(object):
         else:
             self.fail(msg)
 
-    def _call_http(self, path, api_key=None, auth=None, data=None, method=None):
+    def _call_http(self, path, api_key=None, auth=None, data=None, method=None,
+                   userHeaders = {}):
         """Makes a http call and returns its response."""
         url = path
         if api_key:
@@ -97,6 +98,8 @@ class EspBookstoreTest(object):
         if auth:
             headers['Authorization'] = 'Bearer ' + auth
         body = json.dumps(data) if data else None
+        for key, value in userHeaders.iteritems():
+            headers[key] = value
         if not method:
             method = 'POST' if data else 'GET'
         if FLAGS.verbose:
@@ -110,7 +113,7 @@ class EspBookstoreTest(object):
         return response
 
     def _send_request(self, path, api_key=None,
-                      auth=None, data=None, method=None):
+                      auth=None, data=None, method=None, userHeaders = {}):
         """High level sending request test.
         Do Negative tests if endpoints is enabled.
         If auth is required, send it without, verify 401 response.
@@ -119,7 +122,8 @@ class EspBookstoreTest(object):
         if FLAGS.endpoints:
             if auth:
                 print 'Negative test: remove auth.'
-                r = self._call_http(path, api_key, None, data, method)
+                r = self._call_http(path, api_key, None, data, method,
+                                    userHeaders=userHeaders)
                 self.assertEqual(r.status_code, 401)
                 self.assertEqual(
                     r.json()['message'],
@@ -127,7 +131,8 @@ class EspBookstoreTest(object):
                 print 'Completed Negative test.'
             if api_key:
                 print 'Negative test: remove api_key.'
-                r = self._call_http(path, None, auth, data, method)
+                r = self._call_http(path, None, auth, data, method,
+                                    userHeaders=userHeaders)
                 self.assertEqual(r.status_code, 401)
                 self.assertEqual(
                     r.json()['message'],
@@ -135,9 +140,10 @@ class EspBookstoreTest(object):
                      'established identity). Please use API Key or other form of '
                      'API consumer identity to call this API.'))
                 print 'Completed Negative test.'
-            return self._call_http(path, api_key, auth, data, method)
+            return self._call_http(path, api_key, auth, data, method,
+                                   userHeaders=userHeaders)
         else:
-            return self._call_http(path, method=method)
+            return self._call_http(path, method=method, userHeaders=userHeaders)
 
     def clear(self):
         print 'Clear existing shelves.'
@@ -213,6 +219,20 @@ class EspBookstoreTest(object):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json().get('books', []), books)
 
+    def verify_key_restriction(self):
+        if FLAGS.key_restriction_tests != None and \
+          os.path.exists(FLAGS.key_restriction_tests):
+            with open(FLAGS.key_restriction_tests) as data_file:
+                data = json.load(data_file)
+                for type, testcases in data.iteritems():
+                    for testcase in testcases:
+                        response = self._call_http(
+                                               testcase['path'],
+                                               api_key=testcase['api_key'],
+                                               userHeaders=testcase['headers'])
+                    self.assertEqual(response.status_code,
+                                     testcase['status_code'])
+
     def run_all_tests(self):
         self.clear()
         self.verify_list_shelves([])
@@ -265,6 +285,9 @@ class EspBookstoreTest(object):
         self.delete_shelf(shelf2['name'])
         self.delete_shelf(shelf1['name'])
         self.verify_list_shelves([])
+
+        self.verify_key_restriction();
+
         if self._failed_tests:
             sys.exit(esp_utils.red('%d tests passed, %d tests failed.' % (
                 self._passed_tests, self._failed_tests)))
@@ -282,6 +305,8 @@ if __name__ == '__main__':
             default=True, help='Is endpoints enabled on the backend?')
     parser.add_argument('--allow_unverified_cert', type=bool,
             default=False, help='used for testing self-signed ssl cert.')
+    parser.add_argument('--key_restriction_tests',
+                        help='Test suites for api key restriction.')
     flags = parser.parse_args(namespace=FLAGS)
 
     esp_test = EspBookstoreTest()

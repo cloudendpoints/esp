@@ -216,6 +216,12 @@ function bookstore(options) {
     });
   });
 
+  app.get('/restricted', function(req, res) {
+    res.status(200).json({
+      msg: 'restricted'
+    });
+  });
+
   app.get('/shelves', function(req, res) {
     var shelves = bookstoreDatabase.shelves;
     var result = [];
