@@ -7,7 +7,7 @@
 # 2) cp bazel-bin/test/grpc/grpc-test-server test/grpc
 # 3) IMAGE=gcr.io/endpointsv2/grpc-test-server:latest
 # 4) docker build --no-cache -t "${IMAGE}" test/grpc
-# 5) gcloud docker push "${IMAGE}"
+# 5) gcloud docker -- push "${IMAGE}"
 
 FROM debian:jessie
 
