@@ -230,8 +230,8 @@ class EspBookstoreTest(object):
                             testcase['path'],
                             api_key=testcase['api_key'],
                             userHeaders=testcase['headers'])
-                    self.assertEqual(response.status_code,
-                        testcase['status_code'])
+                        self.assertEqual(response.status_code,
+                            testcase['status_code'])
 
     def run_all_tests(self):
         self.clear()
