@@ -55,7 +55,7 @@ import httplib
 import json
 import ssl
 import sys
-
+import os
 
 class C:
     pass
@@ -227,11 +227,11 @@ class EspBookstoreTest(object):
                 for type, testcases in data.iteritems():
                     for testcase in testcases:
                         response = self._call_http(
-                                               testcase['path'],
-                                               api_key=testcase['api_key'],
-                                               userHeaders=testcase['headers'])
+                            testcase['path'],
+                            api_key=testcase['api_key'],
+                            userHeaders=testcase['headers'])
                     self.assertEqual(response.status_code,
-                                     testcase['status_code'])
+                        testcase['status_code'])
 
     def run_all_tests(self):
         self.clear()
