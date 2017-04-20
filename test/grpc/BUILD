@@ -46,6 +46,16 @@ genrule(
     name = "grpc-test_descriptor",
     srcs = [
         "@googleapis_git//:google/rpc/status.proto",
+        "@googleapis_git//:google/api/servicecontrol/v1/service_controller.proto",
+        "@googleapis_git//:google/api/servicecontrol/v1/check_error.proto",
+        "@googleapis_git//:google/api/servicecontrol/v1/distribution.proto",
+        "@googleapis_git//:google/api/servicecontrol/v1/log_entry.proto",
+        "@googleapis_git//:google/api/servicecontrol/v1/metric_value.proto",
+        "@googleapis_git//:google/api/servicecontrol/v1/operation.proto",
+        "@googleapis_git//:google/api/annotations.proto",
+        "@googleapis_git//:google/api/http.proto",
+        "@googleapis_git//:google/logging/type/log_severity.proto",
+        "@googleapis_git//:google/type/money.proto",
         "@protobuf_git//:well_known_protos",
         "grpc-test.proto",
     ],
@@ -63,6 +73,8 @@ genrule(
     srcs = [
         "@protobuf_git//:well_known_protos",
         "@grpc_git//:src/proto/grpc/testing/test.proto",
+        "@grpc_git//:src/proto/grpc/testing/empty.proto",
+        "@grpc_git//:src/proto/grpc/testing/messages.proto",
     ],
     outs = ["grpc-interop.descriptor"],
     cmd = """$(location //external:protoc) \
