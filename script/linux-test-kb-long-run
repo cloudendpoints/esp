@@ -34,10 +34,6 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
   || { echo "Cannot load Bash utilities" ; exit 1 ; }
 
 API_KEY=''
-API_KEY_IP=''
-API_KEY_IOS=''
-API_KEY_ANDROID=''
-API_KEY_REFERRERS=''
 SERVICE_NAME='testing-dot-endpoints-jenkins.appspot.com'
 HOST=''
 DURATION_IN_HOUR=0
@@ -63,26 +59,13 @@ if ! [[ -n "${API_KEY}" ]]; then
   API_KEY="${ENDPOINTS_JENKINS_API_KEY}"
 fi
 
-if ! [[ -n "${API_KEY_IP}" || -n "${API_KEY_IOS}" || \
-        -n "${API_KEY_ANDROID}" || -n "${API_KEY_REFERRERS}" ]]; then
-  set_api_keys_restrictions;
-fi
+# Download api Keys with restrictions from Cloud storage and source the file.
+api_keys_restrictions_directory="$(mktemp -d)"
+API_RESTRICTION_KEYS_FILE="${api_keys_restrictions_directory}/esp-e2e-key-restriction.json"
+gsutil cp gs://client-secret-files/esp-e2e-key-restriction.json \
+      "${API_RESTRICTION_KEYS_FILE}" \
+        || error_exit "Failed to download API key with restrictions file."
 
-if ! [[ -n "${API_KEY_IP}" ]]; then
-  API_KEY_IP="${ENDPOINTS_JENKINS_API_KEY_RESTRICTION_IP}"
-fi
-
-if ! [[ -n "${API_KEY_IOS}" ]]; then
-  API_KEY_IOS="${ENDPOINTS_JENKINS_API_KEY_RESTRICTION_IOS}"
-fi
-
-if ! [[ -n "${API_KEY_ANDROID}" ]]; then
-  API_KEY_ANDROID="${ENDPOINTS_JENKINS_API_KEY_RESTRICTION_ANDROID}"
-fi
-
-if ! [[ -n "${API_KEY_REFERRERS}" ]]; then
-  API_KEY_REFERRERS="${ENDPOINTS_JENKINS_API_KEY_RESTRICTION_REFERRERS}"
-fi
 
 POST_FILE="${ROOT}/test/data/35k.json"
 
@@ -114,13 +97,10 @@ while true; do
   ./esp_bookstore_test.py --verbose=true \
       --host=${HOST} \
       --api_key=${API_KEY} \
-      --api_key_ip=${API_KEY_IP} \
-      --api_key_ios=${API_KEY_IOS} \
-      --api_key_android=${API_KEY_ANDROID} \
-      --api_key_referrers=${API_KEY_REFERRERS} \
       --auth_token=${JWT_TOKEN} \
       --allow_unverified_cert=true \
-      --key_restriction_tests=${ROOT}/test/bookstore/test/key_restriction_test.json \
+      --key_restriction_tests=${ROOT}/test/bookstore/test/key_restriction_test.json.template \
+      --key_restriction_keys_file=${API_RESTRICTION_KEYS_FILE} \
     || ((BOOKSTORE_FAILURES++))
 
   echo "Starting stress test at $(date)."

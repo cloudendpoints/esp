@@ -57,6 +57,8 @@ import ssl
 import sys
 import os
 
+from mako.template import Template
+
 class C:
     pass
 FLAGS = C
@@ -220,27 +222,46 @@ class EspBookstoreTest(object):
         self.assertEqual(response.json().get('books', []), books)
 
     def verify_key_restriction(self):
-        if FLAGS.key_restriction_tests != None and \
-          os.path.exists(FLAGS.key_restriction_tests):
-            with open(FLAGS.key_restriction_tests) as data_file:
-                data_text = data_file.read();
-                data_text = data_text.replace('__API_KEY_IP__',
-                                              FLAGS.api_key_ip);
-                data_text = data_text.replace('__API_KEY_IOS__',
-                                              FLAGS.api_key_ios);
-                data_text = data_text.replace('__API_KEY_ANDROID__',
-                                              FLAGS.api_key_android);
-                data_text = data_text.replace('__API_KEY_REFERRERS__',
-                                              FLAGS.api_key_referrers);
-                data = json.loads(data_text)
-                for type, testcases in data.iteritems():
-                    for testcase in testcases:
-                        response = self._call_http(
-                            testcase['path'],
-                            api_key=testcase['api_key'],
-                            userHeaders=testcase['headers'])
-                        self.assertEqual(response.status_code,
-                            testcase['status_code'])
+        # ignore test if required informations are not provided
+        if FLAGS.key_restriction_tests == None or \
+          FLAGS.key_restriction_keys_file == None:
+            return
+
+        # check file exists
+        if os.path.exists(FLAGS.key_restriction_tests) == False:
+            logging.error("API keys restriction tests template not exist. " +
+                          err.strerror)
+            sys.exit(3)
+        if os.path.exists(FLAGS.key_restriction_keys_file) == False:
+            logging.error("API keys restriction key file not exist. " +
+                          err.strerror)
+            sys.exit(3)
+
+        # load api keys
+        with open(FLAGS.key_restriction_keys_file) as data_file:
+            api_keys = json.load(data_file)
+
+        # Load template
+        try:
+            template = Template(filename=FLAGS.key_restriction_tests)
+        except IOError as err:
+            logging.error("Failed to load test cases template. " + err.strerror)
+            sys.exit(3)
+        # render json template and parse test cases
+        data = json.loads(template.render(
+            api_key_ip=api_keys['ip'],
+            api_key_ios=api_keys['ios'],
+            api_key_android=api_keys['android'],
+            api_key_referrers=api_keys['referrers']))
+        # run test cases
+        for type, testcases in data.iteritems():
+            for testcase in testcases:
+                response = self._call_http(
+                    testcase['path'],
+                    api_key=testcase['api_key'],
+                    userHeaders=testcase['headers'])
+                self.assertEqual(response.status_code,
+                    testcase['status_code'])
 
     def run_all_tests(self):
         self.clear()
@@ -308,14 +329,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--verbose', type=bool, help='Turn on/off verbosity.')
     parser.add_argument('--api_key', help='Project api_key to access service.')
-    parser.add_argument('--api_key_ip',
-                        help='Project api_key restricted by ip address to access service.')
-    parser.add_argument('--api_key_ios',
-                        help='Project api_key restricted by iOS bundle to access service.')
-    parser.add_argument('--api_key_android',
-                        help='Project api_key restricted by android to access service.')
-    parser.add_argument('--api_key_referrers',
-                        help='Project api_key restricted by http referrers to access service.')
     parser.add_argument('--host', help='Deployed application host name.')
     parser.add_argument('--auth_token', help='Auth token.')
     parser.add_argument('--endpoints', type=bool,
@@ -324,6 +337,8 @@ if __name__ == '__main__':
             default=False, help='used for testing self-signed ssl cert.')
     parser.add_argument('--key_restriction_tests',
                         help='Test suites for api key restriction.')
+    parser.add_argument('--key_restriction_keys_file',
+                        help='File contains API keys with restrictions ')
     flags = parser.parse_args(namespace=FLAGS)
 
     esp_test = EspBookstoreTest()

@@ -156,16 +156,6 @@ function set_api_keys() {
   source "${api_key_directory}/api_keys"
 }
 
-# Download api Keys with restrictions from Cloud storage and source the file.
-function set_api_keys_restrictions() {
-  local api_key_directory="$(mktemp -d)"
-  gsutil cp gs://client-secret-files/api_keys_restrictions \
-        "${api_key_directory}/api_keys_restrictions" \
-          || error_exit "Failed to download API key with restrictions file."
-
-  source "${api_key_directory}/api_keys_restrictions"
-}
-
 # Creates a simple Json Status file
 function create_status_file() {
   local OPTIND OPTARG ARG
