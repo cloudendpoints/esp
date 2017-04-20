@@ -2,7 +2,7 @@
   "ip": [{
       "description": "192.16.31.84 will be the remote IP address.",
       "path": "/restricted",
-      "api_key": "AIzaSyCxC2_cFTxQ3yBpMwDkuXCsdZCikeUsJ_s",
+      "api_key": "__API_KEY_IP__",
       "key_restriction": {
         "ip": ["192.16.31.84"]
       },
@@ -13,7 +13,7 @@
     }, {
       "description": "172.17.131.252 will be the remote IP address.",
       "path": "/restricted",
-      "api_key": "AIzaSyCxC2_cFTxQ3yBpMwDkuXCsdZCikeUsJ_s",
+      "api_key": "__API_KEY_IP__",
       "key_restriction": {
         "ip": ["192.16.31.84"]
       },
@@ -24,7 +24,7 @@
     }, {
       "description": "172.17.131.252 will be the remote IP address.",
       "path": "/restricted",
-      "api_key": "AIzaSyCxC2_cFTxQ3yBpMwDkuXCsdZCikeUsJ_s",
+      "api_key": "__API_KEY_IP__",
       "key_restriction": {
         "ip": ["192.16.31.84"]
       },
@@ -35,7 +35,7 @@
     }, {
       "description": "192.16.31.84 will be the remote IP address.",
       "path": "/restricted",
-      "api_key": "AIzaSyCxC2_cFTxQ3yBpMwDkuXCsdZCikeUsJ_s",
+      "api_key": "__API_KEY_IP__",
       "key_restriction": {
         "ip": ["192.16.31.84"]
       },
@@ -46,7 +46,7 @@
     }, {
       "description": "192.16.31.88 will be the remote IP address.",
       "path": "/restricted",
-      "api_key": "AIzaSyCxC2_cFTxQ3yBpMwDkuXCsdZCikeUsJ_s",
+      "api_key": "__API_KEY_IP__",
       "key_restriction": {
         "ip": ["192.16.31.84"]
       },
@@ -57,7 +57,7 @@
     }, {
       "description": "No XFF header. The IP address of the last proxy mismatch",
       "path": "/restricted",
-      "api_key": "AIzaSyCxC2_cFTxQ3yBpMwDkuXCsdZCikeUsJ_s",
+      "api_key": "__API_KEY_IP__",
       "key_restriction": {
         "ip": ["192.16.31.84"]
       },
@@ -68,7 +68,7 @@
   "ios": [{
       "description": "iOS bundle id match",
       "path": "/restricted",
-      "api_key": "AIzaSyD8Wvc7-m3QLA4Jd_vtYvLd7xnS_WhBnq4",
+      "api_key": "__API_KEY_IOS__",
       "key_restriction": {
         "ios": ["com.google.cloud.esp.testApp"]
       },
@@ -79,7 +79,7 @@
     }, {
       "description": "iOS bundle id mismatch",
       "path": "/restricted",
-      "api_key": "AIzaSyD8Wvc7-m3QLA4Jd_vtYvLd7xnS_WhBnq4",
+      "api_key": "__API_KEY_IOS__",
       "key_restriction": {
         "ios": ["com.google.cloud.esp.testApp"]
       },
@@ -91,7 +91,7 @@
   "referer": [{
       "description": "http referer match",
       "path": "/restricted",
-      "api_key": "AIzaSyA7PxRzQT0-ELMHBVbk8OAwPpjbnr42V2o",
+      "api_key": "__API_KEY_REFERRERS__",
       "key_restriction": {
         "referrers": ["*.google.com/*"]
       },
@@ -102,7 +102,7 @@
     }, {
       "description": "http referer mismatch",
       "path": "/restricted",
-      "api_key": "AIzaSyA7PxRzQT0-ELMHBVbk8OAwPpjbnr42V2o",
+      "api_key": "__API_KEY_REFERRERS__",
       "key_restriction": {
         "referrers": ["*.google.com/*"]
       },
@@ -114,7 +114,7 @@
   "android": [{
       "description": "Positive Android key restriction",
       "path": "/restricted",
-      "api_key": "AIzaSyB-pV1n2hbmlg1ShDuv15NEPXCumfv2BJY",
+      "api_key": "__API_KEY_ANDROID__",
       "key_restriction": {
         "android": [{
           "package": "com.google.could.esp.myapplication",
@@ -129,7 +129,7 @@
     }, {
       "description": "Invalid certificate",
       "path": "/restricted",
-      "api_key": "AIzaSyB-pV1n2hbmlg1ShDuv15NEPXCumfv2BJY",
+      "api_key": "__API_KEY_ANDROID__",
       "key_restriction": {
         "android": [{
           "package": "com.google.could.esp.myapplication",

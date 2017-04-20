@@ -223,7 +223,16 @@ class EspBookstoreTest(object):
         if FLAGS.key_restriction_tests != None and \
           os.path.exists(FLAGS.key_restriction_tests):
             with open(FLAGS.key_restriction_tests) as data_file:
-                data = json.load(data_file)
+                data_text = data_file.read();
+                data_text = data_text.replace('__API_KEY_IP__',
+                                              FLAGS.api_key_ip);
+                data_text = data_text.replace('__API_KEY_IOS__',
+                                              FLAGS.api_key_ios);
+                data_text = data_text.replace('__API_KEY_ANDROID__',
+                                              FLAGS.api_key_android);
+                data_text = data_text.replace('__API_KEY_REFERRERS__',
+                                              FLAGS.api_key_referrers);
+                data = json.loads(data_text)
                 for type, testcases in data.iteritems():
                     for testcase in testcases:
                         response = self._call_http(
@@ -299,6 +308,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--verbose', type=bool, help='Turn on/off verbosity.')
     parser.add_argument('--api_key', help='Project api_key to access service.')
+    parser.add_argument('--api_key_ip',
+                        help='Project api_key restricted by ip address to access service.')
+    parser.add_argument('--api_key_ios',
+                        help='Project api_key restricted by iOS bundle to access service.')
+    parser.add_argument('--api_key_android',
+                        help='Project api_key restricted by android to access service.')
+    parser.add_argument('--api_key_referrers',
+                        help='Project api_key restricted by http referrers to access service.')
     parser.add_argument('--host', help='Deployed application host name.')
     parser.add_argument('--auth_token', help='Auth token.')
     parser.add_argument('--endpoints', type=bool,
