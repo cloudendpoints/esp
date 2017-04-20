@@ -16,6 +16,7 @@ addons:
       - gcc-5
       - lcov
       - libio-socket-ssl-perl
+      - python-mako
       - oracle-java8-installer
       - pkg-config
       - uuid-dev
