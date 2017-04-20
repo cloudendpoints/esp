@@ -57,8 +57,6 @@ import ssl
 import sys
 import os
 
-from mako.template import Template
-
 class C:
     pass
 FLAGS = C
@@ -241,27 +239,25 @@ class EspBookstoreTest(object):
         with open(FLAGS.key_restriction_keys_file) as data_file:
             api_keys = json.load(data_file)
 
-        # Load template
-        try:
-            template = Template(filename=FLAGS.key_restriction_tests)
-        except IOError as err:
-            logging.error("Failed to load test cases template. " + err.strerror)
-            sys.exit(3)
-        # render json template and parse test cases
-        data = json.loads(template.render(
-            api_key_ip=api_keys['ip'],
-            api_key_ios=api_keys['ios'],
-            api_key_android=api_keys['android'],
-            api_key_referrers=api_keys['referrers']))
-        # run test cases
-        for type, testcases in data.iteritems():
-            for testcase in testcases:
-                response = self._call_http(
-                    testcase['path'],
-                    api_key=testcase['api_key'],
-                    userHeaders=testcase['headers'])
-                self.assertEqual(response.status_code,
-                    testcase['status_code'])
+        with open(FLAGS.key_restriction_tests) as data_file:
+            # Load template and render
+            data_text = data_file.read();
+            data_text = data_text.replace('${api_key_ip}', api_keys['ip']);
+            data_text = data_text.replace('${api_key_ios}', api_keys['ios']);
+            data_text = data_text.replace('${api_key_android}',
+                                          api_keys['android']);
+            data_text = data_text.replace('${api_key_referrers}',
+                                          api_keys['referrers']);
+            data = json.loads(data_text)
+            # run test cases
+            for type, testcases in data.iteritems():
+                for testcase in testcases:
+                    response = self._call_http(
+                        testcase['path'],
+                        api_key=testcase['api_key'],
+                        userHeaders=testcase['headers'])
+                    self.assertEqual(response.status_code,
+                        testcase['status_code'])
 
     def run_all_tests(self):
         self.clear()
