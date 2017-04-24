@@ -26,7 +26,7 @@
 #
 # A Bazel (http://bazel.io) workspace for the Google Cloud Endpoints runtime.
 
-ISTIO_PROXY = "41268658f9544cccd9c517ff6a727c7d449b629c"
+ISTIO_PROXY = "31b489f59f4b078a423f60e141f183c233ef6d24"
 ESP_TOOL = "ff0d6df7f56ca1c2b229aaadd8abe62cb1d508fb"
 
 git_repository(
