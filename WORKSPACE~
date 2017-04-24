@@ -158,7 +158,7 @@ git_repository(
 #
 git_repository(
     name = "io_bazel_rules_go",
-    commit = "2d9f328a9723baf2d037ba9db28d9d0e30683938", # Apr 6, 2017 (buildifier fix)
+    commit = "76c63b5cd0d47c1f2b47ab4953db96c574af1c1d",
     remote = "https://github.com/bazelbuild/rules_go.git",
 )
 
