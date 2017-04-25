@@ -89,6 +89,22 @@ class EspBookstoreTest(object):
         else:
             self.fail(msg)
 
+    def assertGE(self, a, b):
+        msg = 'assertGE(%s, %s)' % (str(a), str(b))
+        if a >= b:
+            print '%s: %s' % (esp_utils.green('OK'), msg)
+            self._passed_tests += 1
+        else:
+            self.fail(msg)
+
+    def assertLE(self, a, b):
+        msg = 'assertLE(%s, %s)' % (str(a), str(b))
+        if a <= b:
+            print '%s: %s' % (esp_utils.green('OK'), msg)
+            self._passed_tests += 1
+        else:
+            self.fail(msg)
+
     def _call_http(self, path, api_key=None, auth=None, data=None, method=None,
                    userHeaders = {}):
         """Makes a http call and returns its response."""
