@@ -1,3 +1,459 @@
+# Release 1.3.0 25-04-2017
+
+TODO: Edit the section below before submitting!
+===============================================
+
+* [DO NOT MERGE] Added API key restriction e2e tests (#152)
+  Added API key restriction e2e tests
+* Merge firebase to master (#155)
+  * Firebase: Merge changes with master. (#77)
+
+* Fixed bazel install
+* Make docker slaves consistent with jenkinsci/slave
+* Align with latest istio/proxy. (#73)
+
+* Support HEAD request in transcoding (#74)
+
+* Support HEAD request in transcoding
+
+* Removed unused variables
+
+* Fixing bazel install for ubuntu salve
+* Merge from master to firebase (#84)
+
+* Fixed bazel install
+* Make docker slaves consistent with jenkinsci/slave
+* Align with latest istio/proxy. (#73)
+
+* Support HEAD request in transcoding (#74)
+
+* Support HEAD request in transcoding
+
+* Removed unused variables
+
+* Fixing bazel install for ubuntu salve
+* Use open-sourced scripts (#76)
+
+* Use open-sourced scripts
+
+* Add a workaround PEX issue
+
+* Update to istio/proxy with mixer_client integration. (#78)
+
+* Align with istio/proxy. (#79)
+
+* Align with istio/proxy.
+* Update go file.
+* Fix debian jessie package issue
+
+* Change commit ID to consume new security rules in proxy
+
+* Fixes typo in script
+
+* Merge from master to firebase branch (#114)
+
+* Fixed bazel install
+* Make docker slaves consistent with jenkinsci/slave
+* Align with latest istio/proxy. (#73)
+
+* Support HEAD request in transcoding (#74)
+
+* Support HEAD request in transcoding
+
+* Removed unused variables
+
+* Fixing bazel install for ubuntu salve
+* Use open-sourced scripts (#76)
+
+* Use open-sourced scripts
+
+* Add a workaround PEX issue
+
+* Update to istio/proxy with mixer_client integration. (#78)
+
+* Align with istio/proxy. (#79)
+
+* Align with istio/proxy.
+* Update go file.
+* Fix debian jessie package issue
+
+* Fixes typo in script
+
+* Modify test justification. (#83)
+
+* Update NGINX to 1.11.9 (#75)
+
+* Update NGINX to 1.11.9
+
+* Remove mixer_client repo. (#85)
+
+* Revert "Update NGINX to 1.11.9" (#86)
+
+* Use grpc-go for interop tests (#88)
+
+* fix grpc docker build script (#90)
+
+* Upgrade bazel to 0.4.4 (#92)
+
+* Upgrade bazel to 0.4.4
+
+* Update istio/proxy for GRPC v1.1.1 (#89)
+
+* Fix proxy_flow to align grpc 1.1.1
+
+* Fix ProxyFlow leak (#93)
+
+* Basic GRPC request compression support (#94)
+
+* Remove undefined flag of Go stress client (#95)
+
+* t-test changes to check that x-endpoint-api-userinfo is received by grpc
+(#96)
+ service.
+
+* Fix typo (#97)
+* not to use api_key if service is not activated. (#98)
+
+* Escape run description
+* Fix grpc interop stress test script. (#103)
+
+* try to escape json again. (#106)
+
+* Add t test for fail wrong api key. (#104)
+* Allow grpc interop stress test fail once. (#105)
+* Update to latest endpoints-tool. (#110)
+
+* Deprecate x-security (#101)
+
+* Deprecate x-security
+
+* Add one more swagger file
+
+* Update swagger.yaml file also.
+
+* Fix api_key
+
+* Fix indentation
+
+* Update api keys correctly
+
+* Fix indentation
+
+* Update CHANGELOG (#112)
+
+* Update version number to 1.2.0. (#111)
+
+* Merge from master into Firebase (#119)
+
+* Fixed bazel install
+* Make docker slaves consistent with jenkinsci/slave
+* Align with latest istio/proxy. (#73)
+
+* Support HEAD request in transcoding (#74)
+
+* Support HEAD request in transcoding
+
+* Removed unused variables
+
+* Fixing bazel install for ubuntu salve
+* Use open-sourced scripts (#76)
+
+* Use open-sourced scripts
+
+* Add a workaround PEX issue
+
+* Update to istio/proxy with mixer_client integration. (#78)
+
+* Align with istio/proxy. (#79)
+
+* Align with istio/proxy.
+* Update go file.
+* Fix debian jessie package issue
+
+* Fixes typo in script
+
+* Modify test justification. (#83)
+
+* Update NGINX to 1.11.9 (#75)
+
+* Update NGINX to 1.11.9
+
+* Remove mixer_client repo. (#85)
+
+* Revert "Update NGINX to 1.11.9" (#86)
+
+* Use grpc-go for interop tests (#88)
+
+* fix grpc docker build script (#90)
+
+* Upgrade bazel to 0.4.4 (#92)
+
+* Upgrade bazel to 0.4.4
+
+* Update istio/proxy for GRPC v1.1.1 (#89)
+
+* Fix proxy_flow to align grpc 1.1.1
+
+* Fix ProxyFlow leak (#93)
+
+* Basic GRPC request compression support (#94)
+
+* Remove undefined flag of Go stress client (#95)
+
+* t-test changes to check that x-endpoint-api-userinfo is received by grpc
+(#96)
+ service.
+
+* Fix typo (#97)
+* not to use api_key if service is not activated. (#98)
+
+* Escape run description
+* Fix grpc interop stress test script. (#103)
+
+* try to escape json again. (#106)
+
+* Add t test for fail wrong api key. (#104)
+* Allow grpc interop stress test fail once. (#105)
+* Update to latest endpoints-tool. (#110)
+
+* Deprecate x-security (#101)
+
+* Deprecate x-security
+
+* Add one more swagger file
+
+* Update swagger.yaml file also.
+
+* Fix api_key
+
+* Fix indentation
+
+* Update api keys correctly
+
+* Fix indentation
+
+* Update CHANGELOG (#112)
+
+* Update version number to 1.2.0. (#111)
+
+* Quick fix of bookstore-server race (#115)
+
+* Firebase merge from master (#138)
+
+* Fixed bazel install
+* Make docker slaves consistent with jenkinsci/slave
+* Align with latest istio/proxy. (#73)
+
+* Support HEAD request in transcoding (#74)
+
+* Support HEAD request in transcoding
+
+* Removed unused variables
+
+* Fixing bazel install for ubuntu salve
+* Use open-sourced scripts (#76)
+
+* Use open-sourced scripts
+
+* Add a workaround PEX issue
+
+* Update to istio/proxy with mixer_client integration. (#78)
+
+* Align with istio/proxy. (#79)
+
+* Align with istio/proxy.
+* Update go file.
+* Fix debian jessie package issue
+
+* Fixes typo in script
+
+* Modify test justification. (#83)
+
+* Update NGINX to 1.11.9 (#75)
+
+* Update NGINX to 1.11.9
+
+* Remove mixer_client repo. (#85)
+
+* Revert "Update NGINX to 1.11.9" (#86)
+
+* Use grpc-go for interop tests (#88)
+
+* fix grpc docker build script (#90)
+
+* Upgrade bazel to 0.4.4 (#92)
+
+* Upgrade bazel to 0.4.4
+
+* Update istio/proxy for GRPC v1.1.1 (#89)
+
+* Fix proxy_flow to align grpc 1.1.1
+
+* Fix ProxyFlow leak (#93)
+
+* Basic GRPC request compression support (#94)
+
+* Remove undefined flag of Go stress client (#95)
+
+* t-test changes to check that x-endpoint-api-userinfo is received by grpc
+(#96)
+ service.
+
+* Fix typo (#97)
+* not to use api_key if service is not activated. (#98)
+
+* Escape run description
+* Fix grpc interop stress test script. (#103)
+
+* try to escape json again. (#106)
+
+* Add t test for fail wrong api key. (#104)
+* Allow grpc interop stress test fail once. (#105)
+* Update to latest endpoints-tool. (#110)
+
+* Deprecate x-security (#101)
+
+* Deprecate x-security
+
+* Add one more swagger file
+
+* Update swagger.yaml file also.
+
+* Fix api_key
+
+* Fix indentation
+
+* Update api keys correctly
+
+* Fix indentation
+
+* Update CHANGELOG (#112)
+
+* Update version number to 1.2.0. (#111)
+
+* Quick fix of bookstore-server race (#115)
+
+* Support apikey based traffic restriction (#120)
+
+* fix gcloud command (#121)
+
+* add -- for gcloud compute ssh (#122)
+
+* Dev (#123)
+
+* update gcloud command
+
+* update gcloud command
+
+* update gcloud ssh command (#124)
+
+* update gcloud ssh command
+
+* trigger presubmit test
+
+* trigger jenkins test
+
+* Made test cases waiting for the report respose (#125)
+
+* add a version flag to support rollback (#126)
+
+* Updated the commit id of endpoints tools repo (#128)
+
+* Set gRPC max send/receive message size to unlimited (#132)
+
+* Set max send/receive message size to unlimited
+
+* fix format
+
+* Comply with istio/proxy#225 (#134)
+
+* Comply with istio/proxy#225
+
+* fix_format
+
+* fix go build
+
+* Merge rate_limit branch to master (#137)
+
+* Added AllocateQuotaRequest/Response support (#99)
+
+* Added AllocateQuotaRequest/Response support
+
+* Added AllocateQuotaRequest/Response support
+
+* Added test cases for rate limiting
+
+* Fixed failed test cases caused by recent changes
+
+* Removed unnecessary variable and applied server config to disable report
+cache
+
+* Removed unnecessary variable and applied server config to disable report
+cache
+
+* Updated commit id of istio/proxy repo
+
+* Set max column to 80, Added report request handler
+
+* Merge latest changes from master (#107)
+
+* not to use api_key if service is not activated. (#98)
+
+* Escape run description
+* Fix grpc interop stress test script. (#103)
+
+* try to escape json again. (#106)
+
+* Add t test for fail wrong api key. (#104)
+* Allow grpc interop stress test fail once. (#105)
+* Updated the latest commit from istio/proxy (#109)
+
+* Updated commit id of istio/proxy (#117)
+
+* Updated commit id of istio/proxy
+
+* Fixed proto_pass_perf tool compilation error
+
+* Fixed proto_pass_perf tool compilation error
+
+* Recover codes acdientally removed
+
+* Fixed code style
+
+* Update istio/proxy commitid (#131)
+
+* Update commitid of istio/proxy
+
+* Update Proxy commit id to latest (#143)
+
+* Updated the latest commit id of istio/proxy (#150)
+  * Updated the latest commit id of istio/proxy
+
+* Update WORKSPACE for transcoding refactor
+
+* Fixed the quota_exhausted.t according to the quota cache logic change
+
+* Fixed the quota_exhausted.t according to the quota cache logic change
+
+* Update Dockerfile to expose port 8080 by default (#148)
+
+* Added blocking report api call to remove timeout issue (#147)
+
+* Update CHANGELOG.md (#146)
+  * Update CHANGELOG.md
+
+* Fix a typo
+
+* Update version to 1.3.0 (#144)
+
+* Remove service-control in validate_release.py (#145)
+
+
+TODO: Edit the section above before submitting!
+===============================================
+# Release 1.3.0 25-04-2018
+- Support Endpoints Authorization via Firebase rules.
+
 # Release 1.2.0 12-04-2017
 
 - Support rate-limit.
