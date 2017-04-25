@@ -222,6 +222,12 @@ function bookstore(options) {
     });
   });
 
+  app.get('/quota_read', function(req, res) {
+    res.status(200).json({
+      msg: 'ok'
+    });
+  });
+
   app.get('/shelves', function(req, res) {
     var shelves = bookstoreDatabase.shelves;
     var result = [];

@@ -56,6 +56,7 @@ import json
 import ssl
 import sys
 import os
+import time
 
 class C:
     pass
@@ -259,6 +260,66 @@ class EspBookstoreTest(object):
                     self.assertEqual(response.status_code,
                         testcase['status_code'])
 
+    def verify_quota_control(self):
+        # turn off verbose log
+        print("Turn off the verbose log flag...");
+        verbose = FLAGS.verbose
+        FLAGS.verbose = False
+
+        # exhaust current quota
+        print("Exhaust current quota...");
+        response = self._call_http(path='/quota_read',
+                                   api_key=FLAGS.api_key)
+        if response.status_code != 429:
+            while True:
+                response = self._call_http(path='/quota_read',
+                                           api_key=FLAGS.api_key)
+                if response.status_code == 429:
+                    break;
+
+        # waiting for the next quota refill.
+        print("Wait for the next quota refill...");
+        while True:
+            time.sleep(1);
+            response = self._call_http(path='/quota_read',
+                                       api_key=FLAGS.api_key)
+            if response.status_code != 429:
+                break;
+        # Wait for 10 more seconds
+        time.sleep(10);
+
+        # start counting
+        print("Run the stress test to count response codes for 150 seconds...");
+        code_200 = 0
+        code_429 = 0
+        code_else = 0
+
+        # run tests for 2 minutes 30 seconds, two quota refills expected
+        t_end = time.time() + 60 * 2 + 30
+        count = 0;
+        while time.time() < t_end:
+            response = self._call_http(path='/quota_read',
+                                       api_key=FLAGS.api_key)
+            if response.status_code == 429:
+                code_429 += 1
+            elif response.status_code == 200:
+                code_200 += 1
+            else:
+                code_else += 1
+            count += 1
+            if count % 1000 == 0:
+                print(t_end - time.time(), code_200, code_429, code_else);
+
+        self.assertEqual(code_else, 0);
+
+        # requests should be accepted between 30000 to 36000
+        # by initial quota and 2 refills. Allows +-20% of margin
+        self.assertGE(code_200 , 24000);
+        self.assertLE(code_200 , 36000);
+
+        # restore verbose flag
+        FLAGS.verbose = verbose
+
     def run_all_tests(self):
         self.clear()
         self.verify_list_shelves([])
@@ -313,6 +374,7 @@ class EspBookstoreTest(object):
         self.verify_list_shelves([])
 
         self.verify_key_restriction();
+        self.verify_quota_control()
 
         if self._failed_tests:
             sys.exit(esp_utils.red('%d tests passed, %d tests failed.' % (
