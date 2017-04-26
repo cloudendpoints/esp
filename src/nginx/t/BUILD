@@ -119,6 +119,7 @@ nginx_suite(
         "grpc_shared_port_ssl.t",
         "grpc_ssl_downstream.t",
         "grpc_streaming.t",
+        "grpc_uds.t",
         "grpc_upstream_flow_control.t",
     ],
     deps = [

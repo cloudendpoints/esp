@@ -35,6 +35,7 @@ use warnings;
 package ApiManager;
 
 use FindBin;
+use IO::Socket;
 use JSON::PP;
 use Data::Dumper;
 use MIME::Base64;
@@ -623,6 +624,24 @@ sub http_end($;%) {
 
   log_in($reply);
   return $reply;
+}
+
+# Waits for a UDS socket to be ready.
+sub wait_for_uds($) {
+  my ($sockpath) = @_;
+
+  # wait for socket to accept connections
+  for (1 .. 50) {
+    my $s = IO::Socket::UNIX->new(
+	    Type => SOCK_STREAM(),
+	    PeerAddr => $sockpath,
+    );
+
+    return 1 if defined $s;
+    select undef, undef, undef, 0.1;
+  }
+
+  return undef;
 }
 
 1;
