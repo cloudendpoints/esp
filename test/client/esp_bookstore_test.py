@@ -55,13 +55,13 @@ import httplib
 import json
 import ssl
 import sys
-
+from esp_utils import EspClientTest
 
 class C:
     pass
 FLAGS = C
 
-class EspBookstoreTest(object):
+class EspBookstoreTest(EspClientTest):
     """End to end integration test of bookstore application with deployed
     ESP at VM.  It will call bookstore API according its Swagger spec to
     1) wipe out bookstore clean,
@@ -72,42 +72,9 @@ class EspBookstoreTest(object):
     """
 
     def __init__(self):
-        self._failed_tests = 0
-        self._passed_tests = 0
-        self.conn = esp_utils.http_connection(FLAGS.host, FLAGS.allow_unverified_cert)
-
-    def fail(self, msg):
-        print '%s: %s' % (esp_utils.red('FAILED'), msg if msg else '')
-        self._failed_tests += 1
-
-    def assertEqual(self, a, b):
-        msg = 'assertEqual(%s, %s)' % (str(a), str(b))
-        if a == b:
-            print '%s: %s' % (esp_utils.green('OK'), msg)
-            self._passed_tests += 1
-        else:
-            self.fail(msg)
-
-    def _call_http(self, path, api_key=None, auth=None, data=None, method=None):
-        """Makes a http call and returns its response."""
-        url = path
-        if api_key:
-            url += '?key=' + api_key
-        headers = {'Content-Type': 'application/json'}
-        if auth:
-            headers['Authorization'] = 'Bearer ' + auth
-        body = json.dumps(data) if data else None
-        if not method:
-            method = 'POST' if data else 'GET'
-        if FLAGS.verbose:
-            print 'HTTP: %s %s' % (method, url)
-            print 'headers: %s' % str(headers)
-            print 'body: %s' % body
-        self.conn.request(method, url, body, headers)
-        response = esp_utils.Response(self.conn.getresponse())
-        if FLAGS.verbose:
-            print 'Status: %s, body=%s' % (response.status_code, response.text)
-        return response
+        EspClientTest.__init__(self, FLAGS.host,
+                               FLAGS.allow_unverified_cert,
+                               FLAGS.verbose)
 
     def _send_request(self, path, api_key=None,
                       auth=None, data=None, method=None):

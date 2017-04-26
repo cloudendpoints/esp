@@ -46,7 +46,7 @@ Testing steps:
 
 4) Run:
 
-   ./esp_bookstore_test.py --host=$HOST --api_key=$KEY --auth_token=$TOKEN
+   ./esp_bookstore_quota_test.py --host=$HOST --api_key=$KEY --auth_token=$TOKEN
 """
 
 import argparse
@@ -58,116 +58,31 @@ import sys
 import os
 import time
 import datetime
+from esp_utils import EspClientTest
 
 class C:
     pass
 FLAGS = C
 
-class EspBookstoreTest(object):
+class EspBookstoreTest(EspClientTest):
     """End to end integration test of bookstore application with deployed
-    ESP at VM.  It will call bookstore API according its Swagger spec to
-    1) wipe out bookstore clean,
-    2) create 2 shelves,
-    3) add 2 books into the first shelf.
-    4) remove books one by one,
-    5) remove shelves one by one.
+    ESP at VM.  It will call bookstore API according its Swagger spec
+    1) set quota limit to 30
+    2) send traffic 60 qps for 150 seconds and count response code 200
+    3) check count between 80 to 100
     """
 
     def __init__(self):
-        self._failed_tests = 0
-        self._passed_tests = 0
-        self.conn = esp_utils.http_connection(FLAGS.host, FLAGS.allow_unverified_cert)
-
-    def fail(self, msg):
-        print '%s: %s' % (esp_utils.red('FAILED'), msg if msg else '')
-        self._failed_tests += 1
-
-    def assertEqual(self, a, b):
-        msg = 'assertEqual(%s, %s)' % (str(a), str(b))
-        if a == b:
-            print '%s: %s' % (esp_utils.green('OK'), msg)
-            self._passed_tests += 1
-        else:
-            self.fail(msg)
-
-    def assertGE(self, a, b):
-        msg = 'assertGE(%s, %s)' % (str(a), str(b))
-        if a >= b:
-            print '%s: %s' % (esp_utils.green('OK'), msg)
-            self._passed_tests += 1
-        else:
-            self.fail(msg)
-
-    def assertLE(self, a, b):
-        msg = 'assertLE(%s, %s)' % (str(a), str(b))
-        if a <= b:
-            print '%s: %s' % (esp_utils.green('OK'), msg)
-            self._passed_tests += 1
-        else:
-            self.fail(msg)
-
-    def _call_http(self, path, api_key=None, auth=None, data=None, method=None,
-                   userHeaders = {}):
-        """Makes a http call and returns its response."""
-        url = path
-        if api_key:
-            url += '?key=' + api_key
-        headers = {'Content-Type': 'application/json'}
-        if auth:
-            headers['Authorization'] = 'Bearer ' + auth
-        body = json.dumps(data) if data else None
-        for key, value in userHeaders.iteritems():
-            headers[key] = value
-        if not method:
-            method = 'POST' if data else 'GET'
-        if FLAGS.verbose:
-            print 'HTTP: %s %s' % (method, url)
-            print 'headers: %s' % str(headers)
-            print 'body: %s' % body
-        self.conn.request(method, url, body, headers)
-        response = esp_utils.Response(self.conn.getresponse())
-        if FLAGS.verbose:
-            print 'Status: %s, body=%s' % (response.status_code, response.text)
-        return response
-
-    def _send_request(self, path, api_key=None,
-                      auth=None, data=None, method=None, userHeaders = {}):
-        """High level sending request test.
-        Do Negative tests if endpoints is enabled.
-        If auth is required, send it without, verify 401 response.
-        If api_key is required, send it without, verify 401 response.
-        """
-        if FLAGS.endpoints:
-            if auth:
-                print 'Negative test: remove auth.'
-                r = self._call_http(path, api_key, None, data, method,
-                                    userHeaders=userHeaders)
-                self.assertEqual(r.status_code, 401)
-                self.assertEqual(
-                    r.json()['message'],
-                    'JWT validation failed: Missing or invalid credentials')
-                print 'Completed Negative test.'
-            if api_key:
-                print 'Negative test: remove api_key.'
-                r = self._call_http(path, None, auth, data, method,
-                                    userHeaders=userHeaders)
-                self.assertEqual(r.status_code, 401)
-                self.assertEqual(
-                    r.json()['message'],
-                    ('Method doesn\'t allow unregistered callers (callers without '
-                     'established identity). Please use API Key or other form of '
-                     'API consumer identity to call this API.'))
-                print 'Completed Negative test.'
-            return self._call_http(path, api_key, auth, data, method,
-                                   userHeaders=userHeaders)
-        else:
-            return self._call_http(path, method=method, userHeaders=userHeaders)
+        EspClientTest.__init__(self, FLAGS.host,
+                               FLAGS.allow_unverified_cert,
+                               FLAGS.verbose)
 
     def verify_quota_control(self):
         # turn off verbose log
         print("Turn off the verbose log flag...");
         verbose = FLAGS.verbose
         FLAGS.verbose = False
+        self.set_verbose(FLAGS.verbose)
 
         # exhaust current quota
         print("Exhaust current quota...");
@@ -188,24 +103,19 @@ class EspBookstoreTest(object):
                                        api_key=FLAGS.api_key)
             if response.status_code != 429:
                 break;
-        # Wait for 10 more seconds
-        time.sleep(5);
 
         # start counting
-        print("Run the stress test to count response codes for 150 seconds...");
+        print("Sending requests to count response codes for 150 seconds...");
         code_200 = 0
         code_429 = 0
         code_else = 0
 
-        # run tests for 2 minutes 30 seconds, two quota refills expected
+        # run tests for 150 seconds, two quota refills expected
         t_end = time.time() + 60 * 2 + 30
         count = 0;
         while time.time() < t_end:
             response = self._call_http(path='/quota_read',
                                        api_key=FLAGS.api_key)
-            now=datetime.datetime.now()
-            print(now.isoformat(), response.status_code)
-
             if response.status_code == 429:
                 code_429 += 1
             elif response.status_code == 200:
@@ -213,22 +123,24 @@ class EspBookstoreTest(object):
             else:
                 code_else += 1
             count += 1
-            #if count % 5 == 0:
-            #    print(t_end - time.time(), code_200, code_429, code_else);
+
+            print(t_end - time.time(), code_200, code_429, code_else)
+            # delay 1 second after each request
             time.sleep(1);
-            print(t_end - time.time(), code_200, code_429, code_else);
 
         self.assertEqual(code_else, 0);
 
-        # requests should be accepted between 30000 to 36000
-        # by initial quota and 2 refills. Allows +-20% of margin
-        self.assertGE(code_200 , 80);
-        self.assertLE(code_200 , 100);
+        # requests should be accepted between 81 to 99
+        # by initial quota and 2 refills. Allows +-10% of margin
+        self.assertGE(code_200 , 81);
+        self.assertLE(code_200 , 99);
 
         # restore verbose flag
         FLAGS.verbose = verbose
+        self.set_verbose(FLAGS.verbose)
 
     def run_all_tests(self):
+
         self.verify_quota_control()
 
         if self._failed_tests:
@@ -237,21 +149,14 @@ class EspBookstoreTest(object):
         else:
             print esp_utils.green('All %d tests passed' % self._passed_tests)
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--verbose', type=bool, help='Turn on/off verbosity.')
     parser.add_argument('--api_key', help='Project api_key to access service.')
     parser.add_argument('--host', help='Deployed application host name.')
     parser.add_argument('--auth_token', help='Auth token.')
-    parser.add_argument('--endpoints', type=bool,
-            default=True, help='Is endpoints enabled on the backend?')
     parser.add_argument('--allow_unverified_cert', type=bool,
             default=False, help='used for testing self-signed ssl cert.')
-    parser.add_argument('--key_restriction_tests',
-                        help='Test suites for api key restriction.')
-    parser.add_argument('--key_restriction_keys_file',
-                        help='File contains API keys with restrictions ')
     flags = parser.parse_args(namespace=FLAGS)
 
     esp_test = EspBookstoreTest()
