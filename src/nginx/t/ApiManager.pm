@@ -634,7 +634,7 @@ sub wait_for_uds($) {
   for (1 .. 50) {
     my $s = IO::Socket::UNIX->new(
 	    Type => SOCK_STREAM(),
-	    Peet => $sockpath,
+	    PeerAddr => $sockpath,
     );
 
     return 1 if defined $s;
