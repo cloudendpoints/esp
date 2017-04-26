@@ -1,7 +1,11 @@
 # Release 1.3.0 25-04-2017
-* Support endpoint authorization via firebase rules.
-* Update Dockerfile to expose port 8080 by default (#148)
-* Added blocking report api call to remove timeout issue (#147)
+* Support endpoint authorization via firebase rules
+* Update Dockerfile to expose port 8080 by default
+* Added blocking report api call to remove timeout issue
+* Implement support for the request.{method, referer, scheme, user-agent}
+  attributes.
+* Add JSON-gRPC transcoding filter
+* Split out endpoints independent build target for transcoding
 
 # Release 1.2.0 12-04-2017
 
