@@ -94,8 +94,24 @@ while true; do
       --api_key=${API_KEY} \
       --auth_token=${JWT_TOKEN} \
       --allow_unverified_cert=true \
+    || ((BOOKSTORE_FAILURES++))
+
+  echo "Starting bookstore API Key restriction test at $(date)."
+  ./esp_bookstore_key_restriction_test.py --verbose=true \
+      --host=${HOST} \
+      --api_key=${API_KEY} \
+      --auth_token=${JWT_TOKEN} \
+      --allow_unverified_cert=true \
       --key_restriction_tests=${ROOT}/test/bookstore/test/key_restriction_test.json.template \
       --key_restriction_keys_file=${API_RESTRICTION_KEYS_FILE} \
+    || ((BOOKSTORE_FAILURES++))
+
+  echo "Starting bookstore quota control test at $(date)."
+  ./esp_bookstore_quota_test.py --verbose=true \
+      --host=${HOST} \
+      --api_key=${API_KEY} \
+      --auth_token=${JWT_TOKEN} \
+      --allow_unverified_cert=true \
     || ((BOOKSTORE_FAILURES++))
 
   echo "Starting stress test at $(date)."

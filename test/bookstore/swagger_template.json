@@ -636,7 +636,7 @@
   "x-google-quota-definitions": {
     "limits": [{
       "name": "bookstore-read-requests",
-      "values": {"STANDARD": 10000},
+      "values": {"STANDARD": 30},
       "unit": "1/min/{project}",
       "metric": "bookstore/read_requests"
     }]

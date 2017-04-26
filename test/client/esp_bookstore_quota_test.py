@@ -55,7 +55,9 @@ import httplib
 import json
 import ssl
 import sys
-
+import os
+import time
+import datetime
 
 class C:
     pass
@@ -88,7 +90,24 @@ class EspBookstoreTest(object):
         else:
             self.fail(msg)
 
-    def _call_http(self, path, api_key=None, auth=None, data=None, method=None):
+    def assertGE(self, a, b):
+        msg = 'assertGE(%s, %s)' % (str(a), str(b))
+        if a >= b:
+            print '%s: %s' % (esp_utils.green('OK'), msg)
+            self._passed_tests += 1
+        else:
+            self.fail(msg)
+
+    def assertLE(self, a, b):
+        msg = 'assertLE(%s, %s)' % (str(a), str(b))
+        if a <= b:
+            print '%s: %s' % (esp_utils.green('OK'), msg)
+            self._passed_tests += 1
+        else:
+            self.fail(msg)
+
+    def _call_http(self, path, api_key=None, auth=None, data=None, method=None,
+                   userHeaders = {}):
         """Makes a http call and returns its response."""
         url = path
         if api_key:
@@ -97,6 +116,8 @@ class EspBookstoreTest(object):
         if auth:
             headers['Authorization'] = 'Bearer ' + auth
         body = json.dumps(data) if data else None
+        for key, value in userHeaders.iteritems():
+            headers[key] = value
         if not method:
             method = 'POST' if data else 'GET'
         if FLAGS.verbose:
@@ -110,7 +131,7 @@ class EspBookstoreTest(object):
         return response
 
     def _send_request(self, path, api_key=None,
-                      auth=None, data=None, method=None):
+                      auth=None, data=None, method=None, userHeaders = {}):
         """High level sending request test.
         Do Negative tests if endpoints is enabled.
         If auth is required, send it without, verify 401 response.
@@ -119,7 +140,8 @@ class EspBookstoreTest(object):
         if FLAGS.endpoints:
             if auth:
                 print 'Negative test: remove auth.'
-                r = self._call_http(path, api_key, None, data, method)
+                r = self._call_http(path, api_key, None, data, method,
+                                    userHeaders=userHeaders)
                 self.assertEqual(r.status_code, 401)
                 self.assertEqual(
                     r.json()['message'],
@@ -127,7 +149,8 @@ class EspBookstoreTest(object):
                 print 'Completed Negative test.'
             if api_key:
                 print 'Negative test: remove api_key.'
-                r = self._call_http(path, None, auth, data, method)
+                r = self._call_http(path, None, auth, data, method,
+                                    userHeaders=userHeaders)
                 self.assertEqual(r.status_code, 401)
                 self.assertEqual(
                     r.json()['message'],
@@ -135,136 +158,79 @@ class EspBookstoreTest(object):
                      'established identity). Please use API Key or other form of '
                      'API consumer identity to call this API.'))
                 print 'Completed Negative test.'
-            return self._call_http(path, api_key, auth, data, method)
+            return self._call_http(path, api_key, auth, data, method,
+                                   userHeaders=userHeaders)
         else:
-            return self._call_http(path, method=method)
+            return self._call_http(path, method=method, userHeaders=userHeaders)
 
-    def clear(self):
-        print 'Clear existing shelves.'
-        # list shelves: no api_key, no auth
-        response = self._send_request('/shelves')
-        self.assertEqual(response.status_code, 200)
-        json_ret = response.json()
-        for shelf in json_ret.get('shelves', []):
-            self.delete_shelf(shelf['name'])
+    def verify_quota_control(self):
+        # turn off verbose log
+        print("Turn off the verbose log flag...");
+        verbose = FLAGS.verbose
+        FLAGS.verbose = False
 
-    def create_shelf(self, shelf):
-        print 'Create shelf: %s' % str(shelf)
-        # create shelves: auth.
-        response = self._send_request(
-            '/shelves', api_key=FLAGS.api_key, auth=FLAGS.auth_token, data=shelf)
-        self.assertEqual(response.status_code, 200)
-        # shelf name generated in server, not the same as required.
-        json_ret = response.json()
-        self.assertEqual(json_ret.get('theme', ''), shelf['theme'])
-        return json_ret
+        # exhaust current quota
+        print("Exhaust current quota...");
+        response = self._call_http(path='/quota_read',
+                                   api_key=FLAGS.api_key)
+        if response.status_code != 429:
+            while True:
+                response = self._call_http(path='/quota_read',
+                                           api_key=FLAGS.api_key)
+                if response.status_code == 429:
+                    break;
 
-    def verify_shelf(self, shelf):
-        print 'Verify shelf: %s' % shelf['name']
-        # Get shelf: auth.
-        r = self._send_request('/' + shelf['name'], auth=FLAGS.auth_token)
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.json(), shelf)
+        # waiting for the next quota refill.
+        print("Wait for the next quota refill...");
+        while True:
+            time.sleep(1);
+            response = self._call_http(path='/quota_read',
+                                       api_key=FLAGS.api_key)
+            if response.status_code != 429:
+                break;
+        # Wait for 10 more seconds
+        time.sleep(5);
 
-    def delete_shelf(self, shelf_name):
-        print 'Remove shelf: %s' % shelf_name
-        # delete shelf: api_key
-        r = self._send_request(
-            '/' + shelf_name, api_key=FLAGS.api_key, method='DELETE')
-        self.assertEqual(r.status_code, 204)
+        # start counting
+        print("Run the stress test to count response codes for 150 seconds...");
+        code_200 = 0
+        code_429 = 0
+        code_else = 0
 
-    def verify_list_shelves(self, shelves):
-        # list shelves: no api_key, no auth
-        response = self._send_request('/shelves')
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json().get('shelves', []), shelves)
+        # run tests for 2 minutes 30 seconds, two quota refills expected
+        t_end = time.time() + 60 * 2 + 30
+        count = 0;
+        while time.time() < t_end:
+            response = self._call_http(path='/quota_read',
+                                       api_key=FLAGS.api_key)
+            now=datetime.datetime.now()
+            print(now.isoformat(), response.status_code)
 
-    def create_book(self, shelf, book):
-        print 'Create book in shelf: %s, book: %s' % (shelf, str(book))
-        # Create book: api_key
-        response = self._send_request(
-            '/%s/books' % shelf, api_key=FLAGS.api_key, data=book)
-        self.assertEqual(response.status_code, 200)
-        # book name is generated in server, not the same as required.
-        json_ret = response.json()
-        self.assertEqual(json_ret.get('author', ''), book['author'])
-        self.assertEqual(json_ret.get('title', ''), book['title'])
-        return json_ret
+            if response.status_code == 429:
+                code_429 += 1
+            elif response.status_code == 200:
+                code_200 += 1
+            else:
+                code_else += 1
+            count += 1
+            #if count % 5 == 0:
+            #    print(t_end - time.time(), code_200, code_429, code_else);
+            time.sleep(1);
+            print(t_end - time.time(), code_200, code_429, code_else);
 
-    def verify_book(self, book):
-        print 'Remove book: /%s' % book['name']
-        # Get book: api_key, auth
-        r = self._send_request(
-            '/' + book['name'], api_key=FLAGS.api_key, auth=FLAGS.auth_token)
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.json(), book)
+        self.assertEqual(code_else, 0);
 
-    def delete_book(self, book_name):
-        print 'Remove book: /%s' % book_name
-        # Delete book: api_key
-        r = self._send_request(
-            '/' + book_name, api_key=FLAGS.api_key, method='DELETE')
-        self.assertEqual(r.status_code, 204)
+        # requests should be accepted between 30000 to 36000
+        # by initial quota and 2 refills. Allows +-20% of margin
+        self.assertGE(code_200 , 80);
+        self.assertLE(code_200 , 100);
 
-    def verify_list_books(self, shelf, books):
-        # List book: api_key
-        response = self._send_request(
-            '/%s/books' % shelf, api_key=FLAGS.api_key)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json().get('books', []), books)
+        # restore verbose flag
+        FLAGS.verbose = verbose
 
     def run_all_tests(self):
-        self.clear()
-        self.verify_list_shelves([])
+        self.verify_quota_control()
 
-        shelf1 = {
-            'name': 'shelves/100',
-            'theme': 'Text books'
-        }
-        shelf1 = self.create_shelf(shelf1)
-        self.verify_list_shelves([shelf1])
-
-        shelf2 = {
-            'name': 'shelves/200',
-            'theme': 'Fiction'
-        }
-        shelf2 = self.create_shelf(shelf2)
-        self.verify_list_shelves([shelf1, shelf2])
-
-        self.verify_shelf(shelf1)
-        self.verify_shelf(shelf2)
-
-        book11 = {
-            'name': 'books/1000',
-            'author': 'Graham Doggett',
-            'title': 'Maths for Chemist'
-        }
-        book11 = self.create_book(shelf1['name'], book11)
-        self.verify_list_books(shelf1['name'], [book11])
-
-        book12 = {
-            'name': 'books/2000',
-            'author': 'George C. Comstock',
-            'title': 'A Text-Book of Astronomy'
-        }
-        book12 = self.create_book(shelf1['name'], book12)
-        self.verify_list_books(shelf1['name'], [book11, book12])
-
-        self.verify_book(book11)
-        self.verify_book(book12)
-
-        # shelf2 is empty
-        self.verify_list_books(shelf2['name'], [])
-
-        self.delete_book(book12['name'])
-        self.verify_list_books(shelf1['name'], [book11])
-
-        self.delete_book(book11['name'])
-        self.verify_list_books(shelf1['name'], [])
-
-        self.delete_shelf(shelf2['name'])
-        self.delete_shelf(shelf1['name'])
-        self.verify_list_shelves([])
         if self._failed_tests:
             sys.exit(esp_utils.red('%d tests passed, %d tests failed.' % (
                 self._passed_tests, self._failed_tests)))
@@ -282,6 +248,10 @@ if __name__ == '__main__':
             default=True, help='Is endpoints enabled on the backend?')
     parser.add_argument('--allow_unverified_cert', type=bool,
             default=False, help='used for testing self-signed ssl cert.')
+    parser.add_argument('--key_restriction_tests',
+                        help='Test suites for api key restriction.')
+    parser.add_argument('--key_restriction_keys_file',
+                        help='File contains API keys with restrictions ')
     flags = parser.parse_args(namespace=FLAGS)
 
     esp_test = EspBookstoreTest()
