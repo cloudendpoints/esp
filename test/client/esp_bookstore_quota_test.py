@@ -68,7 +68,7 @@ class EspBookstoreTest(EspClientTest):
     """End to end integration test of bookstore application with deployed
     ESP at VM.  It will call bookstore API according its Swagger spec
     1) set quota limit to 30
-    2) send traffic 60 qps for 150 seconds and count response code 200
+    2) send traffic 60 qpm for 150 seconds and count response code 200
     3) check count between 80 to 100
     """
 
@@ -84,7 +84,7 @@ class EspBookstoreTest(EspClientTest):
         FLAGS.verbose = False
         self.set_verbose(FLAGS.verbose)
 
-        # exhaust current quota
+        # exhaust the quota in the current window.
         print("Exhaust current quota...");
         response = self._call_http(path='/quota_read',
                                    api_key=FLAGS.api_key)
