@@ -115,3 +115,65 @@ class Response(object):
         except ValueError as e:
             return False
 
+class EspClientTest(object):
+    def __init__(self, host, allow_unverified_cert, verbose=False):
+        self._failed_tests = 0
+        self._passed_tests = 0
+        self._verbose = verbose
+        self.conn = http_connection(host, allow_unverified_cert)
+
+    def fail(self, msg):
+        print '%s: %s' % (red('FAILED'), msg if msg else '')
+        self._failed_tests += 1
+
+    def assertEqual(self, a, b):
+        msg = 'assertEqual(%s, %s)' % (str(a), str(b))
+        if a == b:
+            print '%s: %s' % (green('OK'), msg)
+            self._passed_tests += 1
+        else:
+            self.fail(msg)
+
+    def assertGE(self, a, b):
+        msg = 'assertGE(%s, %s)' % (str(a), str(b))
+        if a >= b:
+            print '%s: %s' % (green('OK'), msg)
+            self._passed_tests += 1
+        else:
+            self.fail(msg)
+
+    def assertLE(self, a, b):
+        msg = 'assertLE(%s, %s)' % (str(a), str(b))
+        if a <= b:
+            print '%s: %s' % (green('OK'), msg)
+            self._passed_tests += 1
+        else:
+            self.fail(msg)
+
+    def _call_http(self, path, api_key=None, auth=None, data=None, method=None,
+                   userHeaders = {}):
+        """Makes a http call and returns its response."""
+        url = path
+        if api_key:
+            url += '?key=' + api_key
+        headers = {'Content-Type': 'application/json'}
+        if auth:
+            headers['Authorization'] = 'Bearer ' + auth
+        body = json.dumps(data) if data else None
+        for key, value in userHeaders.iteritems():
+            headers[key] = value
+        if not method:
+            method = 'POST' if data else 'GET'
+        if self._verbose:
+            print 'HTTP: %s %s' % (method, url)
+            print 'headers: %s' % str(headers)
+            print 'body: %s' % body
+        self.conn.request(method, url, body, headers)
+        response = Response(self.conn.getresponse())
+        if self._verbose:
+            print 'Status: %s, body=%s' % (response.status_code, response.text)
+        return response
+
+    def set_verbose(self, verbose):
+        self._verbose = verbose
+
