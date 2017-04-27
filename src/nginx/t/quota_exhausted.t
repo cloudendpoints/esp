@@ -222,6 +222,18 @@ Connection: close
   ]
 }
 EOF
+
+    $server->on( 'GET', '/shelves?key=this-is-an-api-key', <<'EOF');
+HTTP/1.1 200 OK
+Connection: close
+
+{ "shelves": [
+    { "name": "shelves/1", "theme": "Fiction" },
+    { "name": "shelves/2", "theme": "Fantasy" }
+  ]
+}
+EOF
+
     $server->run();
 }
 
