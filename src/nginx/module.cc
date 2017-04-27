@@ -65,6 +65,7 @@ ngx_esp_request_ctx_s::ngx_esp_request_ctx_s(ngx_http_request_t *r,
       auth_token(ngx_null_string),
       grpc_server_call(nullptr),
       grpc_pass_through(IsGrpcRequest(r)),
+      grpc_backend(false),
       backend_time(-1) {
   ngx_memzero(&wakeup_event, sizeof(wakeup_event));
   if (lc && lc->esp) {

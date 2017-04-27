@@ -224,6 +224,8 @@ struct ngx_esp_request_ctx_s {
   NgxEspGrpcServerCall *grpc_server_call;
   // Mark if this request is grpc pass through.
   bool grpc_pass_through;
+  // Mark the backend is grpc.
+  bool grpc_backend;
 
   // RequestHandlerInterface object
   std::unique_ptr<RequestHandlerInterface> request_handler;
