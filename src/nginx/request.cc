@@ -73,6 +73,7 @@ std::string NgxEspRequest::GetUnparsedRequestPath() {
   if (ctx->grpc_backend) {
     return ::google::api_manager::protocol::GRPC;
   } else {
+    // TODO: determine HTTP or HTTPS for backend.
     return ::google::api_manager::protocol::UNKNOWN;
   }
 }
