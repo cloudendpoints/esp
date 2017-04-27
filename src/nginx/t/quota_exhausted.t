@@ -47,7 +47,7 @@ my $NginxPort          = ApiManager::pick_port();
 my $BackendPort        = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(21);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(22);
 
 # Save servce configuration that disables the report cache.
 # Report request will be sent for each client request
@@ -125,6 +125,9 @@ $t->run();
 
 my $ok_response =
   ApiManager::http_get( $NginxPort, '/shelves?key=this-is-an-api-key' );
+
+# waiting for the first request getting the response before sending the second one
+is($t->waitforfile("$t->{_testdir}/${rquest_done}"), 1, 'Request body file ready.');
 
 my $error_response =
   ApiManager::http_get( $NginxPort, '/shelves?key=this-is-an-api-key' );
@@ -207,12 +210,14 @@ is( $r->{headers}->{'content-type'}, 'application/x-protobuf',
 ################################################################################
 
 sub bookstore {
-    my ( $t, $port, $file ) = @_;
+    my ( $t, $port, $file, $done) = @_;
     my $server = HttpServer->new( $port, $t->testdir() . '/' . $file )
       or die "Can't create test server socket: $!\n";
     local $SIG{PIPE} = 'IGNORE';
 
-    $server->on( 'GET', '/shelves?key=this-is-an-api-key', <<'EOF');
+    $server->on_sub('GET', '/shelves?key=this-is-an-api-key', sub {
+      my ($headers, $body, $client) = @_;
+      print $client <<'EOF';
 HTTP/1.1 200 OK
 Connection: close
 
@@ -222,17 +227,8 @@ Connection: close
   ]
 }
 EOF
-
-    $server->on( 'GET', '/shelves?key=this-is-an-api-key', <<'EOF');
-HTTP/1.1 200 OK
-Connection: close
-
-{ "shelves": [
-    { "name": "shelves/1", "theme": "Fiction" },
-    { "name": "shelves/2", "theme": "Fantasy" }
-  ]
-}
-EOF
+     $t->write_file($done, ':request done');
+  });
 
     $server->run();
 }
