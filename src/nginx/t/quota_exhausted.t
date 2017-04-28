@@ -110,11 +110,12 @@ http {
 }
 EOF
 
+my $quota_done = 'quota_done';
 my $report_done = 'report_done';
 
-$t->run_daemon( \&bookstore, $t, $BackendPort, 'bookstore.log', $report_done);
+$t->run_daemon( \&bookstore, $t, $BackendPort, 'bookstore.log');
 $t->run_daemon( \&servicecontrol, $t, $ServiceControlPort,
-    'servicecontrol.log', $report_done);
+    'servicecontrol.log', $quota_done, $report_done);
 is( $t->waitforsocket("127.0.0.1:${BackendPort}"),
     1, 'Bookstore socket ready.' );
 is( $t->waitforsocket("127.0.0.1:${ServiceControlPort}"),
@@ -126,8 +127,10 @@ $t->run();
 my $ok_response =
   ApiManager::http_get( $NginxPort, '/shelves?key=this-is-an-api-key' );
 
-# waiting for the first request getting the response before sending the second one
-is($t->waitforfile("$t->{_testdir}/${rquest_done}"), 1, 'Request body file ready.');
+# waiting for the first request getting the AllocateQuotaResponse
+# before sending the second one
+is($t->waitforfile("$t->{_testdir}/${quota_done}"), 1,
+  'AllocateQuotaResponse is ready');
 
 my $error_response =
   ApiManager::http_get( $NginxPort, '/shelves?key=this-is-an-api-key' );
@@ -210,14 +213,12 @@ is( $r->{headers}->{'content-type'}, 'application/x-protobuf',
 ################################################################################
 
 sub bookstore {
-    my ( $t, $port, $file, $done) = @_;
+    my ( $t, $port, $file ) = @_;
     my $server = HttpServer->new( $port, $t->testdir() . '/' . $file )
       or die "Can't create test server socket: $!\n";
     local $SIG{PIPE} = 'IGNORE';
 
-    $server->on_sub('GET', '/shelves?key=this-is-an-api-key', sub {
-      my ($headers, $body, $client) = @_;
-      print $client <<'EOF';
+    $server->on( 'GET', '/shelves?key=this-is-an-api-key', <<'EOF');
 HTTP/1.1 200 OK
 Connection: close
 
@@ -227,9 +228,6 @@ Connection: close
   ]
 }
 EOF
-     $t->write_file($done, ':request done');
-  });
-
     $server->run();
 }
 
@@ -237,7 +235,7 @@ my @quota_responses = ();
 my $quota_response_index = 0;
 
 sub servicecontrol {
-    my ( $t, $port, $file, $done ) = @_;
+    my ( $t, $port, $file, $quota_done, $report_done ) = @_;
     my $server = HttpServer->new( $port, $t->testdir() . '/' . $file )
       or die "Can't create test server socket: $!\n";
     local $SIG{PIPE} = 'IGNORE';
@@ -259,13 +257,18 @@ Connection: close
 
 EOF
 
-    $server->on('POST',
-      '/v1/services/endpoints-test.cloudendpointsapis.com:allocateQuota',
-      <<'EOF' . $quota_response_exhausted);
+
+    $server->on_sub('POST',
+      '/v1/services/endpoints-test.cloudendpointsapis.com:allocateQuota', sub {
+      my ($headers, $body, $client) = @_;
+      print $client <<'EOF'.$quota_response_exhausted;
 HTTP/1.1 200 OK
 Connection: close
 
 EOF
+     $t->write_file($quota_done, ':quota done');
+  });
+
 
   $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:report', sub {
     my ($headers, $body, $client) = @_;
@@ -274,7 +277,7 @@ HTTP/1.1 200 OK
 Connection: close
 
 EOF
-     $t->write_file($done, ':report done');
+     $t->write_file($report_done, ':report done');
   });
 
     $server->run();
