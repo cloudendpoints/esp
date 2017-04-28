@@ -132,6 +132,7 @@ sub gen_report_labels {
   $labels->{'/status_code'} = $in->{status_code} if exists $in->{status_code};
   $labels->{'/error_type'} = $in->{error_type} if exists $in->{error_type};
   $labels->{'/protocol'} = $in->{protocol} if exists $in->{protocol};
+  $labels->{'servicecontrol.googleapis.com/backend_protocol'} = $in->{backend_protocol} if exists $in->{backend_protocol};
   $labels->{'serviceruntime.googleapis.com/api_version'} = $in->{api_version} if exists $in->{api_version};
 
   if (exists $in->{platform}) {

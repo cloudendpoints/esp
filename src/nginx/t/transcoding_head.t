@@ -151,6 +151,7 @@ my $expected_report_body = ServiceControl::gen_report_body({
   'serviceConfigId' => '2016-08-25r1',
   'url' => '/shelves?key=api-key',
   'api_key' => 'api-key',
+  'backend_protocol' => 'grpc',
   'producer_project_id' => 'endpoints-transcoding-test',
   'location' => 'us-central1',
   'api_name' =>  'endpoints.examples.bookstore.Bookstore',
