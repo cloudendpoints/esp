@@ -71,7 +71,16 @@ ngx_esp_request_ctx_s::ngx_esp_request_ctx_s(ngx_http_request_t *r,
   if (lc && lc->esp) {
     request_handler = lc->esp->CreateRequestHandler(
         std::unique_ptr<Request>(new NgxEspRequest(r)));
-    transcoder_factory = lc->transcoder_factory;
+
+    auto config_id = request_handler->GetServiceConfigId();
+    auto it = lc->transcoder_factory_map.find(config_id);
+    if (it != lc->transcoder_factory_map.end()) {
+      transcoder_factory = it->second;
+    } else {
+      transcoder_factory = std::make_shared<transcoding::TranscoderFactory>(
+          lc->esp->service(config_id));
+      lc->transcoder_factory_map[config_id] = transcoder_factory;
+    }
   }
 }
 
@@ -428,12 +437,9 @@ ngx_int_t ngx_esp_postconfiguration(ngx_conf_t *cf) {
         return NGX_ERROR;
       }
 
-      lc->esp = mc->esp_factory.GetOrCreateApiManager(
+      lc->esp = mc->esp_factory.CreateApiManager(
           std::unique_ptr<ApiManagerEnvInterface>(new NgxEspEnv(log)),
           ngx_str_to_std(file_contents), server_config);
-
-      lc->transcoder_factory =
-          std::make_shared<transcoding::TranscoderFactory>(lc->esp->service());
 
       if (!lc->esp) {
         ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
@@ -450,20 +456,6 @@ ngx_int_t ngx_esp_postconfiguration(ngx_conf_t *cf) {
             &file_name);
         handle_endpoints_config_error(cf, lc);
         return NGX_ERROR;
-      }
-
-      // Set metadata server to esp
-      if (lc->metadata_server == 1 && lc->metadata_server_url.data != nullptr) {
-        lc->esp->SetMetadataServer(ngx_str_to_std(lc->metadata_server_url));
-      }
-
-      if (lc->google_authentication_secret.data != nullptr) {
-        Status status = lc->esp->SetClientAuthSecret(
-            ngx_str_to_std(lc->google_authentication_secret));
-        if (!status.ok()) {
-          ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, status.message().c_str());
-          return NGX_ERROR;
-        }
       }
 
       endpoints_enabled = endpoints_enabled || lc->esp->Enabled();

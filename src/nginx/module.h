@@ -124,8 +124,9 @@ typedef struct {
   // Extensible Service Proxy library interface.
   std::shared_ptr<ApiManager> esp;
 
-  // Transcoder factory
-  std::shared_ptr<transcoding::TranscoderFactory> transcoder_factory;
+  // Transcoder factory map.
+  std::map<std::string, std::shared_ptr<transcoding::TranscoderFactory>>
+      transcoder_factory_map;
 
   unsigned endpoints_block : 1;  // location has `endpoints` block
   unsigned grpc_pass : 1;        // location has `grpc_pass` directive
