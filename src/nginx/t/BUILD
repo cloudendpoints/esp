@@ -168,6 +168,7 @@ nginx_suite(
         "auth_disabled.t",
         "auth_no_auth.t",
         "auth_no_pkey.t",
+        "by_consumer_metrics.t",
         "check.t",
         "check_api_key.t",
         "check_custom_api_key.t",

@@ -1,4 +1,4 @@
-# Copyright (C) Extensible Service Proxy Authors
+# Copyright (C) Endpoints Server Proxy Authors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -45,7 +45,7 @@ my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $MetadataPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(59);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(55);
 
 $t->write_file('service.pb.txt',
                ApiManager::get_bookstore_service_config .
@@ -136,7 +136,6 @@ is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:report',
 
 # Verify the :report body contents.
 my $report = decode_json(ServiceControl::convert_proto($r->{body}, 'report_request', 'json'));
-
 sub find_in_array {
   my ($name, $value, $array_ref) = @_;
   foreach my $op (@{$array_ref}) {
@@ -151,6 +150,7 @@ sub find_in_array {
 # Check GetShelf operation and its metrics and labels.
 #
 my $get_shelf = find_in_array('operationName', 'GetShelf', $report->{operations});
+
 isnt($get_shelf, undef, 'Found GetShelf operation');
 
 # Declare variales used below.
@@ -163,7 +163,6 @@ is($labels->{'/credential_id'}, 'apikey:an-api-key',
 is($labels->{'/protocol'}, 'http', 'GetShelf protocol is http');
 is($labels->{'/response_code'}, '200', 'GetShelf response code is 200');
 is($labels->{'/response_code_class'}, '2xx', 'GetShelf response code class is 2xx');
-
 $metrics = $get_shelf->{metricValueSets};
 isnt($metrics, undef, 'GetShelf has metrics');
 
@@ -205,9 +204,9 @@ is($metric, undef, "GetShelf does not have $mn metric.");
 #
 # Check GetBook operation and its metrics and labels.
 #
+
 my $get_book = find_in_array('operationName', 'GetBook', $report->{operations});
 isnt($get_book, undef, 'Found GetBook operation.');
-
 $labels = $get_book->{labels};
 isnt($labels, undef, 'GetBook operation has labels');
 is($labels->{'/credential_id'}, 'apikey:an-api-key',
@@ -242,17 +241,17 @@ $mn = 'serviceruntime.googleapis.com/api/producer/by_consumer/total_latencies';
 $metric = find_in_array('metricName', $mn, $metrics);
 isnt($metric, undef, "GetBook has $mn metric.");
 is($metric->{metricValues}[0]->{distributionValue}->{count}, '1',
-    "GetBook $mn has 1 value.");
+   "GetBook $mn has 1 value.");
 
 $mn = 'serviceruntime.googleapis.com/api/producer/by_consumer/backend_latencies';
 $metric = find_in_array('metricName', $mn, $metrics);
 isnt($metric, undef, "GetBook has $mn metric.");
 is($metric->{metricValues}[0]->{distributionValue}->{count}, '1',
-    "GetBook $mn has 1 value.");
+   "GetBook $mn has 1 value.");
 
 $mn = 'serviceruntime.googleapis.com/api/producer/by_consumer/request_overhead_latencies';
 $metric = find_in_array('metricName', $mn, $metrics);
-isnt($metric, undef, "GetBook has $mn metric.");
+isnt($metric, undef, "getbook has $mn metric.");
 is($metric->{metricValues}[0]->{distributionValue}->{count}, '1',
    "GetBook $mn has 1 value.");
 
@@ -260,19 +259,6 @@ $mn = 'serviceruntime.googleapis.com/api/producer/by_consumer/error_count';
 $metric = find_in_array('metricName', $mn, $metrics);
 isnt($metric, undef, "GetBook has $mn metric.");
 is($metric->{metricValues}[0]->{int64Value}, '1', "GetBook $mn is 1.");
-
-$mn = 'serviceruntime.googleapis.com/api/producer/request_overhead_latencies';
-$metric = find_in_array('metricName', $mn, $metrics);
-isnt($metric, undef, "getbook has $mn metric.");
-is($metric->{metricValues}[0]->{distributionValue}->{count}, '1',
-   "GetBook $mn has 1 value.");
-
-$mn = 'serviceruntime.googleapis.com/api/producer/error_count';
-$metric = find_in_array('metricName', $mn, $metrics);
-isnt($metric, undef, "GetBook has $mn metric.");
-is($metric->{metricValues}[0]->{int64Value}, '1', "GetBook $mn is 1.");
-
-
 
 ################################################################################
 
@@ -308,40 +294,36 @@ sub bookstore {
   my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
-
   $server->on('GET', '/shelves/1', <<'EOF');
 HTTP/1.1 200 OK
 Content-Type: application/json
 
 { "name": "shelves/1", "theme": "Fiction-Fantasy" }
 EOF
-
   $server->on('GET', '/shelves/1/books/2', <<'EOF');
 HTTP/1.1 404 Not Found
 Content-Type: application/json
 
 { "name": "shelves/1/books/2", "error": 404, "message": "Not found." }
 EOF
-
   $server->run();
 }
 
 ################################################################################
-# Metadata server.
 
+# Metadata server.
 sub metadata {
   my ($t, $port, $file) = @_;
   my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
     or die "Can't create metadata server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
-
+  
   $server->on('GET', '/computeMetadata/v1/?recursive=true', <<'EOF' . ApiManager::get_metadata_response_body);
 HTTP/1.1 200 OK
 Metadata-Flavor: Google
 Content-Type: application/json
 
 EOF
-
   $server->on('GET', '/computeMetadata/v1/instance/service-accounts/default/token', <<'EOF');
 HTTP/1.1 200 OK
 Metadata-Flavor: Google
@@ -353,6 +335,5 @@ Content-Type: application/json
  "token_type":"Bearer"
 }
 EOF
-
   $server->run();
 }
