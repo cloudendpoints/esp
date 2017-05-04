@@ -157,6 +157,13 @@ typedef struct {
   // Server config
   ngx_str_t endpoints_server_config;
 
+  // service name
+  ngx_str_t service_name;
+  // config id
+  ngx_str_t config_id;
+  // rollout strategy
+  ngx_str_t rollout_strategy;
+
   // The map of backends to GRPC stubs.  These are constructed
   // on-demand.
   ngx_esp_grpc_stub_map_t grpc_stubs;

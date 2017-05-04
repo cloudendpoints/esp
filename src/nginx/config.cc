@@ -232,6 +232,31 @@ const char *esp_set_server_config(ngx_conf_t *cf, ngx_esp_loc_conf_t *conf) {
   return reinterpret_cast<char *>(NGX_CONF_ERROR);
 }
 
+const char *esp_set_service_name(ngx_conf_t *cf, ngx_esp_loc_conf_t *conf) {
+  if (conf->service_name.data != nullptr) return "duplicate";
+  ngx_str_t *argv = reinterpret_cast<ngx_str_t *>(cf->args->elts);
+  conf->service_name = argv[1];
+  return NGX_CONF_OK;
+}
+
+const char *esp_set_config_id(ngx_conf_t *cf, ngx_esp_loc_conf_t *conf) {
+  if (conf->config_id.data != nullptr) return "duplicate";
+  ngx_str_t *argv = reinterpret_cast<ngx_str_t *>(cf->args->elts);
+  conf->config_id = argv[1];
+  return NGX_CONF_OK;
+}
+
+const char *esp_set_rollout_strategy(ngx_conf_t *cf, ngx_esp_loc_conf_t *conf) {
+  if (conf->rollout_strategy.data != nullptr) return "duplicate";
+  ngx_str_t *argv = reinterpret_cast<ngx_str_t *>(cf->args->elts);
+  if (ngx_string_equal(argv[1], ngx_string("fixed")) ||
+      ngx_string_equal(argv[1], ngx_string("managed"))) {
+    conf->rollout_strategy = argv[1];
+    return NGX_CONF_OK;
+  }
+  return "invalid";
+}
+
 // Enum specifying to which level of ESP configuration a setting applies.
 enum EspConfiguration {
   // Main configuration. A handler is passed ngx_esp_main_conf_t*.
@@ -312,6 +337,18 @@ esp_command_t esp_commands[] = {
     ESP_COMMAND("api_authentication", 1, 1, ESP_LOC_CONF,
                 esp_configure_api_authentication),
     ESP_COMMAND("server_config", 1, 1, ESP_LOC_CONF, esp_set_server_config),
+    // service_name <name>
+    //   - '<name>' - specifies the service name.
+    ESP_COMMAND("service_name", 1, 1, ESP_LOC_CONF, esp_set_service_name),
+    // config_id <config_id>
+    //   - '<config_id>' - specifies the service config id.
+    ESP_COMMAND("config_id", 1, 1, ESP_LOC_CONF, esp_set_config_id),
+    // rollout_strategy fixed | managed
+    //   - 'fixed' - service configs are not dynamically updated.
+    //   - 'managed' - service configs are dynamically updated by following
+    //      service-management config rollout.
+    ESP_COMMAND("rollout_strategy", 1, 1, ESP_LOC_CONF,
+                esp_set_rollout_strategy),
 };
 
 // Parses an individual directive supported in the `endpoints` block.
@@ -343,6 +380,14 @@ esp_command_t esp_commands[] = {
 // google_authentication_secret <file path>;
 //   - path to a file containing an auth secret for authenticating Google
 //     services like Service Controller, Cloud Trace API.
+// service_name <name>
+//   - '<name>' - specifies the service name.
+// config_id <config_id>
+//   - '<config_id>' - specifies the service config id.
+// rollout_strategy fixed | managed
+//   - 'fixed' - service configs are not dynamically updated.
+//   - 'managed' - service configs are dynamically updated by following
+//      service-management config rollout.
 //
 // Following directives are supported but actively deprecated.
 // servicecontrol_secret <file path>;
@@ -568,6 +613,17 @@ ngx_int_t ngx_esp_build_server_config(ngx_conf_t *cf, ngx_esp_loc_conf_t *lc,
   if (lc->api_authentication != NGX_CONF_UNSET) {
     config.mutable_api_authentication_config()->set_force_disable(
         lc->api_authentication == 0);
+  }
+
+  // service name, config_id  and rollout_strategy
+  if (lc->service_name.data != nullptr) {
+    config.set_service_name(ngx_str_to_std(lc->service_name));
+  }
+  if (lc->config_id.data != nullptr) {
+    config.set_config_id(ngx_str_to_std(lc->config_id));
+  }
+  if (lc->rollout_strategy.data != nullptr) {
+    config.set_rollout_strategy(ngx_str_to_std(lc->rollout_strategy));
   }
 
   // Reserialize
