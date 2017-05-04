@@ -97,7 +97,7 @@ EOF
 #   whitespace with a single line so they don't need to be manually removed
 #   from the generated changelog.
 
-git log ${LAST_COMMIT}..${SHA} --pretty="* %s%n%w(76,2)%b" \
+git log ${LAST_COMMIT}..${SHA} --pretty="- %s%n%w(76,2)" \
   | perl -pe'BEGIN {undef $/;} s/\s+Change-Id:[^\n]*\s+/\n/gs;' \
     >> "${CHANGELOG}"
 
