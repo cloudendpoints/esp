@@ -92,6 +92,8 @@ var (
 		"serviceruntime.googleapis.com/api/producer/by_consumer/total_latencies":            true,
 		"serviceruntime.googleapis.com/api/producer/by_consumer/request_overhead_latencies": true,
 		"serviceruntime.googleapis.com/api/producer/by_consumer/backend_latencies":          true,
+		"serviceruntime.googleapis.com/api/consumer/streaming_durations":                    true,
+		"serviceruntime.googleapis.com/api/producer/streaming_durations":                    true,
 	}
 	randomLogEntries = []string{
 		"timestamp",
