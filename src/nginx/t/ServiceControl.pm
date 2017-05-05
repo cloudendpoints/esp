@@ -58,6 +58,8 @@ my @http2_random_metrics = (
     'serviceruntime.googleapis.com/api/producer/response_sizes',
     'serviceruntime.googleapis.com/api/consumer/response_bytes',
     'serviceruntime.googleapis.com/api/producer/response_bytes',
+    'serviceruntime.googleapis.com/api/producer/by_consumer/request_sizes',
+    'serviceruntime.googleapis.com/api/producer/by_consumer/response_sizes',
 );
 
 sub gen_metric_int64 {
@@ -382,6 +384,8 @@ sub compare_http2_report_json {
   my $json_obj = ApiManager::decode_json($json);
 
   strip_random_metrics($json_obj, @http2_random_metrics);
+  strip_random_metrics($expected, @http2_random_metrics);
+
   sort_metrics_by_name($json_obj);
   sort_metrics_by_name($expected);
 
