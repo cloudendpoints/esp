@@ -83,14 +83,17 @@ var (
 	timeDistOptions = distOptions{29, 2.0, 1e-6}
 	sizeDistOptions = distOptions{8, 10.0, 1}
 	randomMatrics   = map[string]bool{
-		"serviceruntime.googleapis.com/api/consumer/total_latencies":            true,
-		"serviceruntime.googleapis.com/api/producer/total_latencies":            true,
-		"serviceruntime.googleapis.com/api/consumer/backend_latencies":          true,
-		"serviceruntime.googleapis.com/api/producer/backend_latencies":          true,
-		"serviceruntime.googleapis.com/api/consumer/request_overhead_latencies": true,
-		"serviceruntime.googleapis.com/api/producer/request_overhead_latencies": true,
-		"serviceruntime.googleapis.com/api/consumer/streaming_durations":        true,
-		"serviceruntime.googleapis.com/api/producer/streaming_durations":        true,
+		"serviceruntime.googleapis.com/api/consumer/total_latencies":                        true,
+		"serviceruntime.googleapis.com/api/producer/total_latencies":                        true,
+		"serviceruntime.googleapis.com/api/consumer/backend_latencies":                      true,
+		"serviceruntime.googleapis.com/api/producer/backend_latencies":                      true,
+		"serviceruntime.googleapis.com/api/consumer/request_overhead_latencies":             true,
+		"serviceruntime.googleapis.com/api/producer/request_overhead_latencies":             true,
+		"serviceruntime.googleapis.com/api/producer/by_consumer/total_latencies":            true,
+		"serviceruntime.googleapis.com/api/producer/by_consumer/request_overhead_latencies": true,
+		"serviceruntime.googleapis.com/api/producer/by_consumer/backend_latencies":          true,
+		"serviceruntime.googleapis.com/api/consumer/streaming_durations":                    true,
+		"serviceruntime.googleapis.com/api/producer/streaming_durations":                    true,
 	}
 	randomLogEntries = []string{
 		"timestamp",
@@ -321,11 +324,14 @@ func CreateReport(er *ExpectedReport) servicecontrol.ReportRequest {
 	ms := []*servicecontrol.MetricValueSet{
 		createInt64MetricSet("serviceruntime.googleapis.com/api/consumer/request_count", 1),
 		createInt64MetricSet("serviceruntime.googleapis.com/api/producer/request_count", 1),
+		createInt64MetricSet("serviceruntime.googleapis.com/api/producer/by_consumer/request_count", 1),
 
 		createDistMetricSet(&sizeDistOptions,
 			"serviceruntime.googleapis.com/api/consumer/request_sizes", er.RequestSize),
 		createDistMetricSet(&sizeDistOptions,
 			"serviceruntime.googleapis.com/api/producer/request_sizes", er.RequestSize),
+		createDistMetricSet(&sizeDistOptions,
+			"serviceruntime.googleapis.com/api/producer/by_consumer/request_sizes", er.RequestSize),
 
 		createInt64MetricSet("serviceruntime.googleapis.com/api/consumer/request_bytes", er.RequestBytes),
 		createInt64MetricSet("serviceruntime.googleapis.com/api/producer/request_bytes", er.RequestBytes),
@@ -339,13 +345,16 @@ func CreateReport(er *ExpectedReport) servicecontrol.ReportRequest {
 				"serviceruntime.googleapis.com/api/consumer/response_sizes", er.ResponseSize),
 			createDistMetricSet(&sizeDistOptions,
 				"serviceruntime.googleapis.com/api/producer/response_sizes", er.ResponseSize),
+			createDistMetricSet(&sizeDistOptions,
+				"serviceruntime.googleapis.com/api/producer/by_consumer/response_sizes", er.ResponseSize),
 			createInt64MetricSet("serviceruntime.googleapis.com/api/consumer/response_bytes", er.ResponseBytes),
 			createInt64MetricSet("serviceruntime.googleapis.com/api/producer/response_bytes", er.ResponseBytes))
 	}
 	if er.ErrorType != "" {
 		ms = append(ms,
 			createInt64MetricSet("serviceruntime.googleapis.com/api/consumer/error_count", 1),
-			createInt64MetricSet("serviceruntime.googleapis.com/api/producer/error_count", 1))
+			createInt64MetricSet("serviceruntime.googleapis.com/api/producer/error_count", 1),
+			createInt64MetricSet("serviceruntime.googleapis.com/api/producer/by_consumer/error_count", 1))
 	}
 	sort.Sort(metricSetSorter(ms))
 	op.MetricValueSets = ms
