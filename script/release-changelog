@@ -72,10 +72,10 @@ done
 
 if [ "${DIRECTORY}" != "." ]; then
   push_proxy ${DIRECTORY}
-else
-  VERSION=$(command cat ${ROOT}/src/nginx/version) \
-  || error_exit "Cannot determine release version."
 fi
+
+VERSION=$(command cat ${ROOT}/src/nginx/version) \
+  || error_exit "Cannot determine release version."
 
 echo $(pwd)
 
