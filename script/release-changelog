@@ -36,20 +36,32 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 function usage() {
   [[ -n "${1}" ]] && echo "${1}"
   cat <<EOF
-usage: ${BASH_SOURCE[0]} -s <commit sha> -l <last release sha or tag>
+usage: ${BASH_SOURCE[0]} -s <commit sha> -l <last release sha or tag> -d <directory>
 
 Generates changelog for changes between last release and current release.
 EOF
   exit 1
 }
 
+function push_proxy() {
+  echo "Push directory "
+  pushd ${1}
+}
+
+function pop_proxy() {
+  popd
+}
+
+
 SHA=""
 LAST_COMMIT=""
+DIRECTORY="."
 
-while getopts :s:l: arg; do
+while getopts :s:l:d: arg; do
   case ${arg} in
     s) SHA="${OPTARG}";;
     l) LAST_COMMIT="${OPTARG}";;
+    d) DIRECTORY="${OPTARG}";;
     *) usage "Invalid option: -${OPTARG}";;
   esac
 done
@@ -58,11 +70,18 @@ done
 [[ "${SHA}" =~ ^[0-9a-f]{40}$ ]] || usage "Invalid SHA: ${SHA}."
 [[ -n "${LAST_COMMIT}" ]] || usage "Must provide last commit sha or tag via '-l' parameter."
 
-VERSION=$(command cat ${ROOT}/src/nginx/version) \
+if [ "${DIRECTORY}" != "." ]; then
+  push_proxy ${DIRECTORY}
+else
+  VERSION=$(command cat ${ROOT}/src/nginx/version) \
   || error_exit "Cannot determine release version."
+fi
+
+echo $(pwd)
 
 echo "The change logs from last commit: ${LAST_COMMIT}"
-echo "To SHA: ${SHA}."
+echo "To SHA: ${SHA}"
+echo "In directory: ${DIRECTORY}"
 echo "Please copy this result to the release bug."
 
 CHANGELOG="$(mktemp)"
@@ -71,7 +90,7 @@ trap "rm '${CHANGELOG}'" EXIT
 cat <<EOF > "${CHANGELOG}"
 # Release ${VERSION} $(date +%d-%m-%Y)
 
-TODO: Edit the section below before submitting!
+TODO: Edit the section below before submitting! DIRECTORY ${PWD}
 ===============================================
 
 EOF
@@ -97,13 +116,14 @@ EOF
 #   whitespace with a single line so they don't need to be manually removed
 #   from the generated changelog.
 
+echo $(pwd)
 git log ${LAST_COMMIT}..${SHA} --pretty="- %s%n%w(76,2)" \
   | perl -pe'BEGIN {undef $/;} s/\s+Change-Id:[^\n]*\s+/\n/gs;' \
     >> "${CHANGELOG}"
 
 cat <<EOF >> "${CHANGELOG}"
 
-TODO: Edit the section above before submitting!
+TODO: Edit the section above before submitting! DIRECTORY ${PWD}
 ===============================================
 EOF
 
