@@ -143,3 +143,8 @@ printf '\e[31m
 *            send for review and submit to the release branch.            *
 ***************************************************************************
 \e[0m'
+
+if [ "${DIRECTORY}" != "." ]; then
+  pop_proxy()
+fi
+
