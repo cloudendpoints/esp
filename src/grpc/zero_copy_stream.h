@@ -28,10 +28,10 @@
 
 #include <deque>
 
-#include "contrib/endpoints/src/grpc/transcoding/transcoder_input_stream.h"
 #include "google/protobuf/io/zero_copy_stream.h"
 #include "grpc++/support/byte_buffer.h"
 #include "src/grpc/message_serializer.h"
+#include "src/transcoder_input_stream.h"
 
 namespace google {
 namespace api_manager {
@@ -39,7 +39,7 @@ namespace grpc {
 
 // ZeroCopyInputStream implementation over a stream of gRPC messages.
 class GrpcZeroCopyInputStream
-    : public ::google::api_manager::transcoding::TranscoderInputStream {
+    : public ::google::grpc::transcoding::TranscoderInputStream {
  public:
   GrpcZeroCopyInputStream();
 

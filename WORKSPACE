@@ -26,7 +26,7 @@
 #
 # A Bazel (http://bazel.io) workspace for the Google Cloud Endpoints runtime.
 
-ISTIO_PROXY = "ad79ad0883397afe33fb97c3ada82f37913f8095"
+ISTIO_PROXY = "efa886a48a812c534fcad415c1faeaea265d16ec"
 ESP_TOOL = "ff0d6df7f56ca1c2b229aaadd8abe62cb1d508fb"
 
 git_repository(
@@ -63,6 +63,7 @@ load(
     "@istio_proxy_git//:repositories.bzl",
     "protobuf_repositories",
     "googletest_repositories",
+    "transcoding_repositories",
 )
 
 bind(
@@ -102,6 +103,8 @@ protobuf_repositories()
 googletest_repositories()
 
 grpc_repositories()
+
+transcoding_repositories()
 
 # Workaround for Bazel > 0.4.0 since it needs newer protobuf.bzl from:
 # https://github.com/google/protobuf/pull/2246
