@@ -47,6 +47,11 @@ std::string NgxEspRequest::GetQueryParameters() {
   return ngx_str_to_std(r_->args);
 }
 
+std::string NgxEspRequest::GetRequestPath() {
+  std::string unparsed_str = ngx_str_to_std(r_->unparsed_uri);
+  return unparsed_str.substr(0, unparsed_str.find_first_of('?'));
+}
+
 std::string NgxEspRequest::GetUnparsedRequestPath() {
   return ngx_str_to_std(r_->unparsed_uri);
 }

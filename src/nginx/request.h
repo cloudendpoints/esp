@@ -46,6 +46,7 @@ class NgxEspRequest : public Request {
   virtual std::string GetQueryParameters();
   virtual protocol::Protocol GetFrontendProtocol();
   virtual protocol::Protocol GetBackendProtocol();
+  virtual std::string GetRequestPath();
   virtual std::string GetUnparsedRequestPath();
   virtual std::string GetClientIP();
 
