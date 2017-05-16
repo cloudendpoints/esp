@@ -105,7 +105,6 @@ nginx_suite(
         "grpc_cloud_trace.t",
         "grpc_compression.t",
         "grpc_config_addr.t",
-        "grpc_downstream_flow_control.t",
         "grpc_errors.t",
         "grpc_grpc_fallback.t",
         "grpc_grpc_override.t",
@@ -120,7 +119,9 @@ nginx_suite(
         "grpc_ssl_downstream.t",
         "grpc_streaming.t",
         "grpc_uds.t",
-        "grpc_upstream_flow_control.t",
+        # TODO: https://github.com/cloudendpoints/esp/issues/178
+        #"grpc_downstream_flow_control.t",
+        #"grpc_upstream_flow_control.t",
     ],
     deps = [
         ":perl_library",
