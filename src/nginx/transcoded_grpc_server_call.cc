@@ -152,13 +152,13 @@ void NgxEspTranscodedGrpcServerCall::Finish(
 }
 
 bool NgxEspTranscodedGrpcServerCall::ConvertRequestBody(
-    std::vector<gpr_slice> *out) {
+    std::vector<grpc_slice> *out) {
   const void *buffer = nullptr;
   int size = 0;
   // Get the next translated buffer from the Transcoder & add a slice to the
   // output.
   while (transcoder_->RequestOutput()->Next(&buffer, &size) && size > 0) {
-    out->push_back(gpr_slice_from_copied_buffer(
+    out->push_back(grpc_slice_from_copied_buffer(
         reinterpret_cast<const char *>(buffer), size));
   }
   // Check the status
