@@ -263,7 +263,8 @@ void ProxyFlow::StartDownstreamReadMessage(std::shared_ptr<ProxyFlow> flow) {
   flow->server_call_->Read(&flow->downstream_to_upstream_buffer_,
                            [flow](bool proceed, utils::Status status) {
                              if (proceed) {
-                               StartUpstreamWriteMessage(flow, status == Status::DONE);
+                               StartUpstreamWriteMessage(
+                                   flow, status == Status::DONE);
                              } else {
                                StartUpstreamWritesDone(flow, status);
                              }
@@ -321,11 +322,10 @@ void ProxyFlow::StartUpstreamWriteMessage(std::shared_ptr<ProxyFlow> flow,
       flow->sent_upstream_writes_done_ = true;
     }
     flow->upstream_reader_writer_->WriteLast(
-        flow->downstream_to_upstream_buffer_, ::grpc::WriteOptions(),
-        tag);
+        flow->downstream_to_upstream_buffer_, ::grpc::WriteOptions(), tag);
   } else {
-    flow->upstream_reader_writer_->Write(
-        flow->downstream_to_upstream_buffer_, tag);
+    flow->upstream_reader_writer_->Write(flow->downstream_to_upstream_buffer_,
+                                         tag);
   }
 }
 
