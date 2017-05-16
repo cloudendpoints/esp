@@ -32,7 +32,7 @@
 
 extern "C" {
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/security/util/b64.h"
+#include "src/core/lib/slice/b64.h"
 }
 
 using ::google::protobuf::util::error::UNAVAILABLE;
@@ -145,7 +145,7 @@ Status ProcessDownstreamHeaders(
     // GRPC runtime libraries use "-bin" suffix to detect binary headers and
     // properly apply base64 encoding & decoding as headers are sent and
     // received. So we decode here before passing it to GRPC runtime.
-    if (grpc_is_binary_header(it.first.c_str(), it.first.length())) {
+    if (grpc_is_binary_header(::grpc::SliceReferencingString(it.first))) {
       // Workaround for https://github.com/grpc/grpc/issues/8624
       if (it.second.length() == 0) {
         continue;
@@ -172,7 +172,7 @@ Status ProcessUpstreamHeaders(
   for (auto &it : upstream_headers) {
     std::string key(it.first.data(), it.first.size());
     std::string value;
-    if (grpc_is_binary_header(it.first.data(), it.first.length())) {
+    if (grpc_is_binary_header(::grpc::SliceReferencingString(key))) {
       char *b64_value =
           grpc_base64_encode(it.second.data(), it.second.size(), 0, 0);
       if (b64_value == nullptr) {

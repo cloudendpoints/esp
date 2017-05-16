@@ -131,7 +131,7 @@ grpc_compression_algorithm GetCompressionAlgorithm(ngx_http_request_t *r) {
   grpc_compression_algorithm algorithm =
       grpc_compression_algorithm::GRPC_COMPRESS_NONE;
   grpc_compression_algorithm_parse(
-      reinterpret_cast<const char *>(header->value.data), header->value.len,
+      grpc_slice_from_static_buffer(header->value.data, header->value.len),
       &algorithm);
 
   return algorithm;
