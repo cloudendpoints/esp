@@ -75,6 +75,7 @@ $t->run();
 is($t->waitforsocket("127.0.0.1:${Http2NginxPort}"), 1, 'Nginx socket ready.');
 
 ################################################################################
+<>;
 
 my $test_results = &ApiManager::run_grpc_test($t, <<"EOF");
 server_addr: "127.0.0.1:${Http2NginxPort}"

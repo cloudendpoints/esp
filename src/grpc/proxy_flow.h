@@ -69,7 +69,8 @@ class ProxyFlow {
   static void StartDownstreamReadMessage(std::shared_ptr<ProxyFlow> flow);
   static void StartUpstreamWritesDone(std::shared_ptr<ProxyFlow> flow,
                                       utils::Status status);
-  static void StartUpstreamWriteMessage(std::shared_ptr<ProxyFlow> flow);
+  static void StartUpstreamWriteMessage(std::shared_ptr<ProxyFlow> flow,
+                                        bool last);
 
   // The upstream->downstream functions:
   static void StartUpstreamReadInitialMetadata(std::shared_ptr<ProxyFlow> flow);

@@ -55,6 +55,7 @@ EOF
 ApiManager::write_file_expand($t, 'nginx.conf', <<"EOF");
 %%TEST_GLOBALS%%
 daemon off;
+master_process off;
 events {
   worker_connections 32;
 }
@@ -85,6 +86,7 @@ $t->run();
 is($t->waitforsocket("127.0.0.1:${Http2NginxPort}"), 1, 'Nginx socket ready.');
 
 ################################################################################
+<>;
 my $test_results = &ApiManager::run_grpc_test($t, <<"EOF");
 server_addr: "127.0.0.1:${Http2NginxPort}"
 plans {
@@ -135,8 +137,8 @@ my $expected_report_body = ServiceControl::gen_report_body({
   'http_method' => 'POST',
   'log_message' => 'Method: test.grpc.Test.Echo',
   'response_code' => '200',
-  'request_size' => ($^O eq 'darwin' ? 305 : 307),
-  'request_bytes' => ($^O eq 'darwin' ? 305 : 307),
+  'request_size' => ($^O eq 'darwin' ? 283 : 285),
+  'request_bytes' => ($^O eq 'darwin' ? 283 : 285),
   'streaming_request_message_counts' => 1,
   'streaming_response_message_counts' => 1,
   });
