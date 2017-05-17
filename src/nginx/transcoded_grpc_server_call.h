@@ -36,11 +36,11 @@ extern "C" {
 }
 
 #include "contrib/endpoints/include/api_manager/utils/status.h"
-#include "contrib/endpoints/src/grpc/transcoding/transcoder.h"
 #include "grpc++/support/byte_buffer.h"
 #include "src/grpc/zero_copy_stream.h"
 #include "src/nginx/grpc_server_call.h"
 #include "src/nginx/zero_copy_stream.h"
+#include "src/transcoder.h"
 
 namespace google {
 namespace api_manager {
@@ -68,7 +68,7 @@ class NgxEspTranscodedGrpcServerCall : public NgxEspGrpcServerCall {
       std::multimap<std::string, std::string> response_trailers);
 
   // NgxEspGrpcServerCall implementation
-  virtual bool ConvertRequestBody(std::vector<gpr_slice>* out);
+  virtual bool ConvertRequestBody(std::vector<grpc_slice>* out);
   virtual bool ConvertResponseMessage(const ::grpc::ByteBuffer& msg,
                                       ngx_chain_t* out);
   virtual const ngx_str_t& response_content_type() const;
@@ -78,7 +78,7 @@ class NgxEspTranscodedGrpcServerCall : public NgxEspGrpcServerCall {
       ngx_http_request_t* r,
       std::unique_ptr<NgxRequestZeroCopyInputStream> nginx_request_stream,
       std::unique_ptr<grpc::GrpcZeroCopyInputStream> grpc_response_stream,
-      std::unique_ptr<transcoding::Transcoder> transcoder);
+      std::unique_ptr<::google::grpc::transcoding::Transcoder> transcoder);
 
   // Read the translated response message from the transcoder into an
   // ngx_chain_t.
@@ -96,7 +96,7 @@ class NgxEspTranscodedGrpcServerCall : public NgxEspGrpcServerCall {
   std::unique_ptr<grpc::GrpcZeroCopyInputStream> grpc_response_stream_;
 
   // The transcoder that does the actual translation
-  std::unique_ptr<transcoding::Transcoder> transcoder_;
+  std::unique_ptr<::google::grpc::transcoding::Transcoder> transcoder_;
 };
 
 }  // namespace nginx

@@ -46,22 +46,22 @@ namespace nginx {
 namespace {
 const ngx_str_t kContentTypeApplicationGrpc = ngx_string("application/grpc");
 
-// Builds a gpr_slice containing the same data as is contained in the
+// Builds a grpc_slice containing the same data as is contained in the
 // supplied nginx buffer.
-gpr_slice GprSliceFromNginxBuffer(ngx_buf_t *buf) {
+grpc_slice GrpcSliceFromNginxBuffer(ngx_buf_t *buf) {
   if (!ngx_buf_in_memory(buf) && buf->file) {
     // If the buffer's not in memory, we need to read the contents.
-    gpr_slice result = gpr_slice_malloc(ngx_buf_size(buf));
-    ngx_read_file(buf->file, GPR_SLICE_START_PTR(result), ngx_buf_size(buf),
+    grpc_slice result = grpc_slice_malloc(ngx_buf_size(buf));
+    ngx_read_file(buf->file, GRPC_SLICE_START_PTR(result), ngx_buf_size(buf),
                   buf->file_pos);
     return result;
   }
 
   // Otherwise, just copy the buffer's data.
-  gpr_slice result = gpr_slice_from_copied_buffer(
+  grpc_slice result = grpc_slice_from_copied_buffer(
       reinterpret_cast<char *>(buf->pos), buf->last - buf->pos);
 
-  buf->pos += GPR_SLICE_LENGTH(result);
+  buf->pos += GRPC_SLICE_LENGTH(result);
   return result;
 }
 
@@ -122,13 +122,13 @@ void NgxEspGrpcPassThroughServerCall::Finish(
 }
 
 bool NgxEspGrpcPassThroughServerCall::ConvertRequestBody(
-    std::vector<gpr_slice> *out) {
+    std::vector<grpc_slice> *out) {
   // Turn all incoming buffers into slices.
   ngx_http_request_body_t *body = r_->request_body;
   while (body->bufs) {
     ngx_chain_t *cl = body->bufs;
     body->bufs = cl->next;
-    out->push_back(GprSliceFromNginxBuffer(cl->buf));
+    out->push_back(GrpcSliceFromNginxBuffer(cl->buf));
     cl->next = body->free;
     body->free = cl;
   }
@@ -152,7 +152,7 @@ bool NgxEspGrpcPassThroughServerCall::ConvertResponseMessage(
     msg_deleter.reset(grpc_msg);
   }
 
-  // Since there's no good way to reuse the underlying gpr_slice for
+  // Since there's no good way to reuse the underlying grpc_slice for
   // the nginx buffer, we need to allocate an nginx buffer and copy
   // the data into it.
   size_t buflen = 5;  // Compressed flag + four bytes of length.
@@ -191,10 +191,10 @@ bool NgxEspGrpcPassThroughServerCall::ConvertResponseMessage(
 
   // Fill in the message.
   for (size_t sln = 0; sln < grpc_msg->data.raw.slice_buffer.count; sln++) {
-    gpr_slice *slice = grpc_msg->data.raw.slice_buffer.slices + sln;
-    ngx_memcpy(buf->last, GPR_SLICE_START_PTR(*slice),
-               GPR_SLICE_LENGTH(*slice));
-    buf->last += GPR_SLICE_LENGTH(*slice);
+    grpc_slice *slice = grpc_msg->data.raw.slice_buffer.slices + sln;
+    ngx_memcpy(buf->last, GRPC_SLICE_START_PTR(*slice),
+               GRPC_SLICE_LENGTH(*slice));
+    buf->last += GRPC_SLICE_LENGTH(*slice);
   }
 
   return true;

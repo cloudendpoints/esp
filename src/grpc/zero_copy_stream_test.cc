@@ -46,12 +46,13 @@ class GrpcZeroCopyInputStreamTest : public ::testing::Test {
 typedef std::vector<std::string> SliceData;
 
 grpc_byte_buffer *CreateByteBuffer(const SliceData &slices) {
-  std::vector<gpr_slice> gpr_slices;
+  std::vector<grpc_slice> grpc_slices;
   std::transform(std::begin(slices), std::end(slices),
-                 std::back_inserter(gpr_slices), [](const std::string &slice) {
-                   return gpr_slice_from_copied_buffer(&slice[0], slice.size());
+                 std::back_inserter(grpc_slices), [](const std::string &slice) {
+                   return grpc_slice_from_copied_buffer(&slice[0],
+                                                        slice.size());
                  });
-  return grpc_raw_byte_buffer_create(gpr_slices.data(), gpr_slices.size());
+  return grpc_raw_byte_buffer_create(grpc_slices.data(), grpc_slices.size());
 }
 
 unsigned DelimiterToSize(const unsigned char *delimiter) {

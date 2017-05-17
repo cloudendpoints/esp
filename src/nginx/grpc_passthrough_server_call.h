@@ -64,7 +64,7 @@ class NgxEspGrpcPassThroughServerCall : public NgxEspGrpcServerCall {
       std::multimap<std::string, std::string> response_trailers);
 
   // NgxEspGrpcServerCall implementation
-  virtual bool ConvertRequestBody(std::vector<gpr_slice>* out);
+  virtual bool ConvertRequestBody(std::vector<grpc_slice>* out);
   virtual bool ConvertResponseMessage(const ::grpc::ByteBuffer& msg,
                                       ngx_chain_t* out);
   virtual const ngx_str_t& response_content_type() const;

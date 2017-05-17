@@ -124,8 +124,9 @@ typedef struct {
   // Extensible Service Proxy library interface.
   std::shared_ptr<ApiManager> esp;
 
-  // Transcoder factory
-  std::shared_ptr<transcoding::TranscoderFactory> transcoder_factory;
+  // Transcoder factory map.
+  std::map<std::string, std::shared_ptr<transcoding::TranscoderFactory>>
+      transcoder_factory_map;
 
   unsigned endpoints_block : 1;  // location has `endpoints` block
   unsigned grpc_pass : 1;        // location has `grpc_pass` directive
@@ -155,6 +156,13 @@ typedef struct {
 
   // Server config
   ngx_str_t endpoints_server_config;
+
+  // service name
+  ngx_str_t service_name;
+  // config id
+  ngx_str_t config_id;
+  // rollout strategy
+  ngx_str_t rollout_strategy;
 
   // The map of backends to GRPC stubs.  These are constructed
   // on-demand.
@@ -224,6 +232,8 @@ struct ngx_esp_request_ctx_s {
   NgxEspGrpcServerCall *grpc_server_call;
   // Mark if this request is grpc pass through.
   bool grpc_pass_through;
+  // Mark the backend is grpc.
+  bool grpc_backend;
 
   // RequestHandlerInterface object
   std::unique_ptr<RequestHandlerInterface> request_handler;

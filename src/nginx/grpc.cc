@@ -151,6 +151,7 @@ ngx_int_t GrpcBackendHandler(ngx_http_request_t *r) {
     // request to the handler defined by the grpc_pass block's
     // synthetic location.
 
+    ctx->grpc_backend = true;
     std::shared_ptr<::grpc::GenericStub> stub;
     std::tie(status, stub) = GrpcGetStub(r, espcf, ctx);
 
@@ -177,6 +178,7 @@ ngx_int_t GrpcBackendHandler(ngx_http_request_t *r) {
   } else if (ctx && ctx->request_handler && CanBeTranscoded(ctx)) {
     // Same as the gRPC case. Check whether there's a GRPC backend defined for
     // this request to use.
+    ctx->grpc_backend = true;
     std::shared_ptr<::grpc::GenericStub> stub;
     std::tie(status, stub) = GrpcGetStub(r, espcf, ctx);
 

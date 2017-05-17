@@ -58,7 +58,7 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "@istio_proxy_git//contrib/endpoints/src/grpc/transcoding:transcoder_input_stream",
+        "@httpjson_transcoding//src:transcoder_input_stream",
         "//external:grpc",
         "//external:grpc++",
         "//external:protobuf",

@@ -52,7 +52,7 @@ NgxEspTranscodedGrpcServerCall::NgxEspTranscodedGrpcServerCall(
     ngx_http_request_t *r,
     std::unique_ptr<NgxRequestZeroCopyInputStream> nginx_request_stream,
     std::unique_ptr<grpc::GrpcZeroCopyInputStream> grpc_response_stream,
-    std::unique_ptr<transcoding::Transcoder> transcoder)
+    std::unique_ptr<::google::grpc::transcoding::Transcoder> transcoder)
     : NgxEspGrpcServerCall(r, true),
       nginx_request_stream_(std::move(nginx_request_stream)),
       grpc_response_stream_(std::move(grpc_response_stream)),
@@ -78,7 +78,7 @@ utils::Status NgxEspTranscodedGrpcServerCall::Create(
   }
 
   // Create the Transcoder
-  std::unique_ptr<transcoding::Transcoder> transcoder;
+  std::unique_ptr<::google::grpc::transcoding::Transcoder> transcoder;
   auto protoStatus = ctx->transcoder_factory->Create(
       *ctx->request_handler->method_call(), nginx_request_stream.get(),
       grpc_response_stream.get(), &transcoder);
@@ -152,13 +152,13 @@ void NgxEspTranscodedGrpcServerCall::Finish(
 }
 
 bool NgxEspTranscodedGrpcServerCall::ConvertRequestBody(
-    std::vector<gpr_slice> *out) {
+    std::vector<grpc_slice> *out) {
   const void *buffer = nullptr;
   int size = 0;
   // Get the next translated buffer from the Transcoder & add a slice to the
   // output.
   while (transcoder_->RequestOutput()->Next(&buffer, &size) && size > 0) {
-    out->push_back(gpr_slice_from_copied_buffer(
+    out->push_back(grpc_slice_from_copied_buffer(
         reinterpret_cast<const char *>(buffer), size));
   }
   // Check the status

@@ -83,7 +83,7 @@ class NgxEspGrpcServerCall : public grpc::ServerCall {
   // Returns true if successful; otherwise ConvertRequestBody() must take care
   // of sending the error to the client, finalizing the request and return
   // false.
-  virtual bool ConvertRequestBody(std::vector<gpr_slice>* out) = 0;
+  virtual bool ConvertRequestBody(std::vector<grpc_slice>* out) = 0;
 
   // Converts the gRPC message into a response ngx_chain_t*
   // Returns true if successful; otherwise ConvertResponseMessage() must take
@@ -133,7 +133,7 @@ class NgxEspGrpcServerCall : public grpc::ServerCall {
   std::function<void(bool)> write_continuation_;
   std::function<void(bool, utils::Status)> read_continuation_;
   ::grpc::ByteBuffer* read_msg_;
-  ::std::vector<gpr_slice> downstream_slices_;
+  ::std::vector<grpc_slice> downstream_slices_;
 
   // If true, sending of the headers will be delayed.
   bool delay_downstream_headers_;

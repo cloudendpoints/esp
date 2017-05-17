@@ -47,6 +47,9 @@ my @http1_random_metrics = (
     'serviceruntime.googleapis.com/api/producer/request_overhead_latencies',
     'serviceruntime.googleapis.com/api/consumer/streaming_durations',
     'serviceruntime.googleapis.com/api/producer/streaming_durations',
+    'serviceruntime.googleapis.com/api/producer/by_consumer/total_latencies',
+    'serviceruntime.googleapis.com/api/producer/by_consumer/request_overhead_latencies',
+    'serviceruntime.googleapis.com/api/producer/by_consumer/backend_latencies',
 );
 
 my @http2_random_metrics = (
@@ -55,6 +58,8 @@ my @http2_random_metrics = (
     'serviceruntime.googleapis.com/api/producer/response_sizes',
     'serviceruntime.googleapis.com/api/consumer/response_bytes',
     'serviceruntime.googleapis.com/api/producer/response_bytes',
+    'serviceruntime.googleapis.com/api/producer/by_consumer/request_sizes',
+    'serviceruntime.googleapis.com/api/producer/by_consumer/response_sizes',
 );
 
 sub gen_metric_int64 {
@@ -132,6 +137,7 @@ sub gen_report_labels {
   $labels->{'/status_code'} = $in->{status_code} if exists $in->{status_code};
   $labels->{'/error_type'} = $in->{error_type} if exists $in->{error_type};
   $labels->{'/protocol'} = $in->{protocol} if exists $in->{protocol};
+  $labels->{'servicecontrol.googleapis.com/backend_protocol'} = $in->{backend_protocol} if exists $in->{backend_protocol};
   $labels->{'serviceruntime.googleapis.com/api_version'} = $in->{api_version} if exists $in->{api_version};
 
   if (exists $in->{platform}) {
@@ -205,9 +211,13 @@ sub gen_report_body {
   my @metrics = (
     gen_metric_int64(
       'serviceruntime.googleapis.com/api/producer/request_count', 1),
+    gen_metric_int64(
+      'serviceruntime.googleapis.com/api/producer/by_consumer/request_count', 1),
 
     gen_metric_dist(\%size_distribution,
       'serviceruntime.googleapis.com/api/producer/request_sizes', $in->{request_size}),
+    gen_metric_dist(\%size_distribution,
+      'serviceruntime.googleapis.com/api/producer/by_consumer/request_sizes', $in->{request_size}),
     );
 
   my $send_consumer_metric = (!exists $in->{no_consumer_data}) || (!$in->{no_consumer_data});
@@ -222,6 +232,8 @@ sub gen_report_body {
   if (exists $in->{response_size}) {
     push @metrics, gen_metric_dist(\%size_distribution,
       'serviceruntime.googleapis.com/api/producer/response_sizes', $in->{response_size});
+    push @metrics, gen_metric_dist(\%size_distribution,
+      'serviceruntime.googleapis.com/api/producer/by_consumer/response_sizes', $in->{response_size});
     if ($send_consumer_metric)  {
       push @metrics, gen_metric_dist(\%size_distribution,
               'serviceruntime.googleapis.com/api/consumer/response_sizes', $in->{response_size});
@@ -268,6 +280,8 @@ sub gen_report_body {
   if (exists $in->{error_type}) {
     push @metrics, gen_metric_int64(
       'serviceruntime.googleapis.com/api/producer/error_count', 1);
+    push @metrics, gen_metric_int64(
+      'serviceruntime.googleapis.com/api/producer/by_consumer/error_count', 1);
     if ($send_consumer_metric) {
       push @metrics, gen_metric_int64(
               'serviceruntime.googleapis.com/api/consumer/error_count', 1);
@@ -370,6 +384,8 @@ sub compare_http2_report_json {
   my $json_obj = ApiManager::decode_json($json);
 
   strip_random_metrics($json_obj, @http2_random_metrics);
+  strip_random_metrics($expected, @http2_random_metrics);
+
   sort_metrics_by_name($json_obj);
   sort_metrics_by_name($expected);
 

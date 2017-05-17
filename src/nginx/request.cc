@@ -47,11 +47,16 @@ std::string NgxEspRequest::GetQueryParameters() {
   return ngx_str_to_std(r_->args);
 }
 
+std::string NgxEspRequest::GetRequestPath() {
+  std::string unparsed_str = ngx_str_to_std(r_->unparsed_uri);
+  return unparsed_str.substr(0, unparsed_str.find_first_of('?'));
+}
+
 std::string NgxEspRequest::GetUnparsedRequestPath() {
   return ngx_str_to_std(r_->unparsed_uri);
 }
 
-::google::api_manager::protocol::Protocol NgxEspRequest::GetRequestProtocol() {
+::google::api_manager::protocol::Protocol NgxEspRequest::GetFrontendProtocol() {
   ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
   if (ctx->grpc_pass_through) {
     return ::google::api_manager::protocol::GRPC;
@@ -64,6 +69,16 @@ std::string NgxEspRequest::GetUnparsedRequestPath() {
 #endif
     return ::google::api_manager::protocol::HTTP;
   } else {
+    return ::google::api_manager::protocol::UNKNOWN;
+  }
+}
+
+::google::api_manager::protocol::Protocol NgxEspRequest::GetBackendProtocol() {
+  ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
+  if (ctx->grpc_backend) {
+    return ::google::api_manager::protocol::GRPC;
+  } else {
+    // TODO: determine HTTP or HTTPS for backend.
     return ::google::api_manager::protocol::UNKNOWN;
   }
 }

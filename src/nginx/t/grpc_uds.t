@@ -55,7 +55,6 @@ EOF
 ApiManager::write_file_expand($t, 'nginx.conf', <<"EOF");
 %%TEST_GLOBALS%%
 daemon off;
-master_process off;
 events {
   worker_connections 32;
 }
@@ -70,7 +69,7 @@ http {
         %%TEST_CONFIG%%
         on;
       }
-      grpc_pass 127.0.0.2:${GrpcFallbackPort};
+      grpc_pass unix:/tmp/grpc_socket override;
     }
   }
 }
@@ -79,14 +78,13 @@ EOF
 my $report_done = 'report_done';
 
 $t->run_daemon(\&service_control, $t, $ServiceControlPort, 'servicecontrol.log', $report_done);
-$t->run_daemon(\&ApiManager::grpc_test_server, $t, "127.0.0.1:${GrpcBackendPort}");
+$t->run_daemon(\&ApiManager::grpc_test_server, $t, "unix:/tmp/grpc_socket");
 is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control socket ready.');
-is($t->waitforsocket("127.0.0.1:${GrpcBackendPort}"), 1, 'GRPC test server socket ready.');
+is(ApiManager::wait_for_uds("unix:/tmp/grpc_socket"), 1, 'GRPC test server socket ready.');
 $t->run();
 is($t->waitforsocket("127.0.0.1:${Http2NginxPort}"), 1, 'Nginx socket ready.');
 
 ################################################################################
-<>;
 my $test_results = &ApiManager::run_grpc_test($t, <<"EOF");
 server_addr: "127.0.0.1:${Http2NginxPort}"
 plans {
