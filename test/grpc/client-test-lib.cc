@@ -853,8 +853,12 @@ class ProbeDownstreamMessageLimit {
 
     // Next, send a message.
     std::shared_ptr<Alarm> alarm = *alarmp;
+    pc->writing_ = true;
     pc->stream_rpc_->Write(pc->desc_.request(), new Tag([pc, alarm](bool ok) {
-                             if (!pc->saw_timeout_) {
+                             pc->writing_ = false;
+                             if (pc->saw_timeout_) {
+                               StartWritesDone(pc);
+                             } else {
                                pc->downstream_message_limit_++;
                              }
                              // The write succeeded; cancel the alarm.  This
@@ -879,6 +883,12 @@ class ProbeDownstreamMessageLimit {
                             }));
     }));
 
+    if (!pc->writing_) {
+      StartWritesDone(pc);
+    }
+  }
+
+  static void StartWritesDone(std::shared_ptr<ProbeDownstreamMessageLimit> pc) {
     pc->stream_rpc_->WritesDone(new Tag([pc](bool ok) {
       Status *status = new Status();
       pc->stream_rpc_->Finish(status, new Tag([pc, status](bool ok) {
@@ -916,6 +926,7 @@ class ProbeDownstreamMessageLimit {
   bool saw_timeout_ = false;
   bool cork_finished_ = false;
   bool stream_finished_ = false;
+  bool writing_ = false;
 };
 
 // Probes for the presence of flow control from the server to the
@@ -995,15 +1006,17 @@ class ProbeUpstreamMessageLimit {
 
     // Next, send a message.
     std::shared_ptr<Alarm> alarm = *alarmp;
+    pc->writing_ = true;
     pc->stream_rpc_->Write(pc->desc_.request(), new Tag([pc, alarm](bool ok) {
-                             if (!pc->saw_timeout_) {
+                             pc->writing_ = false;
+                             if (pc->saw_timeout_) {
+                               StartWritesDone(pc);
+                             } else {
                                pc->upstream_message_limit_++;
                              }
                              // The write succeeded; cancel the alarm.  This
-                             // will cause
-                             // the alarm's callback to fire with ok==false, if
-                             // it hasn't
-                             // already fired.
+                             // will cause the alarm's callback to fire with
+                             // ok==false, if it hasn't already fired.
                              alarm->Cancel();
                            }));
   }
@@ -1015,6 +1028,12 @@ class ProbeUpstreamMessageLimit {
     // queued-up messages, so that the RPC can actually finish.
     StartReadStreamMessages(pc);
 
+    if (!pc->writing_) {
+      StartWritesDone(pc);
+    }
+  }
+
+  static void StartWritesDone(std::shared_ptr<ProbeUpstreamMessageLimit> pc) {
     pc->stream_rpc_->WritesDone(new Tag([pc](bool ok) {
       Status *status = new Status();
       pc->stream_rpc_->Finish(
@@ -1038,6 +1057,7 @@ class ProbeUpstreamMessageLimit {
       stream_rpc_;
   int upstream_message_limit_ = 0;
   bool saw_timeout_ = false;
+  bool writing_ = false;
 };
 
 template <class T>
