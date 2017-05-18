@@ -57,21 +57,6 @@ UNIQUE_ID='test'
 VM_IMAGE=''
 ESP_SERVICE_VERSION=''
 
-# To generate new version
-# $ cp test/bookstore/swagger_template.json swagger.json
-# For Prod
-# $ sed -i s|\${ENDPOINT_SERVICE}|testing-dot-endpoints-jenkins.appspot.com|g \
-  # swagger.json
-# For Staging
-# $ sed -i s|\${ENDPOINT_SERVICE}|staging-testing-dot-endpoints-jenkins.appspot.com|g \
-  # swagger.json
-# $ gcloud beta service-management convert-config swagger.json swagger.json
-# $ sed -i s/endpoints-servicecontrol/staging-servicecontrol/g swagger.json
-# For both
-# $ gcloud beta service-management deploy swagger.json
-# Take a note of the version and update here.
-# Once the service is deployed it will take 24h to get to staging.
-
 # Echo and un command, exit on failure
 function run_nonfatal() {
   echo ""
@@ -103,9 +88,9 @@ function sed_i() {
 function delete_service() {
   local esp_service="${1}"
   if ! [[ "${esp_service}" =~ "${DEFAULT_ESP_SERVICE}" ]]; then
-    ${GCLOUD} beta service-management disable \
+    ${GCLOUD} service-management disable \
       "${esp_service}" --project="${PROJECT_ID}"
-    ${GCLOUD} beta service-management delete "${esp_service}" -q
+    ${GCLOUD} service-management delete "${esp_service}" -q
   fi
 }
 
@@ -133,7 +118,7 @@ function set_esp_service_version() {
   local esp_service="${1}"
   local json_path="$(mktemp /tmp/XXXXX.json)"
   local version=''
-  ${GCLOUD} beta service-management describe \
+  ${GCLOUD} service-management describe \
     ${esp_service} --format=json > "${json_path}" || return 1
   version="$(python - << __EOF__ "${json_path}"
 import json
@@ -159,13 +144,13 @@ function create_service() {
   local version=''
 
   echo 'Deploying service'
-  retry -n 3 run ${GCLOUD} beta service-management deploy "${swagger_json}"
+  retry -n 3 run ${GCLOUD} service-management deploy "${swagger_json}"
 
   retry -n 5 set_esp_service_version "${esp_service}" \
     || error_exit 'Could not fetch the service version.'
 
   echo 'Activating service'
-  retry -n 3 run ${GCLOUD} beta service-management enable \
+  retry -n 3 run ${GCLOUD} service-management enable \
     "${esp_service}" --project="${PROJECT_ID}" \
     || error_exit 'Could not activate the service.'
 

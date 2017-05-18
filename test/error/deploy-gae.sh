@@ -47,7 +47,7 @@ done
 echo "Deploying 'error' as ${VERSION} into ${PROJECT} project."
 [[ -x "${GCLOUD}" ]] || usage "Cannot find gcloud, provide it via '-g' flag."
 
-echo Y | ${GCLOUD} beta app deploy app.yaml \
+echo Y | ${GCLOUD} app deploy app.yaml \
   --project "${PROJECT}" \
   --version "${VERSION}" \
   --promote

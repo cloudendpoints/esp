@@ -98,8 +98,8 @@ function deploy_application() {
     # to be the app directory
     cd "${APP_DIR}"
     echo "gcloud deploy command:"
-    echo "${GCLOUD} --project ${PROJECT} beta app deploy ${APP_YAML_FILE} ${ARGS[@]} --no-promote -q"
-    ${GCLOUD} --project "${PROJECT}" beta app deploy \
+    echo "${GCLOUD} --project ${PROJECT} app deploy ${APP_YAML_FILE} ${ARGS[@]} --no-promote -q"
+    ${GCLOUD} --project "${PROJECT}" app deploy \
       "${APP_YAML_FILE}" "${ARGS[@]}" --no-promote -q
   )
 }

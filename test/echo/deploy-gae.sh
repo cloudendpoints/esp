@@ -42,7 +42,7 @@ pushd ${ROOT} > /dev/null
 sed -e "s/\${PROJECT}/${PROJECT}/" \
     -e "s/\${TAG}/${TAG}/"  ./app.yaml.temp > app.yaml
 
-${GCLOUD} --project ${PROJECT} beta app deploy app.yaml $1
+${GCLOUD} --project ${PROJECT} app deploy app.yaml $1
 
 rm app.yaml
 popd > /dev/null

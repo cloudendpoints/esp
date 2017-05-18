@@ -62,7 +62,7 @@ function update_gcloud() {
     || error_exit 'Could not install gcloud'
   echo "Updating gcloud."
   ${SUDO} sed -i -e 's/true/false/' /usr/lib/google-cloud-sdk/lib/googlecloudsdk/core/config.json
-  ${SUDO} ${GCLOUD} -q components update kubectl beta \
+  ${SUDO} ${GCLOUD} -q components update kubectl \
     || error_exit 'Cannot update gcloud'
 }
 

@@ -16,6 +16,6 @@ where you'd like to deploy the sample application.
 
 Step 2: Deploy the sample using `gcloud`:
 
-    gcloud beta app deploy app.yaml --promote --project=<MY_PROJECT_ID>
+    gcloud app deploy app.yaml --promote --project=<MY_PROJECT_ID>
 
 Step 3: Test using the URL: https://${MY_PROJECT_ID}.appspot.com/.
