@@ -85,6 +85,9 @@ COMMAND="$1"
 
 function deploy_application() {
   echo "Deploy GAE instace ${APP_YAML_FILE} to ${VERSION}"
+  
+  echo "gcloud version:"
+  echo "$(gcloud -v)"
 
   APP_DIR="$(dirname ${APP_YAML_FILE})"
 
@@ -95,6 +98,9 @@ function deploy_application() {
     # deploying an endpoints app requires the current directory
     # to be the app directory
     cd "${APP_DIR}"
+    GCLOUD_APP_DEPLOY_COMMAND="
+    echo "gcloud deploy command:"
+    echo "${GCLOUD} --project ${PROJECT} beta app deploy ${APP_YAML_FILE} ${ARGS[@]} --no-promote -q"
     ${GCLOUD} --project "${PROJECT}" beta app deploy \
       "${APP_YAML_FILE}" "${ARGS[@]}" --no-promote -q
   )
