@@ -85,7 +85,6 @@ COMMAND="$1"
 
 function deploy_application() {
   echo "Deploy GAE instace ${APP_YAML_FILE} to ${VERSION}"
-  
   echo "gcloud version:"
   echo "$(gcloud -v)"
 
