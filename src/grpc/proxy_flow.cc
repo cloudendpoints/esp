@@ -297,36 +297,32 @@ void ProxyFlow::StartUpstreamWritesDone(std::shared_ptr<ProxyFlow> flow,
 
 void ProxyFlow::StartUpstreamWriteMessage(std::shared_ptr<ProxyFlow> flow,
                                           bool last) {
-  flow->server_call_->UpdateRequestMessageStat(
-      static_cast<int64_t>(flow->downstream_to_upstream_buffer_.Length()));
-  auto tag = flow->async_grpc_queue_->MakeTag([flow, last](bool ok) {
-    flow->downstream_to_upstream_buffer_.Clear();
-    if (!ok) {
-      // Upstream is not writable, call finish to get status and
-      // and finish the call
-      StartUpstreamFinish(flow);
+  ::grpc::WriteOptions options;
+  if (last) {
+    options.set_last_message();
+    std::lock_guard<std::mutex> lock(flow->mu_);
+    if (flow->sent_upstream_writes_done_) {
       return;
     }
-    // Now that the write has completed, it's safe to start the
-    // next read.
-    if (!last) {
-      StartDownstreamReadMessage(flow);
-    }
-  });
-  if (last) {
-    {
-      std::lock_guard<std::mutex> lock(flow->mu_);
-      if (flow->sent_upstream_writes_done_) {
-        return;
-      }
-      flow->sent_upstream_writes_done_ = true;
-    }
-    flow->upstream_reader_writer_->WriteLast(
-        flow->downstream_to_upstream_buffer_, ::grpc::WriteOptions(), tag);
-  } else {
-    flow->upstream_reader_writer_->Write(flow->downstream_to_upstream_buffer_,
-                                         tag);
+    flow->sent_upstream_writes_done_ = true;
   }
+  flow->server_call_->UpdateRequestMessageStat(
+      static_cast<int64_t>(flow->downstream_to_upstream_buffer_.Length()));
+  flow->upstream_reader_writer_->Write(
+      flow->downstream_to_upstream_buffer_,
+      options,
+      flow->async_grpc_queue_->MakeTag([flow](bool ok) {
+        flow->downstream_to_upstream_buffer_.Clear();
+        if (!ok) {
+          // Upstream is not writable, call finish to get status and
+          // and finish the call
+          StartUpstreamFinish(flow);
+          return;
+        }
+        // Now that the write has completed, it's safe to start the
+        // next read.
+        StartDownstreamReadMessage(flow);
+      }));
 }
 
 void ProxyFlow::StartUpstreamReadInitialMetadata(
