@@ -79,9 +79,9 @@ $t->run();
 is($t->waitforsocket("127.0.0.1:${Http2NginxPort}"), 1, 'Nginx socket ready.');
 
 ################################################################################
-my $result = &ApiManager::run_grpc_interop_stress_test($t, $GrpcBackendPort, $MetricsPort,
+my $result = &ApiManager::run_grpc_interop_stress_test($t, $Http2NginxPort, $MetricsPort,
     "empty_unary:10,large_unary:10,empty_stream:10,client_streaming:10,ping_pong:20,server_streaming:10,status_code_and_message:10,custom_metadata:10", 
-    2);
+    10);
 is($result, 0, "interop stress test completed as expected.");
 
 $t->stop_daemons();
