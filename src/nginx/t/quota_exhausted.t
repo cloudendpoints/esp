@@ -157,7 +157,7 @@ like( $error_response_headers, qr/HTTP\/1\.1 429/,
 is( $error_response_body, <<'EOF', 'Shelves returned in the response body.' );
 {
  "code": 8,
- "message": "Quota allocation failed.",
+ "message": "Insufficient tokens for quota group and limit 'apiWriteQpsPerProject_LOW' of service 'test.appspot.com', using the limit by ID 'container:123123'.",
  "details": [
   {
    "@type": "type.googleapis.com/google.rpc.DebugInfo",
@@ -245,7 +245,7 @@ sub servicecontrol {
 operation_id: "006eaa26-5c2f-41bc-b6d8-0972eff8bdf6"
 allocate_errors {
   code: RESOURCE_EXHAUSTED
-  description: "Insufficient tokens for quota group and limit \'apiWriteQpsPerProject_LOW\' of service \'jaebonginternal.sandbox.google.com\', using the limit by ID \'container:1002409420961\'."
+  description: "Insufficient tokens for quota group and limit \'apiWriteQpsPerProject_LOW\' of service \'test.appspot.com\', using the limit by ID \'container:123123\'."
 }
 service_config_id: "2017-02-08r9"
 EOF
