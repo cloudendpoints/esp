@@ -103,7 +103,7 @@ like($test_results, qr/$test_results_expected/m, 'Client tests completed as expe
 if ($test_results =~ /$test_results_expected/) {
   my $message_limit = $1;
 
-  cmp_ok($message_limit, '<', 10000, 'upstream->downstream is throttled');
+  cmp_ok($message_limit, '<', 40000, 'upstream->downstream is throttled');
 
 } else {
   fail('Able to pull out test results');
