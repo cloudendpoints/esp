@@ -149,22 +149,6 @@ nginx_suite(
 nginx_suite(
     size = "medium",
     data = [
-        "@org_golang_google_grpc//interop/server",
-        "@org_golang_google_grpc//stress/client",
-    ],
-    nginx = "//src/nginx/main:nginx-esp",
-    tests = [
-        "grpc_interop_ministress.t",
-    ],
-    deps = [
-        ":perl_library",
-    ],
-)
-
-
-nginx_suite(
-    size = "medium",
-    data = [
         "//test/grpc:grpc-test-client",
         "//test/grpc:grpc-test-server",
     ],

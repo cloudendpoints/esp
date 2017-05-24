@@ -30,48 +30,36 @@ load("@io_bazel_rules_go//go:def.bzl", "new_go_repository")
 def grpc_go_repositories():
     new_go_repository(
         name = "org_golang_google_grpc",
-        commit = "9bf8ea0a8282ebecd1aa474c926e3028f5c22a4c",
+        commit = "708a7f9f3283aa2d4f6132d287d78683babe55c8",
         importpath = "google.golang.org/grpc",
     )
 
     new_go_repository(
         name = "com_github_golang_protobuf",
-        commit = "fec3b39b059c0f88fa6b20f5ed012b1aa203a8b4",
+        commit = "8ee79997227bf9b34611aee7946ae64735e6fd93",
         importpath = "github.com/golang/protobuf",
     )
 
     new_go_repository(
-        name = "org_golang_google_genproto",
-        commit = "bb3573be0c484136831138976d444b8754777aff",
-        importpath = "google.golang.org/genproto",
-    )
-
-    new_go_repository(
         name = "org_golang_x_net",
-        commit = "513929065c19401a1c7b76ecd942f9f86a0c061b",
+        commit = "a689eb3bc4b53af70390acc3cf68c9f549b6b8d6",
         importpath = "golang.org/x/net",
     )
 
     new_go_repository(
         name = "org_golang_x_oauth2",
-        commit = "f047394b6d14284165300fd82dad67edb3a4d7f6",
+        commit = "de0725b330ab43c1a3d6c84d961cf01183783f1e",
         importpath = "golang.org/x/oauth2",
     )
 
     new_go_repository(
         name = "com_google_cloud_go",
-        commit = "0625e1e4bfc1aa7a07d6285541fa9020feab1013",
+        commit = "513b07bb7468fa6d8c59519f35b66456bce959b5",
         importpath = "cloud.google.com/go",
     )
 
     new_go_repository(
         name = "com_github_googleapis_gax_go",
-        commit = "9af46dd5a1713e8b5cd71106287eba3cefdde50b",
+        commit = "da06d194a00e19ce00d9011a13931c3f6f6887c7",
         importpath = "github.com/googleapis/gax-go",
-    )
-
-    new_go_repository(
-        name = "org_golang_x_text",
-        commit = "19e51611da83d6be54ddafce4a4af510cb3e9ea4",
-        importpath = "golang.org/x/text",
     )
