@@ -51,27 +51,27 @@ namespace nginx {
 namespace {
 
 // Returns a character at a logical offset within a vector of slices.
-unsigned char GetByte(const std::vector<grpc_slice> &slices, size_t offset) {
+unsigned char GetByte(const std::vector<gpr_slice> &slices, size_t offset) {
   for (const auto &it : slices) {
-    if (offset < GRPC_SLICE_LENGTH(it)) {
-      return GRPC_SLICE_START_PTR(it)[offset];
+    if (offset < GPR_SLICE_LENGTH(it)) {
+      return GPR_SLICE_START_PTR(it)[offset];
     }
-    offset -= GRPC_SLICE_LENGTH(it);
+    offset -= GPR_SLICE_LENGTH(it);
   }
   return '\0';
 }
 
 // Trims some bytes from the front of vector of slices, removing
 // slices as needed.
-void TrimFront(std::vector<grpc_slice> *slices, size_t count) {
+void TrimFront(std::vector<gpr_slice> *slices, size_t count) {
   while (count) {
-    grpc_slice &head = slices->front();
-    if (GRPC_SLICE_LENGTH(head) <= count) {
-      count -= GRPC_SLICE_LENGTH(head);
-      grpc_slice_unref(head);
+    gpr_slice &head = slices->front();
+    if (GPR_SLICE_LENGTH(head) <= count) {
+      count -= GPR_SLICE_LENGTH(head);
+      gpr_slice_unref(head);
       slices->erase(slices->begin());
     } else {
-      head = grpc_slice_sub_no_ref(head, count, GRPC_SLICE_LENGTH(head));
+      head = gpr_slice_sub_no_ref(head, count, GPR_SLICE_LENGTH(head));
       break;
     }
   }
@@ -131,7 +131,7 @@ grpc_compression_algorithm GetCompressionAlgorithm(ngx_http_request_t *r) {
   grpc_compression_algorithm algorithm =
       grpc_compression_algorithm::GRPC_COMPRESS_NONE;
   grpc_compression_algorithm_parse(
-      grpc_slice_from_static_buffer(header->value.data, header->value.len),
+      reinterpret_cast<const char *>(header->value.data), header->value.len,
       &algorithm);
 
   return algorithm;
@@ -187,7 +187,7 @@ NgxEspGrpcServerCall::~NgxEspGrpcServerCall() {
     }
   }
   for (auto &slice : downstream_slices_) {
-    grpc_slice_unref(slice);
+    gpr_slice_unref(slice);
   }
   downstream_slices_.clear();
 }
@@ -525,7 +525,7 @@ bool NgxEspGrpcServerCall::TryReadDownstreamMessage() {
 
   size_t buflen = 0;
   for (auto it : downstream_slices_) {
-    buflen += GRPC_SLICE_LENGTH(it);
+    buflen += GPR_SLICE_LENGTH(it);
   }
   ngx_log_debug1(
       NGX_LOG_DEBUG_HTTP, r_->connection->log, 0,
@@ -569,12 +569,12 @@ bool NgxEspGrpcServerCall::TryReadDownstreamMessage() {
   auto it = downstream_slices_.begin();
   size_t prefixlen =
       0;  // The number of bytes in downstream_slices_ before *it.
-  while (prefixlen < msglen && GRPC_SLICE_LENGTH(*it) <= (msglen - prefixlen)) {
-    prefixlen += GRPC_SLICE_LENGTH(*it);
+  while (prefixlen < msglen && GPR_SLICE_LENGTH(*it) <= (msglen - prefixlen)) {
+    prefixlen += GPR_SLICE_LENGTH(*it);
     ++it;
   }
 
-  grpc_slice remainder;
+  gpr_slice remainder;
   if (prefixlen < msglen) {
     // We need to use part of the contents of the slice at *it, but
     // not all of the contents.  Save the remainder off on the side
@@ -582,8 +582,8 @@ bool NgxEspGrpcServerCall::TryReadDownstreamMessage() {
     // trimmed slice (i.e. what we want for building the message byte
     // buffer), and advance to the next slice.  After this, the slices
     // [downstream_slices_->begin(), it) are the message contents.
-    remainder = grpc_slice_sub(*it, msglen - prefixlen, GRPC_SLICE_LENGTH(*it));
-    *it = grpc_slice_sub_no_ref(*it, 0, msglen - prefixlen);
+    remainder = gpr_slice_sub(*it, msglen - prefixlen, GPR_SLICE_LENGTH(*it));
+    *it = gpr_slice_sub_no_ref(*it, 0, msglen - prefixlen);
     ++it;
   }
 
@@ -593,18 +593,18 @@ bool NgxEspGrpcServerCall::TryReadDownstreamMessage() {
   std::vector<::grpc::Slice> slices;
 
   if (compressed_flag == 1) {
-    grpc_slice_buffer input;
-    grpc_slice_buffer_init(&input);
-    grpc_slice_buffer_addn(&input, downstream_slices_.data(),
-                           it - downstream_slices_.begin());
+    gpr_slice_buffer input;
+    gpr_slice_buffer_init(&input);
+    gpr_slice_buffer_addn(&input, downstream_slices_.data(),
+                          it - downstream_slices_.begin());
 
-    grpc_slice_buffer output;
-    grpc_slice_buffer_init(&output);
+    gpr_slice_buffer output;
+    gpr_slice_buffer_init(&output);
 
     if (grpc_msg_decompress(&exec_ctx, GetCompressionAlgorithm(r_), &input,
                             &output) != 1) {
-      grpc_slice_buffer_destroy(&input);
-      grpc_slice_buffer_destroy(&output);
+      gpr_slice_buffer_destroy(&input);
+      gpr_slice_buffer_destroy(&output);
       CompletePendingRead(false,
                           utils::Status(google::protobuf::util::error::INTERNAL,
                                         "Failed to decompress GRPC message",
@@ -615,16 +615,16 @@ bool NgxEspGrpcServerCall::TryReadDownstreamMessage() {
 
     slices.reserve(output.count);
     std::transform(output.slices, output.slices + output.count,
-                   std::back_inserter(slices), [](grpc_slice &slice) {
+                   std::back_inserter(slices), [](gpr_slice &slice) {
                      return ::grpc::Slice(slice, ::grpc::Slice::ADD_REF);
                    });
 
-    grpc_slice_buffer_destroy(&input);
-    grpc_slice_buffer_destroy(&output);
+    gpr_slice_buffer_destroy(&input);
+    gpr_slice_buffer_destroy(&output);
   } else {
     slices.reserve(it - downstream_slices_.begin());
     std::transform(downstream_slices_.begin(), it, std::back_inserter(slices),
-                   [](grpc_slice &slice) {
+                   [](gpr_slice &slice) {
                      return ::grpc::Slice(slice, ::grpc::Slice::STEAL_REF);
                    });
   }
