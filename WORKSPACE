@@ -26,7 +26,7 @@
 #
 # A Bazel (http://bazel.io) workspace for the Google Cloud Endpoints runtime.
 
-ISTIO_PROXY = "f9bf1d98295a17b67f7af5f78aa2f99f6f4a02d8"
+ISTIO_PROXY = "729519e217a4ca873b33d330b4cdf6488dd5a319"
 ESP_TOOL = "ff0d6df7f56ca1c2b229aaadd8abe62cb1d508fb"
 
 git_repository(
@@ -48,10 +48,6 @@ bind(
     actual = "@boringssl//:ssl",
 )
 
-load("//:repositories.bzl", "cares_repositories")
-
-cares_repositories()
-
 git_repository(
     name = "istio_proxy_git",
     commit = ISTIO_PROXY,
@@ -60,14 +56,13 @@ git_repository(
 
 load(
     "@istio_proxy_git//contrib/endpoints:repositories.bzl",
+    "grpc_repositories",
     "servicecontrol_client_repositories",
 )
 load(
     "@istio_proxy_git//:repositories.bzl",
     "protobuf_repositories",
-    "googleapis_repositories",
     "googletest_repositories",
-    "grpc_repositories",
     "transcoding_repositories",
 )
 
@@ -104,8 +99,6 @@ bind(
 servicecontrol_client_repositories()
 
 protobuf_repositories()
-
-googleapis_repositories()
 
 googletest_repositories()
 

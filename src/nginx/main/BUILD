@@ -155,7 +155,7 @@ genrule(
         "@nginx//:LICENSE",
         "@boringssl//:LICENSE",
         "@grpc_git//:LICENSE",
-        "@grpc_git//third_party/nanopb:LICENSE.txt",
+        "@nanopb_git//:LICENSE.txt",
         "@nginx_pcre//:LICENCE",
         "@nginx_zlib//:README",
         "@protobuf_git//:LICENSE",
@@ -175,7 +175,7 @@ genrule(
           "echo \"\n\ngRPC license:\n=============\n\" >> $(@);" +
           "cat $(location @grpc_git//:LICENSE) >> $(@);" +
           "echo \"\n\nNanopb license:\n===============\n\" >> $(@);" +
-          "cat $(location @grpc_git//third_party/nanopb:LICENSE.txt) >> $(@);" +
+          "cat $(location @nanopb_git//:LICENSE.txt) >> $(@);" +
           "echo \"\n\nNGINX license:\n==============\n\" >> $(@);" +
           "cat $(location @nginx//:LICENSE) >> $(@);" +
           "echo \"\n\nPCRE license:\n=============\n\" >> $(@);" +

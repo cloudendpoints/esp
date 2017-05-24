@@ -381,6 +381,10 @@ class EchoStream {
   }
 
   static void StartFinish(std::shared_ptr<EchoStream> es) {
+    if (!es->started_done_) {
+      StartDone(es);
+      return;
+    }
     if (es->started_finish_) {
       return;
     }

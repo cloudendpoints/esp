@@ -32,7 +32,7 @@
 
 extern "C" {
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/slice/b64.h"
+#include "src/core/lib/security/util/b64.h"
 }
 
 using ::google::protobuf::util::error::UNAVAILABLE;
@@ -145,7 +145,7 @@ Status ProcessDownstreamHeaders(
     // GRPC runtime libraries use "-bin" suffix to detect binary headers and
     // properly apply base64 encoding & decoding as headers are sent and
     // received. So we decode here before passing it to GRPC runtime.
-    if (grpc_is_binary_header(::grpc::SliceReferencingString(it.first))) {
+    if (grpc_is_binary_header(it.first.c_str(), it.first.length())) {
       // Workaround for https://github.com/grpc/grpc/issues/8624
       if (it.second.length() == 0) {
         continue;
@@ -172,7 +172,7 @@ Status ProcessUpstreamHeaders(
   for (auto &it : upstream_headers) {
     std::string key(it.first.data(), it.first.size());
     std::string value;
-    if (grpc_is_binary_header(::grpc::SliceReferencingString(key))) {
+    if (grpc_is_binary_header(it.first.data(), it.first.length())) {
       char *b64_value =
           grpc_base64_encode(it.second.data(), it.second.size(), 0, 0);
       if (b64_value == nullptr) {
@@ -263,11 +263,14 @@ void ProxyFlow::StartDownstreamReadMessage(std::shared_ptr<ProxyFlow> flow) {
   flow->server_call_->Read(&flow->downstream_to_upstream_buffer_,
                            [flow](bool proceed, utils::Status status) {
                              if (proceed) {
-                               StartUpstreamWriteMessage(
-                                   flow, status == Status::DONE);
-                             } else {
-                               StartUpstreamWritesDone(flow, status);
+                               StartUpstreamWriteMessage(flow);
+                               if (status == Status::DONE) {
+                                 status = Status::OK;
+                               } else {
+                                 return;
+                               }
                              }
+                             StartUpstreamWritesDone(flow, status);
                            });
 }
 
@@ -295,21 +298,11 @@ void ProxyFlow::StartUpstreamWritesDone(std::shared_ptr<ProxyFlow> flow,
       }));
 }
 
-void ProxyFlow::StartUpstreamWriteMessage(std::shared_ptr<ProxyFlow> flow,
-                                          bool last) {
-  ::grpc::WriteOptions options;
-  if (last) {
-    options.set_last_message();
-    std::lock_guard<std::mutex> lock(flow->mu_);
-    if (flow->sent_upstream_writes_done_) {
-      return;
-    }
-    flow->sent_upstream_writes_done_ = true;
-  }
+void ProxyFlow::StartUpstreamWriteMessage(std::shared_ptr<ProxyFlow> flow) {
   flow->server_call_->UpdateRequestMessageStat(
       static_cast<int64_t>(flow->downstream_to_upstream_buffer_.Length()));
   flow->upstream_reader_writer_->Write(
-      flow->downstream_to_upstream_buffer_, options,
+      flow->downstream_to_upstream_buffer_,
       flow->async_grpc_queue_->MakeTag([flow](bool ok) {
         flow->downstream_to_upstream_buffer_.Clear();
         if (!ok) {
