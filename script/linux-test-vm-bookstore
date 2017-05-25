@@ -42,8 +42,6 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 API_KEY=''
 BUCKET=''
 DURATION_IN_HOUR=0
-ENABLE_ENDPOINTS='false'
-ENABLE_FLEX='false'
 GAE_VERSION=''
 IMAGE_NAME="gcr.io/endpointsv2/endpoints-runtime-flex:debian-git-$(git log -1 --pretty=format:%H)"
 KEEP_VM='false'
@@ -60,8 +58,6 @@ function test_filename () {
   local endpoints='on'
   local test_type=''
 
-  [[ "${ENABLE_FLEX}" == 'false' ]] && flex='off'
-  [[ "${ENABLE_ENDPOINTS}" == 'false' ]] && endpoints='off'
   [[ ${DURATION_IN_HOUR} -gt 0 ]] && test_type='long-run-test_'
 
   echo "${test_type}flex-${flex}-endpoints-${endpoints}"
@@ -77,11 +73,6 @@ function cleanup() {
   # Delete directory created by gcloud.
   rm -rf "${APP_DIR}/endpoints"
 
-  # deploying a flex app generates some files that cause
-  # subsequent deployments to fail
-  [[ "${ENABLE_FLEX}" == 'true' ]] && \
-    rm -rf "${APP_DIR}/source_context*.json" "${APP_DIR}/Dockerfile"
-
   [[ "${KEEP_VM}" == 'true' ]] \
     || "${ROOT}/script/linux-gae-instance" \
           -v "${GAE_VERSION}" \
@@ -92,13 +83,11 @@ function cleanup() {
 }
 
 
-while getopts :a:b:defi:kLl:p:v: arg; do
+while getopts :a:b:di:kLl:p:v: arg; do
   case ${arg} in
     a) API_KEY="${OPTARG}";;
     b) BUCKET="${OPTARG}";;
     d) USE_LONG_LIFE_TOKEN='true';;
-    e) ENABLE_ENDPOINTS='true';;
-    f) ENABLE_FLEX='true';;
     i) IMAGE_NAME="${OPTARG}";;
     k) KEEP_VM='true';;
     L) USE_LATEST_VERSION='true';;
@@ -136,16 +125,7 @@ echo "PROJECT_ID: ${PROJECT_ID}"
 echo "IMAGE_NAME: ${IMAGE_NAME}"
 echo "APP_VERSION: ${APP_VERSION}"
 echo "GAE_VERSION: ${GAE_VERSION}"
-echo "ENABLE_ENDPOINTS: ${ENABLE_ENDPOINTS}"
-echo "ENABLE_FLEX: ${ENABLE_FLEX}"
 
-if [[ "${ENABLE_FLEX}" == 'true' ]]; then
-  APPENGINE_ENV='env: flex'
-else
-  APPENGINE_ENV='vm: true'
-fi
-
-echo "APPENGINE_ENV: ${APPENGINE_ENV}"
 
 APP_DIR="${ROOT}/test/bookstore"
 APP_YAML="${APP_DIR}/app_esp.yaml"
@@ -153,11 +133,9 @@ CUSTOM_IMAGE="gae_nginx_proxy_image_name: ${IMAGE_NAME}"
 [[ "${USE_LATEST_VERSION}" == 'true' ]] && CUSTOM_IMAGE=''
 
 echo "Replaces environment."
-sed -i "s|\${MY_PROJECT_ID}|${PROJECT_ID}|g" "${APP_DIR}/swagger.json"
 sed -i "s|\${VERSION}|${APP_VERSION}|g" "${APP_DIR}/bookstore.js"
+sed -i "s|\${MY_PROJECT_ID}|${PROJECT_ID}|g" "${APP_YAML}"
 sed -i "s|\${CUSTOM_IMAGE}|${CUSTOM_IMAGE}|g" "${APP_YAML}"
-sed -i "s|\${ENABLE_ENDPOINTS}|${ENABLE_ENDPOINTS}|g" "${APP_YAML}"
-sed -i "s|\${APPENGINE_ENV}|${APPENGINE_ENV}|g" "${APP_YAML}"
 
 cat "${APP_YAML}"
 
@@ -243,17 +221,10 @@ JSON_FILE="${LOG_DIRECTORY}/${TEST_ID}.json"
     fi
     echo "Auth token is: ${JWT_TOKEN}"
 
-    if [[ "${ENABLE_ENDPOINTS}" == 'true' ]]; then
-      echo "Test bookstore with endpoints=on."
-      "${ROOT}/test/client/esp_bookstore_test.py" \
-        --host="${HOST}" --endpoints=true \
-        --api_key="${API_KEY}" --auth_token="${JWT_TOKEN}" \
-        --verbose=true
-    else
-      echo "Test bookstore with endpoints=off."
-      "${ROOT}/test/client/esp_bookstore_test.py" \
-        --host="${HOST}" --endpoints=false --verbose=true
-    fi
+    "${ROOT}/test/client/esp_bookstore_test.py" \
+      --host="${HOST}" --endpoints=true \
+      --api_key="${API_KEY}" --auth_token="${JWT_TOKEN}" \
+      --verbose=true
 
     [[ ${?} -eq 0 ]] \
       || ((BOOKSTORE_FAILURES++))
@@ -299,8 +270,7 @@ if [[ -n "${BUCKET}" ]] ; then
   echo "Uploading NGINX server logs to ${BUCKET}."
   "${ROOT}/script/linux-gae-instance" \
     -v "${GAE_VERSION}" -p "${PROJECT_ID}" -d "${LOG_DIRECTORY}" nginx-logs \
-    && gsutil -h "Content-Type:text/plain" -m cp -r "${LOG_DIRECTORY}" "${BUCKET}/${GAE_VERSION}" \
-    || error_exit "Cannot download NGINX logs."
+    && gsutil -h "Content-Type:text/plain" -m cp -r "${LOG_DIRECTORY}" "${BUCKET}/${GAE_VERSION}"
 fi
 
 exit ${RESULT}

@@ -23,7 +23,7 @@
 # SUCH DAMAGE.
 
 runtime: nodejs
-${APPENGINE_ENV}
+env: flex
 api_version: 1
 service: default
 
@@ -35,12 +35,14 @@ resources:
 manual_scaling:
   instances: 1
 
+# Hard code the service name and config_id
+endpoints_api_service:
+  name: "${MY_PROJECT_ID}.appspot.com"
+  config_id: "2017-05-25r0"
+
 beta_settings:
   allow_ssh: true
   ${CUSTOM_IMAGE}
-  service_account_scopes: compute,devstorage.full_control,appengine.apis,servicecontrol
-  use_endpoints_api_management: ${ENABLE_ENDPOINTS}
-  endpoints_swagger_spec_file: swagger.json
 
 skip_files:
 - ^(.*/)?#.*#$
