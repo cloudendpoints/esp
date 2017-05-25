@@ -68,7 +68,7 @@ DOCKER_SLAVES = [
 // parameter.
 // Please Update script/validate_release.py when adding or removing long-run-test.
 RELEASE_QUALIFICATION_BRANCHES = [
-    'flex-off-endpoints-on',
+    'flex',
     'gce-debian-8',
     'gke-tight-https',
     'gke-tight-http2-echo',
@@ -308,14 +308,9 @@ def e2eTest(nodeLabel) {
           e2eGKE('loose', 'https')
         }
       }],
-      ['flex-off-endpoints-on', {
+      ['flex', {
         node(nodeLabel) {
-          e2eFlex(true, false)
-        }
-      }],
-      ['flex-off-endpoints-off', {
-        node(nodeLabel) {
-          e2eFlex(false, false)
+          e2eFlex()
         }
       }],
       ['gke-tight-http2-echo', {
@@ -634,7 +629,7 @@ def flexPerformance() {
       "-b ${logBucket}")
 }
 
-def e2eFlex(endpoints, flex) {
+def e2eFlex() {
   setupNode()
   fastUnstash('tools')
   def espImgFlex = espFlexDockerImage()
@@ -642,13 +637,9 @@ def e2eFlex(endpoints, flex) {
   def skipCleanup = getParam('SKIP_CLEANUP', false) ? '-k' : ''
   def logBucket = "gs://${BUCKET}/${GIT_SHA}/logs"
   def durationHour = getParam('DURATION_HOUR', 0)
-  def endpointsFlag = endpoints ? '-e ' : ''
-  def flexFlag = flex ? '-f ' : ''
   def useLatestVersion = getParam('USE_LATEST_RELEASE', false) ? '-L ' : ''
 
   sh("script/linux-test-vm-bookstore " +
-      "${endpointsFlag}" +
-      "${flexFlag}" +
       "-v ${rcTestVersion} " +
       "-i ${espImgFlex} " +
       "-l ${durationHour} " +
