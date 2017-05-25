@@ -270,8 +270,7 @@ if [[ -n "${BUCKET}" ]] ; then
   echo "Uploading NGINX server logs to ${BUCKET}."
   "${ROOT}/script/linux-gae-instance" \
     -v "${GAE_VERSION}" -p "${PROJECT_ID}" -d "${LOG_DIRECTORY}" nginx-logs \
-    && gsutil -h "Content-Type:text/plain" -m cp -r "${LOG_DIRECTORY}" "${BUCKET}/${GAE_VERSION}" \
-    || error_exit "Cannot download NGINX logs."
+    && gsutil -h "Content-Type:text/plain" -m cp -r "${LOG_DIRECTORY}" "${BUCKET}/${GAE_VERSION}"
 fi
 
 exit ${RESULT}
