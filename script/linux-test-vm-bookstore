@@ -221,17 +221,10 @@ JSON_FILE="${LOG_DIRECTORY}/${TEST_ID}.json"
     fi
     echo "Auth token is: ${JWT_TOKEN}"
 
-    if [[ "${ENABLE_ENDPOINTS}" == 'true' ]]; then
-      echo "Test bookstore with endpoints=on."
-      "${ROOT}/test/client/esp_bookstore_test.py" \
-        --host="${HOST}" --endpoints=true \
-        --api_key="${API_KEY}" --auth_token="${JWT_TOKEN}" \
-        --verbose=true
-    else
-      echo "Test bookstore with endpoints=off."
-      "${ROOT}/test/client/esp_bookstore_test.py" \
-        --host="${HOST}" --endpoints=false --verbose=true
-    fi
+    "${ROOT}/test/client/esp_bookstore_test.py" \
+      --host="${HOST}" --endpoints=true \
+      --api_key="${API_KEY}" --auth_token="${JWT_TOKEN}" \
+      --verbose=true
 
     [[ ${?} -eq 0 ]] \
       || ((BOOKSTORE_FAILURES++))
