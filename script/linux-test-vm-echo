@@ -81,8 +81,8 @@ echo "GAE_VERSION: ${GAE_VERSION}"
 APP_DIR="${ROOT}/test/echo"
 
 echo 'Replaces environment.'
-sed -i "s|\${MY_PROJECT_ID}|${PROJECT_ID}|g" "${APP_DIR}/swagger.json"
 sed -i "s|\${VERSION}|${APP_VERSION}|g" "${APP_DIR}/echo.js"
+sed -i "s|\${MY_PROJECT_ID}|${PROJECT_ID}|g" "${APP_DIR}/app_esp.yaml"
 sed -i "s|\${IMAGE_NAME}|${IMAGE_NAME}|g" "${APP_DIR}/app_esp.yaml"
 
 trap cleanup EXIT
@@ -146,8 +146,8 @@ if [[ -n "${BUCKET}" ]] ; then
   echo "Uploading NGINX server logs."
   "${ROOT}/script/linux-gae-instance" \
     -v "${GAE_VERSION}" -p "${PROJECT_ID}" -d "${LOG_DIRECTORY}" nginx-logs \
-  && gsutil -h 'Content-Type:text/plain' -m cp -r "${LOG_DIRECTORY}" "${BUCKET}/${GAE_VERSION}" \
-  || error_exit 'Cannot upload NGINX logs.'
+  && gsutil -h 'Content-Type:text/plain' -m cp -r "${LOG_DIRECTORY}" "${BUCKET}/${GAE_VERSION}"
+
 fi
 
 exit ${RESULT}
