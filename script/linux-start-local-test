@@ -103,13 +103,12 @@ cp -f "${NGINX_BAZEL_BIN}" "${NGINX}" \
   || error_exit 'Error copying nginx-esp, aborting.'
 
 echo 'Creating service.json'
-sed "s|\${MY_PROJECT_ID}|esp-load-test|g" "${ROOT}/test/echo/swagger.json" \
-  > "${ROOT}/test/echo/gce-vm/swagger.json"
-${GCLOUD} beta service-management convert-config \
-  ${ROOT}/test/echo/gce-vm/swagger.json > "${ROOT}/test/echo/gce-vm/service.json"
-# Hack to point to the right service control as convert-config is not consistent
-sed_i "s|endpoints-servicecontrol.sandbox|servicecontrol|g" \
-   "${ROOT}/test/echo/gce-vm/service.json"
+# Hard code Config_ID.
+SERVICE_NAME='echo-dot-esp-load-test.appspot.com'
+CONFIG_ID='2017-05-26r0'
+activate_service_account "esp-load-test"
+${GCLOUD} service-management configs describe --service ${SERVICE_NAME} ${CONFIG_ID} \
+  --project=esp-load-test --format=json > "${ROOT}/test/echo/gce-vm/service.json"
 
 cat ${ROOT}/test/echo/gce-vm/service.json
 echo 'Starting Endpoints Runtime.'
@@ -120,7 +119,6 @@ NGINX_ARGS=(-p "${PREFIX}" -c "${NGINX_CONFIG}" -g "pid ${PREFIX}/.nginx.pid;")
 "${NGINX}" "${NGINX_ARGS[@]}"
 
 echo 'Constructing test data.'
-SERVICE_NAME='echo-esp-load-test.appspot.com'
 JWT_TOKEN="$("${ROOT}/client/custom/gen-auth-token.sh" \
     -s "${ROOT}/test/echo/esp-echo-client-secret-jwk.json" \
     -a "${SERVICE_NAME}")"
