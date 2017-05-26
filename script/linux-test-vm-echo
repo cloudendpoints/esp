@@ -115,7 +115,7 @@ EXPECTED_RESPONSE=".*Method doesn't allow unregistered callers.*STATUS_CODE:401"
 [[ "$(curl -w "STATUS_CODE:%{http_code}" "${HOST}/echo")" =~ ${EXPECTED_RESPONSE} ]] \
   || error_exit "ERROR: Endpoints is disabled on ${HOST}"
 
-SERVICE_NAME="echo-${PROJECT_ID}.appspot.com"
+SERVICE_NAME="echo-dot-${PROJECT_ID}.appspot.com"
 JWT_TOKEN="$("${ROOT}/client/custom/gen-auth-token.sh" \
   -s "${ROOT}/test/echo/esp-echo-client-secret-jwk.json" \
   -a "${SERVICE_NAME}")"
