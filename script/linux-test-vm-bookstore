@@ -267,10 +267,8 @@ if [[ -n "${BUCKET}" ]] ; then
     -r "${GAE_VERSION}" \
     || error_exit "Could not create ${JSON_FILE}."
 
-  echo "Uploading NGINX server logs to ${BUCKET}."
-  "${ROOT}/script/linux-gae-instance" \
-    -v "${GAE_VERSION}" -p "${PROJECT_ID}" -d "${LOG_DIRECTORY}" nginx-logs \
-    && gsutil -h "Content-Type:text/plain" -m cp -r "${LOG_DIRECTORY}" "${BUCKET}/${GAE_VERSION}"
+  echo "Uploading logs to ${BUCKET}."
+  gsutil -h "Content-Type:text/plain" -m cp -r "${LOG_DIRECTORY}" "${BUCKET}/${GAE_VERSION}"
 fi
 
 exit ${RESULT}

@@ -60,7 +60,7 @@ RUN_TESTS = [
     'gke-tight-https-bookstore',
     'jenkins-perf-test-vm-esp',
     'jenkins-post-submit-perf-test',
-    'long-run-test_flex-off-endpoints-on',
+    'long-run-test_flex',
     'long-run-test_gce-debian-8',
     'long-run-test_gke-tight-http2-echo',
     'long-run-test_gke-tight-http2-interop',
