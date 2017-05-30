@@ -94,6 +94,9 @@ function generate_run_config() {
 
 function grpc_test_pass_through() {
   echo "Starting grpc pass through stress test at $(date)."
+
+  # Generating token for each run, that they expire in 1 hour.
+  local AUTH_TOKEN=$("${ROOT}/client/custom/gen-auth-token.sh" -a "${SERVICE_NAME}")
   local failures=0
   for run in $(seq 1 ${ALL_CONFIG_TYPES}); do
       generate_run_config $((run - 1))
@@ -112,6 +115,9 @@ function grpc_test_pass_through() {
 
 function grpc_test_transcode() {
   echo "Starting grpc transcode stress test at $(date)."
+
+  # Generating token for each run, that they expire in 1 hour.
+  local AUTH_TOKEN=$("${ROOT}/client/custom/gen-auth-token.sh" -a "${SERVICE_NAME}")
   ./esp_client.py \
       --test=stress \
       --host="${HTTP_HOST}" \
@@ -122,6 +128,9 @@ function grpc_test_transcode() {
 
 function grpc_test_transcode_fuzzing() {
   STATUS_HOST="http:$(echo ${HTTP_HOST}|awk -F : '{ print $2 }'):8090"
+
+  # Generating token for each run, that they expire in 1 hour.
+  local AUTH_TOKEN=$("${ROOT}/client/custom/gen-auth-token.sh" -a "${SERVICE_NAME}")
 
   echo "Starting grpc transcode fuzz test at $(date)."
   ./esp_transcoding_fuzz_test.py \
@@ -167,8 +176,6 @@ while true; do
   #######################
   ((RUN_COUNT++))
 
-  # Generating token for each run, that they expire in 1 hour.
-  AUTH_TOKEN=$("${ROOT}/client/custom/gen-auth-token.sh" -a "${SERVICE_NAME}")
   grpc_test_pass_through || ((GRPC_STRESS_FAILURES++))
 
   if [[ -n ${HTTP_HOST} ]]; then
