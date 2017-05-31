@@ -1,3 +1,10 @@
+# Release 1.5.0 30-05-2017
+
+- Fixed Firebase rule bug with api-key.
+- Use producer porject for Quota call if no api-key.
+- Added /producer/by_consumer metrics.
+- Add backend_protocol in the Report call.
+
 # Release 1.3.0 25-04-2017
 
 - Support endpoint authorization via firebase rules
