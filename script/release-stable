@@ -34,36 +34,23 @@ function usage() {
   [[ -n "${1}" ]] && echo "${1}"
   cat << END_USAGE
 
-Usage: ${BASH_SOURCE[0]} -g <path_to_gcloud> -r <DIRECT_REPO>
+Usage: ${BASH_SOURCE[0]} -r <DIRECT_REPO>
 
-This script will release stable ESP docker image with format of:
-  gcr.io/endpoints-release/endpoints-runtime:\${MINOR_BASE_VERSION}
-  gcr.io/endpoints-release/endpoints-runtime:\${MAJOR_BASE_VERSION}
-where:
-  MINOR_BASE_VERSION=major.minor
-  MAJOR_BASE_VERSION=major
-
-And mark debian package <DIRECT_REPO> in rapture as stable.
+This script will mark debian package <DIRECT_REPO> in rapture as stable.
 
 END_USAGE
   exit 1
 }
 
-GCLOUD=$(which gcloud) || GCLOUD=~/google-cloud-sdk/bin/gcloud
 DEBIAN_PACKAGE_REPOSITORY=''
-VERSION="$(command cat ${ROOT}/src/nginx/version)"
 
-while getopts :g:r:v: arg; do
+while getopts :r: arg; do
   case ${arg} in
-    g) GCLOUD="${OPTARG}";;
     r) DEBIAN_PACKAGE_REPOSITORY="${OPTARG}";;
-    v) VERSION="${OPTARG}";;
     *) usage "Invalid option: -${OPTARG}";;
   esac
 done
 
-[[ -x "${GCLOUD}" ]] \
-  || usage "Cannot find gcloud, provide it via '-g' flag."
 [[ -n "${DEBIAN_PACKAGE_REPOSITORY}" ]] \
   || usage "Please provide name of the Debian repository (DIRECT_REPO) via -r."
 
@@ -71,28 +58,6 @@ which rapture > /dev/null 2>&1 \
   || error_exit "rapture client not installed on this machine."
 
 set -x
-
-# Minor base is 1.0  if version is 1.0.0
-MINOR_BASE_VERSION=${VERSION%.*}
-# Major base is 1  if version is 1.0.0
-MAJOR_BASE_VERSION=${MINOR_BASE_VERSION%.*}
-
-function tag_stable_image() {
-  local image="${1}"
-  local stable="${2}"
-
-  docker_tag_f "${image}" "${stable}"
-
-  retry "${GCLOUD}" docker -- push "${stable}" \
-    || error_exit "ERROR: failed to push '${stable}'"
-}
-
-
-for target in ${MINOR_BASE_VERSION} ${MAJOR_BASE_VERSION}; do
-  tag_stable_image \
-    "gcr.io/endpoints-release/endpoints-runtime:${VERSION}" \
-    "gcr.io/endpoints-release/endpoints-runtime:${target}";
-done
 
 rapture --universe=cloud-apt settag ${DEBIAN_PACKAGE_REPOSITORY} \
   endpoints-dev.stable:true \
