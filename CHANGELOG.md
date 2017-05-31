@@ -1,4 +1,4 @@
-# Release 1.5.0 30-05-2017
+# Release 1.4.0 30-05-2017
 
 - Fixed Firebase rule bug with api-key.
 - Use producer porject for Quota call if no api-key.
