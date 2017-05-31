@@ -1,7 +1,7 @@
 # Release 1.4.0 30-05-2017
 
-- Fixed Firebase rule bug with api-key.
-- Use producer porject for Quota call if no api-key.
+- Fixed a Firebase rule bug when api-key is in query parameter.
+- Use producer project for Quota if api-key is not provided.
 - Added /producer/by_consumer metrics.
 - Add backend_protocol in the Report call.
 
