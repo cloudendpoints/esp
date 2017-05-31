@@ -121,7 +121,12 @@ run_nonfatal long_running_test \
   "${UNIQUE_ID}"
 
 STATUS=${?}
-run ${CLI} logs bookstore --namespace ${NAMESPACE} --project ${PROJECT_ID} --active=false \
+
+gcloud beta logging read "resource.type=container \
+AND resource.labels.container_name=endpoints-bookstore \
+AND resource.labels.namespace_id=$NAMESPACE \
+AND severity=ERROR" \
+--format="table(severity, timestamp:sort=1, resource.labels.pod_id, textPayload)" \
   | tee ${LOG_DIR}/error.log
 
 if [[ -n $REMOTE_LOG_DIR ]]; then
