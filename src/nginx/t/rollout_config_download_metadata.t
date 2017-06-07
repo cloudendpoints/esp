@@ -93,6 +93,33 @@ http {
 }
 EOF
 
+my $service_config_response = <<"END";
+{
+  "name": "endpoints-test.cloudendpointsapis.com",
+  "title": "Bookstore",
+  "http": {
+    "rules": [
+      {
+        "selector": "EchoGetMessage",
+        "get": "/shelves"
+      }
+    ]
+  },
+  "usage": {
+    "rules": [
+      {
+        "selector": "EchoGetMessage",
+        "allowUnregisteredCalls": true
+      }
+    ]
+  },
+  "control": {
+    "environment": "http://127.0.0.1:${ServiceControlPort}"
+  },
+  "id": "2017-05-01r0"
+}
+END
+
 my $report_done = 'report_done';
 
 $t->run_daemon( \&bookstore, $t, $BackendPort, 'bookstore.log' );
@@ -186,9 +213,6 @@ EOF
   $server->run();
 }
 
-my @quota_responses      = ();
-my $quota_response_index = 0;
-
 sub servicecontrol {
   my ( $t, $port, $file, $done) = @_;
   my $server = HttpServer->new( $port, $t->testdir() . '/' . $file )
@@ -197,14 +221,6 @@ sub servicecontrol {
 
   $server->on( 'POST',
     '/v1/services/endpoints-test.cloudendpointsapis.com:check', <<'EOF');
-HTTP/1.1 200 OK
-Connection: close
-
-EOF
-
-  $server->on('POST',
-    '/v1/services/endpoints-test.cloudendpointsapis.com:allocateQuota',
-    <<'EOF');
 HTTP/1.1 200 OK
 Connection: close
 
@@ -231,42 +247,9 @@ sub servicemanagement {
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
 
-  $server->on_sub('GET', 
-  '/v1/services/endpoints-test.cloudendpointsapis.com/configs/2017-05-01r0', sub {
-    my ($headers, $body, $client) = @_;
-
-    my $resp_body = <<'EOF';
-{
-  "name": "endpoints-test.cloudendpointsapis.com",
-  "title": "Bookstore",
-  "http": {
-    "rules": [
-      {
-        "selector": "EchoGetMessage",
-        "get": "/shelves"
-      }
-    ]
-  },
-  "usage": {
-    "rules": [
-      {
-        "selector": "EchoGetMessage",
-        "allowUnregisteredCalls": true
-      }
-    ]
-  },
-  "control": {
-EOF
-    $resp_body .= '  "environment": "http://127.0.0.1:' . 
-        $ServiceControlPort . '"' ."\n";
-    $resp_body .= <<'EOF';
-  },
-  "id": "2017-05-01r0"
-}
-EOF
-
-    print $client $resp_body;
-  });
+  $server->on('GET',
+    '/v1/services/endpoints-test.cloudendpointsapis.com/configs/2017-05-01r0',
+    $service_config_response);
 
   $server->run();
 }
@@ -291,7 +274,7 @@ Content-Type: application/json
     }
 }
 EOF
-  $server->on('GET', 
+  $server->on('GET',
     '/computeMetadata/v1/instance/service-accounts/default/token', <<'EOF');
 HTTP/1.1 200 OK
 Metadata-Flavor: Google

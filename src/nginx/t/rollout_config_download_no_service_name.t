@@ -47,7 +47,7 @@ my $ServiceControlPort = ApiManager::pick_port();
 my $ServiceManagementPort = ApiManager::pick_port();
 my $MetadataPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(11);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(10);
 
 # Save servce configuration that disables the report cache.
 # Report request will be sent for each client request
@@ -84,7 +84,6 @@ http {
     location / {
       endpoints {
         server_config server.pb.txt;
-        service_name endpoints-test.cloudendpointsapis.com;
         %%TEST_CONFIG%%
         on;
       }
@@ -99,15 +98,11 @@ my $report_done = 'report_done';
 $t->run_daemon( \&bookstore, $t, $BackendPort, 'bookstore.log' );
 $t->run_daemon( \&servicecontrol, $t, $ServiceControlPort,
     'servicecontrol.log', $report_done);
-$t->run_daemon( \&servicemanagement, $t, $ServiceManagementPort,
-    'servicemanagement.log');
 $t->run_daemon( \&metadata, $t, $MetadataPort, 'metadata.log');
 
 is( $t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'Bookstore socket ready.');
 is( $t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 
     'Service control socket ready.' );
-is( $t->waitforsocket("127.0.0.1:${ServiceManagementPort}"), 1, 
-    'Service management socket ready.' );
 is( $t->waitforsocket("127.0.0.1:${MetadataPort}"), 1, 
     'Metadata socket ready.' );
 
@@ -121,6 +116,9 @@ my $response = ApiManager::http_get(
 $t->stop_daemons();
 
 my ( $response_headers, $response_body ) = split /\r\n\r\n/, $response, 2;
+
+# config loading fail due to no service_name,
+# the policy is fail open, all requests will go with loading failure.
 
 like( $response_headers, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.' );
 is( $response_body, <<'EOF', 'Shelves returned in the response body.' );
@@ -141,7 +139,7 @@ is( $r->{uri}, '/shelves?key=this-is-an-api-key', 'Backend uri was /shelves' );
 is( $r->{headers}->{host}, "127.0.0.1:${BackendPort}", 'Host header was set' );
 
 @requests = ApiManager::read_http_stream( $t, 'servicecontrol.log' );
-is( scalar @requests, 0, 'Service control received three requests' );
+is( scalar @requests, 0, 'Service control received no request' );
 
 ################################################################################
 
@@ -164,9 +162,6 @@ EOF
   $server->run();
 }
 
-my @quota_responses      = ();
-my $quota_response_index = 0;
-
 sub servicecontrol {
   my ( $t, $port, $file, $done) = @_;
   my $server = HttpServer->new( $port, $t->testdir() . '/' . $file )
@@ -175,14 +170,6 @@ sub servicecontrol {
 
   $server->on( 'POST',
     '/v1/services/endpoints-test.cloudendpointsapis.com:check', <<'EOF');
-HTTP/1.1 200 OK
-Connection: close
-
-EOF
-
-  $server->on('POST',
-    '/v1/services/endpoints-test.cloudendpointsapis.com:allocateQuota',
-    <<'EOF');
 HTTP/1.1 200 OK
 Connection: close
 
@@ -203,53 +190,6 @@ EOF
   $server->run();
 }
 
-sub servicemanagement {
-  my ( $t, $port, $file) = @_;
-  my $server = HttpServer->new( $port, $t->testdir() . '/' . $file )
-    or die "Can't create test server socket: $!\n";
-  local $SIG{PIPE} = 'IGNORE';
-
-  $server->on_sub('GET',
-    '/v1/services/endpoints-test.cloudendpointsapis.com/configs/2017-05-01r0',
-    sub {
-    my ($headers, $body, $client) = @_;
-
-    my $resp_body = <<'EOF';
-{
-  "name": "endpoints-test.cloudendpointsapis.com",
-  "title": "Bookstore",
-  "http": {
-    "rules": [
-      {
-        "selector": "EchoGetMessage",
-        "get": "/shelves"
-      }
-    ]
-  },
-  "usage": {
-    "rules": [
-      {
-        "selector": "EchoGetMessage",
-        "allowUnregisteredCalls": true
-      }
-    ]
-  },
-  "control": {
-EOF
-    $resp_body .= '  "environment": "http://127.0.0.1:' .
-        $ServiceControlPort . '"' ."\n";
-    $resp_body .= <<'EOF';
-  },
-  "id": "2017-05-01r0"
-}
-EOF
-
-    print $client $resp_body;
-  });
-
-  $server->run();
-}
-
 sub metadata {
   my ( $t, $port, $file) = @_;
   my $server = HttpServer->new( $port, $t->testdir() . '/' . $file )
@@ -264,7 +204,6 @@ Content-Type: application/json
 {
     "instance": {
         "attributes": {
-            "endpoints-service-name": "endpoints-test.cloudendpointsapis.com"
         }
     }
 }
