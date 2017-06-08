@@ -386,26 +386,16 @@ ngx_int_t ngx_esp_postconfiguration(ngx_conf_t *cf) {
   // Set the version to api_manager library.
   utils::Version::instance().set(API_MANAGER_VERSION_STRING);
 
-  bool endpoints_enabled = false;
-
   ngx_esp_loc_conf_t **endpoints =
       reinterpret_cast<ngx_esp_loc_conf_t **>(mc->endpoints.elts);
   for (ngx_uint_t i = 0, napis = mc->endpoints.nelts; i < napis; i++) {
     ngx_esp_loc_conf_t *lc = endpoints[i];
 
     if (lc->endpoints_api == 1) {
-      if (lc->endpoints_config.len <= 0) {
-        // TODO: Is it possible to give better error message, i.e. name
-        // of the location where this misconfiguration happened?
-        ngx_conf_log_error(
-            NGX_LOG_EMERG, cf, 0,
-            "API Management enabled but configuration is not specified.");
-        return NGX_ERROR;
-      }
-
       ngx_str_t file_name = lc->endpoints_config;
       ngx_str_t file_contents = ngx_null_string;
-      if (!(ngx_conf_full_name(cf->cycle, &file_name, 1) == NGX_OK &&
+      if (file_name.len > 0 &&
+          !(ngx_conf_full_name(cf->cycle, &file_name, 1) == NGX_OK &&
             ngx_esp_read_file((const char *)file_name.data, cf->pool,
                               &file_contents) == NGX_OK)) {
         ngx_conf_log_error(
@@ -447,18 +437,6 @@ ngx_int_t ngx_esp_postconfiguration(ngx_conf_t *cf) {
         handle_endpoints_config_error(cf, lc);
         return NGX_ERROR;
       }
-
-      // Verify we have service name.
-      if (lc->esp->service_name().empty()) {
-        ngx_conf_log_error(
-            NGX_LOG_EMERG, cf, 0,
-            "API service name not specified in configuration file %V.",
-            &file_name);
-        handle_endpoints_config_error(cf, lc);
-        return NGX_ERROR;
-      }
-
-      endpoints_enabled = endpoints_enabled || lc->esp->Enabled();
     }
   }
 
@@ -466,28 +444,24 @@ ngx_int_t ngx_esp_postconfiguration(ngx_conf_t *cf) {
       reinterpret_cast<ngx_http_core_main_conf_t *>(
           ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module));
 
-  // Register the access handler if Endpoints is enabled.
-  if (endpoints_enabled) {
-    // Access handler.
-    ngx_http_handler_pt *h = reinterpret_cast<ngx_http_handler_pt *>(
-        ngx_array_push(&cmcf->phases[NGX_HTTP_ACCESS_PHASE].handlers));
-    if (h == nullptr) {
-      ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
-                         "Cannot install esp check handler.");
-      return NGX_ERROR;
-    }
-    *h = ngx_http_esp_access_wrapper;
-
-    // Log handler
-    h = reinterpret_cast<ngx_http_handler_pt *>(
-        ngx_array_push(&cmcf->phases[NGX_HTTP_LOG_PHASE].handlers));
-    if (h == nullptr) {
-      ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
-                         "Cannot install esp log handler.");
-      return NGX_ERROR;
-    }
-    *h = ngx_http_esp_log_handler;
+  // Register the access access handler.
+  ngx_http_handler_pt *h = reinterpret_cast<ngx_http_handler_pt *>(
+      ngx_array_push(&cmcf->phases[NGX_HTTP_ACCESS_PHASE].handlers));
+  if (h == nullptr) {
+    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                       "Cannot install esp check handler.");
+    return NGX_ERROR;
   }
+  *h = ngx_http_esp_access_wrapper;
+
+  // Register the log handler
+  h = reinterpret_cast<ngx_http_handler_pt *>(
+      ngx_array_push(&cmcf->phases[NGX_HTTP_LOG_PHASE].handlers));
+  if (h == nullptr) {
+    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "Cannot install esp log handler.");
+    return NGX_ERROR;
+  }
+  *h = ngx_http_esp_log_handler;
 
   return NGX_OK;
 }
@@ -537,6 +511,35 @@ Status ngx_http_esp_access_handler(ngx_http_request_t *r) {
 
   if (!lc->endpoints_api || !lc->esp) {
     return Status(NGX_DECLINED, "Endpoints not configured.");
+  }
+
+  // ApiManager was not initialized yet.
+  if (lc->esp->ConfigLoadingStatus().code() == Code::UNAVAILABLE) {
+    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "esp: ApiManager was not initialized yet");
+
+    ngx_event_t *wakeup_event = new ngx_event_t();
+
+    wakeup_event->data = r;
+    wakeup_event->write = 1;
+    wakeup_event->handler = wakeup_event_handler;
+    wakeup_event->log = r->connection->log;
+
+    // Posts the event to the end of th nginx event queue to handle
+    // after the service config loading done
+    ngx_post_event(wakeup_event, &ngx_posted_events);
+
+    return Status(NGX_AGAIN, "Request was suspended");
+  }
+
+  if (!lc->esp->ConfigLoadingStatus().ok()) {
+    return Status(NGX_DECLINED, "Failed to download service config");
+  }
+
+  // Verify we have service name after the ApiManager was initialized
+  if (lc->esp->service_name().empty()) {
+    return Status(NGX_DECLINED,
+                  "API service name not specified in configuration file");
   }
 
   if (!lc->esp->Enabled()) {
