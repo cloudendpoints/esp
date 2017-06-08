@@ -513,6 +513,40 @@ Status ngx_http_esp_access_handler(ngx_http_request_t *r) {
     return Status(NGX_DECLINED, "Endpoints not configured.");
   }
 
+  // ApiManager was not initialized yet.
+  if (lc->esp->ConfigLoadingStatus().code() == Code::UNAVAILABLE) {
+    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "esp: ApiManager was not initialized yet");
+
+    ngx_event_t *wakeup_event = new ngx_event_t();
+
+    wakeup_event->data = r;
+    wakeup_event->write = 1;
+    wakeup_event->handler = wakeup_event_handler;
+    wakeup_event->log = r->connection->log;
+
+    // Posts the event to the end of th nginx event queue to handle
+    // after the service config loading done
+    ngx_post_event(wakeup_event, &ngx_posted_events);
+
+    return Status(NGX_AGAIN, "Request was suspended");
+  }
+
+  if (!lc->esp->ConfigLoadingStatus().ok()) {
+    return Status(NGX_DECLINED, "Failed to download service config");
+  }
+
+  // Verify we have service name after the ApiManager was initialized
+  if (lc->esp->service_name().empty()) {
+    return Status(NGX_DECLINED,
+                  "API service name not specified in configuration file");
+  }
+
+  if (!lc->esp->Enabled()) {
+    return Status(NGX_DECLINED,
+                  "Neither Service Control nor Auth are required.");
+  }
+
   // Create per-request context if one doesn't exist already.
   ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r);
   if (ctx == nullptr) {
