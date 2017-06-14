@@ -137,7 +137,7 @@ is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:report',
 my $report_json = decode_json(ServiceControl::convert_proto($r->{body}, 'report_request', 'json'));
 
 ok((not exists($report_json->{operations}[0]->{consumerId})), 'ConsumerID not set for :report.');
-is($report_json->{operations}[0]->{operationName}, 'Default.Get',
+is($report_json->{operations}[0]->{operationName}, 'Unspecified.Paths',
    'An unknown operation name was used.');
 
 my $log = $report_json->{operations}[0]->{logEntries}[0];
@@ -145,7 +145,7 @@ is($log->{name}, 'endpoints_log', 'Log entry was written into endpoints_log');
 my $payload = $log->{structPayload};
 is($payload->{http_method}, 'GET', 'Logged HTTP verb is GET');
 is($payload->{url}, '/shelves/1:merge?other=2', 'Logged URL is correct');
-is($payload->{log_message}, 'Method: Default.Get', 'Logged message is as expected');
+is($payload->{log_message}, 'Method: Unspecified.Paths', 'Logged message is as expected');
 
 # Verify backend was called.
 my @bookstore_requests = ApiManager::read_http_stream($t, 'bookstore.log');

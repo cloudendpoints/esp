@@ -40,41 +40,16 @@ http {
     delete: "/shelves/{shelf}/books/{book}"
   }
   rules {
-    selector: "Default.Delete"
-    delete: "/**"
-  }
-  rules {
-    selector: "Default.Get"
-    get: "/**"
-  }
-  rules {
-    selector: "Default.Patch"
-    patch: "/**"
-  }
-  rules {
-    selector: "Default.Post"
-    post: "/**"
-  }
-  rules {
-    selector: "Default.Put"
-    put: "/**"
+    selector: "Unspecified.Paths"
+    custom {
+      path: "/**"
+      kind: "*"
+    }
   }
 }
 usage {
   rules {
-    selector: "Default.Get"
-    allow_unregistered_calls: true
-  }
-  rules {
-    selector: "Default.Patch"
-    allow_unregistered_calls: true
-  }
-  rules {
-    selector: "Default.Post"
-    allow_unregistered_calls: true
-  }
-  rules {
-    selector: "Default.Put"
+    selector: "Unspecified.Paths"
     allow_unregistered_calls: true
   }
   rules {
