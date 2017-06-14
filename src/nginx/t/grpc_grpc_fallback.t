@@ -120,7 +120,7 @@ is(scalar @requests, 1, 'Service control received 1 request.');
 my $r = shift @requests;
 like($r->{uri}, qr/:report$/, ':report was called');
 my $report_body = decode_json(ServiceControl::convert_proto($r->{body}, 'report_request', 'json'));
-is($report_body->{operations}[0]->{operationName}, 'Default.Post', ':report used default post method.');
+is($report_body->{operations}[0]->{operationName}, 'Unspecified.Paths', ':report used default post method.');
 
 ################################################################################
 
