@@ -204,10 +204,6 @@ sub get_bookstore_service_config {
   return read_test_file("testdata/bookstore.pb.txt");
 }
 
-sub get_bookstore_service_config_2 {
-  return read_test_file("testdata/bookstore.2.pb.txt");
-}
-
 sub get_bookstore_service_config_allow_all_http_requests {
     return read_test_file('testdata/bookstore_allow_all_http_requests.pb.txt');
 }

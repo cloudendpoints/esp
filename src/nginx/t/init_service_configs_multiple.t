@@ -44,7 +44,7 @@ my $NginxPort          = ApiManager::pick_port();
 my $BackendPort        = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(27);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(20);
 
 # Save servce configuration that disables the report cache.
 # Report request will be sent for each client request
@@ -71,47 +71,17 @@ $t->write_file( 'service.1.pb.txt',
 control {
   environment: "http://127.0.0.1:${ServiceControlPort}"
 }
-quota {
- metric_rules [
-   {
-     selector: "ListShelves"
-     metric_costs: [
-       {
-         key: "metrics_first"
-         value: 2
-       },
-       {
-         key: "metrics_second"
-         value: 1
-       }
-     ]
-   }
- ]
-}
 EOF
 
+my $service_config_2 = ApiManager::get_bookstore_service_config;
+my $find = 'id: "2016-08-25r1"';
+my $replace = 'id: "2016-08-25r2"';
+$service_config_2 =~ s/$find/$replace/g;
+
 # Save service name in the service configuration protocol buffer file.
-$t->write_file( 'service.2.pb.txt',
-  ApiManager::get_bookstore_service_config_2 . <<"EOF");
+$t->write_file( 'service.2.pb.txt', $service_config_2 . <<"EOF");
 control {
   environment: "http://127.0.0.1:${ServiceControlPort}"
-}
-quota {
- metric_rules [
-   {
-     selector: "ListShelves"
-     metric_costs: [
-       {
-         key: "metrics_first"
-         value: 2
-       },
-       {
-         key: "metrics_second"
-         value: 1
-       }
-     ]
-   }
- ]
 }
 EOF
 
@@ -169,6 +139,8 @@ is( $response_body, <<'EOF', 'Shelves returned in the response body.' );
 }
 EOF
 
+my @config_ids = ('2016-08-25r1', '2016-08-25r2');
+
 my @requests = ApiManager::read_http_stream( $t, 'bookstore.log' );
 is( scalar @requests, 1, 'Backend received one request' );
 
@@ -179,7 +151,7 @@ is( $r->{uri}, '/shelves?key=this-is-an-api-key', 'Backend uri was /shelves' );
 is( $r->{headers}->{host}, "127.0.0.1:${BackendPort}", 'Host header was set' );
 
 @requests = ApiManager::read_http_stream( $t, 'servicecontrol.log' );
-is( scalar @requests, 3, 'Service control received three requests' );
+is( scalar @requests, 2, 'Service control received two requests' );
 
 # check
 $r = shift @requests;
@@ -191,35 +163,10 @@ is( $r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}",
 is( $r->{headers}->{'content-type'}, 'application/x-protobuf',
   ':check Content-Type was protocol buffer');
 
-# test allocateQuota request was requested
-$r = shift @requests;
-is( $r->{verb}, 'POST', ':allocateQuota verb was post' );
-is( $r->{uri},
-  '/v1/services/endpoints-test.cloudendpointsapis.com:allocateQuota',
-  ':allocateQuota was called');
-is( $r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}",
-  'Host header was set');
-is( $r->{headers}->{'content-type'}, 'application/x-protobuf',
-  ':check Content-Type was protocol buffer' );
-
-my $allocate_quota_request = decode_json(ServiceControl::convert_proto(
-  $r->{body}, 'quota_request', 'json' ) );
-
-my @quotaMetrics =
-  @{ $allocate_quota_request->{allocateOperation}->{quotaMetrics} };
-is( @quotaMetrics, 2, "Quota metrics should have two elements" );
-
-my @sorted_quotaMetrics =
-  sort { $a->{metricName} cmp $b->{metricName} } @quotaMetrics;
-
-is( $sorted_quotaMetrics[0]->{metricName}, "metrics_first",
-  "Quota metric name is 'metrics_first'" );
-is( $sorted_quotaMetrics[0]->{metricValues}[0]->{int64Value}, 2,
-  "Quota metric value is 2" );
-is( $sorted_quotaMetrics[1]->{metricName}, "metrics_second",
-  "Quota metric name is 'metrics_second'" );
-is( $sorted_quotaMetrics[1]->{metricValues}[0]->{int64Value}, 1,
-  "Quota metric value is 1" );
+my $check_body = ServiceControl::convert_proto($r->{body}, 'check_request', 'json');
+my $check_request = decode_json( $check_body );
+ok((grep $_ eq $check_request->{serviceConfigId}, @config_ids),
+    'config_id is either 2016-08-25r1 or 2016-08-25r2' );
 
 # check report
 $r = shift @requests;
@@ -231,6 +178,11 @@ is( $r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}",
   'Host header was set');
 is( $r->{headers}->{'content-type'}, 'application/x-protobuf',
   ':check Content-Type was protocol buffer' );
+
+my $report_body = ServiceControl::convert_proto($r->{body}, 'report_request', 'json');
+my $report_request = decode_json( $report_body );
+ok((grep $_ eq $report_request->{serviceConfigId}, @config_ids),
+    'config_id is either 2016-08-25r1 or 2016-08-25r2' );
 
 ################################################################################
 
@@ -264,14 +216,6 @@ sub servicecontrol {
 
   $server->on( 'POST',
     '/v1/services/endpoints-test.cloudendpointsapis.com:check', <<'EOF');
-HTTP/1.1 200 OK
-Connection: close
-
-EOF
-
-  $server->on('POST',
-    '/v1/services/endpoints-test.cloudendpointsapis.com:allocateQuota',
-    <<'EOF');
 HTTP/1.1 200 OK
 Connection: close
 

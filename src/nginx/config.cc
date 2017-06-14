@@ -570,7 +570,8 @@ ngx_int_t ngx_esp_build_server_config(ngx_conf_t *cf, ngx_esp_loc_conf_t *lc,
         lc->api_authentication == 0);
   }
 
-  // api setting in nginx config overrides init_service_configs in server config
+  // the config file from nginx config will override the ones from
+  // server_config.
   if (lc->endpoints_config.len > 0) {
     auto init_service_configs = config.mutable_init_service_configs();
     init_service_configs->Clear();
