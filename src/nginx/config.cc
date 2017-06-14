@@ -570,6 +570,32 @@ ngx_int_t ngx_esp_build_server_config(ngx_conf_t *cf, ngx_esp_loc_conf_t *lc,
         lc->api_authentication == 0);
   }
 
+  // api setting in nginx config overrides init_service_configs in server config
+  if (lc->endpoints_config.len > 0) {
+    auto init_service_configs = config.mutable_init_service_configs();
+    init_service_configs->Clear();
+    auto service_config = init_service_configs->Add();
+    service_config->set_service_config_file_full_path(
+        ngx_str_to_std(lc->endpoints_config));
+    service_config->set_traffic_percentage(100.0);
+  }
+
+  // resolve full paths
+  for (int i = 0; i < config.init_service_configs_size(); i++) {
+    ngx_str_t file_name = ngx_std_to_str_unsafe(
+        config.init_service_configs(i).service_config_file_full_path().c_str());
+
+    if (ngx_conf_full_name(cf->cycle, &file_name, 1) != NGX_OK) {
+      ngx_conf_log_error(
+          NGX_LOG_EMERG, cf, 0,
+          "Failed to resolve an api service configuration file: %V",
+          &file_name);
+      return NGX_ERROR;
+    }
+    config.mutable_init_service_configs(i)->set_service_config_file_full_path(
+        ngx_str_to_std(file_name));
+  }
+
   // Reserialize
   if (!config.SerializeToString(server_config)) {
     ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
