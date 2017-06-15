@@ -49,7 +49,7 @@ my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(20);
 
 # Save servce configuration that disables the report cache.
 # Report request will be sent for each client request
-$t->write_file('server.pb.txt', <<"EOF");
+$t->write_file_expand('server.pb.txt', <<"EOF");
 service_control_config {
   report_aggregator_config {
     cache_entries: 0
@@ -57,7 +57,7 @@ service_control_config {
   }
 }
 init_service_configs {
-  service_config_file_full_path: "service.pb.txt"
+  service_config_file_full_path: "%%TESTDIR%%/service.pb.txt"
   traffic_percentage: 100
 }
 EOF
