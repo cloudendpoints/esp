@@ -205,6 +205,7 @@ nginx_suite(
         "report_failed.t",
         "report_failed_request.t",
         "report_with_geo.t",
+        "skip_service_control.t",
         "statistics.t",
         "test_all_http_methods.t",
         "unrecognized_method.t",
