@@ -280,10 +280,6 @@ $body = ServiceControl::convert_proto($r->{body}, 'report_request', 'json');
 $request = decode_json( $body );
 is( $request->{serviceConfigId}, '2016-08-25r3', 'config_id is 2016-08-25r3' );
 
-
-
-
-
 ################################################################################
 
 sub bookstore {
