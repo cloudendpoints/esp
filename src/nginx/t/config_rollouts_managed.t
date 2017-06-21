@@ -291,8 +291,10 @@ sub bookstore {
   my $server = HttpServer->new( $port, $t->testdir() . '/' . $file )
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
-
-  $server->on( 'GET', '/shelves?key=this-is-an-api-key', <<'EOF');
+  
+    $server->on_sub('POST', '/shelves?key=this-is-an-api-key', sub {
+    my ($headers, $body, $client) = @_;
+    print $client <<'EOF';
 HTTP/1.1 200 OK
 Connection: close
 
@@ -302,17 +304,8 @@ Connection: close
   ]
 }
 EOF
+  });
 
-  $server->on( 'GET', '/shelves?key=this-is-an-api-key', <<'EOF');
-HTTP/1.1 200 OK
-Connection: close
-
-{ "shelves": [
-    { "name": "shelves/1", "theme": "Fiction" },
-    { "name": "shelves/2", "theme": "Fantasy" }
-  ]
-}
-EOF
   $server->run();
 }
 
@@ -324,21 +317,16 @@ sub servicecontrol {
   
   my $index = 0;
 
-  $server->on_sub('POST',
-    '/v1/services/endpoints-test.cloudendpointsapis.com:check', sub {
+  $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:check', sub {
     my ($headers, $body, $client) = @_;
     print $client <<'EOF';
 HTTP/1.1 200 OK
 Connection: close
 
 EOF
-    $t->write_file($done.".".$index, ':report done');
-    $index++;
   });
 
-
-  $server->on_sub('POST',
-    '/v1/services/endpoints-test.cloudendpointsapis.com:report', sub {
+  $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:report', sub {
     my ($headers, $body, $client) = @_;
     print $client <<'EOF';
 HTTP/1.1 200 OK
