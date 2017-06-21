@@ -183,6 +183,7 @@ nginx_suite(
         "check_with_token.t",
         "config_extra_field.t",
         "config_missing.t",
+        "config_rollouts_managed.t",
         "cors.t",
         "cors_disabled.t",
         "fail_wrong_api_key.t",
