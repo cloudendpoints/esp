@@ -46,7 +46,7 @@ my $BackendPort        = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $ServiceManagementPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(43);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(36);
 
 # Save servce configuration that disables the report cache.
 # Report request will be sent for each client request
@@ -190,20 +190,17 @@ my $r = shift @servicemanagement_requests;
 is( $r->{verb}, 'GET', 'Rollout request was a get' );
 is( $r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com/rollouts?filter=status=SUCCESS',
   'Rollout request uri is correct' );
-is( $r->{headers}->{host}, "127.0.0.1:${ServiceManagementPort}", 'Host header was set' );
 
 $r = shift @servicemanagement_requests;
 is( $r->{verb}, 'GET', 'Service download request was a get' );
 is( $r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com/configs/2016-08-25r3',
   'Service config uri' );
-is( $r->{headers}->{host}, "127.0.0.1:${ServiceManagementPort}", 'Host header was set' );
 
 # validate rests of request has no change
 my $check_error_rest = 0;
 while($r = shift @servicemanagement_requests) {
   if ($r->{verb} ne 'GET' ||
-    $r->{uri} ne '/v1/services/endpoints-test.cloudendpointsapis.com/rollouts?filter=status=SUCCESS' ||
-    $r->{headers}->{host} ne "127.0.0.1:${ServiceManagementPort}" ) {
+    $r->{uri} ne '/v1/services/endpoints-test.cloudendpointsapis.com/rollouts?filter=status=SUCCESS') {
         $check_error_rest++;
     }
 }
@@ -217,8 +214,6 @@ $r = shift @requests;
 
 is( $r->{verb}, 'GET', 'Backend request was a get' );
 is( $r->{uri}, '/shelves?key=this-is-an-api-key', 'Backend uri was /shelves' );
-is( $r->{headers}->{host}, "127.0.0.1:${BackendPort}", 'Host header was set' );
-
 
 # Service control requests verification
 my @config_ids = ('2016-08-25r1', '2016-08-25r2');
@@ -233,8 +228,6 @@ $r = shift @requests;
 is( $r->{verb}, 'POST', ':check verb was post' );
 is( $r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:check',
   ':check was called');
-is( $r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}",
-  'Host header was set');
 is( $r->{headers}->{'content-type'}, 'application/x-protobuf',
   ':check Content-Type was protocol buffer');
 
@@ -250,8 +243,6 @@ $r = shift @requests;
 is( $r->{verb}, 'POST', ':report verb was post' );
 is( $r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:report',
   ':report was called');
-is( $r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}",
-  'Host header was set');
 is( $r->{headers}->{'content-type'}, 'application/x-protobuf',
   ':check Content-Type was protocol buffer' );
 
@@ -268,8 +259,6 @@ $r = shift @requests;
 is( $r->{verb}, 'POST', ':check verb was post' );
 is( $r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:check',
   ':check was called');
-is( $r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}",
-  'Host header was set');
 is( $r->{headers}->{'content-type'}, 'application/x-protobuf',
   ':check Content-Type was protocol buffer');
 
@@ -284,8 +273,6 @@ $r = shift @requests;
 is( $r->{verb}, 'POST', ':check verb was post' );
 is( $r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:report',
   ':check was called');
-is( $r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}",
-  'Host header was set');
 is( $r->{headers}->{'content-type'}, 'application/x-protobuf',
   ':check Content-Type was protocol buffer');
 
@@ -337,21 +324,21 @@ sub servicecontrol {
   
   my $index = 0;
 
-  $server->on( 'POST',
-    '/v1/services/endpoints-test.cloudendpointsapis.com:check', <<'EOF');
+  $server->on_sub('POST',
+    '/v1/services/endpoints-test.cloudendpointsapis.com:check', sub {
+    my ($headers, $body, $client) = @_;
+    print $client <<'EOF';
 HTTP/1.1 200 OK
 Connection: close
 
 EOF
+    $t->write_file($done.".".$index, ':report done');
+    $index++;
+  });
 
-  $server->on( 'POST',
-    '/v1/services/endpoints-test.cloudendpointsapis.com:check', <<'EOF');
-HTTP/1.1 200 OK
-Connection: close
 
-EOF
-
-  $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:report', sub {
+  $server->on_sub('POST',
+    '/v1/services/endpoints-test.cloudendpointsapis.com:report', sub {
     my ($headers, $body, $client) = @_;
     print $client <<'EOF';
 HTTP/1.1 200 OK

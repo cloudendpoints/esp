@@ -588,7 +588,6 @@ ngx_int_t ngx_esp_build_server_config(ngx_conf_t *cf, ngx_esp_loc_conf_t *lc,
     }
 
     (*traffic_percentages)[ngx_str_to_std(file_name)] = 100.0;
-    service_config_rollout->set_rollout_id("");
   }
 
   // Reserialize
