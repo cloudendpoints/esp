@@ -299,6 +299,7 @@ nginx_suite(
         "transcoding_metadata.t",
         "transcoding_query_params.t",
         "transcoding_shared_port_ssl.t",
+        "transcoding_status.t",
         "transcoding_streaming.t",
         "transcoding_utf8.t",
     ],
