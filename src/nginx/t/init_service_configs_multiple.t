@@ -55,13 +55,15 @@ service_control_config {
     flush_interval_ms: 1000
   }
 }
-init_service_configs {
-  service_config_file_full_path: "%%TESTDIR%%/service.1.pb.txt"
-  traffic_percentage: 80
-}
-init_service_configs {
-  service_config_file_full_path: "%%TESTDIR%%/service.2.pb.txt"
-  traffic_percentage: 20
+service_config_rollout {
+  traffic_percentages {
+    key: "%%TESTDIR%%/service.1.pb.txt"
+    value: 80
+  }
+  traffic_percentages {
+    key: "%%TESTDIR%%/service.2.pb.txt"
+    value: 20
+  }
 }
 EOF
 

@@ -427,6 +427,14 @@ ngx_int_t ngx_esp_postconfiguration(ngx_conf_t *cf) {
         return NGX_ERROR;
       }
 
+      // Verify service configs loading status.
+      if (!lc->esp->LoadServiceRollouts().ok()) {
+        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                           "Failed to load service configuration files");
+        handle_endpoints_config_error(cf, lc);
+        return NGX_ERROR;
+      }
+
       // Verify we have service name.
       if (lc->esp->service_name().empty()) {
         ngx_conf_log_error(

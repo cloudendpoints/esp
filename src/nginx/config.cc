@@ -573,8 +573,10 @@ ngx_int_t ngx_esp_build_server_config(ngx_conf_t *cf, ngx_esp_loc_conf_t *lc,
   // the config file from nginx config will override the ones from
   // server_config.
   if (lc->endpoints_config.len > 0) {
-    auto init_service_configs = config.mutable_init_service_configs();
-    init_service_configs->Clear();
+    auto service_config_rollout = config.mutable_service_config_rollout();
+    auto traffic_percentages =
+        service_config_rollout->mutable_traffic_percentages();
+    traffic_percentages->clear();
 
     ngx_str_t file_name = lc->endpoints_config;
     if (ngx_conf_full_name(cf->cycle, &file_name, 1) != NGX_OK) {
@@ -585,10 +587,7 @@ ngx_int_t ngx_esp_build_server_config(ngx_conf_t *cf, ngx_esp_loc_conf_t *lc,
       return NGX_ERROR;
     }
 
-    auto service_config = init_service_configs->Add();
-    service_config->set_service_config_file_full_path(
-        ngx_str_to_std(file_name));
-    service_config->set_traffic_percentage(100.0);
+    (*traffic_percentages)[ngx_str_to_std(file_name)] = 100.0;
   }
 
   // Reserialize
