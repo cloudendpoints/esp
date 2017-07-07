@@ -967,12 +967,12 @@ void ngx_http_esp_exit_timer_event_handler(ngx_event_t *ev) {
 
   ngx_cycle_t *cycle = reinterpret_cast<ngx_cycle_t *>(ev->data);
 
-  if (!ngx_exiting && !ngx_terminate) {
+  if (!ngx_exiting && !ngx_terminate && !ngx_quit) {
     ngx_esp_schedule_exit_timer(cycle, ev);
   } else if (!ngx_esp_attempt_shutdown(cycle)) {
     // The shutdown attempt hasn't succeeded yet. Reschedule timer again
     // with shorter timeout to give shutdown more time to complete.
-    shutdown_timeout = 1;
+    shutdown_timeout = 10;
     ngx_esp_schedule_exit_timer(cycle, ev);
   }
 }
