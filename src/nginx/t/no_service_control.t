@@ -58,6 +58,8 @@ daemon off;
 events {
   worker_connections 32;
 }
+worker_shutdown_timeout 10s;
+debug_points abort;
 http {
   %%TEST_GLOBALS_HTTP%%
   server_tokens off;
