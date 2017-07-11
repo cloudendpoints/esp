@@ -113,12 +113,6 @@ void *ngx_esp_create_main_conf(ngx_conf_t *cf);
 // Initializes the modules' main context configuration structure.
 char *ngx_esp_init_main_conf(ngx_conf_t *cf, void *conf);
 
-// Create server context configuration.
-void *ngx_esp_create_srv_conf(ngx_conf_t *cf);
-
-// Merges in parent server configuration.
-char *ngx_esp_merge_srv_conf(ngx_conf_t *cf, void *prev, void *conf);
-
 // Creates the module's location context configuration structure.
 void *ngx_esp_create_loc_conf(ngx_conf_t *cf);
 char *ngx_esp_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child);
@@ -183,14 +177,22 @@ ngx_command_t ngx_esp_commands[] = {
     },
     {
         ngx_string("endpoints_resolver"), NGX_HTTP_MAIN_CONF | NGX_CONF_TAKE1,
-        ngx_conf_set_str_slot, NGX_HTTP_MAIN_CONF_OFFSET,
-        offsetof(ngx_esp_main_conf_t, upstream_resolver), nullptr,
+        [](ngx_conf_t *cf, ngx_command_t *cmd, void *conf) -> char * {
+          return ngx_conf_set_str_slot(
+              cf, cmd, &reinterpret_cast<ngx_esp_main_conf_t *>(conf)
+                            ->upstream_resolver);
+        },
+        NGX_HTTP_MAIN_CONF_OFFSET, 0, nullptr,
     },
     {
         ngx_string("endpoints_certificates"),
-        NGX_HTTP_MAIN_CONF | NGX_CONF_TAKE1, ngx_conf_set_str_slot,
-        NGX_HTTP_MAIN_CONF_OFFSET, offsetof(ngx_esp_main_conf_t, cert_path),
-        nullptr,
+        NGX_HTTP_MAIN_CONF | NGX_CONF_TAKE1,
+        [](ngx_conf_t *cf, ngx_command_t *cmd, void *conf) -> char * {
+          return ngx_conf_set_str_slot(
+              cf, cmd,
+              &reinterpret_cast<ngx_esp_main_conf_t *>(conf)->cert_path);
+        },
+        NGX_HTTP_MAIN_CONF_OFFSET, 0, nullptr,
     },
     ngx_null_command  // last entry
 };
@@ -938,23 +940,9 @@ bool ngx_esp_attempt_shutdown(ngx_cycle_t *cycle) {
 }
 
 // The shutdown timeout.
+// The module schedules a short timeout to detect NGINX shutdown.
 //
-// The module schedules a very long timeout to detect NGINX shutdown. During
-// shutdown, NGINX cancels timers and calls their handlers.
-//
-// The value of NGX_MAX_INT32_VALUE (2147483647 ms, or approximately 24 days)
-// is used for the timeout because it is long enough (24 days) but also
-// confirmed to work on Mac OSX.
-//
-// Too high a timeout (for example NGX_MAX_INT_T_VALUE) will cause kevent to
-// return an invalid argument error which effectively disables the NGINX event
-// loop by turning into a perpetually failing infinite loop.
-//
-// The largest value confirmed to work on Mac OSX is:
-//   NGX_MAX_INT_T_VALUE >> 27 == 68719476735
-// which is approximately 795 days.
-//
-const ngx_msec_t shutdown_timeout = NGX_MAX_INT32_VALUE;
+ngx_msec_t shutdown_timeout = 500;
 
 // Forward declaration.
 void ngx_http_esp_exit_timer_event_handler(ngx_event_t *ev);
@@ -969,7 +957,6 @@ void ngx_esp_schedule_exit_timer(ngx_cycle_t *cycle, ngx_event_t *ev) {
   ev->data = cycle;
   ev->handler = ngx_http_esp_exit_timer_event_handler;
   ev->log = cycle->log;
-  ev->cancelable = 1;
 
   ngx_add_timer(ev, shutdown_timeout);
 }
@@ -980,13 +967,12 @@ void ngx_http_esp_exit_timer_event_handler(ngx_event_t *ev) {
 
   ngx_cycle_t *cycle = reinterpret_cast<ngx_cycle_t *>(ev->data);
 
-  if (ev->timedout) {
-    // Timer timed out. This should be exceedingly rare (the shutdown timeout is
-    // very long). If it does happen, reschedule the same timeout again.
+  if (!ngx_exiting && !ngx_terminate && !ngx_quit) {
     ngx_esp_schedule_exit_timer(cycle, ev);
   } else if (!ngx_esp_attempt_shutdown(cycle)) {
-    // Timer was cancelled but the shutdown attempt hasn't succeeded yet.
-    // Reschedule timer again to give shutdown more time to complete.
+    // The shutdown attempt hasn't succeeded yet. Reschedule timer again
+    // with shorter timeout to give shutdown more time to complete.
+    shutdown_timeout = 10;
     ngx_esp_schedule_exit_timer(cycle, ev);
   }
 }
