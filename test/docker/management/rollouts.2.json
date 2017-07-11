@@ -1,0 +1,28 @@
+{
+  "rollouts": [
+    {
+      "rolloutId": "2017-05-16r1",
+      "createTime": "2017-05-16T21:40:00.550Z",
+      "createdBy": "customer@google.com",
+      "status": "SUCCESS",
+      "trafficPercentStrategy": {
+        "percentages": {
+          "2017-05-16r1": 100
+        }
+      },
+      "serviceName": "bookstore-backend.endpointsv2.appspot.com"
+    },
+    {
+      "rolloutId": "2017-05-16r0",
+      "createTime": "2017-05-16T21:30:59.544Z",
+      "createdBy": "customer@google.com",
+      "status": "SUCCESS",
+      "trafficPercentStrategy": {
+        "percentages": {
+          "2017-05-16r0": 100
+        }
+      },
+      "serviceName": "bookstore-backend.endpointsv2.appspot.com"
+    }
+  ]
+}

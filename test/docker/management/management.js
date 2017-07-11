@@ -32,6 +32,7 @@ var fs = require('fs');
 
 function management() {
   var management = express();
+  var rollouts_sequence = 1;
 
   // Tracing middleware.
   management.use(function(req, res, next) {
@@ -65,6 +66,27 @@ function management() {
     }
 
     res.send(JSON.stringify(json));
+  });
+
+  management.get("/v1/services/:serviceName/rollouts", function(req, res) {
+	  var fileName = 'rollouts.' + rollouts_sequence + '.json';
+	  if (fs.existsSync(fileName)) {
+		  var content = fs.readFileSync(fileName);
+		  res.send(JSON.parse(content));
+	  } else {
+		  res.status(404).send("Not Found");
+	  }
+	  rollouts_sequence++;
+  });
+
+  management.get("/v1/services/:serviceName/configs/:configId", function(req, res) {
+	  var fileName = 'service.' + req.params.configId + '.json';
+	  if (fs.existsSync(fileName)) {
+		  var content = fs.readFileSync(fileName);
+		  res.send(JSON.parse(content));
+	  } else {
+		  res.status(404).send("Not Found");
+	  }
   });
 
   return management;
