@@ -117,9 +117,9 @@ EXPECTED_RESPONSE=".*Method doesn't allow unregistered callers.*STATUS_CODE:401"
 
 SERVICE_NAME="echo-dot-${PROJECT_ID}.appspot.com"
 JWT_TOKEN="$("${ROOT}/client/custom/gen-auth-token.sh" \
-  -s "${ROOT}/test/echo/esp-echo-client-secret-jwk.json" \
+  -s "$(get_test_client_key ${ROOT}/test/echo/esp-echo-client-secret-jwk.json)" \
   -a "${SERVICE_NAME}")"
-POST_FILE="${ROOT}/test/echo/esp-echo-client-secret-x509.json"
+POST_FILE="${ROOT}/test/echo/package.json"
 
 echo "Start perf testing"
 pushd "${ROOT}/test/client" > /dev/null

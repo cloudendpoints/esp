@@ -38,7 +38,7 @@ manual_scaling:
 # Hard code the service name and config_id
 endpoints_api_service:
   name: "${MY_PROJECT_ID}.appspot.com"
-  config_id: "2017-05-25r0"
+  config_id: "2017-07-12r0"
 
 beta_settings:
   allow_ssh: true
