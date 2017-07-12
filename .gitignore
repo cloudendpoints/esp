@@ -9,3 +9,7 @@ CMakeLists.txt
 /bazel-*
 
 test/src/github.com
+
+client/custom/esp-test-client-secret-jwk.json
+client/custom/esp-test-client-secret-x509.json
+test/echo/esp-echo-client-secret-jwk.json

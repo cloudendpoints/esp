@@ -34,9 +34,6 @@ BUILD_AUTH_TOKEN_GEN=1
 
 . ${ROOT}/script/all-utilities || { echo 'Cannot load Bash utilities'; exit 1; }
 
-# By default, use jwk key. Can be switched to x509 or symmetric key.
-SECRET_FILE="${ROOT}/client/custom/esp-test-client-secret-jwk.json"
-
 # By default audience is service name,  use -a to change it to your service
 # name or other allowed audiences (check service swagger configuration).
 AUDIENCE="bookstore-esp-echo.cloudendpointsapis.com"
@@ -61,6 +58,9 @@ while getopts a:g:s:? arg; do
     ?) usage;;
   esac
 done
+
+# By default, use jwk key. Can be switched to x509 or symmetric key.
+SECRET_FILE="${SECRET_FILE:-$(get_test_client_key ${ROOT}/client/custom/esp-test-client-secret-jwk.json)}"
 
 if [[ ! -x ${AUTH_TOKEN_GEN} ]]; then
   [[ ${BUILD_AUTH_TOKEN_GEN} -ne 0 ]] \

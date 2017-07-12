@@ -149,11 +149,20 @@ function retry() {
 # Download api Keys from Cloud storage and source the file.
 function set_api_keys() {
   local api_key_directory="$(mktemp -d)"
-  gsutil cp gs://client-secret-files/api_keys \
+  $GSUTIL cp gs://client-secret-files/api_keys \
         "${api_key_directory}/api_keys" \
           || error_exit "Failed to download API key file."
 
   source "${api_key_directory}/api_keys"
+}
+
+# Download test-client keys from Cloud storage
+function get_test_client_key() {
+  local key_path=$1
+  [[ -e $key_path ]] || $GSUTIL \
+    cp gs://client-secret-files/esp-test-client-434d3cb34a1c.json $key_path
+  echo -n $key_path
+  return 0
 }
 
 # Creates a simple Json Status file
