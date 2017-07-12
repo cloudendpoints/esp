@@ -184,8 +184,8 @@ BOOKSTORE_FAILURES=0
 #   "kid": "f525b853cbd035cc6b2910bb87752311d32091b8"
 # }
 # {
-#   "iss": "loadtest@esp-test-client.iam.gserviceaccount.com",
-#   "sub": "loadtest@esp-test-client.iam.gserviceaccount.com",
+#   "iss": "test-client@esp-test-client.iam.gserviceaccount.com",
+#   "sub": "test-client@esp-test-client.iam.gserviceaccount.com",
 #   "aud": ["test", "esp-load-test.appspot.com"],
 #   "iat": 1457109765,
 #   "exp": 2457113365
