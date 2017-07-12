@@ -31,26 +31,31 @@ use warnings;
 
 use src::nginx::t::ApiManager;   # Must be first (sets up import path to the Nginx test module)
 use src::nginx::t::HttpServer;
+use src::nginx::t::ServiceControl;
 use Test::Nginx;  # Imports Nginx's test module
 use Test::More;   # And the test framework
+use JSON::PP;
 
 ################################################################################
 
-# Port assignments
+# Port assignment
 my $Http2NginxPort = ApiManager::pick_port();
-my $HttpBackendPort = ApiManager::pick_port();
 my $GrpcBackendPort = ApiManager::pick_port();
-my $GrpcFallbackPort = ApiManager::pick_port();
+my $MetricsPort = ApiManager::pick_port();
+my $HttpBackendPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(4);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(3);
 
-$t->write_file('service.pb.txt', ApiManager::get_grpc_test_service_config($GrpcBackendPort));
+$t->write_file(
+    'service.pb.txt',
+    ApiManager::get_grpc_interop_service_config . <<"EOF");
+EOF
 
 $t->write_file_expand('nginx.conf', <<"EOF");
 %%TEST_GLOBALS%%
 daemon off;
 events {
-  worker_connections 32;
+  worker_connections 4096;
 }
 http {
   %%TEST_GLOBALS_HTTP%%
@@ -62,49 +67,43 @@ http {
         api service.pb.txt;
         on;
       }
-      grpc_pass 127.0.0.2:${GrpcFallbackPort};
+      grpc_pass 127.0.0.1:${GrpcBackendPort};
     }
-
   }
 }
 EOF
 
-$t->run_daemon(\&ApiManager::grpc_test_server, $t, "127.0.0.1:${GrpcBackendPort}");
+$t->run_daemon(\&ApiManager::grpc_interop_server, $t, "${GrpcBackendPort}");
 is($t->waitforsocket("127.0.0.1:${GrpcBackendPort}"), 1, 'GRPC test server socket ready.');
 $t->run();
 is($t->waitforsocket("127.0.0.1:${Http2NginxPort}"), 1, 'Nginx socket ready.');
 
 ################################################################################
-
-my $test_results = &ApiManager::run_grpc_test($t, <<"EOF");
-server_addr: "127.0.0.1:${Http2NginxPort}"
-direct_addr: "127.0.0.1:${GrpcBackendPort}"
-plans {
-  probe_upstream_message_limit {
-    request {
-      text: "Hello, world!  Plus some extra text to add a little length."
-    }
-    timeout_ms: 1000
-  }
-}
-EOF
+my $result = &ApiManager::run_grpc_interop_stress_test($t, $Http2NginxPort, $MetricsPort,
+    "empty_unary:10,large_unary:10,empty_stream:10,client_streaming:10,ping_pong:20,server_streaming:10,status_code_and_message:10,custom_metadata:10", 
+    10);
+is($result, 0, "interop stress test completed as expected.");
 
 $t->stop_daemons();
 
-my $test_results_expected = <<'EOF';
-results {
-  probe_upstream_message_limit {
-    message_limit: (\d+)
-  }
-}
+################################################################################
+
+sub service_control {
+  my ($t, $port, $file) = @_;
+  my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
+    or die "Can't create test server socket: $!\n";
+  local $SIG{PIPE} = 'IGNORE';
+
+  $server->on_sub('POST', '/v1/services/endpoints-grpc-interop.cloudendpointsapis.com:check', sub {
+    my ($headers, $body, $client) = @_;
+    print $client <<'EOF';
+HTTP/1.1 200 OK
+Connection: close
+
 EOF
-like($test_results, qr/$test_results_expected/m, 'Client tests completed as expected.');
+  });
 
-if ($test_results =~ /$test_results_expected/) {
-  my $message_limit = $1;
-
-  cmp_ok($message_limit, '<', 40000, 'upstream->downstream is throttled');
-
-} else {
-  fail('Able to pull out test results');
+  $server->run();
 }
+
+################################################################################
