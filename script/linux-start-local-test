@@ -120,8 +120,8 @@ NGINX_ARGS=(-p "${PREFIX}" -c "${NGINX_CONFIG}" -g "pid ${PREFIX}/.nginx.pid;")
 
 echo 'Constructing test data.'
 JWT_TOKEN="$("${ROOT}/client/custom/gen-auth-token.sh" \
-    -s "${ROOT}/test/echo/esp-echo-client-secret-jwk.json" \
-    -a "${SERVICE_NAME}")"
+  -s "$(get_test_client_key ${ROOT}/test/echo/esp-echo-client-secret-jwk.json)" \
+  -a "${SERVICE_NAME}")"
 POST_FILE="${ROOT}/test/data/8k.json"
 HOST='http://127.0.0.1:8090'
 
