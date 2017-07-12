@@ -1102,8 +1102,8 @@
     "providers": [
       {
         "id": "test_jwk",
-        "issuer": "loadtest@esp-test-client.iam.gserviceaccount.com",
-        "jwksUri": "https://www.googleapis.com/service_accounts/v1/jwk/loadtest@esp-test-client.iam.gserviceaccount.com"
+        "issuer": "test-client@esp-test-client.iam.gserviceaccount.com",
+        "jwksUri": "https://www.googleapis.com/service_accounts/v1/jwk/test-client@esp-test-client.iam.gserviceaccount.com"
       }
     ]
   },

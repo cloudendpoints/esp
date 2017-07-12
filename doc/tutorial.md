@@ -265,8 +265,8 @@ Open `${ESP}/src/nginx/conf/bookstore.json` and replace the (initially empty)
  "providers": [
    {
      "id": "test-auth-provider",
-     "issuer": "loadtest@esp-test-client.iam.gserviceaccount.com",
-     "jwksUri": "https://www.googleapis.com/service_accounts/v1/jwk/loadtest@esp-test-client.iam.gserviceaccount.com"
+     "issuer": "test-client@esp-test-client.iam.gserviceaccount.com",
+     "jwksUri": "https://www.googleapis.com/service_accounts/v1/jwk/test-client@esp-test-client.iam.gserviceaccount.com"
    }
  ],
  "rules": [
