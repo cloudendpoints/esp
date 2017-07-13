@@ -105,7 +105,7 @@ cp -f "${NGINX_BAZEL_BIN}" "${NGINX}" \
 echo 'Creating service.json'
 # Hard code Config_ID.
 SERVICE_NAME='echo-dot-esp-load-test.appspot.com'
-CONFIG_ID='2017-05-26r0'
+CONFIG_ID='2017-07-12r0'
 activate_service_account "esp-load-test"
 ${GCLOUD} service-management configs describe --service ${SERVICE_NAME} ${CONFIG_ID} \
   --project=esp-load-test --format=json > "${ROOT}/test/echo/gce-vm/service.json"
