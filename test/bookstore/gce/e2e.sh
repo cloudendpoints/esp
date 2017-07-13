@@ -82,13 +82,23 @@ run cat "${VM_STARTUP_SCRIPT}"
 trap cleanup EXIT
 
 # Creating the VM
-run retry -n 3 gcloud compute instances create "${INSTANCE_NAME}" \
-  --machine-type "custom-2-3840" \
-  --image-family "${VM_IMAGE}" \
-  --image-project debian-cloud \
-  --boot-disk-size "100GB" \
-  --metadata endpoints-service-name="${ESP_SERVICE}",endpoints-service-version="${ESP_SERVICE_VERSION}" \
-  --metadata-from-file startup-script="${VM_STARTUP_SCRIPT}"
+if [[ "${ROLLOUT_STRATEGY}" == "original" ]]; then
+  run retry -n 3 gcloud compute instances create "${INSTANCE_NAME}" \
+    --machine-type "custom-2-3840" \
+    --image-family "${VM_IMAGE}" \
+    --image-project debian-cloud \
+    --boot-disk-size "100GB" \
+    --metadata endpoints-service-name="${ESP_SERVICE}",endpoints-service-version="${ESP_SERVICE_VERSION}" \
+    --metadata-from-file startup-script="${VM_STARTUP_SCRIPT}"
+else
+  run retry -n 3 gcloud compute instances create "${INSTANCE_NAME}" \
+    --machine-type "custom-2-3840" \
+    --image-family "${VM_IMAGE}" \
+    --image-project debian-cloud \
+    --boot-disk-size "100GB" \
+    --metadata endpoints-service-name="${ESP_SERVICE}",endpoints-rollout-strategy="${ROLLOUT_STRATEGY}" \
+    --metadata-from-file startup-script="${VM_STARTUP_SCRIPT}"
+fi
 
 run retry -n 3 get_host_ip "${INSTANCE_NAME}"
 HOST="http://${HOST_INTERNAL_IP}:8080"

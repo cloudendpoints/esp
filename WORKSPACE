@@ -28,7 +28,7 @@
 
 ISTIO_PROXY = "b129798546b499db2966921f4ba4dc53bb56bd5c"
 
-ESP_TOOL = "ff0d6df7f56ca1c2b229aaadd8abe62cb1d508fb"
+ESP_TOOL = "371c201d0d57cd216f6dcbfd0c0053a71e37950e"
 
 git_repository(
     name = "nginx",
