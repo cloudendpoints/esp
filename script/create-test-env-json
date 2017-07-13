@@ -46,7 +46,7 @@ cat << EOF > "${TEST_ENV}"
 {
   "test": "${TEST}",
   "run_id": "${ID}",
-  "run_description": $(python -c "import json; a='${SUBJECT}'; print json.dumps(a)"),
+  "run_description": $(python -c "import json; a='''${SUBJECT}'''; print json.dumps(a)"),
   "owner": "${AUTHOR}"
 }
 EOF
