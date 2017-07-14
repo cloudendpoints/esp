@@ -1,3 +1,8 @@
+# Release 1.5.0 14-07-2017
+
+- Update NGINX to 1.13.3.
+- Add support for skip_service_control usage rule.
+
 # Release 1.4.0 30-05-2017
 
 - Fixed a Firebase rule bug when api-key is in query parameter.
