@@ -280,7 +280,17 @@ def e2eTest(nodeLabel) {
   def branches = [
       ['gce-debian-8', {
         node(nodeLabel) {
-          e2eGCE(DEBIAN_JESSIE)
+          e2eGCE(DEBIAN_JESSIE, 'original')
+        }
+      }],
+      ['gce-debian-8-fixed', {
+        node(nodeLabel) {
+          e2eGCE(DEBIAN_JESSIE, 'fixed')
+        }
+      }],
+      ['gce-debian-8-managed', {
+        node(nodeLabel) {
+          e2eGCE(DEBIAN_JESSIE, 'managed')
         }
       }],
       ['gke-tight-http', {
@@ -573,7 +583,7 @@ def e2eGKE(coupling, proto, backend = 'bookstore') {
       (getParam('SKIP_CLEANUP', false) ? " -s" : ""))
 }
 
-def e2eGCE(vmImage) {
+def e2eGCE(vmImage, rolloutStrategy) {
   setupNode()
   fastUnstash('tools')
   def commonOptions = e2eCommonOptions('gce-raw')
@@ -584,6 +594,7 @@ def e2eGCE(vmImage) {
       commonOptions +
       "-V ${ESP_RUNTIME_VERSION} " +
       "-v ${vmImage} " +
+      "-R ${rolloutStrategy} " +
       "-d \"${espDebianPkg}\" " +
       "-r \"${debianPackageRepo}\"")
 }
