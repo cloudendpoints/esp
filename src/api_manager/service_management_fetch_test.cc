@@ -12,10 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "contrib/endpoints/src/api_manager/service_management_fetch.h"
+#include "src/api_manager/service_management_fetch.h"
 
-#include "contrib/endpoints/src/api_manager/config.h"
-#include "contrib/endpoints/src/api_manager/mock_api_manager_environment.h"
+#include "src/api_manager/config.h"
+#include "src/api_manager/mock_api_manager_environment.h"
 
 using ::testing::_;
 using ::testing::Invoke;

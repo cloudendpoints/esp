@@ -18,7 +18,7 @@
 #include <functional>
 #include <string>
 
-#include "contrib/endpoints/include/api_manager/utils/status.h"
+#include "include/api_manager/utils/status.h"
 
 namespace google {
 namespace api_manager {

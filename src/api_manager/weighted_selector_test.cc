@@ -14,7 +14,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
-#include "contrib/endpoints/src/api_manager/weighted_selector.h"
+#include "src/api_manager/weighted_selector.h"
 #include "gtest/gtest.h"
 
 namespace google {

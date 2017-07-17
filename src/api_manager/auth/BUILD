@@ -14,7 +14,7 @@
 #
 ################################################################################
 #
-package(default_visibility = ["//contrib/endpoints/src/api_manager:__subpackages__"])
+package(default_visibility = ["//src/api_manager:__subpackages__"])
 
 cc_library(
     name = "auth",
@@ -33,9 +33,9 @@ cc_library(
         ],
     }),
     deps = [
-        "//contrib/endpoints/src/api_manager:auth_headers",
-        "//contrib/endpoints/src/api_manager/auth/lib",
-        "//contrib/endpoints/src/api_manager/utils",
+        "//src/api_manager:auth_headers",
+        "//src/api_manager/auth/lib",
+        "//src/api_manager/utils",
         "//external:googletest_prod",
         "//external:servicecontrol_client",
     ],
@@ -57,9 +57,9 @@ cc_library(
         ],
     }),
     deps = [
-        "//contrib/endpoints/include:headers_only",
-        "//contrib/endpoints/src/api_manager/auth/lib",
-        "//contrib/endpoints/src/api_manager/utils",
+        "//include:headers_only",
+        "//src/api_manager/auth/lib",
+        "//src/api_manager/utils",
         "//external:grpc++",
     ],
 )
@@ -86,7 +86,7 @@ cc_test(
     linkstatic = 1,
     deps = [
         ":service_account_token",
-        "//contrib/endpoints/src/api_manager:mock_api_manager_environment",
+        "//src/api_manager:mock_api_manager_environment",
         "//external:googletest_main",
     ],
 )

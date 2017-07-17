@@ -26,7 +26,7 @@
 #ifndef NGINX_NGX_ESP_ENV_H_
 #define NGINX_NGX_ESP_ENV_H_
 
-#include "contrib/endpoints/include/api_manager/api_manager.h"
+#include "include/api_manager/api_manager.h"
 
 extern "C" {
 #include "src/core/ngx_core.h"

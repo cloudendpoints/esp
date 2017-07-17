@@ -14,7 +14,7 @@
 #
 ################################################################################
 #
-package(default_visibility = ["//contrib/endpoints/src/api_manager:__subpackages__"])
+package(default_visibility = ["//src/api_manager:__subpackages__"])
 
 cc_library(
     name = "context",
@@ -36,15 +36,15 @@ cc_library(
         ],
     }),
     deps = [
-        "//contrib/endpoints/src/api_manager:http_template",
-        "//contrib/endpoints/src/api_manager:impl_headers",
-        "//contrib/endpoints/src/api_manager:path_matcher",
-        "//contrib/endpoints/src/api_manager:server_config_proto",
-        "//contrib/endpoints/src/api_manager/auth",
-        "//contrib/endpoints/src/api_manager/auth:service_account_token",
-        "//contrib/endpoints/src/api_manager/cloud_trace",
-        "//contrib/endpoints/src/api_manager/service_control",
-        "//contrib/endpoints/src/api_manager/utils",
+        "//src/api_manager:http_template",
+        "//src/api_manager:impl_headers",
+        "//src/api_manager:path_matcher",
+        "//src/api_manager:server_config_proto",
+        "//src/api_manager/auth",
+        "//src/api_manager/auth:service_account_token",
+        "//src/api_manager/cloud_trace",
+        "//src/api_manager/service_control",
+        "//src/api_manager/utils",
         "//external:cc_wkt_protos",
         "//external:cloud_trace",
         "//external:googletest_prod",

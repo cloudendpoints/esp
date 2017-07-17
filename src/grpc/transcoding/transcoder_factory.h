@@ -17,13 +17,13 @@
 
 #include <memory>
 
-#include "contrib/endpoints/include/api_manager/method_call_info.h"
 #include "google/api/service.pb.h"
 #include "google/protobuf/io/zero_copy_stream.h"
 #include "google/protobuf/stubs/status.h"
 #include "grpc_transcoding/transcoder.h"
 #include "grpc_transcoding/transcoder_input_stream.h"
 #include "grpc_transcoding/type_helper.h"
+#include "include/api_manager/method_call_info.h"
 
 namespace google {
 namespace api_manager {

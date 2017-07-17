@@ -14,7 +14,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "contrib/endpoints/include/api_manager/utils/version.h"
+#include "include/api_manager/utils/version.h"
 
 namespace google {
 namespace api_manager {

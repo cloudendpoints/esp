@@ -14,7 +14,7 @@
 #
 ################################################################################
 #
-package(default_visibility = ["//contrib/endpoints/src/api_manager:__subpackages__"])
+package(default_visibility = ["//src/api_manager:__subpackages__"])
 
 cc_library(
     name = "firebase_rules",
@@ -32,9 +32,9 @@ cc_library(
         ],
     }),
     deps = [
-        "//contrib/endpoints/src/api_manager:security_rules_proto",
-        "//contrib/endpoints/src/api_manager/context",
-        "//contrib/endpoints/src/api_manager/utils",
+        "//src/api_manager:security_rules_proto",
+        "//src/api_manager/context",
+        "//src/api_manager/utils",
         "//external:cc_wkt_protos",
         "//external:googletest_prod",
     ],

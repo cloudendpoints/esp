@@ -13,10 +13,10 @@
 // limitations under the License.
 //
 ////////////////////////////////////////////////////////////////////////////////
-#include "contrib/endpoints/src/api_manager/firebase_rules/firebase_request.h"
-#include "contrib/endpoints/src/api_manager/utils/marshalling.h"
-#include "contrib/endpoints/src/api_manager/utils/url_util.h"
+#include "src/api_manager/firebase_rules/firebase_request.h"
 #include "google/protobuf/util/message_differencer.h"
+#include "src/api_manager/utils/marshalling.h"
+#include "src/api_manager/utils/url_util.h"
 
 #include <algorithm>
 #include <sstream>

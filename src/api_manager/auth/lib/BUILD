@@ -33,9 +33,9 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//contrib/endpoints/include:headers_only",
-        "//contrib/endpoints/src/api_manager:auth_headers",
-        "//contrib/endpoints/src/api_manager/utils",
+        "//include:headers_only",
+        "//src/api_manager:auth_headers",
+        "//src/api_manager/utils",
         "//external:grpc",
         "//external:protobuf",
     ],

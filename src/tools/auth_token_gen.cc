@@ -29,7 +29,7 @@
 #include <memory>
 #include <string>
 
-#include "contrib/endpoints/src/api_manager/auth/lib/auth_token.h"
+#include "src/api_manager/auth/lib/auth_token.h"
 
 namespace {
 

@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "contrib/endpoints/src/api_manager/service_management_fetch.h"
+#include "src/api_manager/service_management_fetch.h"
 
 namespace google {
 namespace api_manager {

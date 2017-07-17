@@ -15,10 +15,10 @@
 #ifndef API_MANAGER_CONTEXT_SERVICE_CONTEXT_H_
 #define API_MANAGER_CONTEXT_SERVICE_CONTEXT_H_
 
-#include "contrib/endpoints/include/api_manager/method.h"
-#include "contrib/endpoints/src/api_manager/config.h"
-#include "contrib/endpoints/src/api_manager/context/global_context.h"
-#include "contrib/endpoints/src/api_manager/service_control/interface.h"
+#include "include/api_manager/method.h"
+#include "src/api_manager/config.h"
+#include "src/api_manager/context/global_context.h"
+#include "src/api_manager/service_control/interface.h"
 
 namespace google {
 namespace api_manager {

@@ -13,12 +13,12 @@
 // limitations under the License.
 //
 ////////////////////////////////////////////////////////////////////////////////
-#include "contrib/endpoints/src/api_manager/check_security_rules.h"
+#include "src/api_manager/check_security_rules.h"
 #include <iostream>
 #include <sstream>
-#include "contrib/endpoints/src/api_manager/auth/lib/json_util.h"
-#include "contrib/endpoints/src/api_manager/firebase_rules/firebase_request.h"
-#include "contrib/endpoints/src/api_manager/utils/marshalling.h"
+#include "src/api_manager/auth/lib/json_util.h"
+#include "src/api_manager/firebase_rules/firebase_request.h"
+#include "src/api_manager/utils/marshalling.h"
 
 using ::google::api_manager::auth::GetStringValue;
 using ::google::api_manager::firebase_rules::FirebaseRequest;

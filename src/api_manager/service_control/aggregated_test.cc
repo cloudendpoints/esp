@@ -14,13 +14,13 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
-#include "contrib/endpoints/src/api_manager/service_control/aggregated.h"
-#include "contrib/endpoints/include/api_manager/utils/status.h"
-#include "contrib/endpoints/src/api_manager/mock_api_manager_environment.h"
-#include "contrib/endpoints/src/api_manager/service_control/proto.h"
+#include "src/api_manager/service_control/aggregated.h"
 #include "gmock/gmock.h"
 #include "google/protobuf/text_format.h"
 #include "gtest/gtest.h"
+#include "include/api_manager/utils/status.h"
+#include "src/api_manager/mock_api_manager_environment.h"
+#include "src/api_manager/service_control/proto.h"
 
 using ::google::api::servicecontrol::v1::CheckRequest;
 using ::google::api::servicecontrol::v1::CheckResponse;

@@ -16,9 +16,9 @@
 //
 #include <iostream>
 
-#include "contrib/endpoints/src/api_manager/cloud_trace/cloud_trace.h"
-#include "contrib/endpoints/src/api_manager/quota_control.h"
 #include "google/protobuf/stubs/status.h"
+#include "src/api_manager/cloud_trace/cloud_trace.h"
+#include "src/api_manager/quota_control.h"
 
 using ::google::api_manager::utils::Status;
 using ::google::protobuf::util::error::Code;

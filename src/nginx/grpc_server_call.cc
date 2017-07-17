@@ -30,9 +30,9 @@
 #include <cassert>
 #include <utility>
 
-#include "contrib/endpoints/include/api_manager/utils/status.h"
 #include "grpc++/support/byte_buffer.h"
 #include "grpc/compression.h"
+#include "include/api_manager/utils/status.h"
 #include "src/nginx/error.h"
 #include "src/nginx/grpc_finish.h"
 #include "src/nginx/module.h"

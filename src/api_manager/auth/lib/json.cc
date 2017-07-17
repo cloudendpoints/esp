@@ -14,12 +14,12 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
-#include "contrib/endpoints/src/api_manager/auth/lib/json.h"
+#include "src/api_manager/auth/lib/json.h"
 
 #include <cstring>
 #include <string>
 
-#include "contrib/endpoints/src/api_manager/auth/lib/json_util.h"
+#include "src/api_manager/auth/lib/json_util.h"
 
 namespace google {
 namespace api_manager {

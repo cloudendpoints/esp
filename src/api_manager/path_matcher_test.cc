@@ -14,7 +14,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
-#include "contrib/endpoints/src/api_manager/path_matcher.h"
+#include "src/api_manager/path_matcher.h"
 
 #include <memory>
 #include <ostream>

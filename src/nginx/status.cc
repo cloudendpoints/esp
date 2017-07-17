@@ -29,7 +29,7 @@
 #include <unistd.h>
 #include <fstream>
 
-#include "contrib/endpoints/src/api_manager/utils/marshalling.h"
+#include "src/api_manager/utils/marshalling.h"
 #include "src/nginx/environment.h"
 #include "src/nginx/module.h"
 #include "src/nginx/proto/status.pb.h"

@@ -14,7 +14,7 @@
 #
 ################################################################################
 #
-package(default_visibility = ["//contrib/endpoints/src/api_manager:__subpackages__"])
+package(default_visibility = ["//src/api_manager:__subpackages__"])
 
 cc_library(
     name = "service_control",
@@ -40,11 +40,11 @@ cc_library(
         ],
     }),
     deps = [
-        "//contrib/endpoints/include:headers_only",
-        "//contrib/endpoints/src/api_manager:impl_headers",
-        "//contrib/endpoints/src/api_manager:server_config_proto",
-        "//contrib/endpoints/src/api_manager/cloud_trace",
-        "//contrib/endpoints/src/api_manager/utils",
+        "//include:headers_only",
+        "//src/api_manager:impl_headers",
+        "//src/api_manager:server_config_proto",
+        "//src/api_manager/cloud_trace",
+        "//src/api_manager/utils",
         "//external:cc_wkt_protos",
         "//external:googletest_prod",
         "//external:grpc++",
@@ -91,7 +91,7 @@ cc_test(
     linkstatic = 1,
     deps = [
         ":service_control",
-        "//contrib/endpoints/src/api_manager:mock_api_manager_environment",
+        "//src/api_manager:mock_api_manager_environment",
         "//external:googletest_main",
     ],
 )
@@ -105,7 +105,7 @@ cc_test(
     linkstatic = 1,
     deps = [
         ":service_control",
-        "//contrib/endpoints/src/api_manager:mock_api_manager_environment",
+        "//src/api_manager:mock_api_manager_environment",
         "//external:googletest_main",
     ],
 )

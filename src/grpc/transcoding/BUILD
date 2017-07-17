@@ -26,7 +26,7 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//contrib/endpoints/include:headers_only",
+        "//include:headers_only",
         "//external:service_config",
         "//external:transcoding",
     ],

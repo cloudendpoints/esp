@@ -14,7 +14,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 // includes should be ordered. This seems like a bug in clang-format?
-#include "contrib/endpoints/src/api_manager/weighted_selector.h"
+#include "src/api_manager/weighted_selector.h"
 
 namespace google {
 namespace api_manager {

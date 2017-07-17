@@ -14,7 +14,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
-#include "contrib/endpoints/src/api_manager/auth/jwt_cache.h"
+#include "src/api_manager/auth/jwt_cache.h"
 #include <memory>
 #include "gtest/gtest.h"
 

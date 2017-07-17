@@ -14,11 +14,11 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
-#include "contrib/endpoints/include/api_manager/utils/status.h"
+#include "include/api_manager/utils/status.h"
 
 #include <sstream>
 
-#include "contrib/endpoints/src/api_manager/utils/marshalling.h"
+#include "src/api_manager/utils/marshalling.h"
 
 using ::google::protobuf::util::error::Code;
 

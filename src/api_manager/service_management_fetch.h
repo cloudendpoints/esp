@@ -18,8 +18,8 @@
 #include <functional>
 #include <string>
 
-#include "contrib/endpoints/src/api_manager/context/global_context.h"
 #include "google/api/servicemanagement/v1/servicemanager.pb.h"
+#include "src/api_manager/context/global_context.h"
 
 using ::google::api::Service;
 using ::google::api::servicemanagement::v1::ListServiceRolloutsResponse;

@@ -12,9 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "contrib/endpoints/src/api_manager/config_manager.h"
-#include "contrib/endpoints/src/api_manager/fetch_metadata.h"
-#include "contrib/endpoints/src/api_manager/utils/marshalling.h"
+#include "src/api_manager/config_manager.h"
+#include "src/api_manager/fetch_metadata.h"
+#include "src/api_manager/utils/marshalling.h"
 
 namespace google {
 namespace api_manager {

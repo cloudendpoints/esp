@@ -15,8 +15,8 @@
 #ifndef API_MANAGER_CONFIG_MANAGER_H_
 #define API_MANAGER_CONFIG_MANAGER_H_
 
-#include "contrib/endpoints/src/api_manager/context/global_context.h"
-#include "contrib/endpoints/src/api_manager/service_management_fetch.h"
+#include "src/api_manager/context/global_context.h"
+#include "src/api_manager/service_management_fetch.h"
 
 namespace google {
 namespace api_manager {

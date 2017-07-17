@@ -20,9 +20,9 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "contrib/endpoints/include/api_manager/utils/status.h"
-#include "contrib/endpoints/src/api_manager/context/request_context.h"
-#include "contrib/endpoints/src/api_manager/proto/security_rules.pb.h"
+#include "include/api_manager/utils/status.h"
+#include "src/api_manager/context/request_context.h"
+#include "src/api_manager/proto/security_rules.pb.h"
 
 // An object of this class should be created for each RequestContext object.
 // Here is the flow of messages between ESP, Firebase rules and User provided

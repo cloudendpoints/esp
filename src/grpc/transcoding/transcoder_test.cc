@@ -20,15 +20,15 @@
 #include <vector>
 
 #include "bookstore.pb.h"
-#include "contrib/endpoints/include/api_manager/method.h"
-#include "contrib/endpoints/include/api_manager/method_call_info.h"
-#include "contrib/endpoints/src/grpc/transcoding/transcoder_factory.h"
 #include "google/protobuf/io/zero_copy_stream.h"
 #include "google/protobuf/stubs/strutil.h"
 #include "google/protobuf/util/message_differencer.h"
 #include "grpc_transcoding/message_reader.h"
 #include "grpc_transcoding/transcoder.h"
 #include "gtest/gtest.h"
+#include "include/api_manager/method.h"
+#include "include/api_manager/method_call_info.h"
+#include "src/grpc/transcoding/transcoder_factory.h"
 #include "test/test_common.h"
 
 namespace google {

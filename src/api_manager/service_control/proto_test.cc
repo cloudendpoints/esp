@@ -14,16 +14,16 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
-#include "contrib/endpoints/src/api_manager/service_control/proto.h"
+#include "src/api_manager/service_control/proto.h"
 #include "gtest/gtest.h"
 
 #include <assert.h>
 #include <fstream>
 #include <string>
 
-#include "contrib/endpoints/include/api_manager/utils/version.h"
 #include "google/protobuf/struct.pb.h"
 #include "google/protobuf/text_format.h"
+#include "include/api_manager/utils/version.h"
 
 namespace gasv1 = ::google::api::servicecontrol::v1;
 using ::google::api_manager::utils::Status;
@@ -36,8 +36,7 @@ namespace service_control {
 
 namespace {
 
-const char kTestdata[] =
-    "contrib/endpoints/src/api_manager/service_control/testdata/";
+const char kTestdata[] = "src/api_manager/service_control/testdata/";
 
 std::string ReadTestBaseline(const char* input_file_name) {
   std::string file_name = std::string(kTestdata) + input_file_name;

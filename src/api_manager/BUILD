@@ -68,7 +68,7 @@ cc_library(
         "request_handler.h",
     ],
     deps = [
-        "//contrib/endpoints/include:headers_only",
+        "//include:headers_only",
     ],
 )
 
@@ -117,12 +117,12 @@ cc_library(
         ":path_matcher",
         ":security_rules_proto",
         ":server_config_proto",
-        "//contrib/endpoints/src/api_manager/auth",
-        "//contrib/endpoints/src/api_manager/cloud_trace",
-        "//contrib/endpoints/src/api_manager/context",
-        "//contrib/endpoints/src/api_manager/firebase_rules",
-        "//contrib/endpoints/src/api_manager/service_control",
-        "//contrib/endpoints/src/api_manager/utils",
+        "//src/api_manager/auth",
+        "//src/api_manager/cloud_trace",
+        "//src/api_manager/context",
+        "//src/api_manager/firebase_rules",
+        "//src/api_manager/service_control",
+        "//src/api_manager/utils",
         "//external:cc_wkt_protos",
         "//external:cloud_trace",
         "//external:googletest_prod",

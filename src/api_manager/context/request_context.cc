@@ -15,7 +15,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 
-#include "contrib/endpoints/src/api_manager/context/request_context.h"
+#include "src/api_manager/context/request_context.h"
 
 #include <uuid/uuid.h>
 #include <sstream>

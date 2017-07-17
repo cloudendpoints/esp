@@ -14,9 +14,9 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
-#include "contrib/endpoints/src/api_manager/api_manager_impl.h"
-#include "contrib/endpoints/src/api_manager/mock_api_manager_environment.h"
 #include "gtest/gtest.h"
+#include "src/api_manager/api_manager_impl.h"
+#include "src/api_manager/mock_api_manager_environment.h"
 
 using ::testing::_;
 using ::testing::Invoke;
@@ -39,7 +39,7 @@ const char kServerConfigWithSingleServiceConfig[] = R"(
   },
   "service_config_rollout": {
     traffic_percentages: {
-      "contrib/endpoints/src/api_manager/testdata/bookstore_service_config_1.json": 100
+      "src/api_manager/testdata/bookstore_service_config_1.json": 100
     }
   }
 }
@@ -54,8 +54,8 @@ const char kServerConfigWithPartialServiceConfig[] = R"(
   },
   "service_config_rollout": {
     traffic_percentages: {
-      "contrib/endpoints/src/api_manager/testdata/bookstore_service_config_1.json": 80,
-      "contrib/endpoints/src/api_manager/testdata/bookstore_service_config_2.json": 20,
+      "src/api_manager/testdata/bookstore_service_config_1.json": 80,
+      "src/api_manager/testdata/bookstore_service_config_2.json": 20,
     }
   }
 }
@@ -70,7 +70,7 @@ const char kServerConfigWithPartialServiceConfigFailed[] = R"(
   },
   "service_config_rollout": {
     traffic_percentages: {
-      "contrib/endpoints/src/api_manager/testdata/bookstore_service_config_1.json": 80,
+      "src/api_manager/testdata/bookstore_service_config_1.json": 80,
       "not_found.json": 20,
     }
   }
@@ -86,7 +86,7 @@ const char kServerConfigWithManagedRolloutStrategy[] = R"(
   },
   "service_config_rollout": {
     traffic_percentages: {
-      "contrib/endpoints/src/api_manager/testdata/bookstore_service_config_1.json": 100
+      "src/api_manager/testdata/bookstore_service_config_1.json": 100
     }
   },
   "rollout_strategy": "managed"

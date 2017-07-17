@@ -15,14 +15,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 
-#include "contrib/endpoints/src/api_manager/check_security_rules.h"
-#include "contrib/endpoints/src/api_manager/context/request_context.h"
-#include "contrib/endpoints/src/api_manager/context/service_context.h"
-#include "contrib/endpoints/src/api_manager/mock_api_manager_environment.h"
-#include "contrib/endpoints/src/api_manager/mock_request.h"
-#include "contrib/endpoints/src/api_manager/proto/security_rules.pb.h"
-#include "contrib/endpoints/src/api_manager/utils/marshalling.h"
+#include "src/api_manager/check_security_rules.h"
 #include "google/protobuf/util/message_differencer.h"
+#include "src/api_manager/context/request_context.h"
+#include "src/api_manager/context/service_context.h"
+#include "src/api_manager/mock_api_manager_environment.h"
+#include "src/api_manager/mock_request.h"
+#include "src/api_manager/proto/security_rules.pb.h"
+#include "src/api_manager/utils/marshalling.h"
 
 using ::testing::_;
 using ::testing::AllOf;

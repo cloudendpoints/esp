@@ -22,7 +22,7 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//contrib/endpoints/src/api_manager",
+        "//src/api_manager",
     ],
 )
 
@@ -32,7 +32,7 @@ cc_library(
         ":headers",
     ],
     visibility = [
-        "//contrib/endpoints/src:__subpackages__",
+        "//src:__subpackages__",
     ],
 )
 

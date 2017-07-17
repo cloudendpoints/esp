@@ -14,7 +14,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
-#include "contrib/endpoints/src/api_manager/utils/url_util.h"
+#include "src/api_manager/utils/url_util.h"
 
 #include "gtest/gtest.h"
 
