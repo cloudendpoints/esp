@@ -26,9 +26,9 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//include:headers_only",
         "//external:service_config",
         "//external:transcoding",
+        "//include:headers_only",
     ],
 )
 
@@ -43,8 +43,8 @@ cc_test(
     ],
     deps = [
         ":transcoding_endpoints",
+        "//external:googletest_main",
         "@httpjson_transcoding//test:bookstore_test_proto",
         "@httpjson_transcoding//test:test_common",
-        "//external:googletest_main",
     ],
 )

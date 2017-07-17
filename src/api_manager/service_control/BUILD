@@ -40,11 +40,6 @@ cc_library(
         ],
     }),
     deps = [
-        "//include:headers_only",
-        "//src/api_manager:impl_headers",
-        "//src/api_manager:server_config_proto",
-        "//src/api_manager/cloud_trace",
-        "//src/api_manager/utils",
         "//external:cc_wkt_protos",
         "//external:googletest_prod",
         "//external:grpc++",
@@ -52,6 +47,11 @@ cc_library(
         "//external:service_config",
         "//external:servicecontrol",
         "//external:servicecontrol_client",
+        "//include:headers_only",
+        "//src/api_manager:impl_headers",
+        "//src/api_manager:server_config_proto",
+        "//src/api_manager/cloud_trace",
+        "//src/api_manager/utils",
     ],
 )
 
@@ -91,8 +91,8 @@ cc_test(
     linkstatic = 1,
     deps = [
         ":service_control",
-        "//src/api_manager:mock_api_manager_environment",
         "//external:googletest_main",
+        "//src/api_manager:mock_api_manager_environment",
     ],
 )
 
@@ -105,8 +105,8 @@ cc_test(
     linkstatic = 1,
     deps = [
         ":service_control",
-        "//src/api_manager:mock_api_manager_environment",
         "//external:googletest_main",
+        "//src/api_manager:mock_api_manager_environment",
     ],
 )
 

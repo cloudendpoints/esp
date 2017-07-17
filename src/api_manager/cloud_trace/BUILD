@@ -23,9 +23,9 @@ cc_library(
         "cloud_trace.h",
     ],
     deps = [
+        "//external:cloud_trace",
         "//include:headers_only",
         "//src/api_manager/auth:service_account_token",
-        "//external:cloud_trace",
     ],
 )
 
@@ -38,9 +38,9 @@ cc_test(
     linkstatic = 1,
     deps = [
         ":cloud_trace",
-        "//src/api_manager:mock_api_manager_environment",
         "//external:cloud_trace",
         "//external:googletest_main",
+        "//src/api_manager:mock_api_manager_environment",
     ],
 )
 

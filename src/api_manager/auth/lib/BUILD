@@ -33,11 +33,11 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "//external:grpc",
+        "//external:protobuf",
         "//include:headers_only",
         "//src/api_manager:auth_headers",
         "//src/api_manager/utils",
-        "//external:grpc",
-        "//external:protobuf",
     ],
 )
 

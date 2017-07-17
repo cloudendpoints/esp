@@ -39,10 +39,10 @@ cc_library(
         ],
     }),
     deps = [
-        "//include:headers_only",
         "//external:cc_wkt_protos",
         "//external:protobuf",
         "//external:servicecontrol",  # for google/rpc/status.proto
+        "//include:headers_only",
     ],
 )
 

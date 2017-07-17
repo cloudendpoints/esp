@@ -32,10 +32,10 @@ cc_library(
         ],
     }),
     deps = [
+        "//external:cc_wkt_protos",
+        "//external:googletest_prod",
         "//src/api_manager:security_rules_proto",
         "//src/api_manager/context",
         "//src/api_manager/utils",
-        "//external:cc_wkt_protos",
-        "//external:googletest_prod",
     ],
 )
