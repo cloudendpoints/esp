@@ -1,4 +1,4 @@
-# Copyright 2016 Istio Authors. All Rights Reserved.
+# Copyright (C) Extensible Service Proxy Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ def protobuf_repositories(bind=True):
 
 def googletest_repositories(bind=True):
     BUILD = """
-# Copyright 2016 Google Inc. All Rights Reserved.
+# Copyright (C) Extensible Service Proxy Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -158,7 +158,7 @@ def transcoding_repositories(bind=True):
 
 def zlib_repositories(bind=True):
     BUILD = """
-# Copyright 2016 Google Inc. All Rights Reserved.
+# Copyright (C) Extensible Service Proxy Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -231,7 +231,7 @@ cc_library(
 
 def nanopb_repositories(bind=True):
     BUILD = """
-# Copyright 2016 Google Inc. All Rights Reserved.
+# Copyright (C) Extensible Service Proxy Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -337,7 +337,7 @@ def grpc_repositories(bind=True):
 
 def googleapis_repositories(protobuf_repo="@protobuf_git//", bind=True):
     BUILD = """
-# Copyright 2016 Google Inc. All Rights Reserved.
+# Copyright (C) Extensible Service Proxy Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.

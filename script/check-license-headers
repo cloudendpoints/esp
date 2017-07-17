@@ -59,8 +59,8 @@ do
   [[ "${base3}" == "tools/src/google" ]] && continue
   [[ "$(basename ${file})" == "check-license-headers" ]] && continue
   if is_source_code_file "${file}"; then
-    total_copyright_count="$(grep 'Copyright (C)' ${file} | wc -l)"
-    esp_copyright_count="$(grep "${ESP_COPYRIGHT}" "${file}" | wc -l)"
+    total_copyright_count="$(head ${file} | grep 'Copyright (C)' | wc -l)"
+    esp_copyright_count="$(head ${file} | grep "${ESP_COPYRIGHT}" | wc -l)"
     [[ "${total_copyright_count}" == 1 && "${esp_copyright_count}" == 1 ]] \
       || error_exit "$file has invalid license headers."
   fi
