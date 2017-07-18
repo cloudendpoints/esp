@@ -31,7 +31,7 @@ syntax = "proto3";
 package google.api_manager.nginx.proto;
 
 import "google/protobuf/timestamp.proto";
-import "contrib/endpoints/src/api_manager/proto/api_manager_status.proto";
+import "src/api_manager/proto/api_manager_status.proto";
 
 // Server-level status
 message ServerStatus {

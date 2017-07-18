@@ -26,9 +26,9 @@
 //
 #include <iostream>
 
-#include "contrib/endpoints/src/api_manager/utils/marshalling.h"
 #include "google/protobuf/io/zero_copy_stream_impl.h"
 #include "google/protobuf/text_format.h"
+#include "src/api_manager/utils/marshalling.h"
 #include "test/grpc/client-test-lib.h"
 #include "test/grpc/grpc-test.grpc.pb.h"
 

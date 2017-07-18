@@ -38,7 +38,6 @@ perl_library(
 # Nginx test suite containing all of the integration tests
 # included with Nginx.
 
-
 nginx_suite(
     nginx = "//src/nginx/main:nginx-esp",
     tags = ["exclusive"],

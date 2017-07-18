@@ -30,8 +30,8 @@
 #include <memory>
 #include <sstream>
 
-#include "contrib/endpoints/include/api_manager/http_request.h"
-#include "contrib/endpoints/include/api_manager/utils/status.h"
+#include "include/api_manager/http_request.h"
+#include "include/api_manager/utils/status.h"
 
 extern "C" {
 #include "src/http/ngx_http.h"

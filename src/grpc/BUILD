@@ -58,10 +58,10 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "@httpjson_transcoding//src:transcoder_input_stream",
         "//external:grpc",
         "//external:grpc++",
         "//external:protobuf",
+        "@httpjson_transcoding//src:transcoder_input_stream",
     ],
 )
 

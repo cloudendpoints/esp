@@ -29,7 +29,7 @@
 #include <core/ngx_string.h>
 #include <memory>
 
-#include "contrib/endpoints/include/api_manager/http_request.h"
+#include "include/api_manager/http_request.h"
 #include "src/nginx/alloc.h"
 #include "src/nginx/module.h"
 #include "src/nginx/util.h"

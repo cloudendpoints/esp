@@ -30,8 +30,8 @@
 
 #include "google/protobuf/io/zero_copy_stream.h"
 #include "grpc++/support/byte_buffer.h"
+#include "grpc_transcoding/transcoder_input_stream.h"
 #include "src/grpc/message_serializer.h"
-#include "src/transcoder_input_stream.h"
 
 namespace google {
 namespace api_manager {
