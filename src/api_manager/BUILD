@@ -302,19 +302,20 @@ cc_test(
     ],
 )
 
-cc_test(
-    name = "config_manager_test",
-    size = "small",
-    srcs = [
-        "config_manager.h",
-        "config_manager_test.cc",
-    ],
-    deps = [
-        ":api_manager",
-        ":mock_api_manager_environment",
-        "//external:googletest_main",
-    ],
-)
+# Disabled due to flaky test in opt mode
+# cc_test(
+#     name = "config_manager_test",
+#     size = "small",
+#     srcs = [
+#         "config_manager.h",
+#         "config_manager_test.cc",
+#     ],
+#     deps = [
+#         ":api_manager",
+#         ":mock_api_manager_environment",
+#         "//external:googletest_main",
+#     ],
+# )
 
 cc_library(
     name = "mock_api_manager_environment",
