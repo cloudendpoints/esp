@@ -49,10 +49,10 @@ bind(
 
 load(
     "//:repositories.bzl",
-    "grpc_repositories",
     "servicecontrol_client_repositories",
     "protobuf_repositories",
     "googletest_repositories",
+    "grpc_repositories",
     "transcoding_repositories",
 )
 
