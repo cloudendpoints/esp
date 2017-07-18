@@ -95,11 +95,11 @@ function generate_run_config() {
 function grpc_test_pass_through() {
   echo "Starting grpc pass through stress test at $(date)."
 
-  # Generating token for each run, that they expire in 1 hour.
-  local AUTH_TOKEN=$("${ROOT}/client/custom/gen-auth-token.sh" -a "${SERVICE_NAME}")
   local failures=0
   for run in $(seq 1 ${ALL_CONFIG_TYPES}); do
       generate_run_config $((run - 1))
+      # Generating token for each run, that they expire in 1 hour.
+      local AUTH_TOKEN=$("${ROOT}/client/custom/gen-auth-token.sh" -a "${SERVICE_NAME}")
       "${ROOT}/test/grpc/grpc_stress_input.py" \
           --server="${GRPC_HOST}" \
           --api_key="${API_KEY}" \

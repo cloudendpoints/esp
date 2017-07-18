@@ -159,7 +159,6 @@ genrule(
         "@nginx_pcre//:LICENCE",
         "@nginx_zlib//:README",
         "@protobuf_git//:LICENSE",
-        "@istio_proxy_git//:LICENSE",
         "@servicecontrol_client_git//:LICENSE",
     ],
     outs = [
@@ -183,9 +182,6 @@ genrule(
           "echo \"\n\nProtocol Buffers license:\" >> $(@);" +
           "echo \"=========================\n\" >> $(@);" +
           "cat $(location @protobuf_git//:LICENSE) >> $(@);" +
-          "echo \"\n\nIstio Proxy license:\" >> $(@);" +
-          "echo \"=========================\n\" >> $(@);" +
-          "cat $(location @istio_proxy_git//:LICENSE) >> $(@);" +
           "echo \"\n\nService Control Client license:\" >> $(@);" +
           "echo \"=========================\n\" >> $(@);" +
           "cat $(location @servicecontrol_client_git//:LICENSE) >> $(@);" +

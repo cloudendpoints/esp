@@ -26,13 +26,11 @@
 #
 # A Bazel (http://bazel.io) workspace for the Google Cloud Endpoints runtime.
 
-ISTIO_PROXY = "b129798546b499db2966921f4ba4dc53bb56bd5c"
-
 ESP_TOOL = "ff0d6df7f56ca1c2b229aaadd8abe62cb1d508fb"
 
 git_repository(
     name = "nginx",
-    commit = "4cc41a4aeefa580ca8a86a7fe251838d60bc6ce5",  # v1.13.3
+    commit = "aae5c50a7669bfee3b904fe87a5ce0bc2f8fecb6",  # v1.13.3
     remote = "https://nginx.googlesource.com/nginx",
 )
 
@@ -49,19 +47,10 @@ bind(
     actual = "@boringssl//:ssl",
 )
 
-git_repository(
-    name = "istio_proxy_git",
-    commit = ISTIO_PROXY,
-    remote = "https://github.com/istio/proxy",
-)
-
 load(
-    "@istio_proxy_git//contrib/endpoints:repositories.bzl",
+    "//:repositories.bzl",
     "grpc_repositories",
     "servicecontrol_client_repositories",
-)
-load(
-    "@istio_proxy_git//:repositories.bzl",
     "protobuf_repositories",
     "googletest_repositories",
     "transcoding_repositories",
@@ -69,32 +58,32 @@ load(
 
 bind(
     name = "api_manager",
-    actual = "@istio_proxy_git//contrib/endpoints/include:api_manager",
+    actual = "//include:api_manager",
 )
 
 bind(
     name = "api_manager_status_proto",
-    actual = "@istio_proxy_git//contrib/endpoints/src/api_manager:status_proto",
+    actual = "//src/api_manager:status_proto",
 )
 
 bind(
     name = "api_manager_status_proto_genproto",
-    actual = "@istio_proxy_git//contrib/endpoints/src/api_manager:status_proto_genproto",
+    actual = "//src/api_manager:status_proto_genproto",
 )
 
 bind(
     name = "api_manager_auth_lib",
-    actual = "@istio_proxy_git//contrib/endpoints/src/api_manager/auth/lib",
+    actual = "//src/api_manager/auth/lib",
 )
 
 bind(
     name = "api_manager_utils",
-    actual = "@istio_proxy_git//contrib/endpoints/src/api_manager/utils",
+    actual = "//src/api_manager/utils",
 )
 
 bind(
     name = "grpc_transcoding",
-    actual = "@istio_proxy_git//contrib/endpoints/src/grpc/transcoding:transcoding_endpoints",
+    actual = "//src/grpc/transcoding:transcoding_endpoints",
 )
 
 servicecontrol_client_repositories()

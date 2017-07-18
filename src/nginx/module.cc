@@ -32,7 +32,7 @@
 #include <core/ngx_string.h>
 #include <memory>
 
-#include "contrib/endpoints/include/api_manager/utils/version.h"
+#include "include/api_manager/utils/version.h"
 #include "module.h"
 #include "src/nginx/config.h"
 #include "src/nginx/environment.h"

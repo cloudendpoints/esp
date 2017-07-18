@@ -58,9 +58,9 @@ cc_binary(
     linkopts = ["-lm"],
     deps = [
         ":bookstore",
-        "//external:protobuf",
         "//external:gflags",
         "//external:grpc++",
+        "//external:protobuf",
     ],
 )
 
