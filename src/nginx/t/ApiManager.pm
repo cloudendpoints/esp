@@ -377,6 +377,17 @@ sub run_grpc_interop_test {
   return system "$client --server_port $port --test_case $test_case " . join(' ', @args)
 }
 
+sub run_grpc_interop_stress_test {
+  my ($t, $port, $metrics_port, $test_cases, $duration, @args) = @_;
+  my $testdir = $t->testdir();
+  my $client = './external/org_golang_google_grpc/stress/client/client';
+  return system "$client --server_addresses localhost:$port " .
+      "--test_cases $test_cases --test_duration_secs $duration " .
+      "--num_channels_per_server 200 --num_stubs_per_channel 1 " . 
+      join(' ', @args)
+}
+
+
 sub run_nginx_with_stderr_redirect {
   my $t = shift;
   my $redirect_file = $t->{_testdir}.'/stderr.log';

@@ -122,9 +122,9 @@ bool GrpcMessageSerializer::NextInternal(const unsigned char** data,
   // At this point we know that the delimiter has been consumed and we must
   // have a regular slice to return.
   auto slice_buffer = &messages_.front().first->data.raw.slice_buffer;
-  *data = GPR_SLICE_START_PTR(slice_buffer->slices[current_slice_no_]);
+  *data = GRPC_SLICE_START_PTR(slice_buffer->slices[current_slice_no_]);
   *size = static_cast<int>(
-      GPR_SLICE_LENGTH(slice_buffer->slices[current_slice_no_]));
+      GRPC_SLICE_LENGTH(slice_buffer->slices[current_slice_no_]));
   ++current_slice_no_;
   byte_count_ -= *size;
   return true;
