@@ -256,7 +256,6 @@ utils::Status ApiManagerImpl::GetStatistics(
 // Get service config rollout information
 utils::Status ApiManagerImpl::GetServiceConfigRollouts(
     ServiceConfigRollouts *rollouts) {
-
   rollouts->rollout_id =
       config_manager_
           ? config_manager_->current_rollout_id()

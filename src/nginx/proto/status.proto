@@ -111,7 +111,7 @@ message ProcessStatus {
 message ServiceConfigRollouts {
   string service_name = 1;
   string rollout_id = 2;
-  map <string, double> percentages = 3;
+  map<string, double> percentages = 3;
 }
 
 // Top-level endpoints status message
