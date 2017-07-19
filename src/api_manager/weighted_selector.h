@@ -33,6 +33,10 @@ class WeightedSelector {
   // Make a selection.
   const std::string& Select();
 
+  const std::vector<std::pair<std::string, int>>& list() {
+    return list_;
+  }
+
  private:
   // Calculates score = "count / weight" for an element.
   float score(int index);

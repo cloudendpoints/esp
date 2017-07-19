@@ -64,6 +64,10 @@ class ApiManagerImpl : public ApiManager {
   // server_config.
   utils::Status LoadServiceRollouts() override;
 
+  // Get service config rollout information
+  utils::Status GetServiceConfigRollouts(
+      ServiceConfigRollouts *rollouts) override;
+
  private:
   // Use these configs according to the traffic percentage.
   void DeployConfigs(std::vector<std::pair<std::string, int>> &&list);

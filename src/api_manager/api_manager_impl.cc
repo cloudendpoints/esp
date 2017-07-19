@@ -253,6 +253,26 @@ utils::Status ApiManagerImpl::GetStatistics(
   return utils::Status::OK;
 }
 
+// Get service config rollout information
+utils::Status ApiManagerImpl::GetServiceConfigRollouts(
+    ServiceConfigRollouts *rollouts) {
+
+  rollouts->rollout_id =
+      config_manager_
+          ? config_manager_->current_rollout_id()
+          : (global_context_->server_config()->has_service_config_rollout())
+                ? global_context_->server_config()
+                      ->service_config_rollout()
+                      .rollout_id()
+                : "";
+
+  for (auto item : service_selector_->list()) {
+    rollouts->percentages[item.first] = item.second;
+  }
+
+  return utils::Status::OK;
+}
+
 std::unique_ptr<RequestHandlerInterface> ApiManagerImpl::CreateRequestHandler(
     std::unique_ptr<Request> request_data) {
   return std::unique_ptr<RequestHandlerInterface>(new RequestHandler(

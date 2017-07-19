@@ -29,6 +29,7 @@
 #include <unistd.h>
 #include <fstream>
 
+#include "include/api_manager/api_manager.h"
 #include "src/api_manager/utils/marshalling.h"
 #include "src/nginx/environment.h"
 #include "src/nginx/module.h"
@@ -140,6 +141,27 @@ Status create_status_json(ngx_http_request_t *r, std::string *json) {
 
   auto *mc = reinterpret_cast<ngx_esp_main_conf_t *>(
       ngx_http_get_module_main_conf(r, ngx_esp_module));
+
+  ngx_esp_loc_conf_t **endpoints =
+      reinterpret_cast<ngx_esp_loc_conf_t **>(mc->endpoints.elts);
+  for (ngx_uint_t i = 0, napis = mc->endpoints.nelts; i < napis; i++) {
+    ngx_esp_loc_conf_t *lc = endpoints[i];
+    if (lc->esp) {
+      auto rollouts = status.add_esp_rollouts();
+
+      rollouts->set_service_name(lc->esp->service_name());
+
+      ServiceConfigRollouts service_config_rollouts;
+      lc->esp->GetServiceConfigRollouts(&service_config_rollouts);
+
+      rollouts->set_rollout_id(service_config_rollouts.rollout_id);
+
+      for (auto percentage : service_config_rollouts.percentages) {
+        (*rollouts->mutable_percentages())[percentage.first] =
+            percentage.second;
+      }
+    }
+  }
 
   auto *process_stats =
       reinterpret_cast<ngx_esp_process_stats_t *>(mc->stats_zone->data);

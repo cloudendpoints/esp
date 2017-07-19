@@ -36,6 +36,15 @@ struct ApiManagerStatistics {
   service_control::Statistics service_control_statistics;
 };
 
+// Service config rollouts information for /endpoints_status
+struct ServiceConfigRollouts {
+  // Current rollout_id
+  std::string rollout_id;
+  // Maps service configuration IDs to their corresponding traffic percentage.
+  // Key is the service configuration ID, Value is the traffic percentage
+  std::map<std::string, int> percentages;
+};
+
 class ApiManager {
  public:
   virtual ~ApiManager() {}
@@ -90,6 +99,9 @@ class ApiManager {
   // Load service rollouts. This can be called only once, the data is from
   // server_config.
   virtual utils::Status LoadServiceRollouts() = 0;
+
+  virtual utils::Status GetServiceConfigRollouts(
+      ServiceConfigRollouts *rollouts) = 0;
 
  protected:
   ApiManager() {}
