@@ -46,6 +46,13 @@ message ServiceControlStatistics {
   uint64 max_report_size = 8;
 }
 
+// Maps service configuration IDs to their corresponding traffic percentage.
+// Key is the service configuration ID, Value is the traffic percentage
+message ServiceConfigRollouts {
+  string rollout_id = 1;
+  map<string, uint64> percentages = 2;
+}
+
 // Status for ESP instances
 message EspStatus {
   // Service name
@@ -53,4 +60,7 @@ message EspStatus {
 
   // Statistics from service control client
   ServiceControlStatistics service_control_statistics = 2;
+
+  // ESP rollouts
+  ServiceConfigRollouts service_config_rollouts = 9;
 }

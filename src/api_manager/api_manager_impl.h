@@ -64,9 +64,8 @@ class ApiManagerImpl : public ApiManager {
   // server_config.
   utils::Status LoadServiceRollouts() override;
 
-  // Get service config rollout information
   utils::Status GetServiceConfigRollouts(
-      ServiceConfigRollouts *rollouts) override;
+      ServiceConfigRolloutsInfo *rollouts) override;
 
  private:
   // Use these configs according to the traffic percentage.

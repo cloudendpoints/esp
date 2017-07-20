@@ -106,14 +106,6 @@ message ProcessStatus {
   repeated google.api_manager.proto.EspStatus esp_status = 6;
 }
 
-// Maps service configuration IDs to their corresponding traffic percentage.
-// Key is the service configuration ID, Value is the traffic percentage
-message ServiceConfigRollouts {
-  string service_name = 1;
-  string rollout_id = 2;
-  map<string, double> percentages = 3;
-}
-
 // Top-level endpoints status message
 message Status {
   // Overall server status
@@ -121,7 +113,4 @@ message Status {
 
   // Status for each process
   repeated ProcessStatus processes = 2;
-
-  // ESP rollouts
-  repeated ServiceConfigRollouts esp_rollouts = 3;
 }

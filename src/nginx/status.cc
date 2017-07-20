@@ -54,6 +54,8 @@ using service_control::Statistics;
 using utils::Status;
 using ServiceControlStatisticsProto =
     ::google::api_manager::proto::ServiceControlStatistics;
+using ServiceConfigRolloutsProto =
+    ::google::api_manager::proto::ServiceConfigRollouts;
 
 #if (NGX_DARWIN)
 const size_t kMemoryUnit = 1;
@@ -126,6 +128,9 @@ void fill_process_stats(const ngx_esp_process_stats_t &stat,
     fill_service_control_statistics(
         stat.esp_stats[j].statistics.service_control_statistics,
         esp_status_proto->mutable_service_control_statistics());
+    esp_status_proto->mutable_service_config_rollouts()->ParseFromString(
+        std::string(stat.esp_stats[j].rollouts,
+                    stat.esp_stats[j].rollouts_length));
   }
 }
 
@@ -141,27 +146,6 @@ Status create_status_json(ngx_http_request_t *r, std::string *json) {
 
   auto *mc = reinterpret_cast<ngx_esp_main_conf_t *>(
       ngx_http_get_module_main_conf(r, ngx_esp_module));
-
-  ngx_esp_loc_conf_t **endpoints =
-      reinterpret_cast<ngx_esp_loc_conf_t **>(mc->endpoints.elts);
-  for (ngx_uint_t i = 0, napis = mc->endpoints.nelts; i < napis; i++) {
-    ngx_esp_loc_conf_t *lc = endpoints[i];
-    if (lc->esp) {
-      auto rollouts = status.add_esp_rollouts();
-
-      rollouts->set_service_name(lc->esp->service_name());
-
-      ServiceConfigRollouts service_config_rollouts;
-      lc->esp->GetServiceConfigRollouts(&service_config_rollouts);
-
-      rollouts->set_rollout_id(service_config_rollouts.rollout_id);
-
-      for (auto percentage : service_config_rollouts.percentages) {
-        (*rollouts->mutable_percentages())[percentage.first] =
-            percentage.second;
-      }
-    }
-  }
 
   auto *process_stats =
       reinterpret_cast<ngx_esp_process_stats_t *>(mc->stats_zone->data);
@@ -292,6 +276,22 @@ Status stats_json_per_process(const ngx_esp_process_stats_t &process_stats,
   return utils::ProtoToJson(status, json, utils::JsonOptions::OUTPUT_DEFAULTS);
 };
 
+ngx_int_t ngx_esp_update_rollout(std::shared_ptr<ApiManager> esp,
+                                 std::string *rollouts) {
+  ServiceConfigRolloutsInfo rollouts_info;
+  esp->GetServiceConfigRollouts(&rollouts_info);
+
+  ServiceConfigRolloutsProto service_config_rollouts_proto;
+  service_config_rollouts_proto.set_rollout_id(rollouts_info.rollout_id);
+  for (auto percentage : rollouts_info.percentages) {
+    (*service_config_rollouts_proto.mutable_percentages())[percentage.first] =
+        percentage.second;
+  }
+
+  service_config_rollouts_proto.SerializeToString(rollouts);
+  return NGX_OK;
+}
+
 ngx_int_t ngx_esp_init_process_stats(ngx_cycle_t *cycle) {
   auto *mc = reinterpret_cast<ngx_esp_main_conf_t *>(
       ngx_http_cycle_get_module_main_conf(cycle, ngx_esp_module));
@@ -317,6 +317,15 @@ ngx_int_t ngx_esp_init_process_stats(ngx_cycle_t *cycle) {
   for (ngx_uint_t i = 0, napis = mc->endpoints.nelts; i < napis; i++) {
     ngx_esp_loc_conf_t *lc = endpoints[i];
     if (lc->esp) {
+      std::string rollouts;
+      ngx_esp_update_rollout(lc->esp, &rollouts);
+      if (rollouts.length() <= kMaxServiceRolloutsInfoSize) {
+        process_stat->esp_stats[process_stat->num_esp].rollouts_length =
+            rollouts.length();
+        strncpy(process_stat->esp_stats[process_stat->num_esp].rollouts,
+                rollouts.c_str(), rollouts.length());
+      }
+
       if (lc->esp->get_logging_status_disabled()) ++log_disabled_esp;
       const std::string &service_name = lc->esp->service_name();
       // only fill buf 1 byte smaller than buffer size, always put '\0' in the
@@ -347,6 +356,14 @@ ngx_int_t ngx_esp_init_process_stats(ngx_cycle_t *cycle) {
     for (ngx_uint_t i = 0, napis = mc->endpoints.nelts; i < napis; i++) {
       ngx_esp_loc_conf_t *lc = endpoints[i];
       if (lc->esp) {
+        std::string rollouts;
+        ngx_esp_update_rollout(lc->esp, &rollouts);
+        if (rollouts.length() <= kMaxServiceRolloutsInfoSize) {
+          process_stat->esp_stats[esp_idx].rollouts_length = rollouts.length();
+          strncpy(process_stat->esp_stats[esp_idx].rollouts, rollouts.c_str(),
+                  rollouts.length());
+        }
+
         lc->esp->GetStatistics(&process_stat->esp_stats[esp_idx].statistics);
         if (++esp_idx >= kMaxEspNum) break;
       }
