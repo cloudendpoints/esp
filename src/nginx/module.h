@@ -245,6 +245,9 @@ struct ngx_esp_request_ctx_s {
 
   // HTTP upstream subrequest connection
   ngx_esp_http_connection *http_subrequest;
+
+  // Nginx variable $backend_url. set from service config.
+  ngx_str_t backend_url;
 };
 
 static_assert(std::is_standard_layout<ngx_esp_request_ctx_t>::value,

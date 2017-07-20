@@ -197,12 +197,50 @@ ngx_command_t ngx_esp_commands[] = {
     ngx_null_command  // last entry
 };
 
+ngx_int_t ngx_esp_endpoints_variable(ngx_http_request_t *r,
+                                     ngx_http_variable_value_t *v,
+                                     uintptr_t data) {
+  ngx_esp_request_ctx_t *ctx;
+  ctx = reinterpret_cast<ngx_esp_request_ctx_t *>(
+      ngx_http_get_module_ctx(r, ngx_esp_module));
+  if (ctx == NULL) {
+    v->not_found = 1;
+    return NGX_OK;
+  }
+  ngx_str_t *value = (ngx_str_t *)(((char *)ctx) + data);
+  if (value->len <= 0) {
+    v->not_found = 1;
+    return NGX_OK;
+  }
+  v->valid = 1;
+  v->no_cacheable = 1;
+  v->not_found = 0;
+  v->len = value->len;
+  v->data = value->data;
+  return NGX_OK;
+}
+
+ngx_http_variable_t ngx_esp_variables[] = {
+    {
+        ngx_string("backend_url"),                       // name
+        NULL,                                            // set_handler
+        ngx_esp_endpoints_variable,                      // get_handler
+        offsetof(ngx_esp_request_ctx_t, backend_url),    // data
+        NGX_HTTP_VAR_NOCACHEABLE | NGX_HTTP_VAR_NOHASH,  // flags
+        0,                                               // index
+    },
+    {ngx_null_string, NULL, NULL, 0, 0, 0}  // last entry
+};
+
+// Pre-configuration initialization.
+ngx_int_t ngx_esp_preconfiguration(ngx_conf_t *cf);
+
 //
 // The module context contains initialization and configuration callbacks.
 //
 ngx_http_module_t ngx_esp_module_ctx = {
     // ngx_int_t (*preconfiguration)(ngx_conf_t *cf);
-    nullptr,
+    ngx_esp_preconfiguration,
     // ngx_int_t (*postconfiguration)(ngx_conf_t *cf);
     ngx_esp_postconfiguration,
     // void *(*create_main_conf)(ngx_conf_t *cf);
@@ -266,6 +304,24 @@ void *ngx_esp_create_loc_conf(ngx_conf_t *cf) {
   lc->api_authentication = NGX_CONF_UNSET;
 
   return lc;
+}
+
+// ESP Module pre-configuration. Defines module variables.
+//
+ngx_int_t ngx_esp_preconfiguration(ngx_conf_t *cf) {
+  // Define ESP's variables.
+  ngx_http_variable_t *decl;
+  for (decl = ngx_esp_variables; decl->name.len > 0; decl++) {
+    ngx_http_variable_t *defn;
+    defn = ngx_http_add_variable(cf, &decl->name, decl->flags);
+    if (defn == NULL) {
+      return NGX_ERROR;
+    }
+    defn->get_handler = decl->get_handler;
+    defn->set_handler = decl->set_handler;
+    defn->data = decl->data;
+  }
+  return NGX_OK;
 }
 
 //
@@ -536,6 +592,14 @@ Status ngx_http_esp_access_handler(ngx_http_request_t *r) {
   ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r);
   if (ctx == nullptr) {
     return Status(NGX_ERROR, "Missing esp request context.");
+  }
+
+  std::string backend_address = ctx->request_handler->GetBackendAddress();
+  if (!backend_address.empty()) {
+    ngx_str_copy_from_std(r->pool, backend_address, &ctx->backend_url);
+    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "esp: use service config backend address: %V",
+                   &ctx->backend_url);
   }
 
   if (ctx->current_access_handler == nullptr) {
