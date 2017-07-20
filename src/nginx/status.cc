@@ -277,7 +277,8 @@ Status stats_json_per_process(const ngx_esp_process_stats_t &process_stats,
 };
 
 ngx_int_t ngx_esp_update_rollout(std::shared_ptr<ApiManager> esp,
-                                 std::string *rollouts) {
+                                 ngx_esp_process_stats_t *process_stat,
+                                 int index) {
   ServiceConfigRolloutsInfo rollouts_info;
   esp->GetServiceConfigRollouts(&rollouts_info);
 
@@ -288,7 +289,18 @@ ngx_int_t ngx_esp_update_rollout(std::shared_ptr<ApiManager> esp,
         percentage.second;
   }
 
-  service_config_rollouts_proto.SerializeToString(rollouts);
+  std::string rollouts;
+  service_config_rollouts_proto.SerializeToString(&rollouts);
+
+  if (rollouts.length() <= kMaxServiceRolloutsInfoSize &&
+      rollouts.length() > 0 &&
+      strncmp(process_stat->esp_stats[index].rollouts, rollouts.c_str(),
+              rollouts.length()) != 0) {
+    process_stat->esp_stats[index].rollouts_length = rollouts.length();
+    strncpy(process_stat->esp_stats[index].rollouts, rollouts.c_str(),
+            rollouts.length());
+  }
+
   return NGX_OK;
 }
 
@@ -317,14 +329,7 @@ ngx_int_t ngx_esp_init_process_stats(ngx_cycle_t *cycle) {
   for (ngx_uint_t i = 0, napis = mc->endpoints.nelts; i < napis; i++) {
     ngx_esp_loc_conf_t *lc = endpoints[i];
     if (lc->esp) {
-      std::string rollouts;
-      ngx_esp_update_rollout(lc->esp, &rollouts);
-      if (rollouts.length() <= kMaxServiceRolloutsInfoSize) {
-        process_stat->esp_stats[process_stat->num_esp].rollouts_length =
-            rollouts.length();
-        strncpy(process_stat->esp_stats[process_stat->num_esp].rollouts,
-                rollouts.c_str(), rollouts.length());
-      }
+      ngx_esp_update_rollout(lc->esp, process_stat, process_stat->num_esp);
 
       if (lc->esp->get_logging_status_disabled()) ++log_disabled_esp;
       const std::string &service_name = lc->esp->service_name();
@@ -356,13 +361,7 @@ ngx_int_t ngx_esp_init_process_stats(ngx_cycle_t *cycle) {
     for (ngx_uint_t i = 0, napis = mc->endpoints.nelts; i < napis; i++) {
       ngx_esp_loc_conf_t *lc = endpoints[i];
       if (lc->esp) {
-        std::string rollouts;
-        ngx_esp_update_rollout(lc->esp, &rollouts);
-        if (rollouts.length() <= kMaxServiceRolloutsInfoSize) {
-          process_stat->esp_stats[esp_idx].rollouts_length = rollouts.length();
-          strncpy(process_stat->esp_stats[esp_idx].rollouts, rollouts.c_str(),
-                  rollouts.length());
-        }
+        ngx_esp_update_rollout(lc->esp, process_stat, esp_idx);
 
         lc->esp->GetStatistics(&process_stat->esp_stats[esp_idx].statistics);
         if (++esp_idx >= kMaxEspNum) break;
