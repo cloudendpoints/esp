@@ -198,7 +198,7 @@ ngx_command_t ngx_esp_commands[] = {
 };
 
 // Support multiple Nginx variables in ngx_esp_request_ctx_t
-// Use this enum to name variable type.
+// Use this enum to name each variable type.
 enum EspVariableType {
   EspVariable_backend_url = 0,
 };
