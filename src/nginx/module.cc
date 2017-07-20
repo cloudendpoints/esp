@@ -197,12 +197,65 @@ ngx_command_t ngx_esp_commands[] = {
     ngx_null_command  // last entry
 };
 
+// Support multiple Nginx variables in ngx_esp_request_ctx_t
+// Use this enum to name each variable type.
+enum EspVariableType {
+  EspVariable_backend_url = 0,
+};
+
+ngx_str_t *ngx_esp_request_ctx_variable(ngx_esp_request_ctx_t *ctx,
+                                        EspVariableType type) {
+  if (type == EspVariable_backend_url) {
+    return &ctx->backend_url;
+  }
+  return nullptr;
+}
+
+ngx_int_t ngx_esp_endpoints_variable(ngx_http_request_t *r,
+                                     ngx_http_variable_value_t *v,
+                                     uintptr_t data) {
+  ngx_esp_request_ctx_t *ctx;
+  ctx = reinterpret_cast<ngx_esp_request_ctx_t *>(
+      ngx_http_get_module_ctx(r, ngx_esp_module));
+  if (ctx == nullptr) {
+    v->not_found = 1;
+    return NGX_OK;
+  }
+  ngx_str_t *value =
+      ngx_esp_request_ctx_variable(ctx, static_cast<EspVariableType>(data));
+  if (value == nullptr || value->len <= 0) {
+    v->not_found = 1;
+    return NGX_OK;
+  }
+  v->valid = 1;
+  v->no_cacheable = 1;
+  v->not_found = 0;
+  v->len = value->len;
+  v->data = value->data;
+  return NGX_OK;
+}
+
+ngx_http_variable_t ngx_esp_variables[] = {
+    {
+        ngx_string("backend_url"),                        // name
+        nullptr,                                          // set_handler
+        ngx_esp_endpoints_variable,                       // get_handler
+        static_cast<uintptr_t>(EspVariable_backend_url),  // data
+        NGX_HTTP_VAR_NOCACHEABLE | NGX_HTTP_VAR_NOHASH,   // flags
+        0,                                                // index
+    },
+    {ngx_null_string, nullptr, nullptr, 0, 0, 0}  // last entry
+};
+
+// Pre-configuration initialization.
+ngx_int_t ngx_esp_preconfiguration(ngx_conf_t *cf);
+
 //
 // The module context contains initialization and configuration callbacks.
 //
 ngx_http_module_t ngx_esp_module_ctx = {
     // ngx_int_t (*preconfiguration)(ngx_conf_t *cf);
-    nullptr,
+    ngx_esp_preconfiguration,
     // ngx_int_t (*postconfiguration)(ngx_conf_t *cf);
     ngx_esp_postconfiguration,
     // void *(*create_main_conf)(ngx_conf_t *cf);
@@ -266,6 +319,24 @@ void *ngx_esp_create_loc_conf(ngx_conf_t *cf) {
   lc->api_authentication = NGX_CONF_UNSET;
 
   return lc;
+}
+
+// ESP Module pre-configuration. Defines module variables.
+//
+ngx_int_t ngx_esp_preconfiguration(ngx_conf_t *cf) {
+  // Define ESP's variables.
+  ngx_http_variable_t *decl;
+  for (decl = ngx_esp_variables; decl->name.len > 0; decl++) {
+    ngx_http_variable_t *defn;
+    defn = ngx_http_add_variable(cf, &decl->name, decl->flags);
+    if (defn == nullptr) {
+      return NGX_ERROR;
+    }
+    defn->get_handler = decl->get_handler;
+    defn->set_handler = decl->set_handler;
+    defn->data = decl->data;
+  }
+  return NGX_OK;
 }
 
 //
@@ -538,6 +609,14 @@ Status ngx_http_esp_access_handler(ngx_http_request_t *r) {
     return Status(NGX_ERROR, "Missing esp request context.");
   }
 
+  std::string backend_address = ctx->request_handler->GetBackendAddress();
+  if (!backend_address.empty()) {
+    ngx_str_copy_from_std(r->pool, backend_address, &ctx->backend_url);
+    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "esp: use service config backend address: %V",
+                   &ctx->backend_url);
+  }
+
   if (ctx->current_access_handler == nullptr) {
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "esp: initiating check, r=%p", r);
@@ -694,7 +773,7 @@ ngx_int_t ngx_esp_create_module_configurations(ngx_http_conf_ctx_t *ctx,
     // Create module's main configuration.
     if (module->create_main_conf) {
       ctx->main_conf[mi] = module->create_main_conf(cf);
-      if (ctx->main_conf[mi] == NULL) {
+      if (ctx->main_conf[mi] == nullptr) {
         return NGX_ERROR;
       }
     }
@@ -702,7 +781,7 @@ ngx_int_t ngx_esp_create_module_configurations(ngx_http_conf_ctx_t *ctx,
     // Server configuration.
     if (module->create_srv_conf) {
       ctx->srv_conf[mi] = module->create_srv_conf(cf);
-      if (ctx->srv_conf[mi] == NULL) {
+      if (ctx->srv_conf[mi] == nullptr) {
         return NGX_ERROR;
       }
     }
@@ -710,7 +789,7 @@ ngx_int_t ngx_esp_create_module_configurations(ngx_http_conf_ctx_t *ctx,
     // Local configuration.
     if (module->create_loc_conf) {
       ctx->loc_conf[mi] = module->create_loc_conf(cf);
-      if (ctx->loc_conf[mi] == NULL) {
+      if (ctx->loc_conf[mi] == nullptr) {
         return NGX_ERROR;
       }
     }
@@ -776,7 +855,7 @@ ngx_int_t ngx_esp_create_http_configuration(ngx_conf_t *cf,
   }
 
   clcf->resolver = ngx_resolver_create(cf, names, 1);
-  if (clcf->resolver == NULL) {
+  if (clcf->resolver == nullptr) {
     ngx_log_error(NGX_LOG_EMERG, cf->log, 0,
                   "Failed to create an Endpoints DNS resolver.");
     return NGX_ERROR;
@@ -821,7 +900,7 @@ ngx_int_t ngx_esp_create_http_configuration(ngx_conf_t *cf,
   // require proper server certificates.
   if (mc->cert_path.len > 0 &&
       SSL_CTX_load_verify_locations(ssl->ctx, (const char *)mc->cert_path.data,
-                                    NULL) == 0) {
+                                    nullptr) == 0) {
     return NGX_ERROR;
   }
 
