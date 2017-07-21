@@ -54,6 +54,8 @@ class RequestHandler : public RequestHandlerInterface {
   // Get the method info.
   const MethodCallInfo *method_call() const { return context_->method_call(); }
 
+  virtual std::string GetAuthorizationUrl() const;
+
  private:
   // The context object needs to pass to the continuation function the check
   // handler as a lambda capture so it can be passed to the next check handler.

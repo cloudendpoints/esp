@@ -45,6 +45,11 @@ class MethodInfoImpl : public MethodInfo {
   bool isAudienceAllowed(const std::string &issuer,
                          const std::set<std::string> &jwt_audiences) const;
 
+  const std::string &authorization_url_by_issuer(
+      const std::string &issuer) const;
+
+  const std::string &first_authorization_url() const;
+
   const std::vector<std::string> *http_header_parameters(
       const std::string &name) const {
     return utils::FindOrNull(http_header_parameters_, name);
@@ -80,10 +85,12 @@ class MethodInfoImpl : public MethodInfo {
 
   bool response_streaming() const { return response_streaming_; }
 
-  // Adds allowed audiences (comma delimated, no space) for the issuer.
-  // audiences_list can be empty.
-  void addAudiencesForIssuer(const std::string &issuer,
-                             const std::string &audiences_list);
+  // Add an auth provider info for the issuer.
+  // audiences_list can be empty or comma delimited without space.
+  void addAuthProvider(const std::string &issuer,
+                       const std::string &audiences_list,
+                       const std::string &authorization_url);
+
   void set_auth(bool v) { auth_ = v; }
   void set_allow_unregistered_calls(bool v) { allow_unregistered_calls_ = v; }
   void set_skip_service_control(bool v) { skip_service_control_ = v; }
@@ -138,6 +145,10 @@ class MethodInfoImpl : public MethodInfo {
   void ProcessSystemQueryParameterNames();
 
  private:
+  struct AuthProvider {
+    std::set<std::string> audiences;
+    std::string authorization_url;
+  };
   // Method name
   std::string name_;
   // API name
@@ -151,8 +162,8 @@ class MethodInfoImpl : public MethodInfo {
   bool allow_unregistered_calls_;
   // Should the method skip service control.
   bool skip_service_control_;
-  // Issuers to allowed audiences map.
-  std::map<std::string, std::set<std::string>> issuer_audiences_map_;
+  // Issuers to auth provider map.
+  std::map<std::string, AuthProvider> issuer_provider_map_;
 
   // system parameter map of parameter name to http_header name.
   std::map<std::string, std::vector<std::string>> http_header_parameters_;

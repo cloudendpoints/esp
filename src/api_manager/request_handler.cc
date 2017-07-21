@@ -144,5 +144,9 @@ std::string RequestHandler::GetRpcMethodFullName() const {
   }
 }
 
+std::string RequestHandler::GetAuthorizationUrl() const {
+  return context_->GetAuthorizationUrl();
+}
+
 }  // namespace api_manager
 }  // namespace google

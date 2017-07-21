@@ -43,8 +43,9 @@ MethodInfoImpl::MethodInfoImpl(const string &name, const string &api_name,
       request_streaming_(false),
       response_streaming_(false) {}
 
-void MethodInfoImpl::addAudiencesForIssuer(const string &issuer,
-                                           const string &audiences_list) {
+void MethodInfoImpl::addAuthProvider(const std::string &issuer,
+                                     const string &audiences_list,
+                                     const std::string &authorization_url) {
   if (issuer.empty()) {
     return;
   }
@@ -52,7 +53,7 @@ void MethodInfoImpl::addAudiencesForIssuer(const string &issuer,
   if (iss.empty()) {
     return;
   }
-  set<string> &audiences = issuer_audiences_map_[iss];
+  AuthProvider &provider = issuer_provider_map_[iss];
   stringstream ss(audiences_list);
   string audience;
   // Audience list is comma-delimited.
@@ -60,15 +61,16 @@ void MethodInfoImpl::addAudiencesForIssuer(const string &issuer,
     if (!audience.empty()) {  // Only adds non-empty audience.
       std::string aud = utils::GetUrlContent(audience);
       if (!aud.empty()) {
-        audiences.insert(aud);
+        provider.audiences.insert(aud);
       }
     }
   }
+  provider.authorization_url = authorization_url;
 }
 
 bool MethodInfoImpl::isIssuerAllowed(const std::string &issuer) const {
   return !issuer.empty() &&
-         issuer_audiences_map_.find(issuer) != issuer_audiences_map_.end();
+         issuer_provider_map_.find(issuer) != issuer_provider_map_.end();
 }
 
 bool MethodInfoImpl::isAudienceAllowed(
@@ -76,13 +78,34 @@ bool MethodInfoImpl::isAudienceAllowed(
   if (issuer.empty() || jwt_audiences.empty() || !isIssuerAllowed(issuer)) {
     return false;
   }
-  const set<string> &audiences = issuer_audiences_map_.at(issuer);
+  const AuthProvider &provider = issuer_provider_map_.at(issuer);
   for (const auto &it : jwt_audiences) {
-    if (audiences.find(it) != audiences.end()) {
+    if (provider.audiences.find(it) != provider.audiences.end()) {
       return true;
     }
   }
   return false;
+}
+
+const std::string &MethodInfoImpl::authorization_url_by_issuer(
+    const std::string &issuer) const {
+  const auto &it = issuer_provider_map_.find(issuer);
+  if (it != issuer_provider_map_.end()) {
+    return it->second.authorization_url;
+  } else {
+    static std::string empty;
+    return empty;
+  }
+}
+
+const std::string &MethodInfoImpl::first_authorization_url() const {
+  for (const auto &it : issuer_provider_map_) {
+    if (!it.second.authorization_url.empty()) {
+      return it.second.authorization_url;
+    }
+  }
+  static std::string empty;
+  return empty;
 }
 
 void MethodInfoImpl::process_system_parameters() {
