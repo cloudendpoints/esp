@@ -313,6 +313,8 @@ ngx_int_t ngx_esp_update_rollout(std::shared_ptr<ApiManager> esp,
       if (dupcheck.find(percentage.first) != dupcheck.end() &&
           dupcheck[percentage.first] == (int)percentage.second) {
         dupcheck.erase(percentage.first);
+      } else {
+        dupcheck[percentage.first] = percentage.second;
       }
     }
 
