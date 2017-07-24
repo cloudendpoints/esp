@@ -281,20 +281,42 @@ ngx_int_t ngx_esp_update_rollout(std::shared_ptr<ApiManager> esp,
   ServiceConfigRolloutsInfo rollouts_info;
   esp->GetServiceConfigRollouts(&rollouts_info);
 
-  ServiceConfigRolloutsProto service_config_rollouts_proto;
-  service_config_rollouts_proto.set_rollout_id(rollouts_info.rollout_id);
+  ServiceConfigRolloutsProto new_rollouts;
+  new_rollouts.set_rollout_id(rollouts_info.rollout_id);
   for (auto percentage : rollouts_info.percentages) {
-    (*service_config_rollouts_proto.mutable_percentages())[percentage.first] =
-        percentage.second;
+    (*new_rollouts.mutable_percentages())[percentage.first] = percentage.second;
   }
 
-  int length = service_config_rollouts_proto.ByteSize();
+  int length = new_rollouts.ByteSize();
   if (0 < length && length <= kMaxServiceRolloutsInfoSize) {
     char rollouts[kMaxServiceRolloutsInfoSize];
-    service_config_rollouts_proto.SerializeToArray(rollouts, length);
+    new_rollouts.SerializeToArray(rollouts, length);
 
-    if (memcmp(process_stat->esp_stats[index].rollouts, rollouts, length) !=
-        0) {
+    ServiceConfigRolloutsProto current_rollouts;
+    if (!current_rollouts.ParseFromArray(
+            process_stat->esp_stats[index].rollouts,
+            process_stat->esp_stats[index].rollouts_length) ||
+        new_rollouts.rollout_id() != current_rollouts.rollout_id() ||
+        new_rollouts.percentages_size() !=
+            current_rollouts.percentages_size()) {
+      memcpy(process_stat->esp_stats[index].rollouts, rollouts, length);
+      process_stat->esp_stats[index].rollouts_length = length;
+      return NGX_OK;
+    }
+
+    std::unordered_map<std::string, int> dupcheck;
+    for (auto percentage : current_rollouts.percentages()) {
+      dupcheck[percentage.first] = percentage.second;
+    }
+
+    for (auto percentage : new_rollouts.percentages()) {
+      if (dupcheck.find(percentage.first) != dupcheck.end() &&
+          dupcheck[percentage.first] == (int)percentage.second) {
+        dupcheck.erase(percentage.first);
+      }
+    }
+
+    if (dupcheck.size() != 0) {
       memcpy(process_stat->esp_stats[index].rollouts, rollouts, length);
       process_stat->esp_stats[index].rollouts_length = length;
     }
