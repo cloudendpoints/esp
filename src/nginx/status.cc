@@ -128,9 +128,8 @@ void fill_process_stats(const ngx_esp_process_stats_t &stat,
     fill_service_control_statistics(
         stat.esp_stats[j].statistics.service_control_statistics,
         esp_status_proto->mutable_service_control_statistics());
-    esp_status_proto->mutable_service_config_rollouts()->ParseFromString(
-        std::string(stat.esp_stats[j].rollouts,
-                    stat.esp_stats[j].rollouts_length));
+    esp_status_proto->mutable_service_config_rollouts()->ParseFromArray(
+        stat.esp_stats[j].rollouts, stat.esp_stats[j].rollouts_length);
   }
 }
 
@@ -289,16 +288,16 @@ ngx_int_t ngx_esp_update_rollout(std::shared_ptr<ApiManager> esp,
         percentage.second;
   }
 
-  std::string rollouts;
-  service_config_rollouts_proto.SerializeToString(&rollouts);
+  int length = service_config_rollouts_proto.ByteSize();
+  if (0 < length && length <= kMaxServiceRolloutsInfoSize) {
+    char rollouts[kMaxServiceRolloutsInfoSize];
+    service_config_rollouts_proto.SerializeToArray(rollouts, length);
 
-  if (rollouts.length() <= kMaxServiceRolloutsInfoSize &&
-      rollouts.length() > 0 &&
-      strncmp(process_stat->esp_stats[index].rollouts, rollouts.c_str(),
-              rollouts.length()) != 0) {
-    process_stat->esp_stats[index].rollouts_length = rollouts.length();
-    strncpy(process_stat->esp_stats[index].rollouts, rollouts.c_str(),
-            rollouts.length());
+    if (memcmp(process_stat->esp_stats[index].rollouts, rollouts, length) !=
+        0) {
+      memcpy(process_stat->esp_stats[index].rollouts, rollouts, length);
+      process_stat->esp_stats[index].rollouts_length = length;
+    }
   }
 
   return NGX_OK;
