@@ -132,6 +132,18 @@ class RequestContext {
   // Return the authorization url.
   std::string GetAuthorizationUrl() const;
 
+  // Set JWT auth token.
+  void SetAuthToken(const std::string &token) { auth_token_ = token;}
+
+  // Get JWT auth token.
+  const std::string &AuthToken() const { return auth_token_; }
+
+  // Set JWT auth token expiration time.
+  void SetAuthExp(const std::chrono::system_clock::time_point &exp) { auth_exp_ = exp; }
+
+  // Get JWT auth token expiration time.
+  const std::chrono::system_clock::time_point &AuthExp() const { return auth_exp_; }
+
  private:
   // Fill OperationInfo
   void FillOperationInfo(service_control::OperationInfo *info);
@@ -204,6 +216,11 @@ class RequestContext {
   // The accumulated data sent till last intermediate report
   int64_t last_request_bytes_;
   int64_t last_response_bytes_;
+
+  // JWT auth token.
+  std::string auth_token_;
+  // JWT auth expiration time.
+  std::chrono::system_clock::time_point auth_exp_;
 };
 
 }  // namespace context

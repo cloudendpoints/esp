@@ -70,6 +70,8 @@ class ServiceContext {
   auth::Certs &certs() { return certs_; }
   auth::JwtCache &jwt_cache() { return jwt_cache_; }
 
+  auth::AuthzCache *authz_cache() { return &authz_cache_; }
+
   bool GetJwksUri(const std::string &issuer, std::string *url) {
     return config_->GetJwksUri(issuer, url);
   }
@@ -105,6 +107,8 @@ class ServiceContext {
 
   auth::Certs certs_;
   auth::JwtCache jwt_cache_;
+
+  auth::AuthzCache authz_cache_;
 
   // The service control object.
   std::unique_ptr<service_control::Interface> service_control_;

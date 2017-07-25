@@ -160,10 +160,11 @@ void AuthChecker::Check() {
     Unauthenticated("Missing or invalid credentials");
     return;
   }
+
   context_->request()->SetAuthToken(auth_token_);
 
-  env_->LogDebug(std::string("auth token: ") + auth_token_);
-
+  //Set auth token for AuthzCache key construction in check_security_rules.cc.
+  context_->SetAuthToken(auth_token_);
   LookupJwtCache();
 }
 
@@ -231,7 +232,9 @@ void AuthChecker::ParseJwt() {
     Unauthenticated(status.message());
     return;
   }
-
+  // Exp field is used for AuthzCache AuthzValue
+  // construction in check_security_rules.cc.
+  context_->SetAuthExp(validator_->GetExpirationTime());
   CheckAudience(false);
 }
 

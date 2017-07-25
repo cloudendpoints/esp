@@ -13,9 +13,10 @@
 // limitations under the License.
 //
 ////////////////////////////////////////////////////////////////////////////////
-#include "src/api_manager/check_security_rules.h"
 #include <iostream>
 #include <sstream>
+#include <chrono>
+#include "src/api_manager/check_security_rules.h"
 #include "src/api_manager/auth/lib/json_util.h"
 #include "src/api_manager/firebase_rules/firebase_request.h"
 #include "src/api_manager/utils/marshalling.h"
@@ -23,6 +24,9 @@
 using ::google::api_manager::auth::GetStringValue;
 using ::google::api_manager::firebase_rules::FirebaseRequest;
 using ::google::api_manager::utils::Status;
+using ::google::api_manager::auth::AuthzCache;
+using ::google::api_manager::auth::AuthzValue;
+using std::chrono::system_clock;
 
 namespace google {
 namespace api_manager {
@@ -67,7 +71,8 @@ class AuthzChecker : public std::enable_shared_from_this<AuthzChecker> {
  private:
   // This method invokes the Firebase TestRuleset API endpoint as well as user
   // defined endpoints provided by the TestRulesetResponse.
-  void CallNextRequest(std::function<void(Status status)> continuation);
+  void CallNextRequest(std::shared_ptr<context::RequestContext> context,
+                       std::function<void(Status status)> continuation);
 
   // Parse the response for GET RELEASE API call
   Status ParseReleaseResponse(const std::string &json_str,
@@ -85,11 +90,13 @@ class AuthzChecker : public std::enable_shared_from_this<AuthzChecker> {
   ApiManagerEnvInterface *env_;
   auth::ServiceAccountToken *sa_token_;
   std::unique_ptr<FirebaseRequest> request_handler_;
+  AuthzCache *authz_cache_;
+  std::string *authz_key_;
 };
 
 AuthzChecker::AuthzChecker(ApiManagerEnvInterface *env,
                            auth::ServiceAccountToken *sa_token)
-    : env_(env), sa_token_(sa_token) {}
+    : env_(env), sa_token_(sa_token), authz_cache_(NULL), authz_key_(NULL) {}
 
 void AuthzChecker::Check(
     std::shared_ptr<context::RequestContext> context,
@@ -104,9 +111,38 @@ void AuthzChecker::Check(
     return;
   }
 
-  // Fetch the Release attributes and get ruleset name.
   auto checker = GetPtr();
-  HttpFetch(GetReleaseUrl(*context), kHttpGetMethod, "",
+
+  authz_cache_ = context->service_context()->authz_cache();
+  authz_key_ = authz_cache_->ComposeAuthzCacheKey(context->AuthToken(), context->request()->GetRequestPath(),
+                                                  context->request()->GetRequestHTTPMethod());
+
+  bool cache_hit = false;
+  // Cached authorization result, default to false.
+  bool pre_authz_success = false;
+  AuthzCache::ScopedLookup lookup(authz_cache_, *authz_key_);
+  if (lookup.Found()){
+    AuthzValue *val = lookup.value();
+    // Cache hit happens only if cache entry is not expired.
+    if (system_clock::now() <= val->exp) {
+      cache_hit = true;
+      pre_authz_success = val->if_success;
+    } else {
+      // Remove cache entry if expired.
+      authz_cache_->Remove(*authz_key_);
+    }
+  }
+
+  if (cache_hit) {
+    checker->env_->LogDebug("I am faster!");
+    if (pre_authz_success) {
+      final_continuation(Status(Code::OK, std::string("Successfully authorized (cached).")));
+    } else {
+      final_continuation(Status(Code::PERMISSION_DENIED, std::string("Unauthorized access (cached).")));
+    }
+  } else {
+    // Fetch the Release attributes and get ruleset name.
+    HttpFetch(GetReleaseUrl(*context), kHttpGetMethod, "",
             auth::ServiceAccountToken::JWT_TOKEN_FOR_FIREBASE,
             context->service_context()->config()->GetFirebaseAudience(),
             [context, final_continuation, checker](Status status,
@@ -128,16 +164,26 @@ void AuthzChecker::Check(
               if (status.ok()) {
                 checker->request_handler_ = std::unique_ptr<FirebaseRequest>(
                     new FirebaseRequest(ruleset_id, checker->env_, context));
-                checker->CallNextRequest(final_continuation);
+                checker->CallNextRequest(context, final_continuation);
               } else {
                 final_continuation(status);
               }
             });
+  }
 }
 
-void AuthzChecker::CallNextRequest(
+void AuthzChecker::CallNextRequest(std::shared_ptr<context::RequestContext> context,
     std::function<void(Status status)> continuation) {
   if (request_handler_->is_done()) {
+    auto status_code = request_handler_->RequestStatus().code();
+    if ( status_code == Code::OK ) {
+      // Insert a successfully authorized entry.
+      authz_cache_->Insert(*authz_key_, true, context->AuthExp(), system_clock::now());
+    }
+    else if ( status_code  == Code::PERMISSION_DENIED ) {
+      // Insert an unsuccessfully authroized entry.
+      authz_cache_->Insert(*authz_key_, false, context->AuthExp(), system_clock::now());
+    }
     continuation(request_handler_->RequestStatus());
     return;
   }
@@ -146,12 +192,12 @@ void AuthzChecker::CallNextRequest(
   firebase_rules::HttpRequest http_request = request_handler_->GetHttpRequest();
   HttpFetch(http_request.url, http_request.method, http_request.body,
             http_request.token_type, http_request.audience,
-            [continuation, checker](Status status, std::string &&body) {
+            [context, continuation, checker](Status status, std::string &&body) {
 
               checker->env_->LogInfo(std::string("Response Body = ") + body);
               if (status.ok() && !body.empty() && body != "{}") {
                 checker->request_handler_->UpdateResponse(body);
-                checker->CallNextRequest(continuation);
+                checker->CallNextRequest(context, continuation);
               } else {
                 checker->env_->LogError(
                     std::string("Test API failed with ") +
