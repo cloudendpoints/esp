@@ -193,6 +193,7 @@ EOF
 # waiting for the second report request is done
 is($t->waitforfile($t->{_testdir}."/".${report_done} . ".1"), 1, 'Report body file ready.');
 
+my $max_retry = 5;
 # verify the second /endpoints_status
 do {
     # wait for the refresh
@@ -201,8 +202,8 @@ do {
     $response = ApiManager::http_get($NginxPort, '/endpoints_status' );
     ( $response_headers, $response_body ) = split /\r\n\r\n/, $response, 2;
     $endpoints_status = decode_json( $response_body );
-} while($endpoints_status->{processes}[0]->{espStatus}[0]->{serviceConfigRollouts}->
-    {rolloutId} ne '2016-08-25r1');
+} while($max_retry-- > 0 && $endpoints_status->{processes}[0]->{espStatus}[0]->
+    {serviceConfigRollouts}->{rolloutId} ne '2016-08-25r1');
 
 like( $response_headers, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.' );
 is($endpoints_status->{processes}[0]->{espStatus}[0]->{serviceConfigRollouts}->
