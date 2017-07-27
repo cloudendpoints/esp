@@ -28,6 +28,7 @@
 
 #include <unistd.h>
 #include <fstream>
+#include <google/protobuf/util/message_differencer.h>
 
 #include "include/api_manager/api_manager.h"
 #include "src/api_manager/utils/marshalling.h"
@@ -293,34 +294,14 @@ ngx_int_t ngx_esp_update_rollout(std::shared_ptr<ApiManager> esp,
     new_rollouts.SerializeToArray(rollouts, length);
 
     ServiceConfigRolloutsProto current_rollouts;
-    if (!current_rollouts.ParseFromArray(
+    if (current_rollouts.ParseFromArray(
             process_stat->esp_stats[index].rollouts,
-            process_stat->esp_stats[index].rollouts_length) ||
-        new_rollouts.rollout_id() != current_rollouts.rollout_id() ||
-        new_rollouts.percentages_size() !=
-            current_rollouts.percentages_size()) {
-      memcpy(process_stat->esp_stats[index].rollouts, rollouts, length);
-      process_stat->esp_stats[index].rollouts_length = length;
-      return NGX_OK;
-    }
-
-    std::unordered_map<std::string, int> dupcheck;
-    for (auto percentage : current_rollouts.percentages()) {
-      dupcheck[percentage.first] = percentage.second;
-    }
-
-    for (auto percentage : new_rollouts.percentages()) {
-      if (dupcheck.find(percentage.first) != dupcheck.end() &&
-          dupcheck[percentage.first] == (int)percentage.second) {
-        dupcheck.erase(percentage.first);
-      } else {
-        dupcheck[percentage.first] = percentage.second;
+            process_stat->esp_stats[index].rollouts_length)) {
+      if (!google::protobuf::util::MessageDifferencer::Equals(current_rollouts,
+                                                              new_rollouts)) {
+        memcpy(process_stat->esp_stats[index].rollouts, rollouts, length);
+        process_stat->esp_stats[index].rollouts_length = length;
       }
-    }
-
-    if (dupcheck.size() != 0) {
-      memcpy(process_stat->esp_stats[index].rollouts, rollouts, length);
-      process_stat->esp_stats[index].rollouts_length = length;
     }
   }
 
