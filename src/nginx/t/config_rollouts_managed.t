@@ -46,7 +46,7 @@ my $BackendPort        = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $ServiceManagementPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(36);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(43);
 
 # Save servce configuration that disables the report cache.
 # Report request will be sent for each client request
@@ -74,6 +74,7 @@ service_config_rollout {
     key: "%%TESTDIR%%/service.2.pb.txt"
     value: 20
   }
+  rollout_id: "2017-05-16r0"
 }
 rollout_strategy: "managed"
 EOF
@@ -118,6 +119,10 @@ http {
       }
       proxy_pass http://127.0.0.1:${BackendPort};
     }
+    location /endpoints_status {
+      endpoints_status;
+      access_log off;
+    }
   }
 }
 EOF
@@ -154,6 +159,18 @@ is( $response_body, <<'EOF', 'Shelves returned in the response body.' );
 EOF
 
 
+# verify the first /endpoints_status
+$response = ApiManager::http_get($NginxPort, '/endpoints_status' );
+( $response_headers, $response_body ) = split /\r\n\r\n/, $response, 2;
+like( $response_headers, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.' );
+my $endpoints_status = decode_json( $response_body );
+is($endpoints_status->{processes}[0]->{espStatus}[0]->{serviceConfigRollouts}->
+    {rolloutId}, '2017-05-16r0', "Rollout from service conf" );
+is($endpoints_status->{processes}[0]->{espStatus}[0]->{serviceConfigRollouts}->
+    {percentages}->{'2016-08-25r1'}, '80', "Rollout 2016-08-25r1 is 80%" );
+is($endpoints_status->{processes}[0]->{espStatus}[0]->{serviceConfigRollouts}->
+    {percentages}->{'2016-08-25r2'}, '20', "Rollout 2016-08-25r2 is 20%" );
+
 # waiting for the first report request is done
 is($t->waitforfile($t->{_testdir}."/".${report_done} . ".0"), 1, 'Report body file ready.');
 
@@ -175,6 +192,24 @@ EOF
 
 # waiting for the second report request is done
 is($t->waitforfile($t->{_testdir}."/".${report_done} . ".1"), 1, 'Report body file ready.');
+
+# verify the second /endpoints_status
+do {
+    # wait for the refresh
+    sleep(1);
+
+    $response = ApiManager::http_get($NginxPort, '/endpoints_status' );
+    ( $response_headers, $response_body ) = split /\r\n\r\n/, $response, 2;
+    $endpoints_status = decode_json( $response_body );
+} while($endpoints_status->{processes}[0]->{espStatus}[0]->{serviceConfigRollouts}->
+    {rolloutId} ne '2016-08-25r1');
+
+like( $response_headers, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.' );
+is($endpoints_status->{processes}[0]->{espStatus}[0]->{serviceConfigRollouts}->
+    {rolloutId}, '2016-08-25r1',
+    "Rollout was updated from the service management API" );
+is($endpoints_status->{processes}[0]->{espStatus}[0]->{serviceConfigRollouts}->
+    {percentages}->{'2016-08-25r3'}, '100', "Rollout 2016-08-25r3 is 10%" );
 
 $t->stop_daemons();
 
