@@ -282,6 +282,22 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
 }
 
 TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutMultipleServiceConfig) {
+  std::function<void(HTTPRequest * req)> hanlder = [this](HTTPRequest* req) {
+    std::map<std::string, std::string> data = {
+        {"https://servicemanagement.googleapis.com/v1/services/"
+         "service_name_from_metadata/configs/2017-05-01r0",
+         kServiceConfig1},
+        {"https://servicemanagement.googleapis.com/v1/services/"
+         "service_name_from_metadata/configs/2017-05-01r1",
+         kServiceConfig2}};
+
+    if (data.find(req->url()) != data.end()) {
+      req->OnComplete(Status::OK, {}, std::move(data[req->url()]));
+    } else {
+      req->OnComplete(utils::Status(Code::NOT_FOUND, "Not Found"), {}, "");
+    }
+  };
+
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
       .WillOnce(Invoke([this](HTTPRequest* req) {
         ASSERT_EQ(
@@ -290,27 +306,17 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutMultipleServiceConfig) {
             req->url());
         req->OnComplete(Status::OK, {}, kRolloutsResponseMultipleServiceConfig);
       }))
-      .WillOnce(Invoke([this](HTTPRequest* req) {
-        ASSERT_EQ(
-            "https://servicemanagement.googleapis.com/v1/services/"
-            "service_name_from_metadata/configs/2017-05-01r0",
-            req->url());
-        req->OnComplete(Status::OK, {}, kServiceConfig1);
-      }))
-      .WillOnce(Invoke([this](HTTPRequest* req) {
-        ASSERT_EQ(
-            "https://servicemanagement.googleapis.com/v1/services/"
-            "service_name_from_metadata/configs/2017-05-01r1",
-            req->url());
-        req->OnComplete(Status::OK, {}, kServiceConfig2);
-      }));
+      .WillOnce(Invoke(hanlder))
+      .WillOnce(Invoke(hanlder));
 
   int sequence = 0;
 
   std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
       global_context_,
       [this, &sequence](const utils::Status& status,
-                        const std::vector<std::pair<std::string, int>>& list) {
+                        std::vector<std::pair<std::string, int>> list) {
+        std::sort(list.begin(), list.end());
+
         ASSERT_EQ(2, list.size());
         ASSERT_EQ(kServiceConfig1, list[0].first);
         ASSERT_EQ(80, list[0].second);
@@ -327,6 +333,37 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutMultipleServiceConfig) {
 
 TEST_F(ConfigManagerServiceNameConfigIdTest,
        RolloutMultipleServiceConfigPartiallyFailedThenSucceededNextTimerEvent) {
+  std::function<void(HTTPRequest * req)> first_hanlder =
+      [this](HTTPRequest* req) {
+        std::map<std::string, std::string> data = {
+            {"https://servicemanagement.googleapis.com/v1/services/"
+             "service_name_from_metadata/configs/2017-05-01r0",
+             kServiceConfig1}};
+
+        if (data.find(req->url()) != data.end()) {
+          req->OnComplete(Status::OK, {}, std::move(data[req->url()]));
+        } else {
+          req->OnComplete(utils::Status(Code::NOT_FOUND, "Not Found"), {}, "");
+        }
+      };
+
+  std::function<void(HTTPRequest * req)> second_hanlder =
+      [this](HTTPRequest* req) {
+        std::map<std::string, std::string> data = {
+            {"https://servicemanagement.googleapis.com/v1/services/"
+             "service_name_from_metadata/configs/2017-05-01r0",
+             kServiceConfig1},
+            {"https://servicemanagement.googleapis.com/v1/services/"
+             "service_name_from_metadata/configs/2017-05-01r1",
+             kServiceConfig2}};
+
+        if (data.find(req->url()) != data.end()) {
+          req->OnComplete(Status::OK, {}, std::move(data[req->url()]));
+        } else {
+          req->OnComplete(utils::Status(Code::NOT_FOUND, "Not Found"), {}, "");
+        }
+      };
+
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
       .WillOnce(Invoke([this](HTTPRequest* req) {
         ASSERT_EQ(
@@ -335,20 +372,8 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
             req->url());
         req->OnComplete(Status::OK, {}, kRolloutsResponseMultipleServiceConfig);
       }))
-      .WillOnce(Invoke([this](HTTPRequest* req) {
-        ASSERT_EQ(
-            "https://servicemanagement.googleapis.com/v1/services/"
-            "service_name_from_metadata/configs/2017-05-01r0",
-            req->url());
-        req->OnComplete(Status::OK, {}, kServiceConfig1);
-      }))
-      .WillOnce(Invoke([this](HTTPRequest* req) {
-        ASSERT_EQ(
-            "https://servicemanagement.googleapis.com/v1/services/"
-            "service_name_from_metadata/configs/2017-05-01r1",
-            req->url());
-        req->OnComplete(utils::Status(Code::NOT_FOUND, "Not Found"), {}, "");
-      }))
+      .WillOnce(Invoke(first_hanlder))
+      .WillOnce(Invoke(first_hanlder))
       .WillOnce(Invoke([this](HTTPRequest* req) {
         ASSERT_EQ(
             "https://servicemanagement.googleapis.com/v1/services/"
@@ -356,20 +381,8 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
             req->url());
         req->OnComplete(Status::OK, {}, kRolloutsResponseMultipleServiceConfig);
       }))
-      .WillOnce(Invoke([this](HTTPRequest* req) {
-        ASSERT_EQ(
-            "https://servicemanagement.googleapis.com/v1/services/"
-            "service_name_from_metadata/configs/2017-05-01r0",
-            req->url());
-        req->OnComplete(Status::OK, {}, kServiceConfig1);
-      }))
-      .WillOnce(Invoke([this](HTTPRequest* req) {
-        ASSERT_EQ(
-            "https://servicemanagement.googleapis.com/v1/services/"
-            "service_name_from_metadata/configs/2017-05-01r1",
-            req->url());
-        req->OnComplete(Status::OK, {}, kServiceConfig2);
-      }));
+      .WillOnce(Invoke(second_hanlder))
+      .WillOnce(Invoke(second_hanlder));
 
   int sequence = 0;
 
