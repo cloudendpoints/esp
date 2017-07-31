@@ -41,6 +41,7 @@ namespace nginx {
 // The maximum number of esp objects.
 const int kMaxEspNum = 10;
 const int kMaxServiceNameSize = 256;
+const int kMaxServiceRolloutsInfoSize = 4096;
 
 typedef struct {
   // process ID
@@ -67,10 +68,12 @@ typedef struct {
   // Number of esp objects.
   int num_esp;
 
-  // Struct to store esp statistics and service name.
+  // Struct to store esp statistics, service name and rollouts
   struct EspData {
     char service_name[kMaxServiceNameSize];
     ApiManagerStatistics statistics;
+    char rollouts[kMaxServiceRolloutsInfoSize];
+    int rollouts_length;
   };
   EspData esp_stats[kMaxEspNum];
 

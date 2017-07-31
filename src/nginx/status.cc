@@ -29,6 +29,8 @@
 #include <unistd.h>
 #include <fstream>
 
+#include "google/protobuf/util/message_differencer.h"
+#include "include/api_manager/api_manager.h"
 #include "src/api_manager/utils/marshalling.h"
 #include "src/nginx/environment.h"
 #include "src/nginx/module.h"
@@ -53,6 +55,8 @@ using service_control::Statistics;
 using utils::Status;
 using ServiceControlStatisticsProto =
     ::google::api_manager::proto::ServiceControlStatistics;
+using ServiceConfigRolloutsProto =
+    ::google::api_manager::proto::ServiceConfigRollouts;
 
 #if (NGX_DARWIN)
 const size_t kMemoryUnit = 1;
@@ -125,6 +129,8 @@ void fill_process_stats(const ngx_esp_process_stats_t &stat,
     fill_service_control_statistics(
         stat.esp_stats[j].statistics.service_control_statistics,
         esp_status_proto->mutable_service_control_statistics());
+    esp_status_proto->mutable_service_config_rollouts()->ParseFromArray(
+        stat.esp_stats[j].rollouts, stat.esp_stats[j].rollouts_length);
   }
 }
 
@@ -270,6 +276,50 @@ Status stats_json_per_process(const ngx_esp_process_stats_t &process_stats,
   return utils::ProtoToJson(status, json, utils::JsonOptions::OUTPUT_DEFAULTS);
 };
 
+ngx_int_t ngx_esp_copy_rollouts(const ServiceConfigRolloutsProto *new_rollouts,
+                                const int new_rollouts_length,
+                                ngx_esp_process_stats_t *process_stat,
+                                const int index) {
+  char rollouts[kMaxServiceRolloutsInfoSize];
+  if (new_rollouts->SerializeToArray(rollouts, new_rollouts_length)) {
+    memcpy(process_stat->esp_stats[index].rollouts, rollouts,
+           new_rollouts_length);
+    process_stat->esp_stats[index].rollouts_length = new_rollouts_length;
+  }
+  return NGX_OK;
+}
+
+ngx_int_t ngx_esp_update_rollout(std::shared_ptr<ApiManager> esp,
+                                 ngx_esp_process_stats_t *process_stat,
+                                 int index) {
+  ServiceConfigRolloutsInfo rollouts_info;
+  esp->GetServiceConfigRollouts(&rollouts_info);
+
+  ServiceConfigRolloutsProto new_rollouts;
+  new_rollouts.set_rollout_id(rollouts_info.rollout_id);
+  for (auto percentage : rollouts_info.percentages) {
+    (*new_rollouts.mutable_percentages())[percentage.first] = percentage.second;
+  }
+
+  int length = new_rollouts.ByteSize();
+  if (0 < length && length <= kMaxServiceRolloutsInfoSize) {
+    ServiceConfigRolloutsProto current_rollouts;
+
+    if (current_rollouts.ParseFromArray(
+            process_stat->esp_stats[index].rollouts,
+            process_stat->esp_stats[index].rollouts_length)) {
+      if (!google::protobuf::util::MessageDifferencer::Equals(current_rollouts,
+                                                              new_rollouts)) {
+        ngx_esp_copy_rollouts(&new_rollouts, length, process_stat, index);
+      }
+    } else {
+      ngx_esp_copy_rollouts(&new_rollouts, length, process_stat, index);
+    }
+  }
+
+  return NGX_OK;
+}
+
 ngx_int_t ngx_esp_init_process_stats(ngx_cycle_t *cycle) {
   auto *mc = reinterpret_cast<ngx_esp_main_conf_t *>(
       ngx_http_cycle_get_module_main_conf(cycle, ngx_esp_module));
@@ -295,6 +345,8 @@ ngx_int_t ngx_esp_init_process_stats(ngx_cycle_t *cycle) {
   for (ngx_uint_t i = 0, napis = mc->endpoints.nelts; i < napis; i++) {
     ngx_esp_loc_conf_t *lc = endpoints[i];
     if (lc->esp) {
+      ngx_esp_update_rollout(lc->esp, process_stat, process_stat->num_esp);
+
       if (lc->esp->get_logging_status_disabled()) ++log_disabled_esp;
       const std::string &service_name = lc->esp->service_name();
       // only fill buf 1 byte smaller than buffer size, always put '\0' in the
@@ -325,6 +377,8 @@ ngx_int_t ngx_esp_init_process_stats(ngx_cycle_t *cycle) {
     for (ngx_uint_t i = 0, napis = mc->endpoints.nelts; i < napis; i++) {
       ngx_esp_loc_conf_t *lc = endpoints[i];
       if (lc->esp) {
+        ngx_esp_update_rollout(lc->esp, process_stat, esp_idx);
+
         lc->esp->GetStatistics(&process_stat->esp_stats[esp_idx].statistics);
         if (++esp_idx >= kMaxEspNum) break;
       }
