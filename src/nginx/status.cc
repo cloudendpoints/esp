@@ -276,6 +276,19 @@ Status stats_json_per_process(const ngx_esp_process_stats_t &process_stats,
   return utils::ProtoToJson(status, json, utils::JsonOptions::OUTPUT_DEFAULTS);
 };
 
+ngx_int_t ngx_esp_copy_rollouts(const ServiceConfigRolloutsProto *new_rollouts,
+                                const int new_rollouts_length,
+                                ngx_esp_process_stats_t *process_stat,
+                                const int index) {
+  char rollouts[kMaxServiceRolloutsInfoSize];
+  if (new_rollouts->SerializeToArray(rollouts, new_rollouts_length)) {
+    memcpy(process_stat->esp_stats[index].rollouts, rollouts,
+           new_rollouts_length);
+    process_stat->esp_stats[index].rollouts_length = new_rollouts_length;
+  }
+  return NGX_OK;
+}
+
 ngx_int_t ngx_esp_update_rollout(std::shared_ptr<ApiManager> esp,
                                  ngx_esp_process_stats_t *process_stat,
                                  int index) {
@@ -290,18 +303,17 @@ ngx_int_t ngx_esp_update_rollout(std::shared_ptr<ApiManager> esp,
 
   int length = new_rollouts.ByteSize();
   if (0 < length && length <= kMaxServiceRolloutsInfoSize) {
-    char rollouts[kMaxServiceRolloutsInfoSize];
-    new_rollouts.SerializeToArray(rollouts, length);
-
     ServiceConfigRolloutsProto current_rollouts;
+
     if (current_rollouts.ParseFromArray(
             process_stat->esp_stats[index].rollouts,
             process_stat->esp_stats[index].rollouts_length)) {
       if (!google::protobuf::util::MessageDifferencer::Equals(current_rollouts,
                                                               new_rollouts)) {
-        memcpy(process_stat->esp_stats[index].rollouts, rollouts, length);
-        process_stat->esp_stats[index].rollouts_length = length;
+        ngx_esp_copy_rollouts(&new_rollouts, length, process_stat, index);
       }
+    } else {
+      ngx_esp_copy_rollouts(&new_rollouts, length, process_stat, index);
     }
   }
 
