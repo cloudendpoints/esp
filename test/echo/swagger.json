@@ -5,7 +5,7 @@
     "title": "Echo",
     "version": "1.0.0"
   },
-  "host": "echo-dot-${MY_PROJECT_ID}.appspot.com",
+  "host": "echo-dot-esp-dev-171621.appspot.com",
   "basePath": "/",
   "consumes": [
     "application/json"
@@ -16,6 +16,9 @@
   "schemes": [
     "https"
   ],
+  "x-google-experimental-authorization": {
+    "provider": "https://staging-firebaserules.sandbox.googleapis.com"
+  },
   "paths": {
     "/echo": {
       "delete": {
@@ -163,9 +166,9 @@
       "authorizationUrl": "",
       "flow": "implicit",
       "type": "oauth2",
-      "x-google-issuer": "test-client@esp-test-client.iam.gserviceaccount.com",
-      "x-google-jwks_uri": "https://www.googleapis.com/service_accounts/v1/jwk/test-client@esp-test-client.iam.gserviceaccount.com",
-      "x-google-audiences": "echo-${MY_PROJECT_ID}.appspot.com"
+      "x-google-issuer": "esp-dev-171621@appspot.gserviceaccount.com",
+      "x-google-jwks_uri": "https://www.googleapis.com/robot/v1/metadata/x509/esp-dev-171621@appspot.gserviceaccount.com",
+      "x-google-audiences": "echo-dot-esp-dev-171621.appspot.com"
     }
   }
 }
