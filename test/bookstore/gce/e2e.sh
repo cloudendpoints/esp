@@ -103,8 +103,8 @@ run retry -n 3 gcloud compute instances create "${INSTANCE_NAME}" \
 run retry -n 3 get_host_ip "${INSTANCE_NAME}"
 HOST="http://${HOST_INTERNAL_IP}:8080"
 
-check_retry_count=0
-until [ $check_retry_count -ge 10 ]
+CHECK_RETRY_COUNT=0
+until [ $CHECK_RETRY_COUNT -ge 10 ]
 do
   sleep 10
   ESP_CURRENT_ROLLOUTS=""
@@ -113,7 +113,7 @@ do
   if [ "$ESP_SERVICE_VERSION" == "$ESP_CURRENT_ROLLOUTS" ]; then
     break
   fi
-  check_retry_count=$[$check_retry_count+1]
+  CHECK_RETRY_COUNT=$[$CHECK_RETRY_COUNT+1]
 done
 
 if [ "$ESP_SERVICE_VERSION" != "$ESP_CURRENT_ROLLOUTS" ]; then
@@ -126,8 +126,8 @@ if [ "${ESP_ROLLOUT_STRATEGY}" == "managed" ]; then
   # Deploy new service config
   create_service "${ESP_SERVICE}" swagger.json
 
-  check_retry_count=0
-  until [ $check_retry_count -ge 10 ]
+  CHECK_RETRY_COUNT=0
+  until [ $CHECK_RETRY_COUNT -ge 10 ]
   do
     sleep 10
     ESP_CURRENT_ROLLOUTS=""
@@ -136,7 +136,7 @@ if [ "${ESP_ROLLOUT_STRATEGY}" == "managed" ]; then
     if [ "$ESP_SERVICE_VERSION" == "$ESP_CURRENT_ROLLOUTS" ]; then
        break
     fi
-    check_retry_count=$[$check_retry_count+1]
+    CHECK_RETRY_COUNT=$[$CHECK_RETRY_COUNT+1]
   done
 fi
 
