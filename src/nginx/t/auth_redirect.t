@@ -32,6 +32,7 @@ use warnings;
 use src::nginx::t::ApiManager;   # Must be first (sets up import path to the Nginx test module)
 use src::nginx::t::HttpServer;
 use src::nginx::t::ServiceControl;
+use src::nginx::t::Auth;
 use Test::Nginx;  # Imports Nginx's test module
 use Test::More;   # And the test framework
 
@@ -40,11 +41,8 @@ use Test::More;   # And the test framework
 # Port allocations
 
 my $NginxPort = ApiManager::pick_port();
-my $BackendPort = ApiManager::pick_port();
-my $ServiceControlPort = ApiManager::pick_port();
-my $RedirectPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(11);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(5);
 
 my $config = ApiManager::get_bookstore_service_config .<<"EOF";
 producer_project_id: "endpoints-test"
@@ -53,7 +51,7 @@ authentication {
     id: "test_auth"
     issuer: "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l\@developer.gserviceaccount.com"
     jwks_uri: "http://127.0.0.1/pubkey"
-    authorization_url: "http://127.0.0.1:${RedirectPort}/redirect"
+    authorization_url: "http://dummy-redirect-url"
   }
   rules {
     selector: "ListShelves"
@@ -64,7 +62,7 @@ authentication {
   }
 }
 control {
-  environment: "http://127.0.0.1:${ServiceControlPort}"
+  environment: "http://127.0.0.1:3000"
 }
 EOF
 $t->write_file('service.pb.txt', $config);
@@ -86,65 +84,47 @@ http {
         api service.pb.txt;
         on;
       }
-      proxy_pass http://127.0.0.1:${BackendPort};
+      proxy_pass http://127.0.0.1:3000;
     }
   }
 }
 EOF
 
-$t->run_daemon(\&bookstore, $t, $BackendPort, 'bookstore.log');
-$t->run_daemon(\&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log', $report_done);
-
-is($t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'Bookstore socket ready.');
-is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control socket ready.');
-
 $t->run();
 
 ################################################################################
-my $response = ApiManager::http_get($NginxPort, "/shelves");
+# no auth token
+my $response1 = ApiManager::http_get($NginxPort, "/shelves");
+
+# should redirect
+like($response1, qr/HTTP\/1\.1 302 Moved Temporarily/, 'Returned HTTP 302.');
+like($response1, qr/Location: http:\/\/dummy-redirect-url/, 'Return correct redirect location.');
+
+# expired auth token
+my $expired_token = Auth::get_expired_jwt_token;
+my $response2 = ApiManager::http($NginxPort, <<"EOF");
+GET /shelves HTTP/1.0
+Host: localhost
+Authorization: Bearer $expired_token
+
+EOF
+
+# should redirect
+like($response2, qr/HTTP\/1\.1 302 Moved Temporarily/, 'Returned HTTP 302.');
+like($response2, qr/Location: http:\/\/dummy-redirect-url/, 'Return correct redirect location.');
+
+#invalid auth token
+my $response3 = ApiManager::http($NginxPort, <<"EOF");
+GET /shelves HTTP/1.0
+Host: localhost
+Authorization: Bearer invalid_token
+
+EOF
+
+# should not redirect.
+like($response3, qr/HTTP\/1\.1 401 Unauthorized/, 'Returned HTTP 401.');
 
 $t->stop_daemons();
 
-like($response, qr/HTTP\/1\.1 401 Unauthorized/, 'Returned HTTP 401, invalid token.');
-like($response, qr/WWW-Authenticate: Bearer, error=\"invalid_token\"/, 'Return invalid_token challenge.');
-like($response, qr/Content-Type: application\/json/i,
-     'Invalid token returned application/json body');
-like($response, qr/JWT validation failed: BAD_FORMAT/i, 'JWT error text in the body.');
-
-my $bookstore_requests = $t->read_file('bookstore.log');
-is($bookstore_requests, '', 'Request did not reach the backend.');
-
-
 ################################################################################
 
-sub bookstore {
-  my ($t, $port, $file) = @_;
-  my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
-    or die "Can't create test server socket: $!\n";
-  local $SIG{PIPE} = 'IGNORE';
-  # Do not initialize any server state, requests won't reach backend anyway.
-  $server->run();
-}
-
-################################################################################
-
-sub servicecontrol {
-  my ($t, $port, $file, $done) = @_;
-  my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
-    or die "Can't create test server socket: $!\n";
-  local $SIG{PIPE} = 'IGNORE';
-
-  $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:report', sub {
-    my ($headers, $body, $client) = @_;
-    print $client <<'EOF';
-HTTP/1.1 200 OK
-Connection: close
-
-{}
-EOF
-  });
-
-  $server->run();
-}
-
-################################################################################

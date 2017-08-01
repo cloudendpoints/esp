@@ -51,6 +51,11 @@ const u_char kLocationLowcase[] = "location";
 ngx_str_t missing_credential = ngx_string("Bearer");
 ngx_str_t invalid_token = ngx_string("Bearer, error=\"invalid_token\"");
 
+const char *kInvalidAuthToken =
+    "JWT validation failed: Missing or invalid credentials";
+const char *kExpiredAuthToken =
+    "JWT validation failed: TIME_CONSTRAINT_FAILURE";
+
 ngx_http_output_header_filter_pt ngx_http_next_header_filter;
 ngx_http_output_body_filter_pt ngx_http_next_body_filter;
 
@@ -108,7 +113,9 @@ ngx_int_t ngx_esp_handle_www_authenticate(ngx_http_request_t *r,
 ngx_int_t ngx_esp_handle_authorization_url(ngx_http_request_t *r,
                                            ngx_esp_request_ctx_t *ctx) {
   if (ctx && ctx->status.code() == Code::UNAUTHENTICATED &&
-      ctx->status.error_cause() == utils::Status::AUTH) {
+      ctx->status.error_cause() == utils::Status::AUTH &&
+      (ctx->status.message() == kInvalidAuthToken ||
+       ctx->status.message() == kExpiredAuthToken)) {
     std::string url = ctx->request_handler->GetAuthorizationUrl();
     if (!url.empty()) {
       r->headers_out.status = NGX_HTTP_MOVED_TEMPORARILY;
