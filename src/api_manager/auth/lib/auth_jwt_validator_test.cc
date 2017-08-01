@@ -200,37 +200,6 @@ const char kPublicKeyX509[] =
     "L9Lb4gPPSUMSKy7Zy4Sn4il1U\\nFc94Mi9j13oeGvLOduNOStGu5XROIxDtCEjjn2y2SL2bPw"
     "0qAlIzBeniiApkmYw/\\no6OLrg==\\n-----END CERTIFICATE-----\\n\"}";
 
-
-// Please see jwt_and_jwk_generator.py under /src/tools/ for Public/private ES256
-// key pair, ES256-signed jwt token, and public jwk generation.
-const char kPublicKeyJwkEC[] = "{\"keys\": [{\"kty\":\"EC\", \"alg\": \"ES256\","
-    "\"kid\": \"1a\",\"crv\":\"P-256\",\"x\":\"UwQ1_lH4UaJ5K-pn9ofZ_unyGZLP-AU38"
-    "20_1vhIXNw\",\"y\":\"CtQozooILf8Llu9qfRDxuAE3YDvqyG1mJE6GKdjvzXI\"}, {\"alg"
-    "\": \"ES256\", \"crv\": \"P-256\", \"kid\": \"2b\",\"kty\": \"EC\", \"use\""
-    ": \"sig\", \"x\": \"C9_ya1G-mtcqJjMqGGk8Z-b2ALSHGWnMXHNvpqF5OBE\", \"y\": "
-    "\"tldOXhHzLb6q0mi2VLlBU1t80TSOUwc9rfEc1w-OnRI\"}]}";
-
-const char kTokenEC[] =  "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjFhIn0.ey"
-    "Jpc3MiOiI2Mjg2NDU3NDE4ODEtbm9hYml1MjNmNWE4bThvdmQ4dWN2Njk4bGo3OHZ2MGxAZGV2Z"
-    "WxvcGVyLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJzdWIiOiI2Mjg2NDU3NDE4ODEtbm9hYml1MjNm"
-    "NWE4bThvdmQ4dWN2Njk4bGo3OHZ2MGxAZGV2ZWxvcGVyLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJ"
-    "hdWQiOiJodHRwOi8vbXlzZXJ2aWNlLmNvbS9teWFwaSJ9.TFVipa_zF6OoR0tFgflcb_RwN3-44"
-    "QTCNW3JnFn2c1jXugYwP7WAhC9kXfXNlDLMQedkXa48yawBZEIKo7677w";
-
-const char kTokenECWrongKey[] = "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjN"
-    "jIn0.eyJpc3MiOiI2Mjg2NDU3NDE4ODEtbm9hYml1MjNmNWE4bThvdmQ4dWN2Njk4bGo3OHZ2MG"
-    "xAZGV2ZWxvcGVyLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJzdWIiOiI2Mjg2NDU3NDE4ODEtbm9hY"
-    "ml1MjNmNWE4bThvdmQ4dWN2Njk4bGo3OHZ2MGxAZGV2ZWxvcGVyLmdzZXJ2aWNlYWNjb3VudC5j"
-    "b20iLCJhdWQiOiJodHRwOi8vbXlzZXJ2aWNlLmNvbS9teWFwaSJ9.s8J5UneA679P9jndvDoPjd"
-    "L-mF7oyQsn7SPwfXVnudVLgca_GAEA7iQHBRj223joWNSFGT-VJ__EoHZb6R73Wg";
-
-const char kTokenECNoKid[] = "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiI2M"
-    "jg2NDU3NDE4ODEtbm9hYml1MjNmNWE4bThvdmQ4dWN2Njk4bGo3OHZ2MGxAZGV2ZWxvcGVyLmdz"
-    "ZXJ2aWNlYWNjb3VudC5jb20iLCJzdWIiOiI2Mjg2NDU3NDE4ODEtbm9hYml1MjNmNWE4bThvdmQ"
-    "4dWN2Njk4bGo3OHZ2MGxAZGV2ZWxvcGVyLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJhdWQiOiJodH"
-    "RwOi8vbXlzZXJ2aWNlLmNvbS9teWFwaSJ9.6vgyydZ_4xj_Vf-ZfMAlKwYcTAEnn5FDTlEDj61U"
-    "k07GKJHlCOac41oRgMQLGqbb7aNgEafbo_KzQJAxkwrl9A";
-
 // Token generated with the following header and payload and kOkPrivateKey.
 // Header (kid is not specified):
 // {
@@ -245,7 +214,6 @@ const char kTokenECNoKid[] = "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiI2M
 //     "noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com",
 //   "aud": "http://myservice.com/myapi"
 // }
-
 const char kTokenNoKid[] =
     "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiI2Mjg2NDU3NDE4ODEtbm9hYml1M"
     "jNmNWE4bThvdmQ4dWN2Njk4bGo3OHZ2MGxAZGV2ZWxvcGVyLmdzZXJ2aWNlYWNjb3VudC5jb20"
@@ -370,25 +338,12 @@ void TestTokenWithPubkey(char *token, const char *pkey) {
   ASSERT_EQ(status.message(), "BAD_FORMAT") << status.message();
 
   // Wrong sig.
-  //
-  // When parsing ES256-signed token, the procedure failed at "Creates
-  // Buffer for signature check". The error message coming from
-  // BigNumFromBase64String(grpc_exec_ctx *exec_ctx, const char *b64) says
-  // "Invalid group. Must be at least 2 bytes" in b64.c.
-  //
-  // Note that when adding ESA256, code of Parse(UserInfo *user_info) is not
-  // changed. So the cause of this is due to the shorter signature length in
-  // ES256-signed token.
-  //
-  // This block is commented out for now. The error scenario can be avoided by
-  // adding length check at beginning.
-  //
-  // validator = JwtValidator::Create(token, strlen(token) - 1);
-  // status = validator->Parse(&user_info);
-  // ASSERT_TRUE(status.ok());
-  // status = validator->VerifySignature(pkey, strlen(pkey));
-  // ASSERT_FALSE(status.ok());
-  // ASSERT_EQ(status.message(), "BAD_SIGNATURE") << status.message();
+  validator = JwtValidator::Create(token, strlen(token) - 1);
+  status = validator->Parse(&user_info);
+  ASSERT_TRUE(status.ok());
+  status = validator->VerifySignature(pkey, strlen(pkey));
+  ASSERT_FALSE(status.ok());
+  ASSERT_EQ(status.message(), "BAD_SIGNATURE") << status.message();
 
   // Wrong key length.
   validator = JwtValidator::Create(token, strlen(token));
@@ -535,38 +490,6 @@ TEST_F(JwtValidatorTest, TokenWithAuthorizedParty) {
   ASSERT_TRUE(status.ok());
   ASSERT_EQ(user_info.authorized_party, kAuthorizedParty);
 }
-
-
-TEST_F(JwtValidatorTest, ECX509PubKeyNotSupported) {
-  UserInfo user_info;
-  std::unique_ptr<JwtValidator> validator =
-      JwtValidator::Create(kTokenEC, strlen(kTokenEC));
-  Status status = validator->Parse(&user_info);
-  ASSERT_TRUE(status.ok());
-  status = validator->VerifySignature(kPublicKeyX509, strlen(kPublicKeyX509));
-  ASSERT_FALSE(status.ok());
-  ASSERT_EQ(status.message(), "KEY_RETRIEVAL_ERROR") << status.message();
-}
-
-TEST_F(JwtValidatorTest, OkTokenJwkEC) {
-  // ES256-signed token with kid specified.
-  TestTokenWithPubkey(const_cast<char *>(kTokenEC), kPublicKeyJwkEC);
-  // ES256-signed token without kid specified.
-  TestTokenWithPubkey(const_cast<char *>(kTokenECNoKid), kPublicKeyJwkEC);
-}
-
-TEST_F(JwtValidatorTest, WrongKeyEC) {
-  UserInfo user_info;
-  std::unique_ptr<JwtValidator> validator =
-      JwtValidator::Create(kTokenECWrongKey, strlen(kTokenECWrongKey));
-  Status status = validator->Parse(&user_info);
-  ASSERT_TRUE(status.ok());
-
-  status = validator->VerifySignature(kPublicKeyJwkEC, strlen(kPublicKeyJwkEC));
-  ASSERT_FALSE(status.ok());
-  ASSERT_EQ(status.message(), "KEY_RETRIEVAL_ERROR") << status.message();
-}
-
 
 }  // namespace
 
