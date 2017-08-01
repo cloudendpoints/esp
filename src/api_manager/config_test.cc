@@ -314,6 +314,7 @@ static const char auth_config[] =
     "    id: \"provider-id2\"\n"
     "    issuer: \"issuer2@gserviceaccount.com\"\n"
     "    jwks_uri: \"https://www.googleapis.com/jwks_uri2\"\n"
+    "    authorization_url: \"https://www.googleapis.com/auth\"\n"
     "  }\n"
     "  providers {\n"
     "    id: \"esp-auth0\"\n"
@@ -371,6 +372,9 @@ TEST(Config, TestLoadAuthentication) {
                                          {"ok_audience1"}));
   ASSERT_FALSE(method1->isAudienceAllowed("issuer1@gserviceaccount.com",
                                           {"ok_audience2"}));
+  EXPECT_EQ(method1->authorization_url_by_issuer("issuer1@gserviceaccount.com"),
+            "");
+  EXPECT_EQ(method1->first_authorization_url(), "");
 
   const MethodInfo *method2 = config->GetMethodInfo("GET", "/xyz/method2/abc");
   ASSERT_EQ("Xyz.Method2", method2->name());
@@ -381,6 +385,10 @@ TEST(Config, TestLoadAuthentication) {
                                           {"ok_audience1"}));
   ASSERT_TRUE(method2->isAudienceAllowed("issuer2@gserviceaccount.com",
                                          {"ok_audience2"}));
+  EXPECT_EQ(method2->authorization_url_by_issuer("issuer2@gserviceaccount.com"),
+            "https://www.googleapis.com/auth");
+  EXPECT_EQ(method2->first_authorization_url(),
+            "https://www.googleapis.com/auth");
 
   const MethodInfo *method3 = config->GetMethodInfo("GET", "/xyz/method3/abc");
   ASSERT_EQ("Xyz.Method3", method3->name());

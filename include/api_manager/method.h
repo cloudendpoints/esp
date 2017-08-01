@@ -56,6 +56,12 @@ class MethodInfo {
       const std::string &issuer,
       const std::set<std::string> &jwt_audiences) const = 0;
 
+  // Return authorization url for an issuer if specified.
+  virtual const std::string &authorization_url_by_issuer(
+      const std::string &issuer) const = 0;
+  // Return the first authorization url for this method.
+  virtual const std::string &first_authorization_url() const = 0;
+
   // Get http header system parameters by name.
   virtual const std::vector<std::string> *http_header_parameters(
       const std::string &name) const = 0;
