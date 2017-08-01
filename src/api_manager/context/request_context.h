@@ -129,6 +129,9 @@ class RequestContext {
   // Get the auth claims.
   const std::string &auth_claims() const { return auth_claims_; }
 
+  // Return the authorization url.
+  std::string GetAuthorizationUrl() const;
+
  private:
   // Fill OperationInfo
   void FillOperationInfo(service_control::OperationInfo *info);

@@ -112,6 +112,16 @@ class TestMethodInfo : public MethodInfo {
   bool response_streaming() const { return response_streaming_; }
   const std::string &body_field_path() const { return body_field_path_; }
 
+  const std::string &authorization_url_by_issuer(
+      const std::string &issuer) const {
+    static std::string empty;
+    return empty;
+  }
+  const std::string &first_authorization_url() const {
+    static std::string empty;
+    return empty;
+  }
+
  private:
   std::string request_type_url_;
   std::string response_type_url_;

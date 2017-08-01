@@ -47,17 +47,17 @@ TEST(MethodInfo, Create) {
 
 TEST(MethodInfo, IssueAndAudiences) {
   MethodInfoImplPtr method_info(new MethodInfoImpl(kMethodName, "", ""));
-  method_info->addAudiencesForIssuer(kIssuer1, "aud1,aud2");
-  method_info->addAudiencesForIssuer(kIssuer1, "aud3");
-  method_info->addAudiencesForIssuer(kIssuer1, ",");
-  method_info->addAudiencesForIssuer(kIssuer1, ",aud4");
-  method_info->addAudiencesForIssuer(kIssuer1, "");
-  method_info->addAudiencesForIssuer(kIssuer1, ",aud5,,,");
-  method_info->addAudiencesForIssuer(kIssuer2https, ",,,aud6");
-  method_info->addAudiencesForIssuer(kIssuer3http, "");
-  method_info->addAudiencesForIssuer(kIssuer3http, "https://aud7");
-  method_info->addAudiencesForIssuer(kIssuer3http, "http://aud8");
-  method_info->addAudiencesForIssuer(kIssuer3http, "https://aud9/");
+  method_info->addAuthProvider(kIssuer1, "aud1,aud2", "");
+  method_info->addAuthProvider(kIssuer1, "aud3", "");
+  method_info->addAuthProvider(kIssuer1, ",", "");
+  method_info->addAuthProvider(kIssuer1, ",aud4", "");
+  method_info->addAuthProvider(kIssuer1, "", "");
+  method_info->addAuthProvider(kIssuer1, ",aud5,,,", "");
+  method_info->addAuthProvider(kIssuer2https, ",,,aud6", "");
+  method_info->addAuthProvider(kIssuer3http, "", "");
+  method_info->addAuthProvider(kIssuer3http, "https://aud7", "");
+  method_info->addAuthProvider(kIssuer3http, "http://aud8", "");
+  method_info->addAuthProvider(kIssuer3http, "https://aud9/", "");
 
   ASSERT_TRUE(method_info->isIssuerAllowed(kIssuer1));
   ASSERT_TRUE(method_info->isIssuerAllowed(kIssuer2));
@@ -86,6 +86,15 @@ TEST(MethodInfo, IssueAndAudiences) {
   ASSERT_FALSE(method_info->isAudienceAllowed("", {"aud1"}));
   ASSERT_FALSE(method_info->isAudienceAllowed(kIssuer1, {""}));
   ASSERT_FALSE(method_info->isAudienceAllowed(kIssuer1, {}));
+}
+
+TEST(MethodInfo, IssueAndAuthorizationUrl) {
+  MethodInfoImplPtr method_info(new MethodInfoImpl(kMethodName, "", ""));
+  method_info->addAuthProvider(kIssuer1, "", "url1");
+  method_info->addAuthProvider(kIssuer2, "aud1,aud2", "");
+  EXPECT_EQ(method_info->authorization_url_by_issuer(kIssuer1), "url1");
+  EXPECT_EQ(method_info->authorization_url_by_issuer(kIssuer2), "");
+  EXPECT_EQ(method_info->first_authorization_url(), "url1");
 }
 
 TEST(MethodInfo, TestParameters) {

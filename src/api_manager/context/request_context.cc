@@ -348,6 +348,17 @@ void RequestContext::StartBackendSpanAndSetTraceContext() {
   }
 }
 
+std::string RequestContext::GetAuthorizationUrl() const {
+  if (method_call_.method_info == nullptr) {
+    return "";
+  }
+  if (auth_issuer_.empty()) {
+    return method_call_.method_info->first_authorization_url();
+  } else {
+    return method_call_.method_info->authorization_url_by_issuer(auth_issuer_);
+  }
+}
+
 }  // namespace context
 }  // namespace api_manager
 }  // namespace google

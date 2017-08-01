@@ -59,6 +59,9 @@ class RequestHandlerInterface {
 
   // Get the method info.
   virtual const MethodCallInfo *method_call() const = 0;
+
+  // Return the authorization url if authentication fails.
+  virtual std::string GetAuthorizationUrl() const = 0;
 };
 
 }  // namespace api_manager
