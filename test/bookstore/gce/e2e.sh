@@ -81,17 +81,71 @@ run cat "${VM_STARTUP_SCRIPT}"
 # Register cleanup for exit
 trap cleanup EXIT
 
+METADATA=""
+if [[ "${ESP_ROLLOUT_STRATEGY}" == "fixed" ]]; then
+  METADATA=endpoints-service-name="${ESP_SERVICE}",endpoints-service-version="${ESP_SERVICE_VERSION}"
+elif [[ "${ESP_ROLLOUT_STRATEGY}" == "managed" ]]; then
+  METADATA=endpoints-service-name="${ESP_SERVICE}",endpoints-rollout-strategy=managed
+else
+  echo "Invalid rollout strategy"
+  exit 1
+fi
+
 # Creating the VM
 run retry -n 3 gcloud compute instances create "${INSTANCE_NAME}" \
   --machine-type "custom-2-3840" \
   --image-family "${VM_IMAGE}" \
   --image-project debian-cloud \
   --boot-disk-size "100GB" \
-  --metadata endpoints-service-name="${ESP_SERVICE}",endpoints-service-version="${ESP_SERVICE_VERSION}" \
+  --metadata "${METADATA}" \
   --metadata-from-file startup-script="${VM_STARTUP_SCRIPT}"
 
 run retry -n 3 get_host_ip "${INSTANCE_NAME}"
 HOST="http://${HOST_INTERNAL_IP}:8080"
+
+check_retry_count=0
+until [ $check_retry_count -ge 10 ]
+do
+  sleep 10
+  ESP_CURRENT_ROLLOUTS=""
+  check_rollout_service_config_version
+
+  if [ "$ESP_SERVICE_VERSION" == "$ESP_CURRENT_ROLLOUTS" ]; then
+    break
+  fi
+  check_retry_count=$[$check_retry_count+1]
+done
+
+if [ "$ESP_SERVICE_VERSION" != "$ESP_CURRENT_ROLLOUTS" ]; then
+  echo "Rollouts server config update failed"
+  exit 1
+fi
+
+
+if [ "${ESP_ROLLOUT_STRATEGY}" == "managed" ]; then
+  # Deploy new service config
+  create_service "${ESP_SERVICE}" swagger.json
+
+  check_retry_count=0
+  until [ $check_retry_count -ge 10 ]
+  do
+    sleep 10
+    ESP_CURRENT_ROLLOUTS=""
+    check_rollout_service_config_version
+
+    if [ "$ESP_SERVICE_VERSION" == "$ESP_CURRENT_ROLLOUTS" ]; then
+       break
+    fi
+    check_retry_count=$[$check_retry_count+1]
+  done
+fi
+
+if [ "$ESP_SERVICE_VERSION" == "$ESP_CURRENT_ROLLOUTS" ]; then
+  echo "Rollouts was successfully updated"
+else
+  echo "Rollouts update was failed"
+  exit 1
+fi
 
 LOG_DIR="$(mktemp -d /tmp/log.XXXX)"
 TEST_ID="gce-${VM_IMAGE}"
