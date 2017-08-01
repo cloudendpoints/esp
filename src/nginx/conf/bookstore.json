@@ -1,6 +1,6 @@
 {
-  "name": "esp-dev-171621.appspot.com",
-  "producerProjectId": "esp-dev-171621",
+  "name": "MY_PROJECT_ID.appspot.com",
+  "producerProjectId": "MY_PROJECT_ID",
   "apis": [
     {
       "methods": [
@@ -49,30 +49,7 @@
       "version": "v1"
     }
   ],
-
-
-  "authentication": {
-    "providers": [
-      {
-        "id": "test-auth-provider",
-        "issuer": "test-client@esp-test-client.iam.gserviceaccount.com",
-        "jwksUri": "https://www.googleapis.com/service_accounts/v1/jwk/test-client@esp-test-client.iam.gserviceaccount.com"
-      }
-    ],
-    "rules": [
-      {
-        "requirements": [
-          {
-            "audiences": "test-esp-audience",
-            "providerId": "test-auth-provider"
-          }
-        ],
-        "selector": "GetShelf"
-      }
-    ]
-  },
-
-
+  "authentication": {},
   "backend": {
     "rules": [
       {
@@ -929,16 +906,5 @@
       }
     ]
   },
-  "visibility": {},
-
-
-  "experimental": {
-      "authorization": {
-            "provider": "https://firebaserules.googleapis.com"
-      }
-  }
-
+  "visibility": {}
 }
-
-
-
