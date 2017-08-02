@@ -14,7 +14,6 @@ addons:
       # We need gcc-5 for TSAN. See comments in tools/bazel.rc.
       - g++-5
       - gcc-5
-      - jq
       - lcov
       - libio-socket-ssl-perl
       - oracle-java8-installer
