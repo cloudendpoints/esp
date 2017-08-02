@@ -55,6 +55,7 @@ SWAGGER_TMPL="${ESP_ROOT}/test/bookstore/swagger_template.json"
 TEST_TYPE='http'
 UNIQUE_ID='test'
 VM_IMAGE=''
+ESP_ROLLOUT_STRATEGY=''
 ESP_SERVICE_VERSION=''
 
 # Echo and un command, exit on failure
@@ -155,6 +156,38 @@ function create_service() {
     || error_exit 'Could not activate the service.'
 
   echo "ESP service version: ${ESP_SERVICE_VERSION}"
+}
+
+# Set current rolloutId to ESP_CURRENT_ROLLOUTS variable
+function set_esp_remote_service_version_env() {
+  ESP_CURRENT_ROLLOUTS=`gcloud compute ssh "${INSTANCE_NAME}" \
+    --command='curl http://localhost:8090/endpoints_status' | python -c "
+import json
+import sys
+data = sys.stdin.readlines()
+try:
+  status=json.loads(''.join(data))
+  print(status['processes'][0]['espStatus'][0]['serviceConfigRollouts']['rolloutId'])
+except:
+  print('')
+" `
+  return ${?}
+}
+
+function wait_for_service_config_version_update() {
+  local target_version=${1}
+
+  ESP_CURRENT_ROLLOUTS=""
+  # set_esp_remote_service_version_env will set ESP_CURRENT_ROLLOUTS
+  retry -n 10 -t 90  set_esp_remote_service_version_env \
+    || error_exit 'Could not fetch the remote rollouts'
+  echo "Instance rolloutId=$ESP_CURRENT_ROLLOUTS"
+
+  if [ "$target_version" == "$ESP_CURRENT_ROLLOUTS" ]; then
+    return 0
+  else
+    return 1
+  fi
 }
 
 # Check for host http return code.
@@ -308,7 +341,7 @@ function upload_logs() {
 # End to End tests common options
 function e2e_options() {
   local OPTIND OPTARG arg
-  while getopts :a:b:B:c:d:e:g:i:k:l:r:st:v:V: arg; do
+  while getopts :a:b:B:c:d:e:g:i:k:l:r:R:st:v:V: arg; do
     case ${arg} in
       a) ESP_SERVICE="${OPTARG}";;
       b) BOOKSTORE_IMAGE="${OPTARG}";;
@@ -321,6 +354,7 @@ function e2e_options() {
       k) API_KEY="${OPTARG}";;
       l) DURATION_IN_HOUR="${OPTARG}";;
       r) DIRECT_REPO="${OPTARG}";;
+      R) ESP_ROLLOUT_STRATEGY="${OPTARG}";;
       s) SKIP_CLEANUP='true';;
       t) TEST_TYPE="$(echo ${OPTARG} | tr '[A-Z]' '[a-z]')";;
       v) VM_IMAGE="${OPTARG}";;
