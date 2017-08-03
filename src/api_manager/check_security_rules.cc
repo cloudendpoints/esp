@@ -74,6 +74,10 @@ class AuthzChecker : public std::enable_shared_from_this<AuthzChecker> {
   void CallNextRequest(std::shared_ptr<context::RequestContext> context,
                        std::function<void(Status status)> continuation);
 
+  // Check if the current request is cached in authz_cache.
+  bool CheckCache(std::shared_ptr<context::RequestContext> context,
+                              std::function<void(Status status)> final_continuation);
+
   // Parse the response for GET RELEASE API call
   Status ParseReleaseResponse(const std::string &json_str,
                               std::string *ruleset_id);
@@ -90,57 +94,62 @@ class AuthzChecker : public std::enable_shared_from_this<AuthzChecker> {
   ApiManagerEnvInterface *env_;
   auth::ServiceAccountToken *sa_token_;
   std::unique_ptr<FirebaseRequest> request_handler_;
-  AuthzCache *authz_cache_;
-  std::string *authz_key_;
 };
 
 AuthzChecker::AuthzChecker(ApiManagerEnvInterface *env,
                            auth::ServiceAccountToken *sa_token)
-    : env_(env), sa_token_(sa_token), authz_cache_(NULL), authz_key_(NULL) {}
+    : env_(env), sa_token_(sa_token){}
 
-void AuthzChecker::Check(
-    std::shared_ptr<context::RequestContext> context,
-    std::function<void(Status status)> final_continuation) {
+
+bool AuthzChecker::CheckCache(std::shared_ptr<context::RequestContext> context,
+                              std::function<void(Status status)> final_continuation) {
   // TODO: Check service config to see if "useSecurityRules" is specified.
   // If so, call Firebase Rules service TestRuleset API.
-
   if (!context->service_context()->IsRulesCheckEnabled() ||
       context->method() == nullptr || !context->method()->auth()) {
     env_->LogInfo("Skipping Firebase Rules checks since it is disabled.");
     final_continuation(Status::OK);
-    return;
+    return false;
   }
-
-  auto checker = GetPtr();
-
-  authz_cache_ = context->service_context()->authz_cache();
-  authz_key_ = authz_cache_->ComposeAuthzCacheKey(context->AuthToken(), context->request()->GetRequestPath(),
-                                                  context->request()->GetRequestHTTPMethod());
 
   bool cache_hit = false;
   // Cached authorization result, default to false.
   bool pre_authz_success = false;
-  AuthzCache::ScopedLookup lookup(authz_cache_, *authz_key_);
-  if (lookup.Found()){
-    AuthzValue *val = lookup.value();
+
+  AuthzValue val;
+  if (context->service_context()->authz_cache().Lookup(context->request()->GetAuthToken(),
+                                                   context->request()->GetRequestPath(),
+                                                   context->request()->GetRequestHTTPMethod(),
+                                                   &val)) {
     // Cache hit happens only if cache entry is not expired.
-    if (system_clock::now() <= val->exp) {
+    if (system_clock::now() <= val.exp) {
       cache_hit = true;
-      pre_authz_success = val->if_success;
+      pre_authz_success = val.if_success;
     } else {
       // Remove cache entry if expired.
-      authz_cache_->Remove(*authz_key_);
+      context->service_context()->authz_cache().Delete(context->request()->GetAuthToken(),
+                                                       context->request()->GetRequestPath(),
+                                                       context->request()->GetRequestHTTPMethod());
     }
   }
-
   if (cache_hit) {
-    checker->env_->LogDebug("I am faster!");
+    GetPtr()->env_->LogDebug("Cache hit.");
     if (pre_authz_success) {
-      final_continuation(Status(Code::OK, std::string("Successfully authorized (cached).")));
+      final_continuation(Status::OK);
     } else {
       final_continuation(Status(Code::PERMISSION_DENIED, std::string("Unauthorized access (cached).")));
     }
-  } else {
+    return false;
+  }
+  return true;
+}
+
+void AuthzChecker::Check(
+    std::shared_ptr<context::RequestContext> context,
+    std::function<void(Status status)> final_continuation) {
+
+  if (CheckCache(context, final_continuation)) {
+    auto checker = GetPtr();
     // Fetch the Release attributes and get ruleset name.
     HttpFetch(GetReleaseUrl(*context), kHttpGetMethod, "",
             auth::ServiceAccountToken::JWT_TOKEN_FOR_FIREBASE,
@@ -176,13 +185,21 @@ void AuthzChecker::CallNextRequest(std::shared_ptr<context::RequestContext> cont
     std::function<void(Status status)> continuation) {
   if (request_handler_->is_done()) {
     auto status_code = request_handler_->RequestStatus().code();
-    if ( status_code == Code::OK ) {
+    if (status_code == Code::OK) {
       // Insert a successfully authorized entry.
-      authz_cache_->Insert(*authz_key_, true, context->AuthExp(), system_clock::now());
+      context->service_context()->authz_cache().Add(context->request()->GetAuthToken(),
+                                                       context->request()->GetRequestPath(),
+                                                       context->request()->GetRequestHTTPMethod(),
+                                                       true, context->AuthExp(),
+                                                       system_clock::now());
     }
-    else if ( status_code  == Code::PERMISSION_DENIED ) {
+    else if (status_code == Code::PERMISSION_DENIED) {
       // Insert an unsuccessfully authroized entry.
-      authz_cache_->Insert(*authz_key_, false, context->AuthExp(), system_clock::now());
+      context->service_context()->authz_cache().Add(context->request()->GetAuthToken(),
+                                                       context->request()->GetRequestPath(),
+                                                       context->request()->GetRequestHTTPMethod(),
+                                                       false, context->AuthExp(),
+                                                       system_clock::now());
     }
     continuation(request_handler_->RequestStatus());
     return;

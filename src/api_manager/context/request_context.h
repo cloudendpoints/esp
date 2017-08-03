@@ -217,8 +217,6 @@ class RequestContext {
   int64_t last_request_bytes_;
   int64_t last_response_bytes_;
 
-  // JWT auth token.
-  std::string auth_token_;
   // JWT auth expiration time.
   std::chrono::system_clock::time_point auth_exp_;
 };

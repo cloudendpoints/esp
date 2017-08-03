@@ -319,6 +319,9 @@ class CheckSecurityRulesTest : public ::testing::Test {
     ON_CALL(*raw_request_, GetRequestPath())
         .WillByDefault(Return(std::string(kRequestPath)));
 
+    ON_CALL(*raw_request_, GetAuthToken())
+        .WillByDefault(Return(std::string(kAuthToken)));
+
     request_context_ = std::make_shared<context::RequestContext>(
         service_context_, std::move(request));
 
@@ -402,11 +405,8 @@ TEST_F(CheckSecurityRulesTest, CheckAuthzCacheHitPositive) {
   std::string server_config = kServerConfig;
   SetUp(service_config, server_config);
 
-  request_context_->SetAuthToken(std::string(kAuthToken));
-
-  google::api_manager::auth::AuthzCache* cache = service_context_->authz_cache();
-  std::string* key = cache->ComposeAuthzCacheKey(std::string(kAuthToken), std::string(kRequestPath), std::string(kRequestMethod));
-  cache->Insert(*key, true, kNow + std::chrono::seconds(300), kNow);
+  service_context_->authz_cache().Add(std::string(kAuthToken), std::string(kRequestPath), std::string(kRequestMethod),
+                                      true, kNow + std::chrono::seconds(300), kNow);
 
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(AllOf(
                              Property(&HTTPRequest::url, StrEq(release_url_)),
@@ -419,11 +419,9 @@ TEST_F(CheckSecurityRulesTest, CheckAuthzCacheHitPositive) {
                         Property(&HTTPRequest::method, StrCaseEq("POST")))))
       .Times(0);
 
-  auto ptr = this;
   CheckSecurityRules(request_context_,
-                     [ptr](Status status) {
+                     [](Status status) {
                        ASSERT_TRUE(status.code()==Code::OK);
-                       ASSERT_TRUE(status.message()==std::string("Successfully authorized (cached)."));
                      });
 }
 
@@ -435,11 +433,8 @@ TEST_F(CheckSecurityRulesTest, CheckAuthzCacheHitNegative) {
   std::string server_config = kServerConfig;
   SetUp(service_config, server_config);
 
-  request_context_->SetAuthToken(std::string(kAuthToken));
-
-  google::api_manager::auth::AuthzCache* cache = service_context_->authz_cache();
-  std::string* key = cache->ComposeAuthzCacheKey(std::string(kAuthToken), std::string(kRequestPath), std::string(kRequestMethod));
-  cache->Insert(*key, false, kNow + std::chrono::seconds(300), kNow);
+  service_context_->authz_cache().Add(std::string(kAuthToken), std::string(kRequestPath), std::string(kRequestMethod),
+                                      false, kNow + std::chrono::seconds(300), kNow);
 
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(AllOf(
                              Property(&HTTPRequest::url, StrEq(release_url_)),
@@ -469,12 +464,10 @@ TEST_F(CheckSecurityRulesTest, CheckAuthzCacheHitButExpired) {
   std::string server_config = kServerConfig;
   SetUp(service_config, server_config);
 
-  request_context_->SetAuthToken(std::string(kAuthToken));
   request_context_->SetAuthExp(kNow+std::chrono::seconds(50));
 
-  google::api_manager::auth::AuthzCache* cache = service_context_->authz_cache();
-  std::string* key = cache->ComposeAuthzCacheKey(std::string(kAuthToken), std::string(kRequestPath), std::string(kRequestMethod));
-  cache->Insert(*key, false, kNow, kNow);
+  service_context_->authz_cache().Add(std::string(kAuthToken), std::string(kRequestPath), std::string(kRequestMethod),
+                                      false, kNow, kNow);
 
   request_context_->set_auth_claims(kJwtEmailPayload);
   ExpectCall(release_url_, "GET", "", kRelease);
@@ -486,11 +479,11 @@ TEST_F(CheckSecurityRulesTest, CheckAuthzCacheHitButExpired) {
                        ASSERT_TRUE(status.code() == Code::OK);
                      });
 
-  google::api_manager::auth::AuthzCache::ScopedLookup lookup(cache, *key);
-  ASSERT_TRUE(lookup.Found());
-  google::api_manager::auth::AuthzValue *val = lookup.value();
-  ASSERT_EQ(val->if_success, true);
-  ASSERT_EQ(val->exp, kNow+std::chrono::seconds(50));
+  google::api_manager::auth::AuthzValue val;
+  ASSERT_TRUE(service_context_->authz_cache().Lookup(std::string(kAuthToken), std::string(kRequestPath),
+                                                     std::string(kRequestMethod), &val));
+  ASSERT_EQ(val.if_success, true);
+  ASSERT_EQ(val.exp, kNow+std::chrono::seconds(50));
 }
 
 // Cache miss. In this case, a cache entry obtained after interacting with
@@ -502,7 +495,6 @@ TEST_F(CheckSecurityRulesTest, CheckAuthzCacheMiss) {
   std::string server_config = kServerConfig;
   SetUp(service_config, server_config);
 
-  request_context_->SetAuthToken(std::string(kAuthToken));
   request_context_->SetAuthExp(kNow+std::chrono::seconds(50));
 
   request_context_->set_auth_claims(kJwtEmailPayload);
@@ -514,13 +506,12 @@ TEST_F(CheckSecurityRulesTest, CheckAuthzCacheMiss) {
                      [](Status status) {
                        ASSERT_TRUE(status.code() == Code::PERMISSION_DENIED);
                      });
-  google::api_manager::auth::AuthzCache* cache = service_context_->authz_cache();
-  std::string* key = cache->ComposeAuthzCacheKey(std::string(kAuthToken), std::string(kRequestPath), std::string(kRequestMethod));
-  google::api_manager::auth::AuthzCache::ScopedLookup lookup(cache, *key);
-  ASSERT_TRUE(lookup.Found());
-  google::api_manager::auth::AuthzValue *val = lookup.value();
-  ASSERT_EQ(val->if_success, false);
-  ASSERT_EQ(val->exp, kNow+std::chrono::seconds(50));
+
+  google::api_manager::auth::AuthzValue val;
+  ASSERT_TRUE(service_context_->authz_cache().Lookup(std::string(kAuthToken), std::string(kRequestPath),
+                                                     std::string(kRequestMethod), &val));
+  ASSERT_EQ(val.if_success, false);
+  ASSERT_EQ(val.exp, kNow+std::chrono::seconds(50));
 }
 
 // Cache miss. In this case no cache entry is added because of the failure of
@@ -532,7 +523,6 @@ TEST_F(CheckSecurityRulesTest, NoCachingOnBadStatus) {
   std::string server_config = kServerConfig;
   SetUp(service_config, server_config);
 
-  request_context_->SetAuthToken(std::string(kAuthToken));
   request_context_->SetAuthExp(kNow+std::chrono::seconds(50));
 
   request_context_->set_auth_claims(kJwtEmailPayload);
@@ -544,10 +534,9 @@ TEST_F(CheckSecurityRulesTest, NoCachingOnBadStatus) {
                      [](Status status) {
                        ASSERT_TRUE(status.code() == Code::INTERNAL);
                      });
-  google::api_manager::auth::AuthzCache* cache = service_context_->authz_cache();
-  std::string* key = cache->ComposeAuthzCacheKey(std::string(kAuthToken), std::string(kRequestPath), std::string(kRequestMethod));
-  google::api_manager::auth::AuthzCache::ScopedLookup lookup(cache, *key);
-  ASSERT_TRUE(!lookup.Found());
+  google::api_manager::auth::AuthzValue val;
+  ASSERT_FALSE(service_context_->authz_cache().Lookup(std::string(kAuthToken), std::string(kRequestPath),
+                                                     std::string(kRequestMethod), &val));
 }
 
 

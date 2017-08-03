@@ -71,6 +71,9 @@ class Request {
   // Sets auth token to the request object. Caller of RequestHandler::Check
   // need to use it compose error message if authentication fails.
   virtual void SetAuthToken(const std::string &auth_token) = 0;
+  // Returns auth token. Used to compose authz_cache key in
+  // check_security_rules.cc
+  virtual std::string GetAuthToken() = 0;
 
   // Adds a header to backend. If the header exists, overwrite its value
   virtual utils::Status AddHeaderToBackend(const std::string &key,

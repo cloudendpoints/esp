@@ -56,9 +56,9 @@ class NgxEspRequest : public Request {
   virtual int64_t GetGrpcResponseMessageCounts();
 
   virtual void SetAuthToken(const std::string &auth_token);
+  virtual std::string GetAuthToken();
   virtual utils::Status AddHeaderToBackend(const std::string &key,
                                            const std::string &value);
-
   virtual bool FindQuery(const std::string &name, std::string *query);
   virtual bool FindHeader(const std::string &name, std::string *header);
 

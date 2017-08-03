@@ -42,7 +42,7 @@ cc_library(
 )
 
 cc_library(
-   name = "authz",
+    name = "authz",
     srcs = [
         "authz_cache.cc",
     ],
@@ -57,7 +57,6 @@ cc_library(
         ],
     }),
     deps = [
-        "//external:googletest_prod",
         "//external:servicecontrol_client",
     ],
 )

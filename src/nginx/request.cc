@@ -144,6 +144,11 @@ void NgxEspRequest::SetAuthToken(const std::string &auth_token) {
   ngx_str_copy_from_std(r_->pool, auth_token, &ctx->auth_token);
 }
 
+std::string NgxEspRequest::GetAuthToken() {
+  ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
+  return ngx_str_to_std(ctx->auth_token);
+}
+
 utils::Status NgxEspRequest::AddHeaderToBackend(const std::string &key,
                                                 const std::string &value) {
   ngx_table_elt_t *h = nullptr;

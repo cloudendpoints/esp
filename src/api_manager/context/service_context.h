@@ -70,7 +70,7 @@ class ServiceContext {
   auth::Certs &certs() { return certs_; }
   auth::JwtCache &jwt_cache() { return jwt_cache_; }
 
-  auth::AuthzCache *authz_cache() { return &authz_cache_; }
+  auth::AuthzCache &authz_cache() { return authz_cache_; }
 
   bool GetJwksUri(const std::string &issuer, std::string *url) {
     return config_->GetJwksUri(issuer, url);
