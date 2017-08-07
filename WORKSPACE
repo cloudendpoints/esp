@@ -41,6 +41,16 @@ nginx_repositories(
     nginx = "@nginx//",
 )
 
+# Needs to come after nginx
+git_repository(
+    name = "iap_jwt_verify_nginx",
+    commit = "5d32cce2b300f79455a065f7ef51898f7b049ed4",
+    remote = "https://github.com/kmbarry1/appengine-sidecars-docker",
+)
+
+load("@iap_jwt_verify_nginx//:iap_jwt_verify_nginx.bzl", "iap_jwt_verify_nginx_repositories")
+iap_jwt_verify_nginx_repositories(True)
+
 # Required by gRPC.
 bind(
     name = "libssl",

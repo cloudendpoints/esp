@@ -240,6 +240,9 @@ extern ngx_module_t  ngx_http_slice_filter_module;
 #if (NGX_HTTP_ENDPOINTS_RUNTIME)
 extern ngx_module_t  ngx_esp_error_module;
 #endif
+#if (NGX_IAP_JWT_VERIFY)
+extern ngx_module_t ngx_iap_jwt_verify_module;
+#endif
 
 #if (NGX_MAIL)
 extern ngx_module_t  ngx_mail_module;
@@ -520,6 +523,9 @@ ngx_module_t *ngx_modules[] = {
 // Placement is important: must be after the write filter
 #if (NGX_HTTP_ENDPOINTS_RUNTIME)
     &ngx_esp_error_module,
+#endif
+#if (NGX_IAP_JWT_VERIFY)
+    &ngx_iap_jwt_verify_module,
 #endif
 
 #if (NGX_MAIL)
@@ -802,6 +808,9 @@ char *ngx_module_names[] = {
 #endif
 #if (NGX_HTTP_ENDPOINTS_RUNTIME)
     "ngx_esp_error_module",
+#endif
+#if (NGX_IAP_JWT_VERIFY)
+    "ngx_iap_jwt_verify_module",
 #endif
 
 #if (NGX_MAIL)
