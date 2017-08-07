@@ -182,10 +182,17 @@ const char kAuthToken[] =
     "0Yu1r5Xuq45q4WNqQ9PRk1HFsWB7uV25m8fU2VpbRLFka6F9MZu4dU9gZoGCGDTtauCHiMqBTv"
     "6vON8GbcB7w8pEhS1hK6FOehe4qZKnSA";
 
-const std::chrono::system_clock::time_point kNow = std::chrono::system_clock::now();
+const std::chrono::system_clock::time_point kNow =
+    std::chrono::system_clock::now();
+const std::chrono::system_clock::time_point kTokenExp =
+    kNow + std::chrono::seconds(50);
 
 const char kRequestPath[] = "/ListShelves";
 const char kRequestMethod[] = "GET";
+const std::string kCacheKey =
+    google::api_manager::auth::AuthzCache::ComposeAuthzCacheKey(
+        std::string(kAuthToken), std::string(kRequestPath),
+        std::string(kRequestMethod));
 
 ::google::protobuf::Value ToValue(const std::string &arg) {
   ::google::protobuf::Value value;
@@ -239,7 +246,6 @@ std::pair<std::string, std::string> GetConfigWithoutServer() {
       std::string(kServiceName) + kApis + kAuthentication + kHttp;
   return std::make_pair(service_config, "");
 }
-
 
 // This test class is parameterized and creates Config object based on the
 // service and server configuration provided.
@@ -399,14 +405,11 @@ class CheckSecurityRulesTest : public ::testing::Test {
 
 // Cache hit without expiration. In this case, a cached "yes" is returned.
 TEST_F(CheckSecurityRulesTest, CheckAuthzCacheHitPositive) {
-  std::string service_config = std::string(kServiceName) +
-                               kProducerProjectId + kApis + kAuthentication +
-                               kHttp;
+  std::string service_config = std::string(kServiceName) + kProducerProjectId +
+                               kApis + kAuthentication + kHttp;
   std::string server_config = kServerConfig;
   SetUp(service_config, server_config);
-
-  service_context_->authz_cache().Add(std::string(kAuthToken), std::string(kRequestPath), std::string(kRequestMethod),
-                                      true, kNow + std::chrono::seconds(300), kNow);
+  service_context_->authz_cache().Add(kCacheKey, true, kTokenExp, kNow);
 
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(AllOf(
                              Property(&HTTPRequest::url, StrEq(release_url_)),
@@ -419,22 +422,19 @@ TEST_F(CheckSecurityRulesTest, CheckAuthzCacheHitPositive) {
                         Property(&HTTPRequest::method, StrCaseEq("POST")))))
       .Times(0);
 
-  CheckSecurityRules(request_context_,
-                     [](Status status) {
-                       ASSERT_TRUE(status.code()==Code::OK);
-                     });
+  CheckSecurityRules(request_context_, [](Status status) {
+    ASSERT_TRUE(status.code() == Code::OK);
+  });
 }
 
 // Cache hit without expiration. In this case, a cached "no" is returned.
 TEST_F(CheckSecurityRulesTest, CheckAuthzCacheHitNegative) {
-  std::string service_config = std::string(kServiceName) +
-                               kProducerProjectId + kApis + kAuthentication +
-                               kHttp;
+  std::string service_config = std::string(kServiceName) + kProducerProjectId +
+                               kApis + kAuthentication + kHttp;
   std::string server_config = kServerConfig;
   SetUp(service_config, server_config);
 
-  service_context_->authz_cache().Add(std::string(kAuthToken), std::string(kRequestPath), std::string(kRequestMethod),
-                                      false, kNow + std::chrono::seconds(300), kNow);
+  service_context_->authz_cache().Add(kCacheKey, false, kTokenExp, kNow);
 
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(AllOf(
                              Property(&HTTPRequest::url, StrEq(release_url_)),
@@ -448,97 +448,89 @@ TEST_F(CheckSecurityRulesTest, CheckAuthzCacheHitNegative) {
       .Times(0);
 
   auto ptr = this;
-  CheckSecurityRules(request_context_,
-                     [ptr](Status status) {
-                       ASSERT_TRUE(status.code()==Code::PERMISSION_DENIED);
-                       ASSERT_TRUE(status.message()==std::string("Unauthorized access (cached)."));
-                     });
+  CheckSecurityRules(request_context_, [ptr](Status status) {
+    ASSERT_TRUE(status.code() == Code::PERMISSION_DENIED);
+    ASSERT_TRUE(status.message() ==
+                std::string("Unauthorized access (cached)."));
+  });
 }
 
-// Cache hit with expiration. In this case, old cache entry is removed and new cache entry obtained
+// Cache hit with expiration. In this case, old cache entry is removed and new
+// cache entry obtained
 // after interacting with firebase is stored assuming the interation is sound.
 TEST_F(CheckSecurityRulesTest, CheckAuthzCacheHitButExpired) {
-  std::string service_config = std::string(kServiceName) +
-                               kProducerProjectId + kApis + kAuthentication +
-                               kHttp;
+  std::string service_config = std::string(kServiceName) + kProducerProjectId +
+                               kApis + kAuthentication + kHttp;
   std::string server_config = kServerConfig;
   SetUp(service_config, server_config);
 
-  request_context_->SetAuthExp(kNow+std::chrono::seconds(50));
+  request_context_->SetAuthExp(kTokenExp);
 
-  service_context_->authz_cache().Add(std::string(kAuthToken), std::string(kRequestPath), std::string(kRequestMethod),
-                                      false, kNow, kNow);
+  service_context_->authz_cache().Add(kCacheKey, false, kNow, kNow);
 
   request_context_->set_auth_claims(kJwtEmailPayload);
   ExpectCall(release_url_, "GET", "", kRelease);
   ExpectCall(ruleset_test_url_, "POST", kFirstRequest,
              BuildTestRulesetResponse(true));
 
-  CheckSecurityRules(request_context_,
-                     [](Status status) {
-                       ASSERT_TRUE(status.code() == Code::OK);
-                     });
+  CheckSecurityRules(request_context_, [](Status status) {
+    ASSERT_TRUE(status.code() == Code::OK);
+  });
 
   google::api_manager::auth::AuthzValue val;
-  ASSERT_TRUE(service_context_->authz_cache().Lookup(std::string(kAuthToken), std::string(kRequestPath),
-                                                     std::string(kRequestMethod), &val));
+  ASSERT_TRUE(service_context_->authz_cache().Lookup(kCacheKey, kNow, &val));
   ASSERT_EQ(val.if_success, true);
-  ASSERT_EQ(val.exp, kNow+std::chrono::seconds(50));
+  ASSERT_EQ(val.exp, kTokenExp);
 }
 
 // Cache miss. In this case, a cache entry obtained after interacting with
 // firebase is stored assuming the interaction is sound.
 TEST_F(CheckSecurityRulesTest, CheckAuthzCacheMiss) {
-  std::string service_config = std::string(kServiceName) +
-                               kProducerProjectId + kApis + kAuthentication +
-                               kHttp;
+  std::string service_config = std::string(kServiceName) + kProducerProjectId +
+                               kApis + kAuthentication + kHttp;
   std::string server_config = kServerConfig;
   SetUp(service_config, server_config);
 
-  request_context_->SetAuthExp(kNow+std::chrono::seconds(50));
+  request_context_->SetAuthExp(kTokenExp);
 
   request_context_->set_auth_claims(kJwtEmailPayload);
   ExpectCall(release_url_, "GET", "", kRelease);
   ExpectCall(ruleset_test_url_, "POST", kFirstRequest,
              BuildTestRulesetResponse(false));
 
-  CheckSecurityRules(request_context_,
-                     [](Status status) {
-                       ASSERT_TRUE(status.code() == Code::PERMISSION_DENIED);
-                     });
+  CheckSecurityRules(request_context_, [](Status status) {
+    ASSERT_TRUE(status.code() == Code::PERMISSION_DENIED);
+  });
 
   google::api_manager::auth::AuthzValue val;
-  ASSERT_TRUE(service_context_->authz_cache().Lookup(std::string(kAuthToken), std::string(kRequestPath),
-                                                     std::string(kRequestMethod), &val));
+  ASSERT_TRUE(service_context_->authz_cache().Lookup(kCacheKey, kNow, &val));
   ASSERT_EQ(val.if_success, false);
-  ASSERT_EQ(val.exp, kNow+std::chrono::seconds(50));
+  ASSERT_EQ(val.exp, kTokenExp);
 }
 
 // Cache miss. In this case no cache entry is added because of the failure of
 // the interaction with firebase.
 TEST_F(CheckSecurityRulesTest, NoCachingOnBadStatus) {
-  std::string service_config = std::string(kServiceName) +
-                               kProducerProjectId + kApis + kAuthentication +
-                               kHttp;
+  std::string service_config = std::string(kServiceName) + kProducerProjectId +
+                               kApis + kAuthentication + kHttp;
   std::string server_config = kServerConfig;
   SetUp(service_config, server_config);
 
-  request_context_->SetAuthExp(kNow+std::chrono::seconds(50));
+  request_context_->SetAuthExp(kTokenExp);
 
   request_context_->set_auth_claims(kJwtEmailPayload);
   ExpectCall(release_url_, "GET", "", kRelease);
   ExpectCall(ruleset_test_url_, "POST", kFirstRequest,
-             BuildTestRulesetResponse(false), Status(Code::INTERNAL, "Cannot talk to server"));
+             BuildTestRulesetResponse(false),
+             Status(Code::INTERNAL, "Cannot talk to server"));
 
-  CheckSecurityRules(request_context_,
-                     [](Status status) {
-                       ASSERT_TRUE(status.code() == Code::INTERNAL);
-                     });
+  CheckSecurityRules(request_context_, [](Status status) {
+    ASSERT_TRUE(status.code() == Code::INTERNAL);
+  });
+
   google::api_manager::auth::AuthzValue val;
-  ASSERT_FALSE(service_context_->authz_cache().Lookup(std::string(kAuthToken), std::string(kRequestPath),
-                                                     std::string(kRequestMethod), &val));
+  ASSERT_FALSE(service_context_->authz_cache().Lookup(kCacheKey, kNow, &val));
 }
-
 
 // If the release name is bad, then check the following:
 // 1. Ensure that GetRuleset request is inovked on bad release name.

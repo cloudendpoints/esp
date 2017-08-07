@@ -15,9 +15,9 @@
 #ifndef API_MANAGER_CONTEXT_GLOBAL_CONTEXT_H_
 #define API_MANAGER_CONTEXT_GLOBAL_CONTEXT_H_
 
+#include "src/api_manager/auth/authz_cache.h"
 #include "src/api_manager/auth/certs.h"
 #include "src/api_manager/auth/jwt_cache.h"
-#include "src/api_manager/auth/authz_cache.h"
 #include "src/api_manager/auth/service_account_token.h"
 #include "src/api_manager/cloud_trace/cloud_trace.h"
 #include "src/api_manager/gce_metadata.h"

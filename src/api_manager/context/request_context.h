@@ -142,7 +142,9 @@ class RequestContext {
   void SetAuthExp(const std::chrono::system_clock::time_point &exp) { auth_exp_ = exp; }
 
   // Get JWT auth token expiration time.
-  const std::chrono::system_clock::time_point &AuthExp() const { return auth_exp_; }
+  const std::chrono::system_clock::time_point &AuthExp() const {
+    return auth_exp_;
+  }
 
  private:
   // Fill OperationInfo

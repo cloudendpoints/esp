@@ -16,8 +16,6 @@
 //
 #include "src/api_manager/auth/authz_cache.h"
 
-using ::google::service_control_client::SimpleLRUCache;
-
 namespace google {
 namespace api_manager {
 namespace auth {
@@ -27,51 +25,51 @@ namespace {
 const int kAuthzCacheTimeout = 300;
 // The number of entries in authz cache.
 const int kAuthzCacheSize = 100;
-} // namespace
+}  // namespace
 
-  AuthzCache::AuthzCache() : SimpleLRUCache<std::string, AuthzValue>(kAuthzCacheSize) {}
+AuthzCache::AuthzCache() : cache_(kAuthzCacheSize) {}
 
-  AuthzCache::~AuthzCache() { Clear(); }
+AuthzCache::~AuthzCache() { cache_.Clear(); }
 
-  void AuthzCache::Add(const std::string& auth_token, const std::string& request_path,
-                           const std::string& request_HTTP_method, const bool if_success,
-                           const std::chrono::system_clock::time_point& token_exp,
-                           const std::chrono::system_clock::time_point& now) {
-    std::string cache_key = ComposeAuthzCacheKey(auth_token, request_path, request_HTTP_method);
-    AuthzValue* newval = new AuthzValue();
-    newval->if_success = if_success;
-    newval->exp = std::min(token_exp, now + std::chrono::seconds(kAuthzCacheTimeout));
-    SimpleLRUCache::Insert(cache_key, newval, 1);
+void AuthzCache::Add(const std::string& cache_key, const bool if_success,
+                     const std::chrono::system_clock::time_point& token_exp,
+                     const std::chrono::system_clock::time_point& now) {
+  AuthzValue* newval = new AuthzValue();
+  newval->if_success = if_success;
+  newval->exp =
+      std::min(token_exp, now + std::chrono::seconds(kAuthzCacheTimeout));
+  cache_.Insert(cache_key, newval, 1);
+}
+
+bool AuthzCache::Lookup(const std::string& cache_key,
+                        const std::chrono::system_clock::time_point& now,
+                        AuthzValue* value) {
+  AuthzValue* val = cache_.Lookup(cache_key);
+  if (val == nullptr) {
+    return false;
   }
-
-  std::string AuthzCache::ComposeAuthzCacheKey(const std::string& auth_token, const std::string& request_path,
-                                              const std::string& request_HTTP_method) {
-    google::service_control_client::MD5 hasher;
-    hasher.Update(auth_token);
-    hasher.Update(request_path);
-    hasher.Update(request_HTTP_method);
-    return hasher.Digest();
+  if (now > val->exp) {
+    cache_.Release(cache_key, val);
+    cache_.Remove(cache_key);
+    return false;
   }
+  *value = *val;
+  // Release after use.
+  cache_.Release(cache_key, val);
+  return true;
+}
 
-  bool AuthzCache::Lookup(const std::string& auth_token, const std::string& request_path,
-                                              const std::string& request_HTTP_method, AuthzValue* value){
-    std::string cache_key = ComposeAuthzCacheKey(auth_token, request_path, request_HTTP_method);
-    // ScopedLookup automatically releases the possessed value (returned value pointer by lookup.value())
-    // when the lookup instance goes out of scope.
-    ScopedLookup lookup(this, cache_key);
-    bool ret = lookup.Found();
-    if (ret) {
-      value->if_success = lookup.value()->if_success;
-      value->exp = lookup.value()->exp;
-    }
-    return ret;
-  }
+std::string AuthzCache::ComposeAuthzCacheKey(
+    const std::string& auth_token, const std::string& request_path,
+    const std::string& request_HTTP_method) {
+  google::service_control_client::MD5 hasher;
+  hasher.Update(auth_token);
+  hasher.Update(request_path);
+  hasher.Update(request_HTTP_method);
+  return hasher.Digest();
+}
 
-  void AuthzCache::Delete(const std::string& auth_token, const std::string& request_path,
-                                              const std::string& request_HTTP_method) {
-    std::string cache_key = ComposeAuthzCacheKey(auth_token, request_path, request_HTTP_method);
-    Remove(cache_key);
-  }
+int AuthzCache::NumberOfEntries() { return cache_.Entries(); }
 
 }  // namespace auth
 }  // namespace api_manager

@@ -17,8 +17,8 @@
 
 #include <chrono>
 #include <string>
-#include "utils/simple_lru_cache_inl.h"
 #include "utils/md5.h"
+#include "utils/simple_lru_cache_inl.h"
 
 namespace google {
 namespace api_manager {
@@ -34,33 +34,37 @@ struct AuthzValue {
 };
 
 // A local cache to expedite the authorization process. The key of the cache is
-// the hash of the concatenation of JWT auth token, request path, and request HTTP
+// the hash of the concatenation of JWT auth token, request path, and request
+// HTTP
 // method. The value is of type AuthzValue.
-class AuthzCache : public ::google::service_control_client::SimpleLRUCache<std::string, AuthzValue> {
-  public:
-    AuthzCache();
-    ~AuthzCache();
-    // This method is used to insert cache entry.
-    void Add(const std::string& auth_token, const std::string& request_path,
-                           const std::string& request_HTTP_method, const bool if_success,
-                           const std::chrono::system_clock::time_point& token_exp,
-                           const std::chrono::system_clock::time_point& now);
-    // This method is used to do cache lookup.
-    bool Lookup(const std::string& auth_token, const std::string& request_path,
-                                              const std::string& request_HTTP_method, AuthzValue* value);
-    // This method is used to delete a cache entry.
-    void Delete(const std::string& auth_token, const std::string& request_path,
-                                              const std::string& request_HTTP_method);
-  private:
-    // This method is used to generate cache key.
-    std::string ComposeAuthzCacheKey(const std::string& auth_token, const std::string& request_path,
-                                              const std::string& request_HTTP_method);
+class AuthzCache {
+ public:
+  AuthzCache();
+  ~AuthzCache();
+  // This method is used to insert cache entry.
+  void Add(const std::string& cache_key, const bool if_success,
+           const std::chrono::system_clock::time_point& token_exp,
+           const std::chrono::system_clock::time_point& now);
+  // This method is used to do cache lookup.
+  bool Lookup(const std::string& cache_key,
+              const std::chrono::system_clock::time_point& now,
+              AuthzValue* value);
+  // This method is used to generate cache key.
+  static std::string ComposeAuthzCacheKey(
+      const std::string& auth_token, const std::string& request_path,
+      const std::string& request_HTTP_method);
+  // This method returns number of entries stored in cache. Note that this
+  // method is only used in testing.
+  int NumberOfEntries();
+
+ private:
+  // LRU cache.
+  ::google::service_control_client::SimpleLRUCache<std::string, AuthzValue>
+      cache_;
 };
 
 }  // namespace auth
 }  // namespace api_manager
 }  // namespace google
 
-#endif // API_MANAGER_AUTH_AUTHZ_CACHE_H_
-
-
+#endif  // API_MANAGER_AUTH_AUTHZ_CACHE_H_
