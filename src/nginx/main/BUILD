@@ -219,6 +219,7 @@ pkg_tar(
         # override that from "@nginx_pkgoss//:debian_overlay".
         ":start_esp_tar",
         "@tools//start_esp:nginx-conf-template",
+        "@tools//start_esp:server-conf-template",
         "@tools//start_esp:nginx-initd-override",
         "@nginx_pkgoss//:debian_overlay",
         "@tools//start_esp:esp-bin",

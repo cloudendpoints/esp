@@ -45,12 +45,6 @@ function management() {
     res.send(process.env.ACCESS_TOKEN);
   });
 
-  var content = fs.readFileSync('service.json');
-  var json = JSON.parse(content);
-
-  // Set a custom service control
-  json.control.environment = process.env.CONTROL_URL;
-
   management.get("/service_config", function(req, res) {
     if (req.param.configId == json.id) {
       res.send('Incorrect version');
@@ -65,6 +59,40 @@ function management() {
     }
 
     res.send(JSON.stringify(json));
+  });
+
+  management.get("/v1/services/:serviceName/rollouts", function(req, res) {
+	  var fileName = 'rollouts.json';
+	  if (fs.existsSync(fileName)) {
+		  var content = fs.readFileSync(fileName);
+		  res.send(JSON.parse(content));
+	  } else {
+		  res.status(404).send("Not Found");
+	  }
+  });
+
+  management.get("/v1/services/:serviceName/config", function(req, res) {
+    var fileName = 'service.' + req.query.configId + '.json';
+    if (fs.existsSync(fileName)) {
+      var content = fs.readFileSync(fileName);
+      var json = JSON.parse(content);
+      json.control.environment = process.env.CONTROL_URL;
+      res.send(json);
+    } else {
+      res.status(404).send("Not Found");
+    }
+  });
+
+  management.get("/v1/services/:serviceName/configs/:configId", function(req, res) {
+    var fileName = 'service.' + req.params.configId + '.json';
+    if (fs.existsSync(fileName)) {
+      var content = fs.readFileSync(fileName);
+      var json = JSON.parse(content);
+      json.control.environment = process.env.CONTROL_URL;
+      res.send(json);
+    } else {
+      res.status(404).send("Not Found");
+    }
   });
 
   return management;

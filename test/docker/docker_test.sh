@@ -187,14 +187,44 @@ echo "Management result: ${MANAGEMENT_RESULT}"
 # The service name and version come from backend/README.md
 # We need to provide metadata for secret
 # Default port is 8080
+
+printf "\nRun docker test for http requests with config_id\n"
+run_esp_test \
+  -a "${APP_DOCKER_IP}:8080" \
+  -e "${ESP_IMAGE}" \
+  -m "http://${METADATA_DOCKER_IP}:8080" \
+  -g "http://${MANAGEMENT_DOCKER_IP}:8080" \
+  -s bookstore-backend.endpointsv2.appspot.com \
+  -v 2017-05-15r0 \
+  || error_exit 'Docker test for http requests failed.'
+
+printf "\nRun docker test for http requests with service config url\n"
+run_esp_test \
+  -a "${APP_DOCKER_IP}:8080" \
+  -e "${ESP_IMAGE}" \
+  -m "http://${METADATA_DOCKER_IP}:8080" \
+  -g "http://${MANAGEMENT_DOCKER_IP}:8080" \
+  -c "http://${MANAGEMENT_DOCKER_IP}:8080/v1/services/custom/config?configId=2017-05-15r0" \
+  -s bookstore-backend.endpointsv2.appspot.com \
+  || error_exit 'Docker test for http requests failed.'
+
 printf "\nRun docker test for http requests.\n"
 run_esp_test \
   -a "${APP_DOCKER_IP}:8080" \
   -e "${ESP_IMAGE}" \
   -m "http://${METADATA_DOCKER_IP}:8080" \
-  -c "http://${MANAGEMENT_DOCKER_IP}:8080/service_config" \
+  -g "http://${MANAGEMENT_DOCKER_IP}:8080" \
   -s bookstore-backend.endpointsv2.appspot.com \
-  -v 2016-04-25R1 \
+  || error_exit 'Docker test for http requests failed.'
+
+printf "\nRun docker test for http requests managed rollout strategy.\n"
+run_esp_test \
+  -a "${APP_DOCKER_IP}:8080" \
+  -e "${ESP_IMAGE}" \
+  -m "http://${METADATA_DOCKER_IP}:8080" \
+  -g "http://${MANAGEMENT_DOCKER_IP}:8080" \
+  -s bookstore-backend.endpointsv2.appspot.com \
+  -R managed \
   || error_exit 'Docker test for http requests failed.'
 
 # Service name, version, and token are fetched from metadata
@@ -204,7 +234,7 @@ run_esp_test \
   -p 8080 \
   -S 8443 \
   -m "http://${METADATA_DOCKER_IP}:8080" \
-  -c "http://${MANAGEMENT_DOCKER_IP}:8080/service_config" \
+  -g "http://${MANAGEMENT_DOCKER_IP}:8080" \
   -a "${APP_DOCKER_IP}:8080" \
   || error_exit 'Docker test for https requests failed.'
 
@@ -214,9 +244,8 @@ run_esp_test \
   -e "${ESP_IMAGE}" \
   -n /etc/nginx/custom/nginx.conf \
   -m "http://${METADATA_DOCKER_IP}:8080" \
-  -c "http://${MANAGEMENT_DOCKER_IP}:8080/service_config" \
+  -g "http://${MANAGEMENT_DOCKER_IP}:8080" \
   -s bookstore-backend.endpointsv2.appspot.com \
-  -v 2016-04-25R1 \
   || error_exit 'Docker test for custom nginx.conf failed.'
 
 printf "\nRun docker test for custom ports.\n"
@@ -226,9 +255,8 @@ run_esp_test \
   -P 9001 \
   -N 9050 \
   -m "http://${METADATA_DOCKER_IP}:8080" \
-  -c "http://${MANAGEMENT_DOCKER_IP}:8080/service_config" \
+  -g "http://${MANAGEMENT_DOCKER_IP}:8080" \
   -a "${APP_DOCKER_IP}:8080" \
   -s bookstore-backend.endpointsv2.appspot.com \
-  -v 2016-04-25R1 \
   || error_exit 'Docker test for custom ports failed.'
 
