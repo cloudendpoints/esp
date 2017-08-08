@@ -46,7 +46,7 @@ my $BackendPort        = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $ServiceManagementPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(43);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(42);
 
 # Save servce configuration that disables the report cache.
 # Report request will be sent for each client request
@@ -171,6 +171,9 @@ is($endpoints_status->{processes}[0]->{espStatus}[0]->{serviceConfigRollouts}->
 is($endpoints_status->{processes}[0]->{espStatus}[0]->{serviceConfigRollouts}->
     {percentages}->{'2016-08-25r2'}, '20', "Rollout 2016-08-25r2 is 20%" );
 
+# Trigger rollout check response
+$t->write_file("endpoints_status.done", ':endpoints_status done');
+
 # waiting for the first report request is done
 is($t->waitforfile($t->{_testdir}."/".${report_done} . ".0"), 1, 'Report body file ready.');
 
@@ -228,19 +231,12 @@ is( $r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com/rollouts?filt
   'Rollout request uri is correct' );
 
 $r = shift @servicemanagement_requests;
+while($r->{uri} eq '/v1/services/endpoints-test.cloudendpointsapis.com/rollouts?filter=status=SUCCESS') {
+	$r = shift @servicemanagement_requests;
+}
 is( $r->{verb}, 'GET', 'Service download request was a get' );
 is( $r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com/configs/2016-08-25r3',
   'Service config uri' );
-
-# validate rests of request has no change
-my $check_error_rest = 0;
-while($r = shift @servicemanagement_requests) {
-  if ($r->{verb} ne 'GET' ||
-    $r->{uri} ne '/v1/services/endpoints-test.cloudendpointsapis.com/rollouts?filter=status=SUCCESS') {
-        $check_error_rest++;
-    }
-}
-is($check_error_rest , 0, 'No new rollouts after the first one' );
 
 # Backend requests verification, before and after config rollouts
 my @requests = ApiManager::read_http_stream( $t, 'bookstore.log' );
@@ -380,6 +376,10 @@ sub servicemanagement {
 
   $server->on_sub('GET', '/v1/services/endpoints-test.cloudendpointsapis.com/rollouts?filter=status=SUCCESS', sub {
     my ($headers, $body, $client) = @_;
+
+    # Wait for the trigger
+    $t->waitforfile($t->{_testdir}."/endpoints_status.done");
+
     print $client <<'EOF' ;
 HTTP/1.1 200 OK
 Connection: close
