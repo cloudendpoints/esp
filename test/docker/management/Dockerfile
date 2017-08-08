@@ -31,6 +31,9 @@ COPY package.json /app/package.json
 COPY management.js /app/management.js
 COPY README.md /app/README.md
 COPY service.json /app/service.json
+COPY rollouts.json /app/rollouts.json
+COPY service.2017-05-15r0.json /app/service.2017-05-15r0.json
+COPY service.2017-05-16r0.json /app/service.2017-05-16r0.json
 
 ENV ACCESS_TOKEN=undefined
 

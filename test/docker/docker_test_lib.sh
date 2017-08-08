@@ -34,6 +34,8 @@ DIR="${ROOT}/test/docker/esp_generic"
 DOCKER_IMAGES=()
 DOCKER_CONTAINERS=()
 LINKS=()
+ESP_CONTAINER_ID=""
+
 
 function docker_ip() {
   local ip="$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' "$@")"
@@ -60,6 +62,19 @@ function wait_for() {
   done
   return 1
 }
+
+function check_esp_container_id() {
+  local container_id="$(docker ps | grep 'esp-image' | cut -f 1 -d ' ')"
+  [[ -z "${container_id}" ]] && return 1
+  ESP_CONTAINER_ID=$container_id
+  return 0  
+}
+
+function get_esp_container_id() {
+  retry -n 5 check_esp_container_id || return 1
+  echo $ESP_CONTAINER_ID
+}
+
 
 function esp_test() {
   local target_address=${1}
@@ -118,7 +133,7 @@ function run_esp_test() {
   local esp_image=''
   local container_id=''
 
-  while getopts 'a:e:n:N:p:P:S:s:v:c:m:k:' arg; do
+  while getopts 'a:e:n:N:p:P:S:s:v:c:m:k:R:g:' arg; do
     case ${arg} in
       a) esp_args+=(-a "${OPTARG}");;
       e) esp_image="${OPTARG}";;
@@ -150,6 +165,8 @@ function run_esp_test() {
           "--volume=${DIR}/nginx.crt:/etc/nginx/ssl/nginx.crt")
         ;;
       s) esp_args+=(-s "${OPTARG}");;
+      g) esp_args+=(-g "${OPTARG}");;
+      R) esp_args+=(-R "${OPTARG}");;
       v) esp_args+=(-v "${OPTARG}");;
       c) esp_args+=(-c "${OPTARG}");;
       m) esp_args+=(-m "${OPTARG}");;
@@ -165,9 +182,11 @@ function run_esp_test() {
   # Start Endpoints proxy container.
   container_id="$(docker run ${docker_args[@]} "${esp_image}" ${esp_args[@]})" \
     || error_exit 'Cannot start Endpoints proxy container.'
-  echo "ESP container is ${container_id}"
   DOCKER_CONTAINERS+=("${container_id}")
-
+  container_id=$(get_esp_container_id)
+  container_id=`echo ${container_id} | rev | cut -d. -f1 | tr -d ' ' | rev`
+  echo "ESP container is ${container_id}"
+      
   esp_http_port="$(get_port "${container_id}" ${port})" \
     || error_exit 'Cannot get esp port'
   esp_nginx_status_port="$(get_port "${container_id}" ${nginx_status_port})" \
@@ -186,5 +205,7 @@ function run_esp_test() {
     printf "\nStart testing esp https requests.\n"
     esp_test "https://${esp_ssl_port}"
   fi
+  # stop docker
+  docker stop ${container_id}
 }
 
