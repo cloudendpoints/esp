@@ -275,6 +275,30 @@ TEST_F(ProtoTest, FillGoodReportRequestTest) {
   ASSERT_EQ(expected_text, text);
 }
 
+TEST_F(ProtoTest, FillGoodReportRequestByConsumerTest) {
+  ReportRequestInfo info;
+  FillOperationInfo(&info);
+  FillReportRequestInfo(&info);
+  info.backend_protocol = protocol::GRPC;
+  info.consumer_project_id = ::google::protobuf::StringPiece("12345");
+
+  gasv1::ReportRequest request;
+  ASSERT_TRUE(scp_.FillReportRequest(info, &request).ok());
+
+  auto operation = request.mutable_operations(1);
+
+  operation->set_operation_id("f88471ca-d43d-439e-8b71-f96e4fdbb317");
+  operation->mutable_start_time()->set_seconds(1502311042);
+  operation->mutable_start_time()->set_nanos(654235055);
+  operation->mutable_end_time()->set_seconds(1502311042);
+  operation->mutable_end_time()->set_nanos(654235055);
+
+
+  std::string text = ReportRequestToString(&request);
+  std::string expected_text = ReadTestBaseline("report_request_by_consumer.golden");
+  ASSERT_EQ(expected_text, text);
+}
+
 TEST_F(ProtoTest, FillStartReportRequestTest) {
   ReportRequestInfo info;
   info.is_first_report = true;
