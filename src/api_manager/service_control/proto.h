@@ -82,6 +82,8 @@ class Proto final {
   const std::vector<std::string> logs_;
   const std::vector<const struct SupportedMetric*> metrics_;
   const std::vector<const struct SupportedLabel*> labels_;
+  const std::vector<const struct SupportedMetric*> by_consumer_metrics_;
+  const std::vector<const struct SupportedLabel*> by_consumer_labels_;
   const std::string service_name_;
   const std::string service_config_id_;
 };

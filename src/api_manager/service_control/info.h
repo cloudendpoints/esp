@@ -89,6 +89,8 @@ struct CheckResponseInfo {
   bool is_api_key_valid;
   // If service is activated.
   bool service_is_activated;
+  // Consumer project id
+  std::string consumer_project_id;
 
   // By default api_key is valid and service is activated.
   // They only set to false by the check response from server.
@@ -168,6 +170,9 @@ struct ReportRequestInfo : public OperationInfo {
 
   // Flag to indicate the final report
   bool is_final_report;
+
+  // The consumer project id.
+  ::google::protobuf::StringPiece consumer_project_id;
 
   ReportRequestInfo()
       : response_code(200),
