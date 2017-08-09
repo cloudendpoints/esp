@@ -73,7 +73,7 @@ struct SupportedLabel {
   const char* name;
   ::google::api::LabelDescriptor_ValueType value_type;
 
-  enum Kind { USER = 0, SYSTEM = 1};
+  enum Kind { USER = 0, SYSTEM = 1 };
   Kind kind;
 
   Status (*set)(const SupportedLabel& l, const ReportRequestInfo& info,
@@ -810,8 +810,8 @@ const SupportedLabel supported_labels[] = {
     },
     {
         kServiceControlConsumerProject,
-        ::google::api::LabelDescriptor_ValueType_STRING,
-        SupportedLabel::USER, set_consumer_project, true,
+        ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::USER,
+        set_consumer_project, true,
     },
 };
 
