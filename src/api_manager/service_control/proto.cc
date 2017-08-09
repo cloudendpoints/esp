@@ -51,22 +51,6 @@ namespace google {
 namespace api_manager {
 namespace service_control {
 
-namespace {
-
-// Maximum 36 byte string for UUID
-const int kMaxUUIDBufSize = 40;
-
-// Generates a UUID string
-std::string GenerateUUID() {
-  char uuid_buf[kMaxUUIDBufSize];
-  uuid_t uuid;
-  uuid_generate(uuid);
-  uuid_unparse(uuid, uuid_buf);
-  return uuid_buf;
-}
-
-}  // namespace
-
 const char kConsumerQuotaUsedCount[] =
     "serviceruntime.googleapis.com/api/consumer/quota_used_count";
 
@@ -77,7 +61,7 @@ struct SupportedMetric {
   ::google::api::MetricDescriptor_MetricKind metric_kind;
   ::google::api::MetricDescriptor_ValueType value_type;
 
-  enum Mark { PRODUCER = 0, CONSUMER = 1 };
+  enum Mark { PRODUCER = 0, CONSUMER = 1, PRODUCER_BY_CONSUMER = 2 };
   enum Tag { START = 0, INTERMEDIATE = 1, FINAL = 2 };
   Tag tag;
   Mark mark;
@@ -89,7 +73,7 @@ struct SupportedLabel {
   const char* name;
   ::google::api::LabelDescriptor_ValueType value_type;
 
-  enum Kind { USER = 0, SYSTEM = 1 };
+  enum Kind { USER = 0, SYSTEM = 1, USER_BY_CONSUMER = 2 };
   Kind kind;
 
   Status (*set)(const SupportedLabel& l, const ReportRequestInfo& info,
@@ -432,44 +416,39 @@ const SupportedMetric supported_metrics[] = {
         SupportedMetric::FINAL, SupportedMetric::PRODUCER,
         set_distribution_metric_to_streaming_durations,
     },
-
-};
-const int supported_metrics_count =
-    sizeof(supported_metrics) / sizeof(supported_metrics[0]);
-
-const SupportedMetric by_consumer_supported_metrics[] = {
     {
         "serviceruntime.googleapis.com/api/producer/by_consumer/request_count",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_INT64, SupportedMetric::FINAL,
-        SupportedMetric::PRODUCER, set_int64_metric_to_constant_1,
+        SupportedMetric::PRODUCER_BY_CONSUMER, set_int64_metric_to_constant_1,
     },
     {
         "serviceruntime.googleapis.com/api/producer/by_consumer/request_sizes",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::FINAL, SupportedMetric::PRODUCER,
+        SupportedMetric::FINAL, SupportedMetric::PRODUCER_BY_CONSUMER,
         set_distribution_metric_to_request_size,
     },
     {
         "serviceruntime.googleapis.com/api/producer/by_consumer/response_sizes",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::FINAL, SupportedMetric::PRODUCER,
+        SupportedMetric::FINAL, SupportedMetric::PRODUCER_BY_CONSUMER,
         set_distribution_metric_to_response_size,
     },
     {
         "serviceruntime.googleapis.com/api/producer/by_consumer/error_count",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_INT64, SupportedMetric::FINAL,
-        SupportedMetric::PRODUCER, set_int64_metric_to_constant_1_if_http_error,
+        SupportedMetric::PRODUCER_BY_CONSUMER,
+        set_int64_metric_to_constant_1_if_http_error,
     },
     {
         "serviceruntime.googleapis.com/api/producer/by_consumer/"
         "total_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::FINAL, SupportedMetric::PRODUCER,
+        SupportedMetric::FINAL, SupportedMetric::PRODUCER_BY_CONSUMER,
         set_distribution_metric_to_request_time,
     },
     {
@@ -477,7 +456,7 @@ const SupportedMetric by_consumer_supported_metrics[] = {
         "backend_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::FINAL, SupportedMetric::PRODUCER,
+        SupportedMetric::FINAL, SupportedMetric::PRODUCER_BY_CONSUMER,
         set_distribution_metric_to_backend_time,
     },
     {
@@ -485,14 +464,13 @@ const SupportedMetric by_consumer_supported_metrics[] = {
         "request_overhead_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::FINAL, SupportedMetric::PRODUCER,
+        SupportedMetric::FINAL, SupportedMetric::PRODUCER_BY_CONSUMER,
         set_distribution_metric_to_overhead_time,
     },
 };
 
-const int by_consumer_supported_metrics_count =
-    sizeof(by_consumer_supported_metrics) /
-    sizeof(by_consumer_supported_metrics[0]);
+const int supported_metrics_count =
+    sizeof(supported_metrics) / sizeof(supported_metrics[0]);
 
 const char kServiceControlCallerIp[] =
     "servicecontrol.googleapis.com/caller_ip";
@@ -828,22 +806,15 @@ const SupportedLabel supported_labels[] = {
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::SYSTEM,
         set_backend_protocol,
     },
+    {
+        kServiceControlConsumerProject,
+        ::google::api::LabelDescriptor_ValueType_STRING,
+        SupportedLabel::USER_BY_CONSUMER, set_consumer_project,
+    },
 };
 
 const int supported_labels_count =
     sizeof(supported_labels) / sizeof(supported_labels[0]);
-
-const SupportedLabel by_consumer_supported_labels[] = {
-    {
-        kServiceControlConsumerProject,
-        ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::SYSTEM,
-        set_consumer_project,
-    },
-};
-
-const int by_consumer_supported_labels_count =
-    sizeof(by_consumer_supported_labels) /
-    sizeof(by_consumer_supported_labels[0]);
 
 // Supported intrinsic labels:
 // "servicecontrol.googleapis.com/operation_name": Operation.operation_name
@@ -1012,14 +983,6 @@ Proto::Proto(const std::set<std::string>& logs, const std::string& service_name,
       labels_(FilterPointers<SupportedLabel>(
           supported_labels, supported_labels + supported_labels_count,
           [](const struct SupportedLabel* l) { return l->set != nullptr; })),
-      by_consumer_metrics_(FilterPointers<SupportedMetric>(
-          by_consumer_supported_metrics,
-          by_consumer_supported_metrics + by_consumer_supported_metrics_count,
-          [](const struct SupportedMetric* m) { return m->set != nullptr; })),
-      by_consumer_labels_(FilterPointers<SupportedLabel>(
-          by_consumer_supported_labels,
-          by_consumer_supported_labels + by_consumer_supported_labels_count,
-          [](const struct SupportedLabel* l) { return l->set != nullptr; })),
       service_name_(service_name),
       service_config_id_(service_config_id) {}
 
@@ -1040,14 +1003,6 @@ Proto::Proto(const std::set<std::string>& logs,
             return l->set && (l->kind == SupportedLabel::SYSTEM ||
                               labels.find(l->name) != labels.end());
           })),
-      by_consumer_metrics_(FilterPointers<SupportedMetric>(
-          by_consumer_supported_metrics,
-          by_consumer_supported_metrics + by_consumer_supported_metrics_count,
-          [](const struct SupportedMetric* m) { return m->set != nullptr; })),
-      by_consumer_labels_(FilterPointers<SupportedLabel>(
-          by_consumer_supported_labels,
-          by_consumer_supported_labels + by_consumer_supported_labels_count,
-          [](const struct SupportedLabel* l) { return l->set != nullptr; })),
       service_name_(service_name),
       service_config_id_(service_config_id) {}
 
@@ -1167,7 +1122,7 @@ Status Proto::FillReportRequest(const ReportRequestInfo& info,
     // Set all labels.
     for (auto it = labels_.begin(), end = labels_.end(); it != end; it++) {
       const SupportedLabel* l = *it;
-      if (l->set) {
+      if (l->set && l->kind != SupportedLabel::Kind::USER_BY_CONSUMER) {
         status = (l->set)(*l, info, labels);
         if (!status.ok()) return status;
       }
@@ -1184,7 +1139,7 @@ Status Proto::FillReportRequest(const ReportRequestInfo& info,
     for (auto it = metrics_.begin(), end = metrics_.end(); it != end; it++) {
       const SupportedMetric* m = *it;
       if (send_consumer_metric || m->mark != SupportedMetric::CONSUMER) {
-        if (m->set) {
+        if (m->set && m->mark != SupportedMetric::PRODUCER_BY_CONSUMER) {
           if ((info.is_first_report && m->tag == SupportedMetric::START) ||
               (info.is_final_report &&
                (m->tag == SupportedMetric::FINAL ||
@@ -1210,7 +1165,7 @@ Status Proto::FillReportRequest(const ReportRequestInfo& info,
     op = request->add_operations();
     SetOperationCommonFields(info, current_time, op);
     // issue a new operation id
-    op->set_operation_id(GenerateUUID());
+    op->set_operation_id(op->operation_id() + "+1");
 
     // Only populate metrics if we can associate them with a method/operation.
     if (!info.operation_id.empty() && !info.operation_name.empty()) {
@@ -1224,40 +1179,18 @@ Status Proto::FillReportRequest(const ReportRequestInfo& info,
         }
       }
 
-      // Set all labels.
-      for (auto it = by_consumer_labels_.begin(),
-                end = by_consumer_labels_.end();
-           it != end; it++) {
-        const SupportedLabel* l = *it;
-        if (l->set) {
-          status = (l->set)(*l, info, labels);
-          if (!status.ok()) return status;
-        }
-      }
-
-      // Not to send consumer metrics if api_key is empty.
-      // api_key is empty in one of following cases:
-      // 1) api_key is not provided,
-      // 2) api_key is invalid determined by the server from the Check call.
-      // 3) the service is not activated for the consumer project.
-      bool send_consumer_metric = !info.api_key.empty();
-
       // Populate all metrics.
-      for (auto it = by_consumer_metrics_.begin(),
-                end = by_consumer_metrics_.end();
-           it != end; it++) {
+      for (auto it = metrics_.begin(), end = metrics_.end(); it != end; it++) {
         const SupportedMetric* m = *it;
-        if (send_consumer_metric || m->mark != SupportedMetric::CONSUMER) {
-          if (m->set) {
-            if ((info.is_first_report && m->tag == SupportedMetric::START) ||
-                (info.is_final_report &&
-                 (m->tag == SupportedMetric::FINAL ||
-                  m->tag == SupportedMetric::INTERMEDIATE)) ||
-                (!info.is_final_report &&
-                 m->tag == SupportedMetric::INTERMEDIATE)) {
-              status = (m->set)(*m, info, op);
-              if (!status.ok()) return status;
-            }
+        if (m->set && m->mark == SupportedMetric::PRODUCER_BY_CONSUMER) {
+          if ((info.is_first_report && m->tag == SupportedMetric::START) ||
+              (info.is_final_report &&
+               (m->tag == SupportedMetric::FINAL ||
+                m->tag == SupportedMetric::INTERMEDIATE)) ||
+              (!info.is_final_report &&
+               m->tag == SupportedMetric::INTERMEDIATE)) {
+            status = (m->set)(*m, info, op);
+            if (!status.ok()) return status;
           }
         }
       }
