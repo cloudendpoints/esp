@@ -73,11 +73,13 @@ struct SupportedLabel {
   const char* name;
   ::google::api::LabelDescriptor_ValueType value_type;
 
-  enum Kind { USER = 0, SYSTEM = 1, USER_BY_CONSUMER = 2 };
+  enum Kind { USER = 0, SYSTEM = 1};
   Kind kind;
 
   Status (*set)(const SupportedLabel& l, const ReportRequestInfo& info,
                 Map<std::string, std::string>* labels);
+
+  bool by_consumer_only;
 };
 
 namespace {
@@ -673,143 +675,143 @@ Status set_user_agent(const SupportedLabel& l, const ReportRequestInfo& info,
 const SupportedLabel supported_labels[] = {
     {
         "/credential_id", ::google::api::LabelDescriptor_ValueType_STRING,
-        SupportedLabel::USER, set_credential_id,
+        SupportedLabel::USER, set_credential_id, false,
     },
     {
         "/end_user", ::google::api::LabelDescriptor_ValueType_STRING,
-        SupportedLabel::USER, nullptr,
+        SupportedLabel::USER, nullptr, false,
     },
     {
         "/end_user_country", ::google::api::LabelDescriptor_ValueType_STRING,
-        SupportedLabel::USER, nullptr,
+        SupportedLabel::USER, nullptr, false,
     },
     {
         "/error_type", ::google::api::LabelDescriptor_ValueType_STRING,
-        SupportedLabel::USER, set_error_type,
+        SupportedLabel::USER, set_error_type, false,
     },
     {
         "/protocol", ::google::api::LabelDescriptor::STRING,
-        SupportedLabel::USER, set_protocol,
+        SupportedLabel::USER, set_protocol, false,
     },
     {
         "/referer", ::google::api::LabelDescriptor_ValueType_STRING,
-        SupportedLabel::USER, set_referer,
+        SupportedLabel::USER, set_referer, false,
     },
     {
         "/response_code", ::google::api::LabelDescriptor_ValueType_STRING,
-        SupportedLabel::USER, set_response_code,
+        SupportedLabel::USER, set_response_code, false,
     },
     {
         "/response_code_class", ::google::api::LabelDescriptor::STRING,
-        SupportedLabel::USER, set_response_code_class,
+        SupportedLabel::USER, set_response_code_class, false,
     },
     {
         "/status_code", ::google::api::LabelDescriptor_ValueType_STRING,
-        SupportedLabel::USER, set_status_code,
+        SupportedLabel::USER, set_status_code, false,
     },
     {
         "appengine.googleapis.com/clone_id",
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::USER,
-        nullptr,
+        nullptr, false,
     },
     {
         "appengine.googleapis.com/module_id",
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::USER,
-        nullptr,
+        nullptr, false,
     },
     {
         "appengine.googleapis.com/replica_index",
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::USER,
-        nullptr,
+        nullptr, false,
     },
     {
         "appengine.googleapis.com/version_id",
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::USER,
-        nullptr,
+        nullptr, false,
     },
     {
         "cloud.googleapis.com/location",
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::SYSTEM,
-        set_location,
+        set_location, false,
     },
     {
         "cloud.googleapis.com/project",
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::SYSTEM,
-        nullptr,
+        nullptr, false,
     },
     {
         "cloud.googleapis.com/region",
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::SYSTEM,
-        nullptr,
+        nullptr, false,
     },
     {
         "cloud.googleapis.com/resource_id",
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::USER,
-        nullptr,
+        nullptr, false,
     },
     {
         "cloud.googleapis.com/resource_type",
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::USER,
-        nullptr,
+        nullptr, false,
     },
     {
         "cloud.googleapis.com/service",
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::SYSTEM,
-        nullptr,
+        nullptr, false,
     },
     {
         "cloud.googleapis.com/zone",
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::SYSTEM,
-        nullptr,
+        nullptr, false,
     },
     {
         "cloud.googleapis.com/uid",
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::SYSTEM,
-        nullptr,
+        nullptr, false,
     },
     {
         "serviceruntime.googleapis.com/api_method",
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::USER,
-        set_api_method,
+        set_api_method, false,
     },
     {
         "serviceruntime.googleapis.com/api_version",
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::USER,
-        set_api_version,
+        set_api_version, false,
     },
     {
         kServiceControlCallerIp,
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::SYSTEM,
-        nullptr,
+        nullptr, false,
     },
     {
         kServiceControlReferer, ::google::api::LabelDescriptor_ValueType_STRING,
-        SupportedLabel::SYSTEM, nullptr,
+        SupportedLabel::SYSTEM, nullptr, false,
     },
     {
         kServiceControlServiceAgent,
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::SYSTEM,
-        set_service_agent,
+        set_service_agent, false,
     },
     {
         kServiceControlUserAgent,
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::SYSTEM,
-        set_user_agent,
+        set_user_agent, false,
     },
     {
         kServiceControlPlatform,
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::SYSTEM,
-        set_platform,
+        set_platform, false,
     },
     {
         kServiceControlBackendProtocol,
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::SYSTEM,
-        set_backend_protocol,
+        set_backend_protocol, false,
     },
     {
         kServiceControlConsumerProject,
         ::google::api::LabelDescriptor_ValueType_STRING,
-        SupportedLabel::USER_BY_CONSUMER, set_consumer_project,
+        SupportedLabel::USER, set_consumer_project, true,
     },
 };
 
@@ -1119,10 +1121,10 @@ Status Proto::FillReportRequest(const ReportRequestInfo& info,
   // Only populate metrics if we can associate them with a method/operation.
   if (!info.operation_id.empty() && !info.operation_name.empty()) {
     Map<std::string, std::string>* labels = op->mutable_labels();
-    // Set all labels.
+    // Set all labels with by_consumer_only is false
     for (auto it = labels_.begin(), end = labels_.end(); it != end; it++) {
       const SupportedLabel* l = *it;
-      if (l->set && l->kind != SupportedLabel::Kind::USER_BY_CONSUMER) {
+      if (l->set && !l->by_consumer_only) {
         status = (l->set)(*l, info, labels);
         if (!status.ok()) return status;
       }
@@ -1165,7 +1167,7 @@ Status Proto::FillReportRequest(const ReportRequestInfo& info,
     op = request->add_operations();
     SetOperationCommonFields(info, current_time, op);
     // issue a new operation id
-    op->set_operation_id(op->operation_id() + "+1");
+    op->set_operation_id(op->operation_id() + "1");
 
     // Only populate metrics if we can associate them with a method/operation.
     if (!info.operation_id.empty() && !info.operation_name.empty()) {
