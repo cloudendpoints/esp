@@ -159,29 +159,44 @@ function create_service() {
 }
 
 # Set current rolloutId to ESP_CURRENT_ROLLOUTS variable
-function set_esp_remote_service_version_env() {
+function set_esp_remote_rollout_info_env() {
   ESP_CURRENT_ROLLOUTS=`gcloud compute ssh "${INSTANCE_NAME}" \
-    --command='curl http://localhost:8090/endpoints_status' | python -c "
+    --command='curl http://localhost:8090/endpoints_status' | python -c '
 import json
 import sys
-data = sys.stdin.readlines()
 try:
-  status=json.loads(''.join(data))
-  print(status['processes'][0]['espStatus'][0]['serviceConfigRollouts']['rolloutId'])
+  status=json.loads("".join(sys.stdin.readlines()))
+  if status["processes"][0]["espStatus"][0]["serviceConfigRollouts"]["percentages"] is None:
+    print("")
+  else:
+    percetages=status["processes"][0]["espStatus"][0]["serviceConfigRollouts"]["percentages"]
+
+    config_ids = [];
+    for config_id, percentage in percetages.iteritems():
+      config_ids.append([config_id,percentage])
+
+    config_ids.sort(key=lambda x: x[0])
+
+    result=[]
+    for i in config_ids:
+      result.append(i[0])
+      result.append(str(i[1]))
+
+    print(" ".join(result))
 except:
-  print('')
-" `
+  print("")
+'`
   return ${?}
 }
 
-function wait_for_service_config_version_update() {
+function wait_for_service_config_rollouts_update() {
   local target_version=${1}
 
   ESP_CURRENT_ROLLOUTS=""
-  # set_esp_remote_service_version_env will set ESP_CURRENT_ROLLOUTS
-  retry -n 10 -t 90  set_esp_remote_service_version_env \
+  # set_esp_remote_rollout_info_env will set ESP_CURRENT_ROLLOUTS
+  retry -n 10 -t 90  set_esp_remote_rollout_info_env \
     || error_exit 'Could not fetch the remote rollouts'
-  echo "Instance rolloutId=$ESP_CURRENT_ROLLOUTS"
+  echo "Instance rollout information=$ESP_CURRENT_ROLLOUTS"
 
   if [ "$target_version" == "$ESP_CURRENT_ROLLOUTS" ]; then
     return 0
