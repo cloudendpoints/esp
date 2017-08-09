@@ -293,9 +293,9 @@ TEST_F(ProtoTest, FillGoodReportRequestByConsumerTest) {
   operation->mutable_end_time()->set_seconds(1502311042);
   operation->mutable_end_time()->set_nanos(654235055);
 
-
   std::string text = ReportRequestToString(&request);
-  std::string expected_text = ReadTestBaseline("report_request_by_consumer.golden");
+  std::string expected_text =
+      ReadTestBaseline("report_request_by_consumer.golden");
   ASSERT_EQ(expected_text, text);
 }
 
