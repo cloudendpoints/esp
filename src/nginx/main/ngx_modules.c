@@ -466,6 +466,8 @@ ngx_module_t *ngx_modules[] = {
 #if (NGX_HTTP_STUB_STATUS)
     &ngx_http_stub_status_module,
 #endif
+// This needs to come before ngx_esp_module so that the IAP access handler runs
+// first.
 #if (NGX_IAP_JWT_VERIFY)
     &ngx_iap_jwt_verify_module,
 #endif
