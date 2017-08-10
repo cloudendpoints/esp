@@ -810,7 +810,7 @@ const SupportedLabel supported_labels[] = {
     },
     {
         kServiceControlConsumerProject,
-        ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::USER,
+        ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::SYSTEM,
         set_consumer_project, true,
     },
 };
