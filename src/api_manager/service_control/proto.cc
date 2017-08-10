@@ -1163,37 +1163,46 @@ Status Proto::FillReportRequest(const ReportRequestInfo& info,
     }
   }
 
-  if (!info.consumer_project_id.empty()) {
-    op = request->add_operations();
-    SetOperationCommonFields(info, current_time, op);
-    // issue a new operation id
-    op->set_operation_id(op->operation_id() + "1");
+  return AppendByConsumerOperations(info, request, current_time);
+}
 
-    // Only populate metrics if we can associate them with a method/operation.
-    if (!info.operation_id.empty() && !info.operation_name.empty()) {
-      Map<std::string, std::string>* labels = op->mutable_labels();
-      // Set all labels.
-      for (auto it = labels_.begin(), end = labels_.end(); it != end; it++) {
-        const SupportedLabel* l = *it;
-        if (l->set) {
-          status = (l->set)(*l, info, labels);
-          if (!status.ok()) return status;
-        }
+utils::Status Proto::AppendByConsumerOperations(
+    const ReportRequestInfo& info,
+    ::google::api::servicecontrol::v1::ReportRequest* request,
+    Timestamp current_time) {
+  if (info.consumer_project_id.empty()) {
+    return Status::OK;
+  }
+
+  Operation* op = request->add_operations();
+  SetOperationCommonFields(info, current_time, op);
+  // issue a new operation id
+  op->set_operation_id(op->operation_id() + "1");
+
+  // Only populate metrics if we can associate them with a method/operation.
+  if (!info.operation_id.empty() && !info.operation_name.empty()) {
+    Map<std::string, std::string>* labels = op->mutable_labels();
+    // Set all labels.
+    for (auto it = labels_.begin(), end = labels_.end(); it != end; it++) {
+      const SupportedLabel* l = *it;
+      if (l->set) {
+        Status status = (l->set)(*l, info, labels);
+        if (!status.ok()) return status;
       }
+    }
 
-      // Populate all metrics.
-      for (auto it = metrics_.begin(), end = metrics_.end(); it != end; it++) {
-        const SupportedMetric* m = *it;
-        if (m->set && m->mark == SupportedMetric::PRODUCER_BY_CONSUMER) {
-          if ((info.is_first_report && m->tag == SupportedMetric::START) ||
-              (info.is_final_report &&
-               (m->tag == SupportedMetric::FINAL ||
-                m->tag == SupportedMetric::INTERMEDIATE)) ||
-              (!info.is_final_report &&
-               m->tag == SupportedMetric::INTERMEDIATE)) {
-            status = (m->set)(*m, info, op);
-            if (!status.ok()) return status;
-          }
+    // Populate all metrics.
+    for (auto it = metrics_.begin(), end = metrics_.end(); it != end; it++) {
+      const SupportedMetric* m = *it;
+      if (m->set && m->mark == SupportedMetric::PRODUCER_BY_CONSUMER) {
+        if ((info.is_first_report && m->tag == SupportedMetric::START) ||
+            (info.is_final_report &&
+             (m->tag == SupportedMetric::FINAL ||
+              m->tag == SupportedMetric::INTERMEDIATE)) ||
+            (!info.is_final_report &&
+             m->tag == SupportedMetric::INTERMEDIATE)) {
+          Status status = (m->set)(*m, info, op);
+          if (!status.ok()) return status;
         }
       }
     }
