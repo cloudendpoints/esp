@@ -1163,9 +1163,11 @@ Status Proto::FillReportRequest(const ReportRequestInfo& info,
     }
   }
 
-  return (info.check_response_info.consumer_project_id.empty())
-             ? Status::OK
-             : AppendByConsumerOperations(info, request, current_time);
+  if (!info.check_response_info.consumer_project_id.empty()) {
+    return AppendByConsumerOperations(info, request, current_time);
+  }
+
+  return Status::OK;
 }
 
 utils::Status Proto::AppendByConsumerOperations(
