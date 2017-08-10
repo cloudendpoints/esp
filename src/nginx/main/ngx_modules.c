@@ -183,6 +183,9 @@ extern ngx_module_t  ngx_http_upstream_zone_module;
 #if (NGX_HTTP_STUB_STATUS)
 extern ngx_module_t  ngx_http_stub_status_module;
 #endif
+#if (NGX_IAP_JWT_VERIFY)
+extern ngx_module_t ngx_iap_jwt_verify_module;
+#endif
 #if (NGX_HTTP_ENDPOINTS_RUNTIME)
 extern ngx_module_t  ngx_esp_module;
 #endif
@@ -239,9 +242,6 @@ extern ngx_module_t  ngx_http_slice_filter_module;
 #endif
 #if (NGX_HTTP_ENDPOINTS_RUNTIME)
 extern ngx_module_t  ngx_esp_error_module;
-#endif
-#if (NGX_IAP_JWT_VERIFY)
-extern ngx_module_t ngx_iap_jwt_verify_module;
 #endif
 
 #if (NGX_MAIL)
@@ -466,6 +466,9 @@ ngx_module_t *ngx_modules[] = {
 #if (NGX_HTTP_STUB_STATUS)
     &ngx_http_stub_status_module,
 #endif
+#if (NGX_IAP_JWT_VERIFY)
+    &ngx_iap_jwt_verify_module,
+#endif
 #if (NGX_HTTP_ENDPOINTS_RUNTIME)
     &ngx_esp_module,
 #endif
@@ -523,9 +526,6 @@ ngx_module_t *ngx_modules[] = {
 // Placement is important: must be after the write filter
 #if (NGX_HTTP_ENDPOINTS_RUNTIME)
     &ngx_esp_error_module,
-#endif
-#if (NGX_IAP_JWT_VERIFY)
-    &ngx_iap_jwt_verify_module,
 #endif
 
 #if (NGX_MAIL)
@@ -752,6 +752,9 @@ char *ngx_module_names[] = {
 #if (NGX_HTTP_STUB_STATUS)
     "ngx_http_stub_status_module",
 #endif
+#if (NGX_IAP_JWT_VERIFY)
+    "ngx_iap_jwt_verify_module",
+#endif
 #if (NGX_HTTP_ENDPOINTS_RUNTIME)
     "ngx_esp_module",
 #endif
@@ -808,9 +811,6 @@ char *ngx_module_names[] = {
 #endif
 #if (NGX_HTTP_ENDPOINTS_RUNTIME)
     "ngx_esp_error_module",
-#endif
-#if (NGX_IAP_JWT_VERIFY)
-    "ngx_iap_jwt_verify_module",
 #endif
 
 #if (NGX_MAIL)
