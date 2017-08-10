@@ -171,9 +171,6 @@ struct ReportRequestInfo : public OperationInfo {
   // Flag to indicate the final report
   bool is_final_report;
 
-  // The consumer project id.
-  ::google::protobuf::StringPiece consumer_project_id;
-
   ReportRequestInfo()
       : response_code(200),
         status(utils::Status::OK),

@@ -580,7 +580,7 @@ Status set_backend_protocol(const SupportedLabel& l,
 Status set_consumer_project(const SupportedLabel& l,
                             const ReportRequestInfo& info,
                             Map<std::string, std::string>* labels) {
-  (*labels)[l.name] = info.consumer_project_id;
+  (*labels)[l.name] = info.check_response_info.consumer_project_id;
   return Status::OK;
 }
 
@@ -1170,7 +1170,7 @@ utils::Status Proto::AppendByConsumerOperations(
     const ReportRequestInfo& info,
     ::google::api::servicecontrol::v1::ReportRequest* request,
     Timestamp current_time) {
-  if (info.consumer_project_id.empty()) {
+  if (info.check_response_info.consumer_project_id.empty()) {
     return Status::OK;
   }
 
