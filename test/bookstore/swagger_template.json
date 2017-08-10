@@ -572,7 +572,7 @@
       "type": "apiKey"
     },
     "auth0_jwk": {
-      "authorizationUrl": "https://esp-jwk.auth0.com/authorize",
+      "authorizationUrl": "",
       "flow": "implicit",
       "type": "oauth2",
       "x-google-issuer": "https://esp-jwk.auth0.com/",
@@ -580,7 +580,7 @@
       "x-google-audiences": "Uuts8fJWf1yieO9Ocv0Uk6LBqsUTePQq"
     },
     "auth0_symmetric": {
-      "authorizationUrl": "https://esp-symmetric.auth0.com/authorize",
+      "authorizationUrl": "",
       "flow": "implicit",
       "type": "oauth2",
       "x-google-issuer": "https://esp-symmetric.auth0.com/",
