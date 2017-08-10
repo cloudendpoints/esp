@@ -1163,17 +1163,15 @@ Status Proto::FillReportRequest(const ReportRequestInfo& info,
     }
   }
 
-  return AppendByConsumerOperations(info, request, current_time);
+  return (info.check_response_info.consumer_project_id.empty())
+             ? Status::OK
+             : AppendByConsumerOperations(info, request, current_time);
 }
 
 utils::Status Proto::AppendByConsumerOperations(
     const ReportRequestInfo& info,
     ::google::api::servicecontrol::v1::ReportRequest* request,
     Timestamp current_time) {
-  if (info.check_response_info.consumer_project_id.empty()) {
-    return Status::OK;
-  }
-
   Operation* op = request->add_operations();
   SetOperationCommonFields(info, current_time, op);
   // issue a new operation id
