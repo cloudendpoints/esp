@@ -265,7 +265,7 @@ function long_running_test() {
   if [[ "${BACKEND}" == 'echo' ]]; then
     # We expect HTTP host to run at port 8080 for GRPC tests
     local http_host="http://${host%:*}:8080"
-    retry -n 10 -t 90 check_grpc_service "${host}"
+    retry -n 20 check_grpc_service "${host}"
     status=${?}
     if [[ ${status} -eq 0 ]]; then
       run_nonfatal "${ESP_ROOT}"/script/linux-grpc-test-long-run \
@@ -283,7 +283,7 @@ function long_running_test() {
       -s "${esp_service}" 2>&1 | tee "${log_file}"
     status=${PIPESTATUS[0]}
   else
-    retry -n 10 -t 90 check_http_service "${host}/shelves" ${http_code}
+    retry -n 20 check_http_service "${host}/shelves" ${http_code}
     status=${?}
     if [[ ${status} -eq 0 ]]; then
       echo 'Running long running test.'
