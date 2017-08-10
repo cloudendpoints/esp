@@ -108,14 +108,6 @@ class RequestContext {
     is_first_report_ = is_first_report;
   }
 
-  const std::string &consumer_project_id() const {
-    return _consumer_project_id;
-  }
-
-  void set_consumer_project_id(const std::string consumer_project_id) {
-    _consumer_project_id = consumer_project_id;
-  }
-
   // Get the last intermediate report time point.
   std::chrono::steady_clock::time_point last_report_time() const {
     return last_report_time_;
@@ -212,9 +204,6 @@ class RequestContext {
   // The accumulated data sent till last intermediate report
   int64_t last_request_bytes_;
   int64_t last_response_bytes_;
-
-  // Consumer project id
-  std::string _consumer_project_id;
 };
 
 }  // namespace context

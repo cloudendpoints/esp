@@ -134,8 +134,9 @@ std::string AllocateQuotaRequestToString(gasv1::AllocateQuotaRequest* request) {
 }
 
 std::string ReportRequestToString(gasv1::ReportRequest* request) {
-  gasv1::Operation* op = request->mutable_operations(0);
-  SetFixTimeStamps(op);
+  for (int i = 0; i < request->operations_size(); i++) {
+    SetFixTimeStamps(request->mutable_operations(i));
+  }
 
   std::string text;
   google::protobuf::TextFormat::PrintToString(*request, &text);
@@ -284,14 +285,6 @@ TEST_F(ProtoTest, FillGoodReportRequestByConsumerTest) {
 
   gasv1::ReportRequest request;
   ASSERT_TRUE(scp_.FillReportRequest(info, &request).ok());
-
-  auto operation = request.mutable_operations(1);
-
-  operation->set_operation_id("f88471ca-d43d-439e-8b71-f96e4fdbb317");
-  operation->mutable_start_time()->set_seconds(1502311042);
-  operation->mutable_start_time()->set_nanos(654235055);
-  operation->mutable_end_time()->set_seconds(1502311042);
-  operation->mutable_end_time()->set_nanos(654235055);
 
   std::string text = ReportRequestToString(&request);
   std::string expected_text =

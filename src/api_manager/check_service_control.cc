@@ -84,7 +84,6 @@ void CheckServiceControl(std::shared_ptr<context::RequestContext> context,
 
         // update consumer_project_id to service context
         if (!info.consumer_project_id.empty()) {
-          context->set_consumer_project_id(info.consumer_project_id);
           context->request()->AddHeaderToBackend(kConsumerProjecId,
                                                  info.consumer_project_id);
         }

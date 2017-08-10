@@ -279,7 +279,7 @@ void RequestContext::FillReportRequestInfo(
   info->url = request_->GetUnparsedRequestPath();
   info->method = GetRequestHTTPMethodWithOverride();
 
-  info->consumer_project_id = _consumer_project_id;
+  info->consumer_project_id = check_response_info_.consumer_project_id;
 
   info->frontend_protocol = request_->GetFrontendProtocol();
   info->backend_protocol = request_->GetBackendProtocol();

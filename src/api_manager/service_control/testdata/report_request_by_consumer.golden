@@ -569,16 +569,16 @@ operations {
   }
 }
 operations {
-  operation_id: "f88471ca-d43d-439e-8b71-f96e4fdbb317"
+  operation_id: "operation_id1"
   operation_name: "operation_name"
   consumer_id: "api_key:api_key_x"
   start_time {
-    seconds: 1502311042
-    nanos: 654235055
+    seconds: 100000
+    nanos: 100000
   }
   end_time {
-    seconds: 1502311042
-    nanos: 654235055
+    seconds: 100000
+    nanos: 100000
   }
   labels {
     key: "/credential_id"
