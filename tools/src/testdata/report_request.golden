@@ -59,12 +59,6 @@ operations: <
     >
   >
   metric_value_sets: <
-    metric_name: "serviceruntime.googleapis.com/api/producer/by_consumer/request_count"
-    metric_values: <
-      int64_value: 1
-    >
-  >
-  metric_value_sets: <
     metric_name: "serviceruntime.googleapis.com/api/consumer/request_sizes"
     metric_values: <
       distribution_value: <
@@ -195,32 +189,6 @@ operations: <
     >
   >
   metric_value_sets: <
-    metric_name: "serviceruntime.googleapis.com/api/producer/by_consumer/response_sizes"
-    metric_values: <
-      distribution_value: <
-        count: 1
-        mean: 208
-        minimum: 208
-        maximum: 208
-        bucket_counts: 0
-        bucket_counts: 0
-        bucket_counts: 0
-        bucket_counts: 0
-        bucket_counts: 1
-        bucket_counts: 0
-        bucket_counts: 0
-        bucket_counts: 0
-        bucket_counts: 0
-        bucket_counts: 0
-        exponential_buckets: <
-          num_finite_buckets: 8
-          growth_factor: 10
-          scale: 1
-        >
-      >
-    >
-  >
-  metric_value_sets: <
     metric_name: "serviceruntime.googleapis.com/api/consumer/error_count"
     metric_values: <
       int64_value: 1
@@ -228,12 +196,6 @@ operations: <
   >
   metric_value_sets: <
     metric_name: "serviceruntime.googleapis.com/api/producer/error_count"
-    metric_values: <
-      int64_value: 1
-    >
-  >
-  metric_value_sets: <
-    metric_name: "serviceruntime.googleapis.com/api/producer/by_consumer/error_count"
     metric_values: <
       int64_value: 1
     >

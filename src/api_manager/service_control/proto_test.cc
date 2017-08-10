@@ -134,8 +134,9 @@ std::string AllocateQuotaRequestToString(gasv1::AllocateQuotaRequest* request) {
 }
 
 std::string ReportRequestToString(gasv1::ReportRequest* request) {
-  gasv1::Operation* op = request->mutable_operations(0);
-  SetFixTimeStamps(op);
+  for (int i = 0; i < request->operations_size(); i++) {
+    SetFixTimeStamps(request->mutable_operations(i));
+  }
 
   std::string text;
   google::protobuf::TextFormat::PrintToString(*request, &text);
@@ -272,6 +273,23 @@ TEST_F(ProtoTest, FillGoodReportRequestTest) {
 
   std::string text = ReportRequestToString(&request);
   std::string expected_text = ReadTestBaseline("report_request.golden");
+  ASSERT_EQ(expected_text, text);
+}
+
+TEST_F(ProtoTest, FillGoodReportRequestByConsumerTest) {
+  ReportRequestInfo info;
+  FillOperationInfo(&info);
+  FillReportRequestInfo(&info);
+  info.backend_protocol = protocol::GRPC;
+  info.check_response_info.consumer_project_id =
+      ::google::protobuf::StringPiece("12345");
+
+  gasv1::ReportRequest request;
+  ASSERT_TRUE(scp_.FillReportRequest(info, &request).ok());
+
+  std::string text = ReportRequestToString(&request);
+  std::string expected_text =
+      ReadTestBaseline("report_request_by_consumer.golden");
   ASSERT_EQ(expected_text, text);
 }
 

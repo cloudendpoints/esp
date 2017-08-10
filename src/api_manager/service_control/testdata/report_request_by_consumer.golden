@@ -568,4 +568,272 @@ operations {
     severity: INFO
   }
 }
+operations {
+  operation_id: "operation_id1"
+  operation_name: "operation_name"
+  consumer_id: "api_key:api_key_x"
+  start_time {
+    seconds: 100000
+    nanos: 100000
+  }
+  end_time {
+    seconds: 100000
+    nanos: 100000
+  }
+  labels {
+    key: "/credential_id"
+    value: "apikey:api_key_x"
+  }
+  labels {
+    key: "/protocol"
+    value: "http"
+  }
+  labels {
+    key: "/referer"
+    value: "referer"
+  }
+  labels {
+    key: "/response_code"
+    value: "200"
+  }
+  labels {
+    key: "/response_code_class"
+    value: "2xx"
+  }
+  labels {
+    key: "/status_code"
+    value: "0"
+  }
+  labels {
+    key: "cloud.googleapis.com/location"
+    value: "us-central"
+  }
+  labels {
+    key: "servicecontrol.googleapis.com/backend_protocol"
+    value: "grpc"
+  }
+  labels {
+    key: "servicecontrol.googleapis.com/platform"
+    value: "GKE"
+  }
+  labels {
+    key: "servicecontrol.googleapis.com/service_agent"
+    value: "ESP/"
+  }
+  labels {
+    key: "servicecontrol.googleapis.com/user_agent"
+    value: "ESP"
+  }
+  labels {
+    key: "serviceruntime.googleapis.com/api_method"
+    value: "api-method"
+  }
+  labels {
+    key: "serviceruntime.googleapis.com/api_version"
+    value: "api-version"
+  }
+  labels {
+    key: "serviceruntime.googleapis.com/consumer_project"
+    value: "12345"
+  }
+  metric_value_sets {
+    metric_name: "serviceruntime.googleapis.com/api/producer/by_consumer/request_count"
+    metric_values {
+      int64_value: 1
+    }
+  }
+  metric_value_sets {
+    metric_name: "serviceruntime.googleapis.com/api/producer/by_consumer/request_sizes"
+    metric_values {
+      distribution_value {
+        count: 1
+        mean: 100
+        minimum: 100
+        maximum: 100
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 1
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        exponential_buckets {
+          num_finite_buckets: 8
+          growth_factor: 10
+          scale: 1
+        }
+      }
+    }
+  }
+  metric_value_sets {
+    metric_name: "serviceruntime.googleapis.com/api/producer/by_consumer/response_sizes"
+    metric_values {
+      distribution_value {
+        count: 1
+        mean: 1048576
+        minimum: 1048576
+        maximum: 1048576
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 1
+        bucket_counts: 0
+        bucket_counts: 0
+        exponential_buckets {
+          num_finite_buckets: 8
+          growth_factor: 10
+          scale: 1
+        }
+      }
+    }
+  }
+  metric_value_sets {
+    metric_name: "serviceruntime.googleapis.com/api/producer/by_consumer/total_latencies"
+    metric_values {
+      distribution_value {
+        count: 1
+        mean: 0.123
+        minimum: 0.123
+        maximum: 0.123
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 1
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        exponential_buckets {
+          num_finite_buckets: 29
+          growth_factor: 2
+          scale: 1e-06
+        }
+      }
+    }
+  }
+  metric_value_sets {
+    metric_name: "serviceruntime.googleapis.com/api/producer/by_consumer/backend_latencies"
+    metric_values {
+      distribution_value {
+        count: 1
+        mean: 0.101
+        minimum: 0.101
+        maximum: 0.101
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 1
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        exponential_buckets {
+          num_finite_buckets: 29
+          growth_factor: 2
+          scale: 1e-06
+        }
+      }
+    }
+  }
+  metric_value_sets {
+    metric_name: "serviceruntime.googleapis.com/api/producer/by_consumer/request_overhead_latencies"
+    metric_values {
+      distribution_value {
+        count: 1
+        mean: 0.022
+        minimum: 0.022
+        maximum: 0.022
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 1
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        bucket_counts: 0
+        exponential_buckets {
+          num_finite_buckets: 29
+          growth_factor: 2
+          scale: 1e-06
+        }
+      }
+    }
+  }
+}
 service_config_id: "2016-09-19r0"
