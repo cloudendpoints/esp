@@ -89,6 +89,8 @@ struct CheckResponseInfo {
   bool is_api_key_valid;
   // If service is activated.
   bool service_is_activated;
+  // Consumer project id
+  std::string consumer_project_id;
 
   // By default api_key is valid and service is activated.
   // They only set to false by the check response from server.

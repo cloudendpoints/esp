@@ -81,17 +81,39 @@ run cat "${VM_STARTUP_SCRIPT}"
 # Register cleanup for exit
 trap cleanup EXIT
 
+METADATA=""
+if [[ "${ESP_ROLLOUT_STRATEGY}" == "fixed" ]]; then
+  METADATA=endpoints-service-name="${ESP_SERVICE}",endpoints-service-version="${ESP_SERVICE_VERSION}"
+elif [[ "${ESP_ROLLOUT_STRATEGY}" == "managed" ]]; then
+  METADATA=endpoints-service-name="${ESP_SERVICE}",endpoints-rollout-strategy=managed
+else
+  echo "Invalid rollout strategy"
+  exit 1
+fi
+
 # Creating the VM
 run retry -n 3 gcloud compute instances create "${INSTANCE_NAME}" \
   --machine-type "custom-2-3840" \
   --image-family "${VM_IMAGE}" \
   --image-project debian-cloud \
   --boot-disk-size "100GB" \
-  --metadata endpoints-service-name="${ESP_SERVICE}",endpoints-service-version="${ESP_SERVICE_VERSION}" \
+  --metadata "${METADATA}" \
   --metadata-from-file startup-script="${VM_STARTUP_SCRIPT}"
 
 run retry -n 3 get_host_ip "${INSTANCE_NAME}"
 HOST="http://${HOST_INTERNAL_IP}:8080"
+
+run retry -n 10 wait_for_service_config_rollouts_update "$ESP_SERVICE_VERSION 100" \
+    || error_exit 'Rollouts update was failed'
+
+if [ "${ESP_ROLLOUT_STRATEGY}" == "managed" ]; then
+  # Deploy new service config
+  # create_service will set ESP_SERVICE_VERSION to the deployed new config id
+  create_service "${ESP_SERVICE}" swagger.json
+
+  run retry -n 10 wait_for_service_config_rollouts_update "$ESP_SERVICE_VERSION 100" \
+    || error_exit 'Rollouts update was failed'
+fi
 
 LOG_DIR="$(mktemp -d /tmp/log.XXXX)"
 TEST_ID="gce-${VM_IMAGE}"

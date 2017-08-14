@@ -24,6 +24,11 @@ using ::google::protobuf::util::error::Code;
 namespace google {
 namespace api_manager {
 
+namespace {
+
+const std::string kConsumerProjecId = "X-Endpoint-API-Project-ID";
+}
+
 void CheckServiceControl(std::shared_ptr<context::RequestContext> context,
                          std::function<void(Status status)> continuation) {
   std::shared_ptr<cloud_trace::CloudTraceSpan> trace_span(
@@ -76,6 +81,13 @@ void CheckServiceControl(std::shared_ptr<context::RequestContext> context,
                           << "status " << status.ToString();
         // info is valid regardless status.
         context->set_check_response_info(info);
+
+        // update consumer_project_id to service context
+        if (!info.consumer_project_id.empty()) {
+          context->request()->AddHeaderToBackend(kConsumerProjecId,
+                                                 info.consumer_project_id);
+        }
+
         continuation(status);
       });
 }
