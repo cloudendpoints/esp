@@ -44,8 +44,8 @@ nginx_repositories(
 # Needs to come after nginx
 git_repository(
     name = "iap_jwt_verify_nginx",
-    commit = "5d32cce2b300f79455a065f7ef51898f7b049ed4",
-    remote = "https://github.com/kmbarry1/appengine-sidecars-docker",
+    commit = "d3b47d8017ae808a891b5ce6e22315d0b2652baf",
+    remote = "https://github.com/GoogleCloudPlatform/appengine-sidecars-docker",
 )
 
 load("@iap_jwt_verify_nginx//:iap_jwt_verify_nginx.bzl", "iap_jwt_verify_nginx_repositories")
