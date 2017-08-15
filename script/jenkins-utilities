@@ -160,8 +160,18 @@ function create_service() {
 
 # Set current rolloutId to ESP_CURRENT_ROLLOUTS variable
 function set_esp_remote_rollout_info_env() {
-  ESP_CURRENT_ROLLOUTS=`gcloud compute ssh "${INSTANCE_NAME}" \
-    --command='curl http://localhost:8090/endpoints_status' | python -c '
+  local target_env=${1}
+  local endpoint_status_url=${2}
+  local endpoint_status=""
+
+  case "${target_env}" in
+    'gce' )
+      endpoint_status=`gcloud compute ssh "${INSTANCE_NAME}" --command="curl '$endpoint_status_url'"`;;
+    'gke' )
+      endpoint_status=`curl '$endpoint_status_url'`;;
+  esac
+
+  ESP_CURRENT_ROLLOUTS=`echo ${endpoint_status} | python -c '
 import json
 import sys
 try:
@@ -190,15 +200,17 @@ except:
 }
 
 function wait_for_service_config_rollouts_update() {
-  local target_version=${1}
+  local target_env=${1}
+  local endpoint_status_url=${2}
+  local target_rollouts=${3}
 
   ESP_CURRENT_ROLLOUTS=""
   # set_esp_remote_rollout_info_env will set ESP_CURRENT_ROLLOUTS
-  retry -n 10 -t 90  set_esp_remote_rollout_info_env \
+  retry -n 10 -t 90  set_esp_remote_rollout_info_env "$target_env" "$endpoint_status_url" \
     || error_exit 'Could not fetch the remote rollouts'
   echo "Instance rollout information=$ESP_CURRENT_ROLLOUTS"
 
-  if [ "$target_version" == "$ESP_CURRENT_ROLLOUTS" ]; then
+  if [ "$target_rollouts" == "$ESP_CURRENT_ROLLOUTS" ]; then
     return 0
   else
     return 1

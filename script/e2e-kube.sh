@@ -99,6 +99,9 @@ case "${TEST_TYPE}" in
   *       ) e2e_usage "Invalid test type";;
 esac
 
+# set rollout strategy
+ARGS="$ARGS --rollout_strategy ${ESP_ROLLOUT_STRATEGY}"
+
 trap cleanup EXIT
 
 # Testing protocol
@@ -119,6 +122,15 @@ run_nonfatal long_running_test \
   "${LOG_DIR}" \
   "${TEST_ID}" \
   "${UNIQUE_ID}"
+
+# Deploy new config and check new rollout on /endpoints_status
+if [[ ("${ESP_ROLLOUT_STRATEGY}" == "managed") && ("${BACKEND}" == "bookstore") ]] ; then
+  # Deploy new service config
+  create_service "${ESP_SERVICE}" "${SERVICE_IDL}"
+
+  run retry -n 10 wait_for_service_config_rollouts_update "gke" "${HOST}:8090/endpoints_status" "$ESP_SERVICE_VERSION 100" \
+    || error_exit 'Rollouts update was failed'
+fi
 
 STATUS=${?}
 run ${CLI} logs bookstore --namespace ${NAMESPACE} --project ${PROJECT_ID} --active=false \
