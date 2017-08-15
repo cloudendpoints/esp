@@ -581,7 +581,8 @@ def e2eGKE(coupling, proto, backend = 'bookstore') {
 def e2eGCE(vmImage, rolloutStrategy) {
   setupNode()
   fastUnstash('tools')
-  def commonOptions = e2eCommonOptions('gce-raw')
+  // Use different service names for tests with different strategy.
+  def commonOptions = e2eCommonOptions('gce-raw', rolloutStrategy)
   def espDebianPkg = espDebianPackage()
   def debianPackageRepo = getDebianPackageRepo()
   echo('Running GCE test')
