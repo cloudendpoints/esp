@@ -189,6 +189,9 @@ extern ngx_module_t  ngx_http_upstream_zone_module;
 #if (NGX_HTTP_STUB_STATUS)
 extern ngx_module_t  ngx_http_stub_status_module;
 #endif
+#if (NGX_IAP_JWT_VERIFY)
+extern ngx_module_t ngx_iap_jwt_verify_module;
+#endif
 #if (NGX_HTTP_ENDPOINTS_RUNTIME)
 extern ngx_module_t  ngx_esp_module;
 #endif
@@ -474,6 +477,11 @@ ngx_module_t *ngx_modules[] = {
 #endif
 #if (NGX_HTTP_STUB_STATUS)
     &ngx_http_stub_status_module,
+#endif
+// This needs to come before ngx_esp_module so that the IAP access handler runs
+// first.
+#if (NGX_IAP_JWT_VERIFY)
+    &ngx_iap_jwt_verify_module,
 #endif
 #if (NGX_HTTP_ENDPOINTS_RUNTIME)
     &ngx_esp_module,
@@ -763,6 +771,9 @@ char *ngx_module_names[] = {
 #endif
 #if (NGX_HTTP_STUB_STATUS)
     "ngx_http_stub_status_module",
+#endif
+#if (NGX_IAP_JWT_VERIFY)
+    "ngx_iap_jwt_verify_module",
 #endif
 #if (NGX_HTTP_ENDPOINTS_RUNTIME)
     "ngx_esp_module",
