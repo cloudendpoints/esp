@@ -168,7 +168,7 @@ function set_esp_remote_rollout_info_env() {
     'gce' )
       endpoint_status=`gcloud compute ssh "${INSTANCE_NAME}" --command='curl "$endpoint_status_url"'`;;
     'gke' )
-      endpoint_status=`curl '$endpoint_status_url'`;;
+      endpoint_status=`curl "$endpoint_status_url"`;;
   esac
 
   ESP_CURRENT_ROLLOUTS=`echo ${endpoint_status} | python -c '
