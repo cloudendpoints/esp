@@ -325,12 +325,12 @@ def e2eTest(nodeLabel) {
       }],
       ['gke-tight-http2-echo', {
         node(nodeLabel) {
-          e2eGKE('tight', 'http2', 'echo', 'fixed')
+          e2eGKE('tight', 'http2', 'fixed', 'echo')
         }
       }],
       ['gke-tight-http2-interop', {
         node(nodeLabel) {
-          e2eGKE('tight', 'http2', 'interop', 'fixed')
+          e2eGKE('tight', 'http2', 'fixed', 'interop')
         }
       }],
   ]
