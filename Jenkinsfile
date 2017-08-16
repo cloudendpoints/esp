@@ -293,7 +293,7 @@ def e2eTest(nodeLabel) {
           e2eGKE('tight', 'http', 'fixed')
         }
       }],
-      ['gke-tight-http', {
+      ['gke-tight-http-managed', {
         node(nodeLabel) {
           e2eGKE('tight', 'http', 'managed')
         }
