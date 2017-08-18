@@ -24,7 +24,7 @@ namespace {
 // The maximum lifetime of a cache entry. Unit: seconds.
 const int kAuthzCacheTimeout = 300;
 // The number of entries in authz cache.
-const int kAuthzCacheSize = 100;
+const int kAuthzCacheSize = 200;
 }  // namespace
 
 AuthzCache::AuthzCache() : cache_(kAuthzCacheSize) {}
@@ -32,30 +32,27 @@ AuthzCache::AuthzCache() : cache_(kAuthzCacheSize) {}
 AuthzCache::~AuthzCache() { cache_.Clear(); }
 
 void AuthzCache::Add(const std::string& cache_key, const bool if_success,
-                     const std::chrono::system_clock::time_point& token_exp,
                      const std::chrono::system_clock::time_point& now) {
   AuthzValue* newval = new AuthzValue();
   newval->if_success = if_success;
-  newval->exp =
-      std::min(token_exp, now + std::chrono::seconds(kAuthzCacheTimeout));
+  newval->exp = now + std::chrono::seconds(kAuthzCacheTimeout);
   cache_.Insert(cache_key, newval, 1);
 }
 
 bool AuthzCache::Lookup(const std::string& cache_key,
                         const std::chrono::system_clock::time_point& now,
                         AuthzValue* value) {
-  AuthzValue* val = cache_.Lookup(cache_key);
-  if (val == nullptr) {
+  ::google::service_control_client::SimpleLRUCache<
+      std::string, AuthzValue>::ScopedLookup lookup(&cache_, cache_key);
+  if (!lookup.Found()) {
     return false;
   }
+  AuthzValue* val = lookup.value();
   if (now > val->exp) {
-    cache_.Release(cache_key, val);
     cache_.Remove(cache_key);
     return false;
   }
   *value = *val;
-  // Release after use.
-  cache_.Release(cache_key, val);
   return true;
 }
 

@@ -184,8 +184,7 @@ const char kAuthToken[] =
 
 const std::chrono::system_clock::time_point kNow =
     std::chrono::system_clock::now();
-const std::chrono::system_clock::time_point kTokenExp =
-    kNow + std::chrono::seconds(50);
+const int kAuthzCacheTimeout = 300;
 
 const char kRequestPath[] = "/ListShelves";
 const char kRequestMethod[] = "GET";
@@ -325,9 +324,6 @@ class CheckSecurityRulesTest : public ::testing::Test {
     ON_CALL(*raw_request_, GetRequestPath())
         .WillByDefault(Return(std::string(kRequestPath)));
 
-    ON_CALL(*raw_request_, GetAuthToken())
-        .WillByDefault(Return(std::string(kAuthToken)));
-
     request_context_ = std::make_shared<context::RequestContext>(
         service_context_, std::move(request));
 
@@ -409,7 +405,9 @@ TEST_F(CheckSecurityRulesTest, CheckAuthzCacheHitPositive) {
                                kApis + kAuthentication + kHttp;
   std::string server_config = kServerConfig;
   SetUp(service_config, server_config);
-  service_context_->authz_cache().Add(kCacheKey, true, kTokenExp, kNow);
+
+  request_context_->SetAuthToken(std::string(kAuthToken));
+  service_context_->authz_cache().Add(kCacheKey, true, kNow);
 
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(AllOf(
                              Property(&HTTPRequest::url, StrEq(release_url_)),
@@ -434,7 +432,8 @@ TEST_F(CheckSecurityRulesTest, CheckAuthzCacheHitNegative) {
   std::string server_config = kServerConfig;
   SetUp(service_config, server_config);
 
-  service_context_->authz_cache().Add(kCacheKey, false, kTokenExp, kNow);
+  request_context_->SetAuthToken(std::string(kAuthToken));
+  service_context_->authz_cache().Add(kCacheKey, false, kNow);
 
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(AllOf(
                              Property(&HTTPRequest::url, StrEq(release_url_)),
@@ -447,8 +446,7 @@ TEST_F(CheckSecurityRulesTest, CheckAuthzCacheHitNegative) {
                         Property(&HTTPRequest::method, StrCaseEq("POST")))))
       .Times(0);
 
-  auto ptr = this;
-  CheckSecurityRules(request_context_, [ptr](Status status) {
+  CheckSecurityRules(request_context_, [](Status status) {
     ASSERT_TRUE(status.code() == Code::PERMISSION_DENIED);
     ASSERT_TRUE(status.message() ==
                 std::string("Unauthorized access (cached)."));
@@ -464,9 +462,9 @@ TEST_F(CheckSecurityRulesTest, CheckAuthzCacheHitButExpired) {
   std::string server_config = kServerConfig;
   SetUp(service_config, server_config);
 
-  request_context_->SetAuthExp(kTokenExp);
-
-  service_context_->authz_cache().Add(kCacheKey, false, kNow, kNow);
+  request_context_->SetAuthToken(std::string(kAuthToken));
+  service_context_->authz_cache().Add(
+      kCacheKey, false, kNow - std::chrono::seconds(kAuthzCacheTimeout));
 
   request_context_->set_auth_claims(kJwtEmailPayload);
   ExpectCall(release_url_, "GET", "", kRelease);
@@ -480,7 +478,7 @@ TEST_F(CheckSecurityRulesTest, CheckAuthzCacheHitButExpired) {
   google::api_manager::auth::AuthzValue val;
   ASSERT_TRUE(service_context_->authz_cache().Lookup(kCacheKey, kNow, &val));
   ASSERT_EQ(val.if_success, true);
-  ASSERT_EQ(val.exp, kTokenExp);
+  ASSERT_NE(val.exp, kNow);
 }
 
 // Cache miss. In this case, a cache entry obtained after interacting with
@@ -491,9 +489,9 @@ TEST_F(CheckSecurityRulesTest, CheckAuthzCacheMiss) {
   std::string server_config = kServerConfig;
   SetUp(service_config, server_config);
 
-  request_context_->SetAuthExp(kTokenExp);
-
+  request_context_->SetAuthToken(std::string(kAuthToken));
   request_context_->set_auth_claims(kJwtEmailPayload);
+
   ExpectCall(release_url_, "GET", "", kRelease);
   ExpectCall(ruleset_test_url_, "POST", kFirstRequest,
              BuildTestRulesetResponse(false));
@@ -505,7 +503,7 @@ TEST_F(CheckSecurityRulesTest, CheckAuthzCacheMiss) {
   google::api_manager::auth::AuthzValue val;
   ASSERT_TRUE(service_context_->authz_cache().Lookup(kCacheKey, kNow, &val));
   ASSERT_EQ(val.if_success, false);
-  ASSERT_EQ(val.exp, kTokenExp);
+  ASSERT_LT(kNow + std::chrono::seconds(kAuthzCacheTimeout), val.exp);
 }
 
 // Cache miss. In this case no cache entry is added because of the failure of
@@ -516,9 +514,9 @@ TEST_F(CheckSecurityRulesTest, NoCachingOnBadStatus) {
   std::string server_config = kServerConfig;
   SetUp(service_config, server_config);
 
-  request_context_->SetAuthExp(kTokenExp);
-
+  request_context_->SetAuthToken(std::string(kAuthToken));
   request_context_->set_auth_claims(kJwtEmailPayload);
+
   ExpectCall(release_url_, "GET", "", kRelease);
   ExpectCall(ruleset_test_url_, "POST", kFirstRequest,
              BuildTestRulesetResponse(false),

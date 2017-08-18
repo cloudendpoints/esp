@@ -28,22 +28,20 @@ namespace auth {
 struct AuthzValue {
   // Authorization result.
   bool if_success;
-  // Expiration time of the cache entry. This is the minimum of "exp" field in
-  // the JWT and [the time this cache entry is added + CacheEntryTTL]
+  // Expiration time of the cache entry. This equals the time this cache entry
+  // is added + CacheEntryTTL.
   std::chrono::system_clock::time_point exp;
 };
 
 // A local cache to expedite the authorization process. The key of the cache is
 // the hash of the concatenation of JWT auth token, request path, and request
-// HTTP
-// method. The value is of type AuthzValue.
+// HTTP method. The value is of type AuthzValue.
 class AuthzCache {
  public:
   AuthzCache();
   ~AuthzCache();
   // This method is used to insert cache entry.
   void Add(const std::string& cache_key, const bool if_success,
-           const std::chrono::system_clock::time_point& token_exp,
            const std::chrono::system_clock::time_point& now);
   // This method is used to do cache lookup.
   bool Lookup(const std::string& cache_key,

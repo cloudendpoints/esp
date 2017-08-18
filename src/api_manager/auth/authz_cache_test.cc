@@ -62,8 +62,7 @@ TEST_F(TestAuthzCache, EntryNotExist) {
   AuthzValue val;
   ASSERT_FALSE(cache_.Lookup(cache_key, now, &val));
   ASSERT_EQ(cache_.NumberOfEntries(), 0);
-  cache_.Add(cache_key, true, now + std::chrono::seconds(kAuthzCacheTimeout),
-             now);
+  cache_.Add(cache_key, true, now);
   ASSERT_EQ(cache_.NumberOfEntries(), 1);
   ASSERT_FALSE(cache_.Lookup(new_cache_key, now, &val));
   ASSERT_EQ(cache_.NumberOfEntries(), 1);
@@ -72,7 +71,7 @@ TEST_F(TestAuthzCache, EntryNotExist) {
 // Lookup the cache entry that has expired. In this case, Lookup also deletes
 // expired entry.
 TEST_F(TestAuthzCache, EntryExistButExpired) {
-  cache_.Add(cache_key, true, now, now);
+  cache_.Add(cache_key, true, now - std::chrono::seconds(kAuthzCacheTimeout));
   ASSERT_EQ(cache_.NumberOfEntries(), 1);
   AuthzValue val;
   ASSERT_FALSE(cache_.Lookup(
@@ -80,26 +79,9 @@ TEST_F(TestAuthzCache, EntryExistButExpired) {
   ASSERT_EQ(cache_.NumberOfEntries(), 0);
 }
 
-// Lookup the cache entry that has not expired. The scenario where token expires
-// sooner than cache entry timeout is tested.
-TEST_F(TestAuthzCache, TokenExpSmallerThanCacheTimeout) {
-  std::chrono::system_clock::time_point token_exp =
-      now + std::chrono::seconds(kAuthzCacheTimeout - 1);
-  cache_.Add(cache_key, true, token_exp, now);
-  ASSERT_EQ(cache_.NumberOfEntries(), 1);
-  AuthzValue val;
-  ASSERT_TRUE(cache_.Lookup(cache_key, now, &val));
-  ASSERT_EQ(cache_.NumberOfEntries(), 1);
-  ASSERT_EQ(val.if_success, true);
-  ASSERT_EQ(val.exp, token_exp);
-}
-
-// Lookup the cache entry that has not expired. The scenario where token expires
-// no sooner than cache entry timeout is tested.
-TEST_F(TestAuthzCache, TokenExpNotSmallerThanCacheTimeout) {
-  std::chrono::system_clock::time_point token_exp =
-      now + std::chrono::seconds(kAuthzCacheTimeout + 1);
-  cache_.Add(cache_key, true, token_exp, now);
+// Lookup the cache entry that has not expired.
+TEST_F(TestAuthzCache, EntryExistNotExpired) {
+  cache_.Add(cache_key, true, now);
   ASSERT_EQ(cache_.NumberOfEntries(), 1);
   AuthzValue val;
   ASSERT_TRUE(cache_.Lookup(cache_key, now, &val));

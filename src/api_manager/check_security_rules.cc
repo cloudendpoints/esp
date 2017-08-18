@@ -110,7 +110,7 @@ bool AuthzChecker::CheckCache(
     std::function<void(Status status)> final_continuation) {
   AuthzValue val;
   std::string cache_key = AuthzCache::ComposeAuthzCacheKey(
-      context->request()->GetAuthToken(), context->request()->GetRequestPath(),
+      context->AuthToken(), context->request()->GetRequestPath(),
       context->request()->GetRequestHTTPMethod());
   system_clock::time_point now = system_clock::now();
   if (context->service_context()->authz_cache().Lookup(cache_key, now, &val)) {
@@ -134,7 +134,6 @@ void AuthzChecker::Check(
     final_continuation(Status::OK);
     return;
   }
-
   if (!CheckCache(context, final_continuation)) {
     auto checker = GetPtr();
     // Fetch the Release attributes and get ruleset name.
@@ -174,11 +173,10 @@ void AuthzChecker::InsertCache(std::shared_ptr<context::RequestContext> context,
   if (status_code == Code::OK || status_code == Code::PERMISSION_DENIED) {
     bool res = (status_code == Code::OK) ? true : false;
     std::string cache_key = AuthzCache::ComposeAuthzCacheKey(
-        context->request()->GetAuthToken(),
-        context->request()->GetRequestPath(),
+        context->AuthToken(), context->request()->GetRequestPath(),
         context->request()->GetRequestHTTPMethod());
-    context->service_context()->authz_cache().Add(
-        cache_key, res, context->AuthExp(), system_clock::now());
+    context->service_context()->authz_cache().Add(cache_key, res,
+                                                  system_clock::now());
   }
 }
 
@@ -191,7 +189,6 @@ void AuthzChecker::CallNextRequest(
     continuation(request_handler_->RequestStatus());
     return;
   }
-
   auto checker = GetPtr();
   firebase_rules::HttpRequest http_request = request_handler_->GetHttpRequest();
   HttpFetch(
