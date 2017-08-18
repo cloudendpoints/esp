@@ -24,7 +24,7 @@ namespace {
 // The maximum lifetime of a cache entry. Unit: seconds.
 const int kAuthzCacheTimeout = 300;
 // The number of entries in authz cache.
-const int kAuthzCacheSize = 200;
+const int kAuthzCacheSize = 10000;
 }  // namespace
 
 AuthzCache::AuthzCache() : cache_(kAuthzCacheSize) {}

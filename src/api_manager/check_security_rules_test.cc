@@ -399,21 +399,25 @@ class CheckSecurityRulesTest : public ::testing::Test {
   std::string ruleset_test_url_;
 };
 
-// Cache hit without expiration. In this case, a cached "yes" is returned.
-TEST_F(CheckSecurityRulesTest, CheckAuthzCacheHitPositive) {
+// Cache first miss then hit. In this case, "yes" is cached on miss and returnd
+// on hit.
+TEST_F(CheckSecurityRulesTest, CheckAuthzCacheMissThenHitPositive) {
   std::string service_config = std::string(kServiceName) + kProducerProjectId +
                                kApis + kAuthentication + kHttp;
   std::string server_config = kServerConfig;
   SetUp(service_config, server_config);
 
   request_context_->SetAuthToken(std::string(kAuthToken));
-  service_context_->authz_cache().Add(kCacheKey, true, kNow);
+  request_context_->set_auth_claims(kJwtEmailPayload);
 
+  InSequence s;
+  ExpectCall(release_url_, "GET", "", kRelease);
+  ExpectCall(ruleset_test_url_, "POST", kFirstRequest,
+             BuildTestRulesetResponse(true));
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(AllOf(
                              Property(&HTTPRequest::url, StrEq(release_url_)),
                              Property(&HTTPRequest::method, StrCaseEq("GET")))))
       .Times(0);
-
   EXPECT_CALL(*raw_env_,
               DoRunHTTPRequest(
                   AllOf(Property(&HTTPRequest::url, StrEq(ruleset_test_url_)),
@@ -423,87 +427,45 @@ TEST_F(CheckSecurityRulesTest, CheckAuthzCacheHitPositive) {
   CheckSecurityRules(request_context_, [](Status status) {
     ASSERT_TRUE(status.code() == Code::OK);
   });
+  CheckSecurityRules(request_context_, [](Status status) {
+    ASSERT_TRUE(status.code() == Code::OK);
+  });
 }
 
-// Cache hit without expiration. In this case, a cached "no" is returned.
-TEST_F(CheckSecurityRulesTest, CheckAuthzCacheHitNegative) {
+// Cache first miss then hit. In this case, "no" is cached on miss and returnd
+// on hit.
+TEST_F(CheckSecurityRulesTest, CheckAuthzCacheMissThenHitNegative) {
   std::string service_config = std::string(kServiceName) + kProducerProjectId +
                                kApis + kAuthentication + kHttp;
   std::string server_config = kServerConfig;
   SetUp(service_config, server_config);
 
   request_context_->SetAuthToken(std::string(kAuthToken));
-  service_context_->authz_cache().Add(kCacheKey, false, kNow);
+  request_context_->set_auth_claims(kJwtEmailPayload);
 
+  InSequence s;
+  ExpectCall(release_url_, "GET", "", kRelease);
+  ExpectCall(ruleset_test_url_, "POST", kFirstRequest,
+             BuildTestRulesetResponse(false));
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(AllOf(
                              Property(&HTTPRequest::url, StrEq(release_url_)),
                              Property(&HTTPRequest::method, StrCaseEq("GET")))))
       .Times(0);
-
   EXPECT_CALL(*raw_env_,
               DoRunHTTPRequest(
                   AllOf(Property(&HTTPRequest::url, StrEq(ruleset_test_url_)),
                         Property(&HTTPRequest::method, StrCaseEq("POST")))))
       .Times(0);
+
+  CheckSecurityRules(request_context_, [](Status status) {
+    ASSERT_TRUE(status.code() == Code::PERMISSION_DENIED);
+  });
 
   CheckSecurityRules(request_context_, [](Status status) {
     ASSERT_TRUE(status.code() == Code::PERMISSION_DENIED);
     ASSERT_TRUE(status.message() ==
                 std::string("Unauthorized access (cached)."));
   });
-}
-
-// Cache hit with expiration. In this case, old cache entry is removed and new
-// cache entry obtained
-// after interacting with firebase is stored assuming the interation is sound.
-TEST_F(CheckSecurityRulesTest, CheckAuthzCacheHitButExpired) {
-  std::string service_config = std::string(kServiceName) + kProducerProjectId +
-                               kApis + kAuthentication + kHttp;
-  std::string server_config = kServerConfig;
-  SetUp(service_config, server_config);
-
-  request_context_->SetAuthToken(std::string(kAuthToken));
-  service_context_->authz_cache().Add(
-      kCacheKey, false, kNow - std::chrono::seconds(kAuthzCacheTimeout));
-
-  request_context_->set_auth_claims(kJwtEmailPayload);
-  ExpectCall(release_url_, "GET", "", kRelease);
-  ExpectCall(ruleset_test_url_, "POST", kFirstRequest,
-             BuildTestRulesetResponse(true));
-
-  CheckSecurityRules(request_context_, [](Status status) {
-    ASSERT_TRUE(status.code() == Code::OK);
-  });
-
-  google::api_manager::auth::AuthzValue val;
-  ASSERT_TRUE(service_context_->authz_cache().Lookup(kCacheKey, kNow, &val));
-  ASSERT_EQ(val.if_success, true);
-  ASSERT_NE(val.exp, kNow);
-}
-
-// Cache miss. In this case, a cache entry obtained after interacting with
-// firebase is stored assuming the interaction is sound.
-TEST_F(CheckSecurityRulesTest, CheckAuthzCacheMiss) {
-  std::string service_config = std::string(kServiceName) + kProducerProjectId +
-                               kApis + kAuthentication + kHttp;
-  std::string server_config = kServerConfig;
-  SetUp(service_config, server_config);
-
-  request_context_->SetAuthToken(std::string(kAuthToken));
-  request_context_->set_auth_claims(kJwtEmailPayload);
-
-  ExpectCall(release_url_, "GET", "", kRelease);
-  ExpectCall(ruleset_test_url_, "POST", kFirstRequest,
-             BuildTestRulesetResponse(false));
-
-  CheckSecurityRules(request_context_, [](Status status) {
-    ASSERT_TRUE(status.code() == Code::PERMISSION_DENIED);
-  });
-
-  google::api_manager::auth::AuthzValue val;
-  ASSERT_TRUE(service_context_->authz_cache().Lookup(kCacheKey, kNow, &val));
-  ASSERT_EQ(val.if_success, false);
-  ASSERT_LT(kNow + std::chrono::seconds(kAuthzCacheTimeout), val.exp);
 }
 
 // Cache miss. In this case no cache entry is added because of the failure of
@@ -517,17 +479,21 @@ TEST_F(CheckSecurityRulesTest, NoCachingOnBadStatus) {
   request_context_->SetAuthToken(std::string(kAuthToken));
   request_context_->set_auth_claims(kJwtEmailPayload);
 
+  InSequence s;
   ExpectCall(release_url_, "GET", "", kRelease);
   ExpectCall(ruleset_test_url_, "POST", kFirstRequest,
              BuildTestRulesetResponse(false),
              Status(Code::INTERNAL, "Cannot talk to server"));
+  ExpectCall(release_url_, "GET", "", kRelease);
+  ExpectCall(ruleset_test_url_, "POST", kFirstRequest,
+             BuildTestRulesetResponse(false));
 
   CheckSecurityRules(request_context_, [](Status status) {
     ASSERT_TRUE(status.code() == Code::INTERNAL);
   });
-
-  google::api_manager::auth::AuthzValue val;
-  ASSERT_FALSE(service_context_->authz_cache().Lookup(kCacheKey, kNow, &val));
+  CheckSecurityRules(request_context_, [](Status status) {
+    ASSERT_TRUE(status.code() == Code::PERMISSION_DENIED);
+  });
 }
 
 // If the release name is bad, then check the following:
