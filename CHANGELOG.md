@@ -1,3 +1,12 @@
+# Release 1.6.0 18-08-2017
+
+- Integrate IAP JWT auto-verification for GAE Flex (#240)
+- Added by-consumer metrics to report request, X-Endpoint-API-Project-I… (#235)
+- Support authorization url (#228)
+- Added esp service config rollouts info to /endpoints_status (#222)
+- Update gRPC to 1.4.2 (#220)
+
+
 # Release 1.5.0 14-07-2017
 
 - Update NGINX to 1.13.3.
