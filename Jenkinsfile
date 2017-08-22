@@ -778,7 +778,7 @@ def generateServiceName(uniqueID, servicePrefix = '') {
   if (getParam('USE_LATEST_RELEASE', false) || getParam('GCLOUD_URL')) {
     return "${uniqueID}-dot-${PROJECT_ID}.appspot.com"
   }
-  return "${servicePrefix}testing-dot-${PROJECT_ID}.appspot.com"
+  return "${servicePrefix}-${uniqueID}-dot-${PROJECT_ID}.appspot.com"
 }
 
 // Converts a list of [key, value] to a map
