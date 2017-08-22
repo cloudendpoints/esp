@@ -122,6 +122,7 @@ run_nonfatal long_running_test \
   "${LOG_DIR}" \
   "${TEST_ID}" \
   "${UNIQUE_ID}"
+STATUS=${?}
 
 # Deploy new config and check new rollout on /endpoints_status
 if [[ ("${ESP_ROLLOUT_STRATEGY}" == "managed") && ("${BACKEND}" == "bookstore") ]] ; then
@@ -132,7 +133,6 @@ if [[ ("${ESP_ROLLOUT_STRATEGY}" == "managed") && ("${BACKEND}" == "bookstore") 
     || error_exit 'Rollouts update was failed'
 fi
 
-STATUS=${?}
 run ${CLI} logs bookstore --namespace ${NAMESPACE} --project ${PROJECT_ID} --active=false \
   | tee ${LOG_DIR}/error.log
 
