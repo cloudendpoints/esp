@@ -133,7 +133,13 @@ if [[ ("${ESP_ROLLOUT_STRATEGY}" == "managed") && ("${BACKEND}" == "bookstore") 
 fi
 
 STATUS=${?}
-run ${CLI} logs bookstore --namespace ${NAMESPACE} --project ${PROJECT_ID} --active=false \
+LOG_LIMIT=10000
+
+gcloud beta logging read "resource.type=container \
+AND resource.labels.container_name=endpoints-bookstore \
+AND resource.labels.namespace_id=$NAMESPACE \
+AND severity=ERROR" "--limit $LOG_LIMIT" \
+--format="table(severity, timestamp:sort=1, resource.labels.pod_id, textPayload)" \
   | tee ${LOG_DIR}/error.log
 
 if [[ -n $REMOTE_LOG_DIR ]]; then
