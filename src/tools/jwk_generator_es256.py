@@ -24,39 +24,16 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+import argparse
 import sys
 import chilkat   #  Chilkat v9.5.0.66 or later.
-import jwt  # pip install PyJWT and pip install cryptography.
 
-""" This script is used to generate ES256-signed jwt token and public jwk. Before
-    running, make sure to generate ES256 public/private key pair via following two
-    command-line openssl commands.
+""" This script is used to generate ES256 public jwk key."""
 
-    Create private key:
-    $ openssl ecparam -genkey -name prime256v1 -noout -out myprivatekey.pem
-    Create public key:
-    $ openssl ec -in myprivatekey.pem -pubout -out mypubkey.pem
-"""
-
-def jwt_and_jwk_generator():
-  # JWT token generation.
-  with open('myprivatekey.pem', 'r') as f:
-    try:
-      secret = f.read()
-    except:
-      print("Private key file not present. Need to be generated.")
-      sys.exit()
-  # Change claim and headers field to fit needs.
-  jwt_token = jwt.encode({'iss': '628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com',
-                          'sub': '628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com',
-                          'aud': 'http://myservice.com/myapi'}, secret, algorithm="ES256",
-                         headers={'alg': 'ES256', 'typ': 'JWT', 'kid': '1a'})
-  print("ES256-signed jwt token:")
-  print(jwt_token)
-
+def main(args):
   #  Load public key file into memory.
   sbPem = chilkat.CkStringBuilder()
-  success = sbPem.LoadFile("mypubkey.pem", "utf-8")
+  success = sbPem.LoadFile(args.public_key_file, "utf-8")
   if (success != True):
     print("Failed to load PEM file.")
     sys.exit()
@@ -67,20 +44,39 @@ def jwt_and_jwk_generator():
   if (success != True):
     print(pubKey.lastErrorText())
     sys.exit()
+
   #  Get the public key in JWK format:
   jwk = pubKey.getJwk()
   # Convert it to json format.
   json = chilkat.CkJsonObject()
   json.Load(jwk)
   # This line is used to set output format.
-  json.put_EmitCompact(False)
+  cpt = True
+  if (not args.compact) or (args.compact and args.compact == "no"):
+    cpt = False
+  json.put_EmitCompact(cpt)
   # Additional information can be added like this. change to fit needs.
-  json.AppendString("alg","ES256")
-  json.AppendString("kid","1a")
+  if args.alg:
+    json.AppendString("alg", args.alg)
+  if args.kid:
+    json.AppendString("kid", args.kid)
   # Print.
-  print("Generated jwk:")
+  print("Generated ES256 public jwk:")
   print(json.emit())
 
 
 if __name__ == '__main__':
-  jwt_and_jwk_generator()
+  parser = argparse.ArgumentParser(
+      description=__doc__,
+      formatter_class=argparse.RawDescriptionHelpFormatter)
+
+  # positional arguments
+  parser.add_argument(
+      "public_key_file",
+      help="The path to the generated ES256 public key file, e.g., /path/to/mypubkey.pem.")
+
+  #optional arguments
+  parser.add_argument("-c", "--compact", help="If making json output compact, say 'yes' or 'no'.")
+  parser.add_argument("-a", "--alg", help="Encryption algorithm, e.g., ES256.")
+  parser.add_argument("-k", "--kid", help="Key id, same as the kid in private key if any.")
+  main(parser.parse_args())
