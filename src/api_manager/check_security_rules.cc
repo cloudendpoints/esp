@@ -113,7 +113,6 @@ bool AuthzChecker::CheckCache(
       context->AuthToken(), context->request()->GetRequestPath(),
       context->request()->GetRequestHTTPMethod());
   system_clock::time_point now = system_clock::now();
-
   if (context->service_context()->authz_cache().Lookup(cache_key, now, &val)) {
     if (val.if_success) {
       final_continuation(Status::OK);
