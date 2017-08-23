@@ -761,12 +761,10 @@ def setupNode() {
 
 def getUniqueID(testId, useSha) {
   // This is used also for Kubernetes namespace and should not > 62 chars.
-  def date = new Date().format("yyMMddHHmm").toString()
-  def prefix = isReleaseQualification() ? 'rc-test' : 'test'
+  def prefix = isReleaseQualification() ? 'rc-' : ''
   def uuid = randomUUID().toString()
-  def sha = useSha ? "${GIT_SHA.take(7)}-" : ''
   def identifier = testId != '' ? "${testId}-" : ''
-  return "${prefix}-${sha}${identifier}${uuid.take(4)}-${date}"
+  return "${prefix}${identifier}${uuid.take(8)}"
 }
 
 def generateServiceName(uniqueID, servicePrefix = '') {
