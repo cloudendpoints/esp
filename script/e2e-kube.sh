@@ -106,7 +106,7 @@ run kubectl get services -o yaml            --namespace "${NAMESPACE}"
 run kubectl get deployments -o yaml         --namespace "${NAMESPACE}"
 
 LOG_DIR="$(mktemp -d /tmp/log.XXXX)"
-TEST_ID="gke-${COUPLING_OPTION}-${TEST_TYPE}-${BACKEND}"
+TEST_ID="gke-${COUPLING_OPTION}-${TEST_TYPE}-${BACKEND}-${ESP_ROLLOUT_STRATEGY}"
 
 # Running Test
 run_nonfatal long_running_test \
