@@ -151,7 +151,7 @@ function create_service() {
     || error_exit 'Could not fetch the service version.'
 
   echo 'Activating service'
-  retry -n 3 run ${GCLOUD} service-management enable \
+  retry -n 10 run ${GCLOUD} service-management enable \
     "${esp_service}" --project="${PROJECT_ID}" \
     || error_exit 'Could not activate the service.'
 
