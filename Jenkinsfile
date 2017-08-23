@@ -764,7 +764,7 @@ def getUniqueID(testId, useSha) {
   def prefix = isReleaseQualification() ? 'rc-' : ''
   def uuid = randomUUID().toString()
   def identifier = testId != '' ? "${testId}-" : ''
-  return "${prefix}${identifier}${uuid.take(8)}"
+  return "${prefix}${identifier}${uuid.take(6)}"
 }
 
 def generateServiceName(uniqueID, servicePrefix = '') {
