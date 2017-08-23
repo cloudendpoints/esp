@@ -1,3 +1,7 @@
+# Release 1.7.0 22-08-2017
+
+- Fixed the server config file backward compatibility
+
 # Release 1.6.0 18-08-2017
 
 - Integrate IAP JWT auto-verification for GAE Flex (#240)
