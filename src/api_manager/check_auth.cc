@@ -171,13 +171,13 @@ void AuthChecker::GetAuthToken() {
   Request *r = context_->request();
   std::string auth_header;
 
-  // IAP header is of format "X-Goog-Iap-Jwt-Assertion": "eyJhbG...". No
-  // "Bearer" prefix is needed.
-  if (r->FindHeader(KAuthHeaderIAP, &auth_header)) {
-    auth_token_ = auth_header;
-    return;
-  }
   if (!r->FindHeader(kAuthHeader, &auth_header)) {
+    // IAP header is of format "X-Goog-Iap-Jwt-Assertion": "eyJhbG...". No
+    // "Bearer" prefix is needed.
+    if (r->FindHeader(kAuthHeaderIAP, &auth_header)) {
+      auth_token_ = auth_header;
+      return;
+    }
     // When authorization header is missing, check query parameter.
     r->FindQuery(kAccessTokenName, &auth_token_);
     return;

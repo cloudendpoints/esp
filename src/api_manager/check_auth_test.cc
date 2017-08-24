@@ -359,6 +359,7 @@ class CheckAuthTest : public ::testing::Test {
           *trace_context = "";
           return true;
         }));
+
     context_ = std::make_shared<context::RequestContext>(service_context_,
                                                          std::move(request));
     EXPECT_TRUE(Mock::VerifyAndClearExpectations(raw_request_));
@@ -456,6 +457,11 @@ TEST_F(CheckAuthTest, TestOpenIdFailed) {
   EXPECT_CALL(*raw_request_, FindHeader(kAuthHeader, _))
       .WillOnce(Invoke([](const std::string &, std::string *token) {
         *token = std::string();
+        return false;
+      }));
+  EXPECT_CALL(*raw_request_, FindHeader("x-goog-iap-jwt-assertion", _))
+      .WillOnce(Invoke([](const std::string &, std::string *token) {
+        *token = "";
         return false;
       }));
   EXPECT_CALL(*raw_request_, FindQuery(kAccessTokenName, _))
