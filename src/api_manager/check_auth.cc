@@ -161,9 +161,8 @@ void AuthChecker::Check() {
     return;
   }
   context_->request()->SetAuthToken(auth_token_);
-
+  context_->SetAuthToken(auth_token_);
   env_->LogDebug(std::string("auth token: ") + auth_token_);
-
   LookupJwtCache();
 }
 
@@ -231,7 +230,6 @@ void AuthChecker::ParseJwt() {
     Unauthenticated(status.message());
     return;
   }
-
   CheckAudience(false);
 }
 

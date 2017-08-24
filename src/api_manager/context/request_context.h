@@ -132,6 +132,12 @@ class RequestContext {
   // Return the authorization url.
   std::string GetAuthorizationUrl() const;
 
+  // Set auth token to RuqestContext.
+  void SetAuthToken(const std::string &token) { auth_token_ = token; }
+
+  // Get auth token from RequestContext.
+  const std::string &AuthToken() const { return auth_token_; }
+
  private:
   // Fill OperationInfo
   void FillOperationInfo(service_control::OperationInfo *info);
@@ -204,6 +210,9 @@ class RequestContext {
   // The accumulated data sent till last intermediate report
   int64_t last_request_bytes_;
   int64_t last_response_bytes_;
+
+  // JWT auth token.
+  std::string auth_token_;
 };
 
 }  // namespace context
