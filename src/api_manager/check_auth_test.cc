@@ -459,11 +459,6 @@ TEST_F(CheckAuthTest, TestOpenIdFailed) {
         *token = std::string();
         return false;
       }));
-  EXPECT_CALL(*raw_request_, FindHeader("x-goog-iap-jwt-assertion", _))
-      .WillOnce(Invoke([](const std::string &, std::string *token) {
-        *token = "";
-        return false;
-      }));
   EXPECT_CALL(*raw_request_, FindQuery(kAccessTokenName, _))
       .WillOnce(Invoke([](const std::string &, std::string *token) {
         *token = std::string(kTokenOpenIdFail);
