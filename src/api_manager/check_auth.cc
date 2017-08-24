@@ -44,7 +44,7 @@ namespace api_manager {
 namespace {
 const char kAccessTokenName[] = "access_token";
 const char kAuthHeader[] = "authorization";
-const char kAuthHeaderIAP[] = "X-Goog-Iap-Jwt-Assertion";
+const char kAuthHeaderIAP[] = "x-goog-iap-jwt-assertion";
 const char kBearer[] = "Bearer ";
 // The lifetime of a public key cache entry. Unit: seconds.
 const int kPubKeyCacheDuration = 300;
