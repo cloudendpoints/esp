@@ -182,16 +182,8 @@ const char kAuthToken[] =
     "0Yu1r5Xuq45q4WNqQ9PRk1HFsWB7uV25m8fU2VpbRLFka6F9MZu4dU9gZoGCGDTtauCHiMqBTv"
     "6vON8GbcB7w8pEhS1hK6FOehe4qZKnSA";
 
-const std::chrono::system_clock::time_point kNow =
-    std::chrono::system_clock::now();
-const int kAuthzCacheTimeout = 300;
-
 const char kRequestPath[] = "/ListShelves";
 const char kRequestMethod[] = "GET";
-const std::string kCacheKey =
-    google::api_manager::auth::AuthzCache::ComposeAuthzCacheKey(
-        std::string(kAuthToken), std::string(kRequestPath),
-        std::string(kRequestMethod));
 
 ::google::protobuf::Value ToValue(const std::string &arg) {
   ::google::protobuf::Value value;
@@ -335,6 +327,8 @@ class CheckSecurityRulesTest : public ::testing::Test {
         "https://myfirebaseserver.com/v1"
         "/projects/myfirebaseapp/rulesets/99045fc0-a5e4-47e2-a665-f88593594b6b"
         ":test?alt=json";
+
+    request_context_->SetAuthToken(std::string(kAuthToken));
   }
 
   void ExpectCall(std::string url, std::string method, std::string body,
@@ -407,7 +401,6 @@ TEST_F(CheckSecurityRulesTest, CheckAuthzCacheMissThenHitPositive) {
   std::string server_config = kServerConfig;
   SetUp(service_config, server_config);
 
-  request_context_->SetAuthToken(std::string(kAuthToken));
   request_context_->set_auth_claims(kJwtEmailPayload);
 
   InSequence s;
@@ -440,7 +433,6 @@ TEST_F(CheckSecurityRulesTest, CheckAuthzCacheMissThenHitNegative) {
   std::string server_config = kServerConfig;
   SetUp(service_config, server_config);
 
-  request_context_->SetAuthToken(std::string(kAuthToken));
   request_context_->set_auth_claims(kJwtEmailPayload);
 
   InSequence s;
@@ -476,7 +468,6 @@ TEST_F(CheckSecurityRulesTest, NoCachingOnBadStatus) {
   std::string server_config = kServerConfig;
   SetUp(service_config, server_config);
 
-  request_context_->SetAuthToken(std::string(kAuthToken));
   request_context_->set_auth_claims(kJwtEmailPayload);
 
   InSequence s;

@@ -37,6 +37,8 @@ const std::string kFailedFirebaseReleaseFetch =
 const std::string kFailedFirebaseTest = "Failed to execute Firebase Test";
 const std::string kInvalidResponse =
     "Invalid JSON response from Firebase Service";
+const std::string kFailedTokenRetrieve =
+    "Failure to retrieve auth token from RequestContext.";
 const std::string kV1 = "/v1";
 const std::string kHttpGetMethod = "GET";
 const std::string kProjects = "/projects";
@@ -135,6 +137,12 @@ void AuthzChecker::Check(
     final_continuation(Status::OK);
     return;
   }
+  if (context->AuthToken().empty()) {
+    env_->LogError(kFailedTokenRetrieve);
+    final_continuation(Status(Code::INTERNAL, kFailedTokenRetrieve));
+    return;
+  }
+
   if (!CheckCache(context, final_continuation)) {
     auto checker = GetPtr();
     // Fetch the Release attributes and get ruleset name.
