@@ -44,6 +44,7 @@ namespace api_manager {
 namespace {
 const char kAccessTokenName[] = "access_token";
 const char kAuthHeader[] = "authorization";
+const char kAuthHeaderIAP[] = "x-goog-iap-jwt-assertion";
 const char kBearer[] = "Bearer ";
 // The lifetime of a public key cache entry. Unit: seconds.
 const int kPubKeyCacheDuration = 300;
@@ -168,6 +169,12 @@ void AuthChecker::Check() {
 
 void AuthChecker::GetAuthToken() {
   Request *r = context_->request();
+  // IAP header is of format "X-Goog-Iap-Jwt-Assertion": "eyJhbG...". No
+  // "Bearer" prefix is needed.
+  if (r->FindHeader(kAuthHeaderIAP, &auth_token_)) {
+    return;
+  }
+
   std::string auth_header;
   if (!r->FindHeader(kAuthHeader, &auth_header)) {
     // When authorization header is missing, check query parameter.
