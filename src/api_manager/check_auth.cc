@@ -190,6 +190,7 @@ void AuthChecker::GetAuthToken() {
     auth_token_ = std::string();
     return;
   }
+
   auth_token_ = auth_header.substr(bearer_len);
 }
 
