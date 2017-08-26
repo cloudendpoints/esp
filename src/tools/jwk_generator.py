@@ -28,14 +28,21 @@ import argparse
 import sys
 import chilkat   #  Chilkat v9.5.0.66 or later.
 
-""" This script is used to generate ES256 public jwk key."""
+""" This script is used to generate ES256/RS256 public jwk key."""
+
+"""commands to generate public_key_file (Note that private key needs to be generated first):
+  ES256: $ openssl ecparam -genkey -name prime256v1 -noout -out private_key.pem
+         $ openssl ec -in private_key.pem -pubout -out public_key.pem
+  RS256: $ openssl genpkey -algorithm RSA -out private_key.pem -pkeyopt rsa_keygen_bits:2048
+         $ openssl rsa -pubout -in private_key.pem -out public_key.pem
+"""
 
 def main(args):
   #  Load public key file into memory.
   sbPem = chilkat.CkStringBuilder()
   success = sbPem.LoadFile(args.public_key_file, "utf-8")
   if (success != True):
-    print("Failed to load PEM file.")
+    print("Failed to load public key.")
     sys.exit()
 
   #  Load the key file into a public key object.
@@ -61,7 +68,7 @@ def main(args):
   if args.kid:
     json.AppendString("kid", args.kid)
   # Print.
-  print("Generated ES256 public jwk:")
+  print("Generated " + args.alg + " public jwk:")
   print(json.emit())
 
 
@@ -72,11 +79,13 @@ if __name__ == '__main__':
 
   # positional arguments
   parser.add_argument(
+      "alg",
+      help="Signing algorithm, e.g., ES256/RS256.")
+  parser.add_argument(
       "public_key_file",
-      help="The path to the generated ES256 public key file, e.g., /path/to/mypubkey.pem.")
+      help="The path to the generated ES256 public key file, e.g., /path/to/public_key.pem.")
 
   #optional arguments
   parser.add_argument("-c", "--compact", help="If making json output compact, say 'yes' or 'no'.")
-  parser.add_argument("-a", "--alg", help="Encryption algorithm, e.g., ES256.")
   parser.add_argument("-k", "--kid", help="Key id, same as the kid in private key if any.")
   main(parser.parse_args())

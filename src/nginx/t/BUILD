@@ -92,6 +92,16 @@ nginx_suite(
 )
 
 nginx_suite(
+    nginx = "//src/nginx/main:nginx-esp",
+    tests = [
+        "auth_asymmetrickey.t",
+    ],
+    deps = [
+        ":perl_library",
+    ],
+)
+
+nginx_suite(
     size = "small",
     data = [
         "matching-client-secret.json",

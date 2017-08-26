@@ -28,7 +28,12 @@ import argparse
 import sys
 import jwt  # pip install PyJWT and pip install cryptography.
 
-""" This script is used to generate ES256-signed jwt token."""
+""" This script is used to generate ES256/RS256-signed jwt token."""
+
+"""commands to generate private_key_file:
+  ES256: $ openssl ecparam -genkey -name prime256v1 -noout -out private_key.pem
+  RS256: $ openssl genpkey -algorithm RSA -out private_key.pem -pkeyopt rsa_keygen_bits:2048
+"""
 
 def main(args):
   # JWT token generation.
@@ -36,11 +41,11 @@ def main(args):
     try:
       secret = f.read()
     except:
-      print("Private key file read failure.")
+      print("Failed to load private key.")
       sys.exit()
 
   # Token headers
-  hdrs = {'alg': 'ES256',
+  hdrs = {'alg': args.alg,
           'typ': 'JWT'}
   if args.kid:
     hdrs['kid'] = args.kid
@@ -59,10 +64,10 @@ def main(args):
   # Change claim and headers field to fit needs.
   jwt_token = jwt.encode(claims,
                          secret,
-                         algorithm="ES256",
+                         algorithm=args.alg,
                          headers=hdrs)
 
-  print("ES256-signed jwt:")
+  print(args.alg + "-signed jwt:")
   print(jwt_token)
 
 
@@ -73,6 +78,9 @@ if __name__ == '__main__':
 
   # positional arguments
   parser.add_argument(
+      "alg",
+      help="Signing algorithm, i.e., ES256/RS256.")
+  parser.add_argument(
       "iss",
       help="Token issuer, which is also used for sub claim.")
   parser.add_argument(
@@ -81,7 +89,7 @@ if __name__ == '__main__':
       " in the swagger spec.")
   parser.add_argument(
       "private_key_file",
-      help="The path to the generated ES256 private key file, e.g., /path/to/myprivatekey.pem.")
+      help="The path to the generated ES256 private key file, e.g., /path/to/private_key.pem.")
 
   #optional arguments
   parser.add_argument("-e", "--email", help="Preferred e-mail address.")
