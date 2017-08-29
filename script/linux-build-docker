@@ -67,6 +67,7 @@ if [[ "${PLATFORM}" == "flex" ]]; then
   cat "$FLEX_DIR/nginx_proxy/Dockerfile"
 fi
 
+chmod +w "${DOCKERFILE_PATH}/endpoints-runtime.deb"
 cp "${DEB}" "${DOCKERFILE_PATH}/endpoints-runtime.deb"
 retry -n 3 docker build --no-cache -t "${IMAGE}" \
   -f "${DOCKERFILE_PATH}/${DOCKERFILE}" \
