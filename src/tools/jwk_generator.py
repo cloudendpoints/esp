@@ -83,7 +83,7 @@ if __name__ == '__main__':
       help="Signing algorithm, e.g., ES256/RS256.")
   parser.add_argument(
       "public_key_file",
-      help="The path to the generated ES256 public key file, e.g., /path/to/public_key.pem.")
+      help="The path to the generated ES256/RS256 public key file, e.g., /path/to/public_key.pem.")
 
   #optional arguments
   parser.add_argument("-c", "--compact", help="If making json output compact, say 'yes' or 'no'.")
