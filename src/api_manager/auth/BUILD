@@ -42,6 +42,26 @@ cc_library(
 )
 
 cc_library(
+    name = "authz",
+    srcs = [
+        "authz_cache.cc",
+    ],
+    hdrs = [
+        "authz_cache.h",
+    ],
+    linkopts = select({
+        "//:darwin": [],
+        "//conditions:default": [
+            "-lm",
+            "-luuid",
+        ],
+    }),
+    deps = [
+        "//external:servicecontrol_client",
+    ],
+)
+
+cc_library(
     name = "service_account_token",
     srcs = [
         "service_account_token.cc",
@@ -73,6 +93,19 @@ cc_test(
     linkstatic = 1,
     deps = [
         ":auth",
+        "//external:googletest_main",
+    ],
+)
+
+cc_test(
+    name = "authz_cache_test",
+    size = "small",
+    srcs = [
+        "authz_cache_test.cc",
+    ],
+    linkstatic = 1,
+    deps = [
+        ":authz",
         "//external:googletest_main",
     ],
 )

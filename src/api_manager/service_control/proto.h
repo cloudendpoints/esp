@@ -19,6 +19,7 @@
 #include "google/api/metric.pb.h"
 #include "google/api/servicecontrol/v1/quota_controller.pb.h"
 #include "google/api/servicecontrol/v1/service_controller.pb.h"
+#include "google/protobuf/timestamp.pb.h"
 #include "include/api_manager/utils/status.h"
 #include "src/api_manager/service_control/info.h"
 
@@ -59,6 +60,13 @@ class Proto final {
   utils::Status FillReportRequest(
       const ReportRequestInfo& info,
       ::google::api::servicecontrol::v1::ReportRequest* request);
+
+  // Append a new consumer project Operations to the ReportRequest, if customer
+  // project id from the CheckResponse is not empty
+  utils::Status AppendByConsumerOperations(
+      const ReportRequestInfo& info,
+      ::google::api::servicecontrol::v1::ReportRequest* request,
+      ::google::protobuf::Timestamp current_time);
 
   // Converts the response status information in the CheckResponse protocol
   // buffer into utils::Status and returns and returns 'check_response_info'

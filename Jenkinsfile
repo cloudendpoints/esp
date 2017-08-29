@@ -280,32 +280,42 @@ def e2eTest(nodeLabel) {
   def branches = [
       ['gce-debian-8', {
         node(nodeLabel) {
-          e2eGCE(DEBIAN_JESSIE)
+          e2eGCE(DEBIAN_JESSIE, 'fixed')
+        }
+      }],
+      ['gce-debian-8-managed', {
+        node(nodeLabel) {
+          e2eGCE(DEBIAN_JESSIE, 'managed')
         }
       }],
       ['gke-tight-http', {
         node(nodeLabel) {
-          e2eGKE('tight', 'http')
+          e2eGKE('tight', 'http', 'fixed')
+        }
+      }],
+      ['gke-tight-http-managed', {
+        node(nodeLabel) {
+          e2eGKE('tight', 'http', 'managed')
         }
       }],
       ['gke-loose-http', {
         node(nodeLabel) {
-          e2eGKE('loose', 'http')
+          e2eGKE('loose', 'http', 'fixed')
         }
       }],
       ['gke-custom-http', {
         node(nodeLabel) {
-          e2eGKE('custom', 'http')
+          e2eGKE('custom', 'http', 'fixed')
         }
       }],
       ['gke-tight-https', {
         node(nodeLabel) {
-          e2eGKE('tight', 'https')
+          e2eGKE('tight', 'https', 'fixed')
         }
       }],
       ['gke-loose-https', {
         node(nodeLabel) {
-          e2eGKE('loose', 'https')
+          e2eGKE('loose', 'https', 'fixed')
         }
       }],
       ['flex', {
@@ -315,12 +325,12 @@ def e2eTest(nodeLabel) {
       }],
       ['gke-tight-http2-echo', {
         node(nodeLabel) {
-          e2eGKE('tight', 'http2', 'echo')
+          e2eGKE('tight', 'http2', 'fixed', 'echo')
         }
       }],
       ['gke-tight-http2-interop', {
         node(nodeLabel) {
-          e2eGKE('tight', 'http2', 'interop')
+          e2eGKE('tight', 'http2', 'fixed', 'interop')
         }
       }],
   ]
@@ -556,7 +566,7 @@ def e2eCommonOptions(testId, prefix = '') {
 //  'bookstore': HTTP bookstore
 //  'echo': run grpc echo pass_through and transcoding tests
 //  'interop': run grpc interop pass_through test.
-def e2eGKE(coupling, proto, backend = 'bookstore') {
+def e2eGKE(coupling, proto, rollout_strategy, backend = 'bookstore') {
   setupNode()
   fastUnstash('tools')
   def uniqueID = getUniqueID("gke-${coupling}-${proto}-${backend}", true)
@@ -570,13 +580,15 @@ def e2eGKE(coupling, proto, backend = 'bookstore') {
       " -a ${uniqueID}.${PROJECT_ID}.appspot.com" +
       " -B ${BUCKET} " +
       " -l " + getParam('DURATION_HOUR', 0) +
+      " -R ${rollout_strategy} " +
       (getParam('SKIP_CLEANUP', false) ? " -s" : ""))
 }
 
-def e2eGCE(vmImage) {
+def e2eGCE(vmImage, rolloutStrategy) {
   setupNode()
   fastUnstash('tools')
-  def commonOptions = e2eCommonOptions('gce-raw')
+  // Use different service names for tests with different strategy.
+  def commonOptions = e2eCommonOptions('gce-raw', rolloutStrategy)
   def espDebianPkg = espDebianPackage()
   def debianPackageRepo = getDebianPackageRepo()
   echo('Running GCE test')
@@ -584,6 +596,7 @@ def e2eGCE(vmImage) {
       commonOptions +
       "-V ${ESP_RUNTIME_VERSION} " +
       "-v ${vmImage} " +
+      "-R ${rolloutStrategy} " +
       "-d \"${espDebianPkg}\" " +
       "-r \"${debianPackageRepo}\"")
 }

@@ -45,7 +45,7 @@ my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $MetadataPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(59);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(34);
 
 $t->write_file('service.pb.txt',
                ApiManager::get_bookstore_service_config .
@@ -167,40 +167,6 @@ is($labels->{'/response_code_class'}, '2xx', 'GetShelf response code class is 2x
 $metrics = $get_shelf->{metricValueSets};
 isnt($metrics, undef, 'GetShelf has metrics');
 
-# Check by_consumer Metrics.
-$mn = 'serviceruntime.googleapis.com/api/producer/by_consumer/request_count';
-$metric = find_in_array('metricName', $mn, $metrics);
-isnt($metric, undef, "GetShelf has $mn metric.");
-is($metric->{metricValues}[0]->{int64Value}, '1', "GetShelf $mn is 1.");
-
-$mn = 'serviceruntime.googleapis.com/api/producer/by_consumer/request_sizes';
-$metric = find_in_array('metricName', $mn, $metrics);
-isnt($metric, undef, "GetShelf has $mn metric.");
-is($metric->{metricValues}[0]->{distributionValue}->{count}, '1',
-   "GetShelf $mn has 1 value.");
-
-$mn = 'serviceruntime.googleapis.com/api/producer/by_consumer/total_latencies';
-$metric = find_in_array('metricName', $mn, $metrics);
-isnt($metric, undef, "GetShelf has $mn metric.");
-is($metric->{metricValues}[0]->{distributionValue}->{count}, '1',
-   "GetShelf $mn has 1 value.");
-
-$mn = 'serviceruntime.googleapis.com/api/producer/by_consumer/backend_latencies';
-$metric = find_in_array('metricName', $mn, $metrics);
-isnt($metric, undef, "GetShelf has $mn metric.");
-is($metric->{metricValues}[0]->{distributionValue}->{count}, '1',
-   "GetShelf $mn has 1 value.");
-
-$mn = 'serviceruntime.googleapis.com/api/producer/by_consumer/request_overhead_latencies',
-$metric = find_in_array('metricName', $mn, $metrics);
-isnt($metric, undef, "GetShelf has $mn metric.");
-is($metric->{metricValues}[0]->{distributionValue}->{count}, '1',
-   "GetShelf $mn has 1 value.");
-
-# Error metrics are not populated.
-$mn = 'serviceruntime.googleapis.com/api/producer/by_consumer/error_count';
-$metric = find_in_array('metricName', $mn, $metrics);
-is($metric, undef, "GetShelf does not have $mn metric.");
 
 #
 # Check GetBook operation and its metrics and labels.
@@ -219,47 +185,6 @@ is($labels->{'/response_code_class'}, '4xx', 'GetBook response code class is 4xx
 
 $metrics = $get_book->{metricValueSets};
 isnt($metrics, undef, 'GetBook has metrics.');
-
-# Check by_consumer metrics.
-$mn = 'serviceruntime.googleapis.com/api/producer/by_consumer/request_count';
-$metric = find_in_array('metricName', $mn, $metrics);
-isnt($metric, undef, "GetBook has $mn metric.");
-is($metric->{metricValues}[0]->{int64Value}, '1', "GetBook $mn is 1.");
-
-$mn = 'serviceruntime.googleapis.com/api/producer/by_consumer/request_sizes';
-$metric = find_in_array('metricName', $mn, $metrics);
-isnt($metric, undef, "GetBook has $mn metric.");
-is($metric->{metricValues}[0]->{distributionValue}->{count}, '1',
-   "GetBook $mn has 1 value.");
-
-$mn = 'serviceruntime.googleapis.com/api/producer/by_consumer/response_sizes';
-$metric = find_in_array('metricName', $mn, $metrics);
-isnt($metric, undef, "GetBook has $mn metric.");
-is($metric->{metricValues}[0]->{distributionValue}->{count}, '1',
-   "GetBook $mn has 1 value.");
-
-$mn = 'serviceruntime.googleapis.com/api/producer/by_consumer/total_latencies';
-$metric = find_in_array('metricName', $mn, $metrics);
-isnt($metric, undef, "GetBook has $mn metric.");
-is($metric->{metricValues}[0]->{distributionValue}->{count}, '1',
-    "GetBook $mn has 1 value.");
-
-$mn = 'serviceruntime.googleapis.com/api/producer/by_consumer/backend_latencies';
-$metric = find_in_array('metricName', $mn, $metrics);
-isnt($metric, undef, "GetBook has $mn metric.");
-is($metric->{metricValues}[0]->{distributionValue}->{count}, '1',
-    "GetBook $mn has 1 value.");
-
-$mn = 'serviceruntime.googleapis.com/api/producer/by_consumer/request_overhead_latencies';
-$metric = find_in_array('metricName', $mn, $metrics);
-isnt($metric, undef, "GetBook has $mn metric.");
-is($metric->{metricValues}[0]->{distributionValue}->{count}, '1',
-   "GetBook $mn has 1 value.");
-
-$mn = 'serviceruntime.googleapis.com/api/producer/by_consumer/error_count';
-$metric = find_in_array('metricName', $mn, $metrics);
-isnt($metric, undef, "GetBook has $mn metric.");
-is($metric->{metricValues}[0]->{int64Value}, '1', "GetBook $mn is 1.");
 
 $mn = 'serviceruntime.googleapis.com/api/producer/request_overhead_latencies';
 $metric = find_in_array('metricName', $mn, $metrics);

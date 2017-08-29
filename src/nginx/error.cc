@@ -33,6 +33,7 @@
 #include "src/nginx/module.h"
 #include "src/nginx/util.h"
 
+using ::google::protobuf::util::error::Code;
 using ::google::api_manager::utils::Status;
 
 namespace google {
@@ -45,8 +46,15 @@ ngx_str_t application_grpc = ngx_string("application/grpc");
 
 ngx_str_t www_authenticate = ngx_string("WWW-Authenticate");
 const u_char www_authenticate_lowcase[] = "www-authenticate";
+ngx_str_t kLocation = ngx_string("Location");
+const u_char kLocationLowcase[] = "location";
 ngx_str_t missing_credential = ngx_string("Bearer");
 ngx_str_t invalid_token = ngx_string("Bearer, error=\"invalid_token\"");
+
+const char *kInvalidAuthToken =
+    "JWT validation failed: Missing or invalid credentials";
+const char *kExpiredAuthToken =
+    "JWT validation failed: TIME_CONSTRAINT_FAILURE";
 
 ngx_http_output_header_filter_pt ngx_http_next_header_filter;
 ngx_http_output_body_filter_pt ngx_http_next_body_filter;
@@ -69,6 +77,68 @@ bool ngx_esp_is_error_response(ngx_http_request_t *r,
                                ngx_esp_request_ctx_t *ctx) {
   return r->err_status && r == r->main && ctx &&
          ctx->http_subrequest == nullptr;
+}
+
+// Returns WWW-Authenticate header for authentication/authorization
+// responses.
+// See https://tools.ietf.org/html/rfc6750#section-3.
+ngx_int_t ngx_esp_handle_www_authenticate(ngx_http_request_t *r,
+                                          ngx_esp_request_ctx_t *ctx) {
+  if (r->err_status == NGX_HTTP_UNAUTHORIZED ||
+      r->err_status == NGX_HTTP_FORBIDDEN) {
+    r->headers_out.www_authenticate = reinterpret_cast<ngx_table_elt_t *>(
+        ngx_list_push(&r->headers_out.headers));
+    if (r->headers_out.www_authenticate == nullptr) {
+      return NGX_ERROR;
+    }
+
+    r->headers_out.www_authenticate->key = www_authenticate;
+    r->headers_out.www_authenticate->lowcase_key =
+        const_cast<u_char *>(www_authenticate_lowcase);
+    r->headers_out.www_authenticate->hash =
+        ngx_hash_key(const_cast<u_char *>(www_authenticate_lowcase),
+                     sizeof(www_authenticate_lowcase) - 1);
+
+    if (ctx->auth_token.len == 0) {
+      r->headers_out.www_authenticate->value = missing_credential;
+    } else {
+      r->headers_out.www_authenticate->value = invalid_token;
+    }
+  }
+  return NGX_OK;
+}
+
+// If authentication fails, and authorization url is not empty,
+// Reply 302 and authorization url.
+ngx_int_t ngx_esp_handle_authorization_url(ngx_http_request_t *r,
+                                           ngx_esp_request_ctx_t *ctx) {
+  if (ctx && ctx->status.code() == Code::UNAUTHENTICATED &&
+      ctx->status.error_cause() == utils::Status::AUTH &&
+      (ctx->status.message() == kInvalidAuthToken ||
+       ctx->status.message() == kExpiredAuthToken)) {
+    std::string url = ctx->request_handler->GetAuthorizationUrl();
+    if (!url.empty()) {
+      r->headers_out.status = NGX_HTTP_MOVED_TEMPORARILY;
+
+      ngx_table_elt_t *loc;
+      loc = reinterpret_cast<ngx_table_elt_t *>(
+          ngx_list_push(&r->headers_out.headers));
+      if (loc == nullptr) {
+        return NGX_ERROR;
+      }
+
+      loc->key = kLocation;
+      loc->lowcase_key = const_cast<u_char *>(kLocationLowcase);
+      loc->hash = ngx_hash_key(const_cast<u_char *>(kLocationLowcase),
+                               sizeof(kLocationLowcase) - 1);
+
+      ngx_str_copy_from_std(r->pool, url, &loc->value);
+      ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                     "ESP authorization_url: %V", &loc->value);
+      r->headers_out.location = loc;
+    }
+  }
+  return NGX_OK;
 }
 
 ngx_int_t ngx_esp_error_header_filter(ngx_http_request_t *r) {
@@ -96,30 +166,12 @@ ngx_int_t ngx_esp_error_header_filter(ngx_http_request_t *r) {
       r->headers_out.content_type_len = application_json.len;
       r->headers_out.content_type_lowcase = nullptr;
 
-      // Returns WWW-Authenticate header for authentication/authorization
-      // responses.
-      // See https://tools.ietf.org/html/rfc6750#section-3.
-      if (r->err_status == NGX_HTTP_UNAUTHORIZED ||
-          r->err_status == NGX_HTTP_FORBIDDEN) {
-        r->headers_out.www_authenticate = reinterpret_cast<ngx_table_elt_t *>(
-            ngx_list_push(&r->headers_out.headers));
-        if (r->headers_out.www_authenticate == nullptr) {
-          return NGX_ERROR;
-        }
+      ngx_int_t ret;
+      ret = ngx_esp_handle_www_authenticate(r, ctx);
+      if (ret != NGX_OK) return ret;
 
-        r->headers_out.www_authenticate->key = www_authenticate;
-        r->headers_out.www_authenticate->lowcase_key =
-            const_cast<u_char *>(www_authenticate_lowcase);
-        r->headers_out.www_authenticate->hash =
-            ngx_hash_key(const_cast<u_char *>(www_authenticate_lowcase),
-                         sizeof(www_authenticate_lowcase) - 1);
-
-        if (ctx->auth_token.len == 0) {
-          r->headers_out.www_authenticate->value = missing_credential;
-        } else {
-          r->headers_out.www_authenticate->value = invalid_token;
-        }
-      }
+      ret = ngx_esp_handle_authorization_url(r, ctx);
+      if (ret != NGX_OK) return ret;
     }
 
     // Clear headers (refilled by subsequent NGX header filters)

@@ -26,7 +26,7 @@
 #
 # A Bazel (http://bazel.io) workspace for the Google Cloud Endpoints runtime.
 
-ESP_TOOL = "ff0d6df7f56ca1c2b229aaadd8abe62cb1d508fb"
+ESP_TOOL = "5910b23429c34168343a898a5d2be2403405bc92"
 
 git_repository(
     name = "nginx",
@@ -40,6 +40,16 @@ nginx_repositories(
     bind = True,
     nginx = "@nginx//",
 )
+
+# Needs to come after nginx
+git_repository(
+    name = "iap_jwt_verify_nginx",
+    commit = "d3b47d8017ae808a891b5ce6e22315d0b2652baf",
+    remote = "https://github.com/GoogleCloudPlatform/appengine-sidecars-docker",
+)
+
+load("@iap_jwt_verify_nginx//:iap_jwt_verify_nginx.bzl", "iap_jwt_verify_nginx_repositories")
+iap_jwt_verify_nginx_repositories(True)
 
 # Required by gRPC.
 bind(

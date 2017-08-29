@@ -49,6 +49,7 @@ cc_library(
         "//src/api_manager:path_matcher",
         "//src/api_manager:server_config_proto",
         "//src/api_manager/auth",
+        "//src/api_manager/auth:authz",
         "//src/api_manager/auth:service_account_token",
         "//src/api_manager/cloud_trace",
         "//src/api_manager/service_control",

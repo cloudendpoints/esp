@@ -101,6 +101,7 @@ cc_binary(
     deps = [
         "//src/nginx:ngx_esp",
         "//src/nginx:version_header",
+        "@iap_jwt_verify_nginx//third_party/iap_jwt_verify_nginx/src:ngx_iap_jwt_verify",
         "@nginx//:http",
         "@nginx//:http_access",
         "@nginx//:http_addition",
@@ -219,6 +220,7 @@ pkg_tar(
         # override that from "@nginx_pkgoss//:debian_overlay".
         ":start_esp_tar",
         "@tools//start_esp:nginx-conf-template",
+        "@tools//start_esp:server-conf-template",
         "@tools//start_esp:nginx-initd-override",
         "@nginx_pkgoss//:debian_overlay",
         "@tools//start_esp:esp-bin",

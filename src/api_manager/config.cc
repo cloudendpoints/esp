@@ -324,7 +324,8 @@ bool Config::LoadAuthentication(ApiManagerEnvInterface *env) {
         const std::string &audiences = provider->audiences().empty()
                                            ? requirement.audiences()
                                            : provider->audiences();
-        (*method)->addAudiencesForIssuer(provider->issuer(), audiences);
+        (*method)->addAuthProvider(provider->issuer(), audiences,
+                                   provider->authorization_url());
       }
     }
   }

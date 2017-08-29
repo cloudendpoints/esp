@@ -19,6 +19,7 @@
 #include <functional>
 
 #include <time.h>
+#include <uuid/uuid.h>
 #include <chrono>
 
 #include "google/api/metric.pb.h"
@@ -60,7 +61,7 @@ struct SupportedMetric {
   ::google::api::MetricDescriptor_MetricKind metric_kind;
   ::google::api::MetricDescriptor_ValueType value_type;
 
-  enum Mark { PRODUCER = 0, CONSUMER = 1 };
+  enum Mark { PRODUCER = 0, CONSUMER = 1, PRODUCER_BY_CONSUMER = 2 };
   enum Tag { START = 0, INTERMEDIATE = 1, FINAL = 2 };
   Tag tag;
   Mark mark;
@@ -77,6 +78,8 @@ struct SupportedLabel {
 
   Status (*set)(const SupportedLabel& l, const ReportRequestInfo& info,
                 Map<std::string, std::string>* labels);
+
+  bool by_consumer_only;
 };
 
 namespace {
@@ -261,7 +264,7 @@ const SupportedMetric supported_metrics[] = {
         "serviceruntime.googleapis.com/api/producer/by_consumer/request_count",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_INT64, SupportedMetric::FINAL,
-        SupportedMetric::PRODUCER, set_int64_metric_to_constant_1,
+        SupportedMetric::PRODUCER_BY_CONSUMER, set_int64_metric_to_constant_1,
     },
     {
         "serviceruntime.googleapis.com/api/consumer/request_sizes",
@@ -281,7 +284,7 @@ const SupportedMetric supported_metrics[] = {
         "serviceruntime.googleapis.com/api/producer/by_consumer/request_sizes",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::FINAL, SupportedMetric::PRODUCER,
+        SupportedMetric::FINAL, SupportedMetric::PRODUCER_BY_CONSUMER,
         set_distribution_metric_to_request_size,
     },
     {
@@ -302,7 +305,7 @@ const SupportedMetric supported_metrics[] = {
         "serviceruntime.googleapis.com/api/producer/by_consumer/response_sizes",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::FINAL, SupportedMetric::PRODUCER,
+        SupportedMetric::FINAL, SupportedMetric::PRODUCER_BY_CONSUMER,
         set_distribution_metric_to_response_size,
     },
     {
@@ -349,7 +352,8 @@ const SupportedMetric supported_metrics[] = {
         "serviceruntime.googleapis.com/api/producer/by_consumer/error_count",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_INT64, SupportedMetric::FINAL,
-        SupportedMetric::PRODUCER, set_int64_metric_to_constant_1_if_http_error,
+        SupportedMetric::PRODUCER_BY_CONSUMER,
+        set_int64_metric_to_constant_1_if_http_error,
     },
     {
         "serviceruntime.googleapis.com/api/consumer/total_latencies",
@@ -370,7 +374,7 @@ const SupportedMetric supported_metrics[] = {
         "total_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::FINAL, SupportedMetric::PRODUCER,
+        SupportedMetric::FINAL, SupportedMetric::PRODUCER_BY_CONSUMER,
         set_distribution_metric_to_request_time,
     },
     {
@@ -392,7 +396,7 @@ const SupportedMetric supported_metrics[] = {
         "backend_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::FINAL, SupportedMetric::PRODUCER,
+        SupportedMetric::FINAL, SupportedMetric::PRODUCER_BY_CONSUMER,
         set_distribution_metric_to_backend_time,
     },
     {
@@ -414,7 +418,7 @@ const SupportedMetric supported_metrics[] = {
         "request_overhead_latencies",
         ::google::api::MetricDescriptor_MetricKind_DELTA,
         ::google::api::MetricDescriptor_ValueType_DISTRIBUTION,
-        SupportedMetric::FINAL, SupportedMetric::PRODUCER,
+        SupportedMetric::FINAL, SupportedMetric::PRODUCER_BY_CONSUMER,
         set_distribution_metric_to_overhead_time,
     },
     {
@@ -465,8 +469,8 @@ const SupportedMetric supported_metrics[] = {
         SupportedMetric::FINAL, SupportedMetric::PRODUCER,
         set_distribution_metric_to_streaming_durations,
     },
-
 };
+
 const int supported_metrics_count =
     sizeof(supported_metrics) / sizeof(supported_metrics[0]);
 
@@ -486,6 +490,8 @@ const char kServiceControlIosBundleId[] =
     "servicecontrol.googleapis.com/ios_bundle_id";
 const char kServiceControlBackendProtocol[] =
     "servicecontrol.googleapis.com/backend_protocol";
+const char kServiceControlConsumerProject[] =
+    "serviceruntime.googleapis.com/consumer_project";
 
 // User agent label value
 // The value for kUserAgent should be configured at service control server.
@@ -567,6 +573,14 @@ Status set_backend_protocol(const SupportedLabel& l,
       info.frontend_protocol != info.backend_protocol) {
     (*labels)[l.name] = protocol::ToString(info.backend_protocol);
   }
+  return Status::OK;
+}
+
+// /servicecontrol.googleapis.com/consumer_project
+Status set_consumer_project(const SupportedLabel& l,
+                            const ReportRequestInfo& info,
+                            Map<std::string, std::string>* labels) {
+  (*labels)[l.name] = info.check_response_info.consumer_project_id;
   return Status::OK;
 }
 
@@ -661,138 +675,143 @@ Status set_user_agent(const SupportedLabel& l, const ReportRequestInfo& info,
 const SupportedLabel supported_labels[] = {
     {
         "/credential_id", ::google::api::LabelDescriptor_ValueType_STRING,
-        SupportedLabel::USER, set_credential_id,
+        SupportedLabel::USER, set_credential_id, false,
     },
     {
         "/end_user", ::google::api::LabelDescriptor_ValueType_STRING,
-        SupportedLabel::USER, nullptr,
+        SupportedLabel::USER, nullptr, false,
     },
     {
         "/end_user_country", ::google::api::LabelDescriptor_ValueType_STRING,
-        SupportedLabel::USER, nullptr,
+        SupportedLabel::USER, nullptr, false,
     },
     {
         "/error_type", ::google::api::LabelDescriptor_ValueType_STRING,
-        SupportedLabel::USER, set_error_type,
+        SupportedLabel::USER, set_error_type, false,
     },
     {
         "/protocol", ::google::api::LabelDescriptor::STRING,
-        SupportedLabel::USER, set_protocol,
+        SupportedLabel::USER, set_protocol, false,
     },
     {
         "/referer", ::google::api::LabelDescriptor_ValueType_STRING,
-        SupportedLabel::USER, set_referer,
+        SupportedLabel::USER, set_referer, false,
     },
     {
         "/response_code", ::google::api::LabelDescriptor_ValueType_STRING,
-        SupportedLabel::USER, set_response_code,
+        SupportedLabel::USER, set_response_code, false,
     },
     {
         "/response_code_class", ::google::api::LabelDescriptor::STRING,
-        SupportedLabel::USER, set_response_code_class,
+        SupportedLabel::USER, set_response_code_class, false,
     },
     {
         "/status_code", ::google::api::LabelDescriptor_ValueType_STRING,
-        SupportedLabel::USER, set_status_code,
+        SupportedLabel::USER, set_status_code, false,
     },
     {
         "appengine.googleapis.com/clone_id",
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::USER,
-        nullptr,
+        nullptr, false,
     },
     {
         "appengine.googleapis.com/module_id",
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::USER,
-        nullptr,
+        nullptr, false,
     },
     {
         "appengine.googleapis.com/replica_index",
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::USER,
-        nullptr,
+        nullptr, false,
     },
     {
         "appengine.googleapis.com/version_id",
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::USER,
-        nullptr,
+        nullptr, false,
     },
     {
         "cloud.googleapis.com/location",
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::SYSTEM,
-        set_location,
+        set_location, false,
     },
     {
         "cloud.googleapis.com/project",
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::SYSTEM,
-        nullptr,
+        nullptr, false,
     },
     {
         "cloud.googleapis.com/region",
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::SYSTEM,
-        nullptr,
+        nullptr, false,
     },
     {
         "cloud.googleapis.com/resource_id",
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::USER,
-        nullptr,
+        nullptr, false,
     },
     {
         "cloud.googleapis.com/resource_type",
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::USER,
-        nullptr,
+        nullptr, false,
     },
     {
         "cloud.googleapis.com/service",
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::SYSTEM,
-        nullptr,
+        nullptr, false,
     },
     {
         "cloud.googleapis.com/zone",
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::SYSTEM,
-        nullptr,
+        nullptr, false,
     },
     {
         "cloud.googleapis.com/uid",
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::SYSTEM,
-        nullptr,
+        nullptr, false,
     },
     {
         "serviceruntime.googleapis.com/api_method",
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::USER,
-        set_api_method,
+        set_api_method, false,
     },
     {
         "serviceruntime.googleapis.com/api_version",
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::USER,
-        set_api_version,
+        set_api_version, false,
     },
     {
         kServiceControlCallerIp,
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::SYSTEM,
-        nullptr,
+        nullptr, false,
     },
     {
         kServiceControlReferer, ::google::api::LabelDescriptor_ValueType_STRING,
-        SupportedLabel::SYSTEM, nullptr,
+        SupportedLabel::SYSTEM, nullptr, false,
     },
     {
         kServiceControlServiceAgent,
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::SYSTEM,
-        set_service_agent,
+        set_service_agent, false,
     },
     {
         kServiceControlUserAgent,
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::SYSTEM,
-        set_user_agent,
+        set_user_agent, false,
     },
     {
         kServiceControlPlatform,
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::SYSTEM,
-        set_platform,
+        set_platform, false,
     },
     {
         kServiceControlBackendProtocol,
         ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::SYSTEM,
-        set_backend_protocol,
+        set_backend_protocol, false,
+    },
+    {
+        kServiceControlConsumerProject,
+        ::google::api::LabelDescriptor_ValueType_STRING, SupportedLabel::SYSTEM,
+        set_consumer_project, true,
     },
 };
 
@@ -1102,10 +1121,10 @@ Status Proto::FillReportRequest(const ReportRequestInfo& info,
   // Only populate metrics if we can associate them with a method/operation.
   if (!info.operation_id.empty() && !info.operation_name.empty()) {
     Map<std::string, std::string>* labels = op->mutable_labels();
-    // Set all labels.
+    // Set all labels with by_consumer_only is false
     for (auto it = labels_.begin(), end = labels_.end(); it != end; it++) {
       const SupportedLabel* l = *it;
-      if (l->set) {
+      if (l->set && !l->by_consumer_only) {
         status = (l->set)(*l, info, labels);
         if (!status.ok()) return status;
       }
@@ -1122,7 +1141,7 @@ Status Proto::FillReportRequest(const ReportRequestInfo& info,
     for (auto it = metrics_.begin(), end = metrics_.end(); it != end; it++) {
       const SupportedMetric* m = *it;
       if (send_consumer_metric || m->mark != SupportedMetric::CONSUMER) {
-        if (m->set) {
+        if (m->set && m->mark != SupportedMetric::PRODUCER_BY_CONSUMER) {
           if ((info.is_first_report && m->tag == SupportedMetric::START) ||
               (info.is_final_report &&
                (m->tag == SupportedMetric::FINAL ||
@@ -1141,6 +1160,51 @@ Status Proto::FillReportRequest(const ReportRequestInfo& info,
   if (info.is_final_report) {
     for (auto it = logs_.begin(), end = logs_.end(); it != end; it++) {
       FillLogEntry(info, *it, current_time, op->add_log_entries());
+    }
+  }
+
+  if (!info.check_response_info.consumer_project_id.empty()) {
+    return AppendByConsumerOperations(info, request, current_time);
+  }
+
+  return Status::OK;
+}
+
+utils::Status Proto::AppendByConsumerOperations(
+    const ReportRequestInfo& info,
+    ::google::api::servicecontrol::v1::ReportRequest* request,
+    Timestamp current_time) {
+  Operation* op = request->add_operations();
+  SetOperationCommonFields(info, current_time, op);
+  // issue a new operation id
+  op->set_operation_id(op->operation_id() + "1");
+
+  // Only populate metrics if we can associate them with a method/operation.
+  if (!info.operation_id.empty() && !info.operation_name.empty()) {
+    Map<std::string, std::string>* labels = op->mutable_labels();
+    // Set all labels.
+    for (auto it = labels_.begin(), end = labels_.end(); it != end; it++) {
+      const SupportedLabel* l = *it;
+      if (l->set) {
+        Status status = (l->set)(*l, info, labels);
+        if (!status.ok()) return status;
+      }
+    }
+
+    // Populate all metrics.
+    for (auto it = metrics_.begin(), end = metrics_.end(); it != end; it++) {
+      const SupportedMetric* m = *it;
+      if (m->set && m->mark == SupportedMetric::PRODUCER_BY_CONSUMER) {
+        if ((info.is_first_report && m->tag == SupportedMetric::START) ||
+            (info.is_final_report &&
+             (m->tag == SupportedMetric::FINAL ||
+              m->tag == SupportedMetric::INTERMEDIATE)) ||
+            (!info.is_final_report &&
+             m->tag == SupportedMetric::INTERMEDIATE)) {
+          Status status = (m->set)(*m, info, op);
+          if (!status.ok()) return status;
+        }
+      }
     }
   }
 
@@ -1220,6 +1284,12 @@ Status Proto::ConvertAllocateQuotaResponse(
 Status Proto::ConvertCheckResponse(const CheckResponse& check_response,
                                    const std::string& service_name,
                                    CheckResponseInfo* check_response_info) {
+  if (check_response.check_info().consumer_info().project_number() > 0) {
+    // Store project id to check_response_info
+    check_response_info->consumer_project_id = std::to_string(
+        check_response.check_info().consumer_info().project_number());
+  }
+
   if (check_response.check_errors().size() == 0) {
     return Status::OK;
   }

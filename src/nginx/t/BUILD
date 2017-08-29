@@ -49,10 +49,12 @@ nginx_suite(
     ],
     nginx = "//src/nginx/main:nginx-esp",
     tests = [
+        "auth_asymmetrickey.t",
         "auth_check_report_body.t",
         "auth_ok_check_fail.t",
         "auth_pass_user_info.t",
         "auth_pkey_cache.t",
+        "auth_redirect.t",
         "auth_unreachable_pkey.t",
         "new_http.t",
         "service_control_disabled.t",

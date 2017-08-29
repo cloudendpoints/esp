@@ -60,6 +60,7 @@ extern "C" {
 
 #include "grpc_internals.h"
 
+#include <openssl/ec.h>
 #include <openssl/hmac.h>
 #include <openssl/pem.h>
 #include <cstring>
@@ -116,16 +117,21 @@ class JwtValidatorImpl : public JwtValidator {
   // Extracts the public key from a jwk key (jkey) and sets it to pkey_.
   // Returns true if successful.
   bool ExtractPubkeyFromJwk(const grpc_json *jkey);
+  bool ExtractPubkeyFromJwkRSA(const grpc_json *jkey);
+  bool ExtractPubkeyFromJwkEC(const grpc_json *jkey);
   // Extracts the public key from jwk key set and verifies JWT signature with
   // it.
   grpc_jwt_verifier_status ExtractAndVerifyJwkKeys(const grpc_json *jwt_keys);
   // Extracts the public key from pkey_json_ and verifies JWT signature with
   // it.
   grpc_jwt_verifier_status ExtractAndVerifyX509Keys();
-  // Verifies signature with pkey_.
+  // Verifies signature with public key.
   grpc_jwt_verifier_status VerifyPubkey();
-  // Verifies RS (asymmetric) signature.
-  grpc_jwt_verifier_status VerifyRsSignature(const char *pkey, size_t pkey_len);
+  grpc_jwt_verifier_status VerifyPubkeyRSA();
+  grpc_jwt_verifier_status VerifyPubkeyEC();
+  // Verifies asymmetric signature, including RS256/384/512 and ES256.
+  grpc_jwt_verifier_status VerifyAsymSignature(const char *pkey,
+                                               size_t pkey_len);
   // Verifies HS (symmetric) signature.
   grpc_jwt_verifier_status VerifyHsSignature(const char *pkey, size_t pkey_len);
 
@@ -150,7 +156,8 @@ class JwtValidatorImpl : public JwtValidator {
   RSA *rsa_;
   EVP_PKEY *pkey_;
   EVP_MD_CTX *md_ctx_;
-
+  EC_KEY *eck_;
+  ECDSA_SIG *ecdsa_sig_;
   grpc_exec_ctx exec_ctx_;
 };
 
@@ -188,6 +195,8 @@ JwtValidatorImpl::JwtValidatorImpl(const char *jwt, size_t jwt_len)
       rsa_(nullptr),
       pkey_(nullptr),
       md_ctx_(nullptr),
+      eck_(nullptr),
+      ecdsa_sig_(nullptr),
       exec_ctx_(GRPC_EXEC_CTX_INIT) {
   header_buffer_ = grpc_empty_slice();
   signed_buffer_ = grpc_empty_slice();
@@ -235,6 +244,12 @@ JwtValidatorImpl::~JwtValidatorImpl() {
   }
   if (md_ctx_ != nullptr) {
     EVP_MD_CTX_destroy(md_ctx_);
+  }
+  if (eck_ != nullptr) {
+    EC_KEY_free(eck_);
+  }
+  if (ecdsa_sig_ != nullptr) {
+    ECDSA_SIG_free(ecdsa_sig_);
   }
 }
 
@@ -334,7 +349,9 @@ grpc_jwt_verifier_status JwtValidatorImpl::ParseImpl() {
     }
     return GRPC_JWT_VERIFIER_BAD_FORMAT;
   }
+
   UpdateAudience(claims_json);
+
   // Takes ownershp of claims_json and claims_buffer.
   claims_ = grpc_jwt_claims_from_json(&exec_ctx_, claims_json, claims_buffer);
 
@@ -373,6 +390,13 @@ grpc_jwt_verifier_status JwtValidatorImpl::ParseImpl() {
   if (GRPC_SLICE_IS_EMPTY(sig_buffer_)) {
     return GRPC_JWT_VERIFIER_BAD_FORMAT;
   }
+  // Check signature length if the signing algorihtm is ES256. ES256 is the only
+  // supported ECDSA signing algorithm.
+  if (strncmp(header_->alg, "ES256", 5) == 0 &&
+      GRPC_SLICE_LENGTH(sig_buffer_) != 2 * 32) {
+    gpr_log(GPR_ERROR, "ES256 signature length is not correct.");
+    return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
+  }
 
   return GRPC_JWT_VERIFIER_OK;
 }
@@ -398,8 +422,9 @@ grpc_jwt_verifier_status JwtValidatorImpl::VerifySignatureImpl(
   if (GRPC_SLICE_IS_EMPTY(signed_buffer_) || GRPC_SLICE_IS_EMPTY(sig_buffer_)) {
     return GRPC_JWT_VERIFIER_BAD_FORMAT;
   }
-  if (strncmp(header_->alg, "RS", 2) == 0) {  // Asymmetric keys.
-    return VerifyRsSignature(pkey, pkey_len);
+  if (strncmp(header_->alg, "ES256", 5) == 0 ||
+      strncmp(header_->alg, "RS", 2) == 0) {  // Asymmetric keys.
+    return VerifyAsymSignature(pkey, pkey_len);
   } else {  // Symmetric key.
     return VerifyHsSignature(pkey, pkey_len);
   }
@@ -414,7 +439,7 @@ void JwtValidatorImpl::CreateJoseHeader() {
     gpr_log(GPR_ERROR, "Missing alg field.");
     return;
   }
-  if (EvpMdFromAlg(alg) == nullptr) {
+  if (EvpMdFromAlg(alg) == nullptr && strncmp(alg, "ES256", 5) != 0) {
     gpr_log(GPR_ERROR, "Invalid alg field [%s].", alg);
     return;
   }
@@ -432,6 +457,7 @@ grpc_jwt_verifier_status JwtValidatorImpl::FindAndVerifySignature() {
     gpr_log(GPR_ERROR, "The public keys are empty.");
     return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
   }
+
   if (header_ == nullptr) {
     gpr_log(GPR_ERROR, "JWT header is empty.");
     return GRPC_JWT_VERIFIER_BAD_FORMAT;
@@ -439,6 +465,10 @@ grpc_jwt_verifier_status JwtValidatorImpl::FindAndVerifySignature() {
   // JWK set https://tools.ietf.org/html/rfc7517#section-5.
   const grpc_json *jwk_keys = GetProperty(pkey_json_, "keys");
   if (jwk_keys == nullptr) {
+    // Currently we only support JWK format for ES256.
+    if (strncmp(header_->alg, "ES256", 5) == 0) {
+      return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
+    }
     // Try x509 format.
     return ExtractAndVerifyX509Keys();
   } else {
@@ -535,6 +565,7 @@ grpc_jwt_verifier_status JwtValidatorImpl::ExtractAndVerifyJwkKeys(
     gpr_log(GPR_ERROR, "The jwks key set is empty");
     return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
   }
+
   // JWK format from https://tools.ietf.org/html/rfc7518#section-6.
   for (jkey = jwk_keys->child; jkey != nullptr; jkey = jkey->next) {
     if (jkey->type != GRPC_JSON_OBJECT) continue;
@@ -548,14 +579,19 @@ grpc_jwt_verifier_status JwtValidatorImpl::ExtractAndVerifyJwkKeys(
       continue;
     }
     const char *kty = GetStringValue(jkey, "kty");
-    if (kty == nullptr || strcmp(kty, "RSA") != 0) {
+    if (kty == nullptr ||
+        (strncmp(header_->alg, "RS", 2) == 0 && strncmp(kty, "RSA", 3) != 0) ||
+        (strncmp(header_->alg, "ES256", 5) == 0 &&
+         strncmp(kty, "EC", 2) != 0)) {
       gpr_log(GPR_ERROR, "Missing or unsupported key type %s.", kty);
       continue;
     }
+
     if (!ExtractPubkeyFromJwk(jkey)) {
       // Failed to extract public key from this Jwk key.
       continue;
     }
+
     if (header_->kid != nullptr) {
       return VerifyPubkey();
     }
@@ -580,6 +616,16 @@ grpc_jwt_verifier_status JwtValidatorImpl::ExtractAndVerifyJwkKeys(
 }
 
 bool JwtValidatorImpl::ExtractPubkeyFromJwk(const grpc_json *jkey) {
+  if (strncmp(header_->alg, "RS", 2) == 0) {
+    return ExtractPubkeyFromJwkRSA(jkey);
+  } else if (strncmp(header_->alg, "ES256", 5) == 0) {
+    return ExtractPubkeyFromJwkEC(jkey);
+  } else {
+    return false;
+  }
+}
+
+bool JwtValidatorImpl::ExtractPubkeyFromJwkRSA(const grpc_json *jkey) {
   if (rsa_ != nullptr) {
     RSA_free(rsa_);
   }
@@ -612,8 +658,39 @@ bool JwtValidatorImpl::ExtractPubkeyFromJwk(const grpc_json *jkey) {
   return true;
 }
 
-grpc_jwt_verifier_status JwtValidatorImpl::VerifyRsSignature(const char *pkey,
-                                                             size_t pkey_len) {
+bool JwtValidatorImpl::ExtractPubkeyFromJwkEC(const grpc_json *jkey) {
+  if (eck_ != nullptr) {
+    EC_KEY_free(eck_);
+  }
+  eck_ = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+  if (eck_ == nullptr) {
+    gpr_log(GPR_ERROR, "Could not create ec key.");
+    return false;
+  }
+  const char *eck_x = GetStringValue(jkey, "x");
+  const char *eck_y = GetStringValue(jkey, "y");
+  if (eck_x == nullptr || eck_y == nullptr) {
+    gpr_log(GPR_ERROR, "Missing EC public key field.");
+    return false;
+  }
+  BIGNUM *bn_x = BigNumFromBase64String(&exec_ctx_, eck_x);
+  BIGNUM *bn_y = BigNumFromBase64String(&exec_ctx_, eck_y);
+  if (bn_x == nullptr || bn_y == nullptr) {
+    gpr_log(GPR_ERROR, "Could not generate BIGNUM-type x and y fields.");
+    return false;
+  }
+
+  if (EC_KEY_set_public_key_affine_coordinates(eck_, bn_x, bn_y) == 0) {
+    BN_free(bn_x);
+    BN_free(bn_y);
+    gpr_log(GPR_ERROR, "Could not populate ec key coordinates.");
+    return false;
+  }
+  return true;
+}
+
+grpc_jwt_verifier_status JwtValidatorImpl::VerifyAsymSignature(
+    const char *pkey, size_t pkey_len) {
   pkey_buffer_ = grpc_slice_from_copied_buffer(pkey, pkey_len);
   if (GRPC_SLICE_IS_EMPTY(pkey_buffer_)) {
     return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
@@ -629,6 +706,45 @@ grpc_jwt_verifier_status JwtValidatorImpl::VerifyRsSignature(const char *pkey,
 }
 
 grpc_jwt_verifier_status JwtValidatorImpl::VerifyPubkey() {
+  if (strncmp(header_->alg, "RS", 2) == 0) {
+    return VerifyPubkeyRSA();
+  } else if (strncmp(header_->alg, "ES256", 5) == 0) {
+    return VerifyPubkeyEC();
+  } else {
+    return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
+  }
+}
+
+grpc_jwt_verifier_status JwtValidatorImpl::VerifyPubkeyEC() {
+  if (eck_ == nullptr) {
+    gpr_log(GPR_ERROR, "Cannot find eck.");
+    return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
+  }
+
+  uint8_t digest[SHA256_DIGEST_LENGTH];
+  SHA256(
+      reinterpret_cast<const uint8_t *>(GRPC_SLICE_START_PTR(signed_buffer_)),
+      GRPC_SLICE_LENGTH(signed_buffer_), digest);
+
+  if (ecdsa_sig_ != nullptr) {
+    ECDSA_SIG_free(ecdsa_sig_);
+  }
+  ecdsa_sig_ = ECDSA_SIG_new();
+  if (ecdsa_sig_ == nullptr) {
+    gpr_log(GPR_ERROR, "Could not create ECDSA_SIG.");
+    return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
+  }
+
+  BN_bin2bn(GRPC_SLICE_START_PTR(sig_buffer_), 32, ecdsa_sig_->r);
+  BN_bin2bn(GRPC_SLICE_START_PTR(sig_buffer_) + 32, 32, ecdsa_sig_->s);
+  if (ECDSA_do_verify(digest, SHA256_DIGEST_LENGTH, ecdsa_sig_, eck_) == 0) {
+    gpr_log(GPR_ERROR, "JWT signature verification failed.");
+    return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
+  }
+  return GRPC_JWT_VERIFIER_OK;
+}
+
+grpc_jwt_verifier_status JwtValidatorImpl::VerifyPubkeyRSA() {
   if (pkey_ == nullptr) {
     gpr_log(GPR_ERROR, "Cannot find public key.");
     return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
@@ -642,7 +758,6 @@ grpc_jwt_verifier_status JwtValidatorImpl::VerifyPubkey() {
     return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
   }
   const EVP_MD *md = EvpMdFromAlg(header_->alg);
-
   GPR_ASSERT(md != nullptr);  // Checked before.
 
   if (EVP_DigestVerifyInit(md_ctx_, nullptr, md, nullptr, pkey_) != 1) {
