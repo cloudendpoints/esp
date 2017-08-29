@@ -30,8 +30,6 @@ cc_library(
         "async_grpc_queue.h",
         "proxy_flow.cc",
         "proxy_flow.h",
-        "stub_map.cc",
-        "stub_map.h",
     ],
     hdrs = [
         "server_call.h",
