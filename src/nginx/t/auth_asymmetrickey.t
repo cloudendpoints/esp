@@ -42,22 +42,35 @@ my $NginxPort = ApiManager::pick_port();
 my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $PubkeyPort = ApiManager::pick_port();
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(22);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(13);
 
 my $config = ApiManager::get_bookstore_service_config;
 $config .= <<"EOF";
 authentication {
-  providers {
-    id: "test_auth"
-    issuer: "test-esp-auth.com"
-    jwks_uri: "http://127.0.0.1:${PubkeyPort}/key"
-  }
+  providers [
+    {
+      id: "test_auth"
+      issuer: "test-esp-auth.com"
+      jwks_uri: "http://127.0.0.1:${PubkeyPort}/key"
+    },
+    {
+      id: "test_auth_1"
+      issuer: "test-esp-auth-dot.com"
+      jwks_uri: "http://127.0.0.1:${PubkeyPort}/key"
+    }
+  ]
   rules {
     selector: "ListShelves"
-    requirements {
-      provider_id: "test_auth"
-      audiences: "ok_audience_1"
-    }
+    requirements [
+      {
+        provider_id: "test_auth"
+        audiences: "ok_audience_1"
+      },
+      {
+        provider_id: "test_auth_1"
+        audiences: "ok_audience_1"
+      }
+    ]
   }
 }
 control {
@@ -90,7 +103,7 @@ http {
 }
 EOF
 
-my $es256_pubkey = <<'EOF';
+my $pubkeys = <<'EOF';
 {
  "keys": [
   {
@@ -100,14 +113,7 @@ my $es256_pubkey = <<'EOF';
    "y": "t3FPM5-BhLsjyTG6QcDkTotU6PTMmrT6KCfr4L_0Lhk",
    "alg": "ES256",
    "kid": "1a"
-  }
- ]
-}
-EOF
-
-my $rs256_pubkey = <<'EOF';
-{
- "keys": [
+  },
   {
    "kty": "RSA",
    "n": "zaS0LKbCovc6gdmwwEbovLBqEuat2ihKmuXMEAh7yjk--Pw55djgkpiAFaoTr0-iEnJB8QKQAkssU5mQcKHCtKRfVH9TZv3JC8mXeSg1dvS-AckkGqXwuPpYyaTUDZsd7u3xW3lSX4QtrLNcwCo0TRFmUGcpkecy6omJdD8kwhWXYOEkDPZqZXlvWkLfyuelWE8Wcrv-X_v8UrCMOOECRPRxl5tmC93vMnZZAHN35gyLizaPOkXPR69DN-_d34aiLctphiqzTJUlMlpIU2SciXj2CaOMFzioy-cRb9sbr8eN91cDPDs4r-EiFB6bcoAJxaHCyxdhJYihFGfwGjhCkQ",
@@ -119,32 +125,35 @@ my $rs256_pubkey = <<'EOF';
 }
 EOF
 
+# es256_token is issued by "test-esp-auth.com".
 my $es256_token = "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjFhIn0.".
 "eyJpc3MiOiJ0ZXN0LWVzcC1hdXRoLmNvbSIsInN1YiI6InRlc3QtZXNwLWF1dGguY29tIi".
 "wiYXVkIjoib2tfYXVkaWVuY2VfMSJ9.BUmszufjBD1ID2BBvcFQNiXwhSfhfoLuFhO2e0i".
 "aPashTZCmcSn98lFGic2uFMlAzO5rdvF4SQTirX3vpp4spA";
 
-my $rs256_token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjJiIn0".
-".eyJpc3MiOiJ0ZXN0LWVzcC1hdXRoLmNvbSIsInN1YiI6InRlc3QtZXNwLWF1dGguY29t".
-"IiwiYXVkIjoib2tfYXVkaWVuY2VfMSJ9.KMBjBmA5h1gLspYsC5HnHzyHgmeGPVGeNX0i".
-"ZDY4V5v8GUvBCZEU_SGBIostrhmAfvV1TY4KOuvDT6CcsbDjfm-04_66AhmVOg72y6HxM".
-"E3hhLgNt_pu1Rrn2gi5RMEVMVw50ogT4XUP3CxmLgqwcbesWYmSeStTXx-U556qO_j0qF".
-"7g6OPmhUbmaj9oewCcqI3BHRiCju-WTUKu2qVhQzVtgXSoS2svCgEpawHQ1C6lM51EHoC".
-"ETCV7pd5f2I6GWoCWV3PZ3zM3k2h5EwJs-95oJxWuTcwmOAXABd1h3ySjzD697BNU5sAK".
-"ygtL7KbWkaO6cL0zTOuPIopbPGI91Q";
-
-################################################################################
-# No JWT passed in.
+# rs256_token is issued by "test-esp-auth-dot.com" to avoid pkey cache
+# conflict from second case to third case.
+my $rs256_token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjJiIn0.".
+"eyJpc3MiOiJ0ZXN0LWVzcC1hdXRoLWRvdC5jb20iLCJzdWIiOiJ0ZXN0LWVzcC1hdXRoLW".
+"RvdC5jb20iLCJhdWQiOiJva19hdWRpZW5jZV8xIn0.NiGDKEzCLpSxtvCpdc6PVD5wwLcE".
+"wbFq8FKvZ5gwaYTGXrpyuI2XtXZDlOMucgv1jq1d99c6zqz6l5y18M-FUBNZjtIzama6vm".
+"knUA9GTRkOtUlRA1Bs1eqqO99OeFSn96riWdsEWK2YHBZ-sadd5mjVomlNZtQh2IFBEtdJ".
+"AmPFQCx6xucxM_DTrpKckTZwC7LNKl9XcHaDTC5GPAI3CNvzC_FyFn1xsvCeL7h6lnQVXi".
+"pnXjL6mj-5BPu6D1iNhDydTLJa1RboQ02szs_J0fEKmhlz94_U3ePVmP_Y7iruPvixGoEx".
+"715qm0jrcBuYLp6nwKoDVSbheBMIrB-Ebw";
 
 $t->run_daemon(\&bookstore, $t, $BackendPort, 'bookstore.log');
 $t->run_daemon(\&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log');
-$t->run_daemon(\&key, $t, $PubkeyPort, $es256_pubkey, 'key.log');
+$t->run_daemon(\&key, $t, $PubkeyPort, $pubkeys, 'key.log');
 
 is($t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'Bookstore socket ready.');
 is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control socket ready.');
 is($t->waitforsocket("127.0.0.1:${PubkeyPort}"), 1, 'Pubkey socket ready.');
 
 $t->run();
+
+################################################################################
+# No JWT passed in.
 
 my $response = ApiManager::http($NginxPort,<<"EOF");
 GET /shelves?key=this-is-an-api-key HTTP/1.0
@@ -159,20 +168,8 @@ like($response, qr/Content-Type: application\/json/i,
 like($response, qr/JWT validation failed: Missing or invalid credentials/i,
      "Error body contains 'Missing or invalid credentials'.");
 
-$t->stop_daemons();
-$t->stop();
 ################################################################################
 # ES256-signed jwt token is passed in "X-Goog-Iap-Jwt-Assertion" header.
-
-$t->run_daemon(\&bookstore, $t, $BackendPort, 'bookstore.log');
-$t->run_daemon(\&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log');
-$t->run_daemon(\&key, $t, $PubkeyPort, $es256_pubkey, 'key.log');
-
-is($t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'Bookstore socket ready.');
-is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control socket ready.');
-is($t->waitforsocket("127.0.0.1:${PubkeyPort}"), 1, 'Pubkey socket ready.');
-
-$t->run();
 
 $response = ApiManager::http($NginxPort,<<"EOF");
 GET /shelves?key=this-is-an-api-key HTTP/1.0
@@ -191,20 +188,8 @@ is($response_body, <<'EOF', 'Shelves returned in the response body.');
 }
 EOF
 
-$t->stop_daemons();
-$t->stop();
 ################################################################################
 # RS256-signed jwt token is passed in "Authorization: Bearer" header.
-
-$t->run_daemon(\&bookstore, $t, $BackendPort, 'bookstore.log');
-$t->run_daemon(\&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log');
-$t->run_daemon(\&key, $t, $PubkeyPort, $rs256_pubkey, 'key.log');
-
-is($t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'Bookstore socket ready.');
-is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control socket ready.');
-is($t->waitforsocket("127.0.0.1:${PubkeyPort}"), 1, 'Pubkey socket ready.');
-
-$t->run();
 
 $response = ApiManager::http($NginxPort,<<"EOF");
 GET /shelves?key=this-is-an-api-key HTTP/1.0
@@ -223,20 +208,8 @@ is($response_body, <<'EOF', 'Shelves returned in the response body.');
 }
 EOF
 
-$t->stop_daemons();
-$t->stop();
 ################################################################################
 # RS256-signed jwt token is passed in query.
-
-$t->run_daemon(\&bookstore, $t, $BackendPort, 'bookstore.log');
-$t->run_daemon(\&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log');
-$t->run_daemon(\&key, $t, $PubkeyPort, $rs256_pubkey, 'key.log');
-
-is($t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'Bookstore socket ready.');
-is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control socket ready.');
-is($t->waitforsocket("127.0.0.1:${PubkeyPort}"), 1, 'Pubkey socket ready.');
-
-$t->run();
 
 $response = ApiManager::http($NginxPort,<<"EOF");
 GET /shelves?key=this-is-an-api-key&access_token=$rs256_token HTTP/1.0
@@ -254,9 +227,10 @@ is($response_body, <<'EOF', 'Shelves returned in the response body.');
 }
 EOF
 
+################################################################################
+
 $t->stop_daemons();
 $t->stop();
-################################################################################
 
 sub bookstore {
   my ($t, $port, $file) = @_;
@@ -264,7 +238,9 @@ sub bookstore {
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
 
-  $server->on('GET', '/shelves', <<'EOF');
+  $server->on_sub('GET', '/shelves', sub {
+    my ($headers, $body, $client) = @_;
+    print $client <<'EOF';
 HTTP/1.1 200 OK
 Connection: close
 
@@ -274,6 +250,7 @@ Connection: close
   ]
 }
 EOF
+  });
 
   $server->run();
 }
@@ -284,27 +261,33 @@ sub servicecontrol {
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
 
-  $server->on('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:check', <<'EOF');
+  $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:check', sub {
+    my ($headers, $body, $client) = @_;
+    print $client <<'EOF';
 HTTP/1.1 200 OK
 Connection: close
 
 EOF
+  });
 
   $server->run();
 }
 
 sub key {
-  my ($t, $port, $secret, $file) = @_;
+  my ($t, $port, $keys, $file) = @_;
   my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
 
-  $server->on('GET', '/key', <<"EOF");
+  $server->on_sub('GET', '/key', sub {
+    my ($headers, $body, $client) = @_;
+    print $client <<"EOF";
 HTTP/1.1 200 OK
 Connection: close
 
-$secret
+$keys
 EOF
+  });
 
   $server->run();
 }

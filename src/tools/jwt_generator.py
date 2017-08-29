@@ -89,7 +89,7 @@ if __name__ == '__main__':
       " in the swagger spec.")
   parser.add_argument(
       "private_key_file",
-      help="The path to the generated ES256 private key file, e.g., /path/to/private_key.pem.")
+      help="The path to the generated ES256/RS256 private key file, e.g., /path/to/private_key.pem.")
 
   #optional arguments
   parser.add_argument("-e", "--email", help="Preferred e-mail address.")
