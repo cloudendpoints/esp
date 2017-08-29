@@ -50,12 +50,12 @@ authentication {
   providers [
     {
       id: "test_auth"
-      issuer: "test-esp-auth.com"
+      issuer: "es256-issuer"
       jwks_uri: "http://127.0.0.1:${PubkeyPort}/key"
     },
     {
       id: "test_auth_1"
-      issuer: "test-esp-auth-dot.com"
+      issuer: "rs256-issuer"
       jwks_uri: "http://127.0.0.1:${PubkeyPort}/key"
     }
   ]
@@ -64,11 +64,11 @@ authentication {
     requirements [
       {
         provider_id: "test_auth"
-        audiences: "ok_audience_1"
+        audiences: "ok_audience"
       },
       {
         provider_id: "test_auth_1"
-        audiences: "ok_audience_1"
+        audiences: "ok_audience"
       }
     ]
   }
@@ -103,6 +103,10 @@ http {
 }
 EOF
 
+# Two public keys are used, one for ES256 and the other for RS256.
+# ESP will identify and use the proper key according to kid if
+# existing. If not, ESP simply tries all keys to find the right one.
+# Please see jwk_generator.py under /src/tools for jwk generation.
 my $pubkeys = <<'EOF';
 {
  "keys": [
@@ -125,22 +129,24 @@ my $pubkeys = <<'EOF';
 }
 EOF
 
-# es256_token is issued by "test-esp-auth.com".
+# es256_token is issued by "es256-issuer". Please see jwt_generator.py
+# under /src/tools/ for ES256-signed jwt token generation.
 my $es256_token = "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjFhIn0.".
-"eyJpc3MiOiJ0ZXN0LWVzcC1hdXRoLmNvbSIsInN1YiI6InRlc3QtZXNwLWF1dGguY29tIi".
-"wiYXVkIjoib2tfYXVkaWVuY2VfMSJ9.BUmszufjBD1ID2BBvcFQNiXwhSfhfoLuFhO2e0i".
-"aPashTZCmcSn98lFGic2uFMlAzO5rdvF4SQTirX3vpp4spA";
+"eyJpc3MiOiJlczI1Ni1pc3N1ZXIiLCJzdWIiOiJlczI1Ni1pc3N1ZXIiLCJhdWQiOiJva1".
+"9hdWRpZW5jZSJ9.hz9IUedX6WTbuxQSbcXBSKfvF2hK48o06CnxJn-5vyOkWfUNroJjb3J".
+"okQpweF9XFI8RxeMGPKFMdHb8qyIlqA";
 
-# rs256_token is issued by "test-esp-auth-dot.com" to avoid pkey cache
-# conflict from second case to third case.
+# rs256_token is issued by "rs256-issuer" to avoid pkey cache
+# conflict from second case to third case. Please see jwt_generator.py
+# under /src/tools/ for RS256-signed jwt token generation.
 my $rs256_token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjJiIn0.".
-"eyJpc3MiOiJ0ZXN0LWVzcC1hdXRoLWRvdC5jb20iLCJzdWIiOiJ0ZXN0LWVzcC1hdXRoLW".
-"RvdC5jb20iLCJhdWQiOiJva19hdWRpZW5jZV8xIn0.NiGDKEzCLpSxtvCpdc6PVD5wwLcE".
-"wbFq8FKvZ5gwaYTGXrpyuI2XtXZDlOMucgv1jq1d99c6zqz6l5y18M-FUBNZjtIzama6vm".
-"knUA9GTRkOtUlRA1Bs1eqqO99OeFSn96riWdsEWK2YHBZ-sadd5mjVomlNZtQh2IFBEtdJ".
-"AmPFQCx6xucxM_DTrpKckTZwC7LNKl9XcHaDTC5GPAI3CNvzC_FyFn1xsvCeL7h6lnQVXi".
-"pnXjL6mj-5BPu6D1iNhDydTLJa1RboQ02szs_J0fEKmhlz94_U3ePVmP_Y7iruPvixGoEx".
-"715qm0jrcBuYLp6nwKoDVSbheBMIrB-Ebw";
+"eyJpc3MiOiJyczI1Ni1pc3N1ZXIiLCJzdWIiOiJyczI1Ni1pc3N1ZXIiLCJhdWQiOiJva1".
+"9hdWRpZW5jZSJ9.Idf-XyipQCoMmIkI8TT3LgHUseV5AG-tJGhGrEldto-q44oNz9ZEd3K".
+"oJ3TlZGKknfEfaSCndsFR_yeHrI1CLdQ7kIs2SaRQP2aG4QqJAwn0-kFoTSUwxqQtV428A".
+"KrMrTeahu6ZGOGqwaLMOKP2F7pzI2sCFAYMwLCLhbHzvzRwhIPekG8iENj5YDS5_C5GtFt".
+"UV4iL7e6KS7ZqRTljqZB6HUjG7TL_QMZuQ7S44bLGePgx8AeMlEqBzFizG7cJKvGJjsSTi".
+"uxvESBnPNpjm4bNFLgLXULoRsoXgU3i1DKQ0r12uztARJpq79diXf-ln7tV-TCwOXlubbb".
+"2hiP6-A";
 
 $t->run_daemon(\&bookstore, $t, $BackendPort, 'bookstore.log');
 $t->run_daemon(\&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log');
