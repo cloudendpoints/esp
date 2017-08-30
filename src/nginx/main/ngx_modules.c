@@ -90,6 +90,12 @@ extern ngx_module_t  ngx_http_index_module;
 #if (NGX_HTTP_RANDOM_INDEX)
 extern ngx_module_t  ngx_http_random_index_module;
 #endif
+#if (NGX_HTTP_MIRROR)
+extern ngx_module_t  ngx_http_mirror_module;
+#endif
+#if (NGX_HTTP)
+extern ngx_module_t  ngx_http_try_files_module;
+#endif
 #if (NGX_HTTP_AUTH_REQUEST)
 extern ngx_module_t  ngx_http_auth_request_module;
 #endif
@@ -372,6 +378,12 @@ ngx_module_t *ngx_modules[] = {
 #endif
 #if (NGX_HTTP_RANDOM_INDEX)
     &ngx_http_random_index_module,
+#endif
+#if (NGX_HTTP_MIRROR)
+    &ngx_http_mirror_module,
+#endif
+#if (NGX_HTTP)
+    &ngx_http_try_files_module,
 #endif
 #if (NGX_HTTP_AUTH_REQUEST)
     &ngx_http_auth_request_module,
@@ -660,6 +672,12 @@ char *ngx_module_names[] = {
 #endif
 #if (NGX_HTTP_RANDOM_INDEX)
     "ngx_http_random_index_module",
+#endif
+#if (NGX_HTTP_MIRROR)
+    "ngx_http_mirror_module",
+#endif
+#if (NGX_HTTP)
+    "ngx_http_try_files_module",
 #endif
 #if (NGX_HTTP_AUTH_REQUEST)
     "ngx_http_auth_request_module",
@@ -1065,6 +1083,9 @@ ngx_show_configure_options(void)
 #endif
 #if !(NGX_HTTP_MEMCACHED)
     ngx_write_stderr(" --without-http_memcached_module");
+#endif
+#if !(NGX_HTTP_MIRROR)
+    ngx_write_stderr(" --without-http_mirror_module");
 #endif
 #if !(NGX_HTTP_PROXY)
     ngx_write_stderr(" --without-http_proxy_module");

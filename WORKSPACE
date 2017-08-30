@@ -30,7 +30,7 @@ ESP_TOOL = "5910b23429c34168343a898a5d2be2403405bc92"
 
 git_repository(
     name = "nginx",
-    commit = "aae5c50a7669bfee3b904fe87a5ce0bc2f8fecb6",  # v1.13.3
+    commit = "18e870fcf52981cd0804eef269f2bb08182f0e3f",  # v1.13.4
     remote = "https://nginx.googlesource.com/nginx",
 )
 
