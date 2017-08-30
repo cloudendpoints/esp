@@ -17,6 +17,7 @@
 ./etc/nginx/nginx.conf
 ./etc/nginx/scgi_params
 ./etc/nginx/server-auto.conf.template
+./etc/nginx/server_config.pb.txt
 ./etc/nginx/trusted-ca-certificates.crt
 ./etc/nginx/uwsgi_params
 ./etc/nginx/win-utf

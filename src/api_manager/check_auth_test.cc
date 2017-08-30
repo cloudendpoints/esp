@@ -359,6 +359,7 @@ class CheckAuthTest : public ::testing::Test {
           *trace_context = "";
           return true;
         }));
+
     context_ = std::make_shared<context::RequestContext>(service_context_,
                                                          std::move(request));
     EXPECT_TRUE(Mock::VerifyAndClearExpectations(raw_request_));
@@ -373,6 +374,11 @@ class CheckAuthTest : public ::testing::Test {
 };
 
 void CheckAuthTest::TestValidToken(const std::string &auth_token) {
+  EXPECT_CALL(*raw_request_, FindHeader("x-goog-iap-jwt-assertion", _))
+      .WillOnce(Invoke([](const std::string &, std::string *token) {
+        *token = "";
+        return false;
+      }));
   EXPECT_CALL(*raw_request_, FindHeader(kAuthHeader, _))
       .WillOnce(Invoke([auth_token](const std::string &, std::string *token) {
         *token = std::string(kBearer) + auth_token;
@@ -414,6 +420,11 @@ TEST_F(CheckAuthTest, TestOKAuth) {
   EXPECT_TRUE(Mock::VerifyAndClearExpectations(raw_env_));
 
   // Step 2. Check auth with the same auth token. This time the token is cached.
+  EXPECT_CALL(*raw_request_, FindHeader("x-goog-iap-jwt-assertion", _))
+      .WillOnce(Invoke([](const std::string &, std::string *token) {
+        *token = "";
+        return false;
+      }));
   EXPECT_CALL(*raw_request_, FindHeader(kAuthHeader, _))
       .WillOnce(Invoke([](const std::string &, std::string *token) {
         *token = std::string(kBearer) + std::string(kToken);
@@ -432,6 +443,11 @@ TEST_F(CheckAuthTest, TestOKAuth) {
 
   // Step 3. Check auth with a different token signed by the same issuer.
   // In this case, the token is not in the cache, but key is cached.
+  EXPECT_CALL(*raw_request_, FindHeader("x-goog-iap-jwt-assertion", _))
+      .WillOnce(Invoke([](const std::string &, std::string *token) {
+        *token = "";
+        return false;
+      }));
   EXPECT_CALL(*raw_request_, FindHeader(kAuthHeader, _))
       .WillOnce(Invoke([](const std::string &, std::string *token) {
         *token = std::string(kBearer) + std::string(kToken2);
@@ -453,6 +469,11 @@ TEST_F(CheckAuthTest, TestOKAuth) {
 TEST_F(CheckAuthTest, TestOpenIdFailed) {
   // Step 1. Try to fetch key URI via OpenID discovery but failed.
   // Use FindQuery to get auth token.
+  EXPECT_CALL(*raw_request_, FindHeader("x-goog-iap-jwt-assertion", _))
+      .WillOnce(Invoke([](const std::string &, std::string *token) {
+        *token = "";
+        return false;
+      }));
   EXPECT_CALL(*raw_request_, FindHeader(kAuthHeader, _))
       .WillOnce(Invoke([](const std::string &, std::string *token) {
         *token = std::string();
@@ -484,6 +505,11 @@ TEST_F(CheckAuthTest, TestOpenIdFailed) {
 
   // Step 2. Use a different token signed by the same issuer, no HTTP request
   //         is sent this time because the failure result was cached.
+  EXPECT_CALL(*raw_request_, FindHeader("x-goog-iap-jwt-assertion", _))
+      .WillOnce(Invoke([](const std::string &, std::string *token) {
+        *token = "";
+        return false;
+      }));
   EXPECT_CALL(*raw_request_, FindHeader(kAuthHeader, _))
       .WillOnce(Invoke([](const std::string &, std::string *token) {
         *token = std::string(kBearer) + std::string(kTokenOpenIdFail2);
@@ -503,6 +529,11 @@ TEST_F(CheckAuthTest, TestOpenIdFailed) {
 // jwks_uri is already specified in service config. Hence, no need to
 // do openID discovery.
 TEST_F(CheckAuthTest, TestNoOpenId) {
+  EXPECT_CALL(*raw_request_, FindHeader("x-goog-iap-jwt-assertion", _))
+      .WillOnce(Invoke([](const std::string &, std::string *token) {
+        *token = "";
+        return false;
+      }));
   EXPECT_CALL(*raw_request_, FindHeader(kAuthHeader, _))
       .WillOnce(Invoke([](const std::string &, std::string *token) {
         *token = std::string(kBearer) + std::string(kTokenIssuer2);
@@ -525,6 +556,11 @@ TEST_F(CheckAuthTest, TestNoOpenId) {
 
 // Negative test: invalid token and expired token.
 TEST_F(CheckAuthTest, TestInvalidToken) {
+  EXPECT_CALL(*raw_request_, FindHeader("x-goog-iap-jwt-assertion", _))
+      .WillOnce(Invoke([](const std::string &, std::string *token) {
+        *token = "";
+        return false;
+      }));
   // Invalid token.
   EXPECT_CALL(*raw_request_, FindHeader(kAuthHeader, _))
       .WillOnce(Invoke([](const std::string &, std::string *token) {
@@ -541,6 +577,11 @@ TEST_F(CheckAuthTest, TestInvalidToken) {
 
   EXPECT_TRUE(Mock::VerifyAndClearExpectations(raw_request_));
 
+  EXPECT_CALL(*raw_request_, FindHeader("x-goog-iap-jwt-assertion", _))
+      .WillOnce(Invoke([](const std::string &, std::string *token) {
+        *token = "";
+        return false;
+      }));
   // Expired token.
   EXPECT_CALL(*raw_request_, FindHeader(kAuthHeader, _))
       .WillOnce(Invoke([](const std::string &, std::string *token) {
@@ -559,6 +600,11 @@ TEST_F(CheckAuthTest, TestInvalidToken) {
   EXPECT_TRUE(Mock::VerifyAndClearExpectations(raw_request_));
   EXPECT_TRUE(Mock::VerifyAndClearExpectations(raw_env_));
 
+  EXPECT_CALL(*raw_request_, FindHeader("x-goog-iap-jwt-assertion", _))
+      .WillOnce(Invoke([](const std::string &, std::string *token) {
+        *token = "";
+        return false;
+      }));
   // Token that is not ready to be used (i.e., current time is less than the
   // "nbf" claim).
   EXPECT_CALL(*raw_request_, FindHeader(kAuthHeader, _))
@@ -578,6 +624,11 @@ TEST_F(CheckAuthTest, TestInvalidToken) {
 
 // Negative test: bad audience
 TEST_F(CheckAuthTest, TestBadAudience) {
+  EXPECT_CALL(*raw_request_, FindHeader("x-goog-iap-jwt-assertion", _))
+      .WillOnce(Invoke([](const std::string &, std::string *token) {
+        *token = "";
+        return false;
+      }));
   EXPECT_CALL(*raw_request_, FindHeader(kAuthHeader, _))
       .WillOnce(Invoke([](const std::string &, std::string *token) {
         *token = std::string(kBearer) + std::string(kTokenBadAud);

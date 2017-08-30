@@ -331,10 +331,9 @@ ngx_int_t ngx_esp_init_process_stats(ngx_cycle_t *cycle) {
   auto *process_stats =
       reinterpret_cast<ngx_esp_process_stats_t *>(mc->stats_zone->data);
 
-  ngx_memzero(&process_stats[ngx_process_slot],
-              sizeof(ngx_esp_process_stats_t));
+  ngx_memzero(&process_stats[ngx_worker], sizeof(ngx_esp_process_stats_t));
 
-  auto *process_stat = &process_stats[ngx_process_slot];
+  auto *process_stat = &process_stats[ngx_worker];
   process_stat->pid = ngx_pid;
   process_stat->start_time = system_clock::from_time_t(ngx_time());
 

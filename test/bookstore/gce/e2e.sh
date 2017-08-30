@@ -103,7 +103,7 @@ run retry -n 3 gcloud compute instances create "${INSTANCE_NAME}" \
 run retry -n 3 get_host_ip "${INSTANCE_NAME}"
 HOST="http://${HOST_INTERNAL_IP}:8080"
 
-run retry -n 10 wait_for_service_config_rollouts_update "$ESP_SERVICE_VERSION 100" \
+run retry -n 10 wait_for_service_config_rollouts_update "gce" "http://localhost:8090/endpoints_status" "$ESP_SERVICE_VERSION 100" \
     || error_exit 'Rollouts update was failed'
 
 if [ "${ESP_ROLLOUT_STRATEGY}" == "managed" ]; then
@@ -111,7 +111,7 @@ if [ "${ESP_ROLLOUT_STRATEGY}" == "managed" ]; then
   # create_service will set ESP_SERVICE_VERSION to the deployed new config id
   create_service "${ESP_SERVICE}" swagger.json
 
-  run retry -n 10 wait_for_service_config_rollouts_update "$ESP_SERVICE_VERSION 100" \
+  run retry -n 10 wait_for_service_config_rollouts_update gce "http://localhost:8090/endpoints_status" "$ESP_SERVICE_VERSION 100" \
     || error_exit 'Rollouts update was failed'
 fi
 

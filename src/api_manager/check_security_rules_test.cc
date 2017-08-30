@@ -145,7 +145,10 @@ static const char kRelease[] = R"(
 // Error response for GetRelease on bad release name
 static const char kReleaseError[] = R"(
 {
-  "error": {
+  "error": { google::api_manager::auth::AuthzValue* val = cache->Lookup(*key);
+                       ASSERT_NE(nullptr, val);
+                       ASSERT_EQ(val->if_success, false);
+                       ASSERT_EQ(val->exp, kNow+std::chrono::seconds(50));
     "code": 404,
     "message": "Requested entity was not found.",
     "status": "NOT_FOUND",
@@ -167,6 +170,20 @@ const char kSecondRequest[] =
 
 const char kThirdRequest[] =
     R"({"testSuite":{"testCases":[{"expectation":"ALLOW","request":{"method":"get","path":"/ListShelves","auth":{"token":{"email":"limin-429@appspot.gserviceaccount.com","iat":1486575396,"azp":"limin-429@appspot.gserviceaccount.com","exp":1486578996,"email_verified":true,"sub":"113424383671131376652","aud":"https://myfirebaseapp.appspot.com","iss":"https://accounts.google.com"}}},"functionMocks":[{"function":"f2","args":[{"exactValue":"http://url2"},{"exactValue":"GET"},{"exactValue":{"key":"value"}},{"exactValue":"test-audience"}],"result":{"value":{"key":"value"}}},{"function":"f3","args":[{"exactValue":"https://url3"},{"exactValue":"GET"},{"exactValue":{"key":"value"}},{"exactValue":"test-audience"}],"result":{"value":{"key":"value"}}},{"function":"f1","args":[{"exactValue":"http://url1"},{"exactValue":"POST"},{"exactValue":{"key":"value"}},{"exactValue":"test-audience"}],"result":{"value":{"key":"value"}}}]}]}})";
+
+const char kAuthToken[] =
+    "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImIzMzE5YTE0NzUxNGRmN2VlNWU0Ym"
+    "NkZWU1MTM1MGNjODkwY2M4OWUifQ.eyJpc3MiOiJodHRwczovL2lzc3VlcjEuY29tIiwic3ViI"
+    "joiYW5vdGhlci11c2VyLWlkIiwiYXVkIjoiZW5kcG9pbnRzLXRlc3QuY2xvdWRlbmRwb2ludHN"
+    "hcGlzLmNvbSIsImlhdCI6MTQ2MTc3OTMyMSwiZXhwIjoyNDYxNzgyOTIxfQ.ASIXY1N3fmGuDY"
+    "8-Xg6lCxiXM51wtTiGRmcYMk6_q_91D3D9cswVMfNp7YLf6sA4KQFxoTFAiWRqxT-kPzF5o2O8"
+    "ga4CY0VZAsiXRm-YTe7O8T2kFrVJOkABQIyNZgln8Sm15bO1MSyClj8Ti2qRAYPeoDM57X0f-u"
+    "0nQsWv0X8BsLvlJfu1J-4n08l_eEUFZlYGwpWCKfwvklmWXYfXdcJMeQ_poVqOti8dvSnqVi_Z"
+    "0Yu1r5Xuq45q4WNqQ9PRk1HFsWB7uV25m8fU2VpbRLFka6F9MZu4dU9gZoGCGDTtauCHiMqBTv"
+    "6vON8GbcB7w8pEhS1hK6FOehe4qZKnSA";
+
+const char kRequestPath[] = "/ListShelves";
+const char kRequestMethod[] = "GET";
 
 ::google::protobuf::Value ToValue(const std::string &arg) {
   ::google::protobuf::Value value;
@@ -291,16 +308,17 @@ class CheckSecurityRulesTest : public ::testing::Test {
     raw_request_ = request.get();
 
     ON_CALL(*raw_request_, GetRequestHTTPMethod())
-        .WillByDefault(Return(std::string("GET")));
+        .WillByDefault(Return(std::string(kRequestMethod)));
 
     ON_CALL(*raw_request_, GetUnparsedRequestPath())
-        .WillByDefault(Return(std::string("/ListShelves")));
+        .WillByDefault(Return(std::string(kRequestPath)));
 
     ON_CALL(*raw_request_, GetRequestPath())
-        .WillByDefault(Return(std::string("/ListShelves")));
+        .WillByDefault(Return(std::string(kRequestPath)));
 
     request_context_ = std::make_shared<context::RequestContext>(
         service_context_, std::move(request));
+
     release_url_ =
         "https://myfirebaseserver.com/v1/projects/myfirebaseapp/"
         "releases/myfirebaseapp.appspot.com:v1";
@@ -309,6 +327,8 @@ class CheckSecurityRulesTest : public ::testing::Test {
         "https://myfirebaseserver.com/v1"
         "/projects/myfirebaseapp/rulesets/99045fc0-a5e4-47e2-a665-f88593594b6b"
         ":test?alt=json";
+
+    request_context_->SetAuthToken(std::string(kAuthToken));
   }
 
   void ExpectCall(std::string url, std::string method, std::string body,
@@ -372,6 +392,100 @@ class CheckSecurityRulesTest : public ::testing::Test {
   std::string release_url_;
   std::string ruleset_test_url_;
 };
+
+// Cache first miss then hit. In this case, "yes" is cached on miss and returnd
+// on hit.
+TEST_F(CheckSecurityRulesTest, CheckAuthzCacheMissThenHitPositive) {
+  std::string service_config = std::string(kServiceName) + kProducerProjectId +
+                               kApis + kAuthentication + kHttp;
+  std::string server_config = kServerConfig;
+  SetUp(service_config, server_config);
+
+  request_context_->set_auth_claims(kJwtEmailPayload);
+
+  InSequence s;
+  ExpectCall(release_url_, "GET", "", kRelease);
+  ExpectCall(ruleset_test_url_, "POST", kFirstRequest,
+             BuildTestRulesetResponse(true));
+  EXPECT_CALL(*raw_env_, DoRunHTTPRequest(AllOf(
+                             Property(&HTTPRequest::url, StrEq(release_url_)),
+                             Property(&HTTPRequest::method, StrCaseEq("GET")))))
+      .Times(0);
+  EXPECT_CALL(*raw_env_,
+              DoRunHTTPRequest(
+                  AllOf(Property(&HTTPRequest::url, StrEq(ruleset_test_url_)),
+                        Property(&HTTPRequest::method, StrCaseEq("POST")))))
+      .Times(0);
+
+  CheckSecurityRules(request_context_, [](Status status) {
+    ASSERT_TRUE(status.code() == Code::OK);
+  });
+  CheckSecurityRules(request_context_, [](Status status) {
+    ASSERT_TRUE(status.code() == Code::OK);
+  });
+}
+
+// Cache first miss then hit. In this case, "no" is cached on miss and returnd
+// on hit.
+TEST_F(CheckSecurityRulesTest, CheckAuthzCacheMissThenHitNegative) {
+  std::string service_config = std::string(kServiceName) + kProducerProjectId +
+                               kApis + kAuthentication + kHttp;
+  std::string server_config = kServerConfig;
+  SetUp(service_config, server_config);
+
+  request_context_->set_auth_claims(kJwtEmailPayload);
+
+  InSequence s;
+  ExpectCall(release_url_, "GET", "", kRelease);
+  ExpectCall(ruleset_test_url_, "POST", kFirstRequest,
+             BuildTestRulesetResponse(false));
+  EXPECT_CALL(*raw_env_, DoRunHTTPRequest(AllOf(
+                             Property(&HTTPRequest::url, StrEq(release_url_)),
+                             Property(&HTTPRequest::method, StrCaseEq("GET")))))
+      .Times(0);
+  EXPECT_CALL(*raw_env_,
+              DoRunHTTPRequest(
+                  AllOf(Property(&HTTPRequest::url, StrEq(ruleset_test_url_)),
+                        Property(&HTTPRequest::method, StrCaseEq("POST")))))
+      .Times(0);
+
+  CheckSecurityRules(request_context_, [](Status status) {
+    ASSERT_TRUE(status.code() == Code::PERMISSION_DENIED);
+  });
+
+  CheckSecurityRules(request_context_, [](Status status) {
+    ASSERT_TRUE(status.code() == Code::PERMISSION_DENIED);
+    ASSERT_TRUE(status.message() ==
+                std::string("Unauthorized access (cached)."));
+  });
+}
+
+// Cache miss. In this case no cache entry is added because of the failure of
+// the interaction with firebase.
+TEST_F(CheckSecurityRulesTest, NoCachingOnBadStatus) {
+  std::string service_config = std::string(kServiceName) + kProducerProjectId +
+                               kApis + kAuthentication + kHttp;
+  std::string server_config = kServerConfig;
+  SetUp(service_config, server_config);
+
+  request_context_->set_auth_claims(kJwtEmailPayload);
+
+  InSequence s;
+  ExpectCall(release_url_, "GET", "", kRelease);
+  ExpectCall(ruleset_test_url_, "POST", kFirstRequest,
+             BuildTestRulesetResponse(false),
+             Status(Code::INTERNAL, "Cannot talk to server"));
+  ExpectCall(release_url_, "GET", "", kRelease);
+  ExpectCall(ruleset_test_url_, "POST", kFirstRequest,
+             BuildTestRulesetResponse(false));
+
+  CheckSecurityRules(request_context_, [](Status status) {
+    ASSERT_TRUE(status.code() == Code::INTERNAL);
+  });
+  CheckSecurityRules(request_context_, [](Status status) {
+    ASSERT_TRUE(status.code() == Code::PERMISSION_DENIED);
+  });
+}
 
 // If the release name is bad, then check the following:
 // 1. Ensure that GetRuleset request is inovked on bad release name.
