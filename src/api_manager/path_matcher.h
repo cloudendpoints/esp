@@ -324,7 +324,8 @@ void ExtractBindingsFromQueryParameters(
 //
 // - Strips off query string: "/a?foo=bar" --> "/a"
 // - Collapses extra slashes: "///" --> "/"
-std::vector<std::string> ExtractRequestParts(std::string path) {
+std::vector<std::string> ExtractRequestParts(
+    std::string path, const std::set<std::string>& custom_verbs) {
   // Remove query parameters.
   path = path.substr(0, path.find_first_of('?'));
 
@@ -333,7 +334,12 @@ std::vector<std::string> ExtractRequestParts(std::string path) {
   std::size_t last_colon_pos = path.find_last_of(':');
   std::size_t last_slash_pos = path.find_last_of('/');
   if (last_colon_pos != std::string::npos && last_colon_pos > last_slash_pos) {
-    path[last_colon_pos] = '/';
+    std::string verb = path.substr(last_colon_pos + 1);
+    // only verb in the configured custom verbs, treat it as verb
+    // replace ":" with / as a separate segment.
+    if (custom_verbs.find(verb) != custom_verbs.end()) {
+      path[last_colon_pos] = '/';
+    }
   }
 
   std::vector<std::string> result;
@@ -392,7 +398,8 @@ Method PathMatcher<Method>::Lookup(
     const std::string& query_params,
     std::vector<VariableBinding>* variable_bindings,
     std::string* body_field_path) const {
-  const std::vector<std::string> parts = ExtractRequestParts(path);
+  const std::vector<std::string> parts =
+      ExtractRequestParts(path, custom_verbs_);
 
   // If service_name has not been registered to ESP and strict_service_matching_
   // is set to false, tries to lookup the method in all registered services.
@@ -424,7 +431,8 @@ Method PathMatcher<Method>::Lookup(
 template <class Method>
 Method PathMatcher<Method>::Lookup(const std::string& http_method,
                                    const std::string& path) const {
-  const std::vector<std::string> parts = ExtractRequestParts(path);
+  const std::vector<std::string> parts =
+      ExtractRequestParts(path, custom_verbs_);
 
   // If service_name has not been registered to ESP and strict_service_matching_
   // is set to false, tries to lookup the method in all registered services.
@@ -490,6 +498,9 @@ bool PathMatcherBuilder<Method>::Register(std::string http_method,
                    root_ptr_.get());
   // Add the method_data to the methods_ vector for cleanup
   methods_.emplace_back(std::move(method_data));
+  if (!ht->verb().empty()) {
+    custom_verbs_.insert(ht->verb());
+  }
   return true;
 }
 

@@ -551,13 +551,11 @@ TEST_F(PathMatcherTest, CustomVerbMatch2) {
 }
 
 TEST_F(PathMatcherTest, CustomVerbMatch3) {
-  EXPECT_NE(nullptr, AddGetPath("/foo/*"));
+  MethodInfo* verb = AddGetPath("/foo/*");
   Build();
 
-  // This should match. But due to an implementation bug which
-  // blinkdly replacing last : with /, it will use /foo/other/verb
-  // to match /foo/* which will fail.
-  EXPECT_EQ(LookupNoBindings("GET", "/foo/other:verb"), nullptr);
+  // This is not custom verb since it was not configured.
+  EXPECT_EQ(LookupNoBindings("GET", "/foo/other:verb"), verb);
 }
 
 TEST_F(PathMatcherTest, CustomVerbMatch4) {
