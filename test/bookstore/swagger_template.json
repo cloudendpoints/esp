@@ -626,19 +626,21 @@
       "x-google-jwks_uri": "https://www.googleapis.com/service_accounts/v1/metadata/x509/23028304136-fbju1j1cdfpc5q9q6s23gm56trn0c9ti@developer.gserviceaccount.com"
     }
   },
-  "x-google-metric-definitions": [
-    {
-      "name": "bookstore/read_requests",
-      "value_type": "INT64",
-      "metric_kind": "DELTA"
+  "x-google-management": {
+    "metrics": [
+      {
+        "name": "bookstore/read_requests",
+        "value_type": "INT64",
+        "metric_kind": "DELTA"
+      }
+    ],
+    "quota": {
+      "limits": [{
+        "name": "bookstore-read-requests",
+        "values": {"STANDARD": 30},
+        "unit": "1/min/{project}",
+        "metric": "bookstore/read_requests"
+      }]
     }
-  ],
-  "x-google-quota-definitions": {
-    "limits": [{
-      "name": "bookstore-read-requests",
-      "values": {"STANDARD": 30},
-      "unit": "1/min/{project}",
-      "metric": "bookstore/read_requests"
-    }]
   }
 }
