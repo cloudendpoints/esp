@@ -116,7 +116,7 @@ TARGET_PKG="$(command mktemp -d)/endpoints-runtime-amd64.deb"
 "${GSUTIL}" cp "${SOURCE_PKG}" "${TARGET_PKG}" \
   || error_exit "Could not fetch ${SOURCE_PKG}."
 OUTPUT="$(rapture --universe=cloud-apt addpkg ${PREFIX} ${TARGET_PKG})"
-DIRECT_REPO=$(echo "${OUTPUT}" | grep "(direct):" | cut -d ' ' -f 1)
+DIRECT_REPO=$(echo "${OUTPUT}" | grep "(direct)" | cut -d ' ' -f 1)
 
 echo "${OUTPUT}"
 echo
