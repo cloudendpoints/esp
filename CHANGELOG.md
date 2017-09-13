@@ -1,28 +1,13 @@
 # Release 1.8.0 12-09-2017
 
-- add a test case for OPTIONS. (#261)
-
 - e2e test service configuration supports x-google-management (#259)
-
 - Auto detect custom verb to support : in the path. (#257)
-
 - Upgrade nginx to 1.13.4 (#242)
-
 - Remove unused stub_map (#206)
-
-- add permission to cp (#253)
-
 - Adding ES256 for auth jwt validator (#231)
-
-- Used ngx_worker to access shared memory for stats (#252)
-
-- IAP header support (#251)
-
+- Support Nginx restart (#252)
+- Add IAP header support (#251)
 - Adding authz cache. (#225)
-
-- Update CHANGELOG for 1.7.0. (#250)
-
-- Increase version number to 1.8.0. (#249)
 
 
 # Release 1.7.0 22-08-2017
