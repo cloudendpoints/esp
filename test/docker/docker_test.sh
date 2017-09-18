@@ -196,7 +196,6 @@ run_esp_test \
   -g "http://${MANAGEMENT_DOCKER_IP}:8080" \
   -s bookstore-backend.endpointsv2.appspot.com \
   -v 2017-05-15r0 \
-  --check_metadata \
   || error_exit 'Docker test for http requests failed.'
 
 printf "\nRun docker test for http requests with service config url\n"
@@ -207,7 +206,6 @@ run_esp_test \
   -g "http://${MANAGEMENT_DOCKER_IP}:8080" \
   -c "http://${MANAGEMENT_DOCKER_IP}:8080/v1/services/custom/config?configId=2017-05-15r0" \
   -s bookstore-backend.endpointsv2.appspot.com \
-  --check_metadata \
   || error_exit 'Docker test for http requests failed.'
 
 printf "\nRun docker test for http requests.\n"
@@ -217,7 +215,6 @@ run_esp_test \
   -m "http://${METADATA_DOCKER_IP}:8080" \
   -g "http://${MANAGEMENT_DOCKER_IP}:8080" \
   -s bookstore-backend.endpointsv2.appspot.com \
-  --check_metadata \
   || error_exit 'Docker test for http requests failed.'
 
 printf "\nRun docker test for http requests managed rollout strategy.\n"
@@ -228,7 +225,6 @@ run_esp_test \
   -g "http://${MANAGEMENT_DOCKER_IP}:8080" \
   -s bookstore-backend.endpointsv2.appspot.com \
   -R managed \
-  --check_metadata \
   || error_exit 'Docker test for http requests failed.'
 
 # Service name, version, and token are fetched from metadata
@@ -240,7 +236,6 @@ run_esp_test \
   -m "http://${METADATA_DOCKER_IP}:8080" \
   -g "http://${MANAGEMENT_DOCKER_IP}:8080" \
   -a "${APP_DOCKER_IP}:8080" \
-  --check_metadata \
   || error_exit 'Docker test for https requests failed.'
 
 # Still need to fetch service.json for custom nginx
@@ -251,7 +246,6 @@ run_esp_test \
   -m "http://${METADATA_DOCKER_IP}:8080" \
   -g "http://${MANAGEMENT_DOCKER_IP}:8080" \
   -s bookstore-backend.endpointsv2.appspot.com \
-  --check_metadata \
   || error_exit 'Docker test for custom nginx.conf failed.'
 
 printf "\nRun docker test for custom ports.\n"
@@ -264,6 +258,5 @@ run_esp_test \
   -g "http://${MANAGEMENT_DOCKER_IP}:8080" \
   -a "${APP_DOCKER_IP}:8080" \
   -s bookstore-backend.endpointsv2.appspot.com \
-  --check_metadata \
   || error_exit 'Docker test for custom ports failed.'
 
