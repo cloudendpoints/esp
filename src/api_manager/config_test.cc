@@ -857,6 +857,38 @@ TEST(Config, TestHttpOptionsSelector) {
   ASSERT_TRUE(method1->allow_unregistered_calls());
 }
 
+TEST(Config, TestHttpOptionslLast) {
+  MockApiManagerEnvironmentWithLog env;
+
+  static const char config_text[] = R"(
+ name: "Service.Name"
+ endpoints {
+   name: "Service.Name"
+   allow_cors: true
+ }
+ http {
+   rules {
+     selector: "user"
+     get: "/api/v1/system/user"
+   }
+   rules {
+     selector: "user.id"
+     get: "/api/v1/system/user/{id}"
+   }
+ }
+)";
+
+  std::unique_ptr<Config> config = Config::Create(&env, config_text, "");
+  ASSERT_TRUE(config);
+
+  auto method1 = config->GetMethodInfo("OPTIONS", "/api/v1/system/user");
+  ASSERT_NE(nullptr, method1);
+
+  auto method2 = config->GetMethodInfo(
+      "OPTIONS", "/api/v1/system/user/e50335e6-e050-4a91-8bb5-5c2035d91fb2");
+  ASSERT_NE(nullptr, method2);
+}
+
 TEST(Config, TestCorsDisabled) {
   MockApiManagerEnvironmentWithLog env;
 

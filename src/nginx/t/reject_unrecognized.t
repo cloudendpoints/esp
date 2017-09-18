@@ -96,7 +96,7 @@ $t->run();
 ################################################################################
 
 # Call an unrecognized method "merge shelves"
-my $response = ApiManager::http_get($NginxPort,'/shelves/1:merge?other=2');
+my $response = ApiManager::http_get($NginxPort,'/shelves/1/:merge?other=2');
 
 # Wait for :report body.
 is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');
@@ -129,7 +129,7 @@ my $log = $report_json->{operations}[0]->{logEntries}[0];
 is($log->{name}, 'endpoints_log', 'Log entry was written into endpoints_log');
 my $payload = $log->{structPayload};
 is($payload->{http_method}, 'GET', 'Logged HTTP verb is GET');
-is($payload->{url}, '/shelves/1:merge?other=2', 'Logged URL is correct');
+is($payload->{url}, '/shelves/1/:merge?other=2', 'Logged URL is correct');
 like($payload->{log_message}, qr/an unrecognized HTTP call/, 'Logged message is as expected');
 
 # Verify backend was not called.

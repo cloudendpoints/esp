@@ -277,6 +277,8 @@ def performance(nodeLabel) {
 def e2eTest(nodeLabel) {
   // Please Update script/validate_release.py when adding or removing test.
   // Storing as [key, value] as Jenkins groovy cannot iterate over maps :(.
+  // Please don't remove gke-custom-http test. It is important to test
+  // custom nginx config.
   def branches = [
       ['gce-debian-8', {
         node(nodeLabel) {

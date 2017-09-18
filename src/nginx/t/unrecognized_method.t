@@ -96,7 +96,7 @@ $t->run();
 ################################################################################
 
 # Call an unrecognized method "merge shelves"
-my $response = ApiManager::http_get($NginxPort,'/shelves/1:merge?other=2');
+my $response = ApiManager::http_get($NginxPort,'/shelves/1/:merge?other=2');
 
 # Wait for :report body.
 is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');
@@ -144,7 +144,7 @@ my $log = $report_json->{operations}[0]->{logEntries}[0];
 is($log->{name}, 'endpoints_log', 'Log entry was written into endpoints_log');
 my $payload = $log->{structPayload};
 is($payload->{http_method}, 'GET', 'Logged HTTP verb is GET');
-is($payload->{url}, '/shelves/1:merge?other=2', 'Logged URL is correct');
+is($payload->{url}, '/shelves/1/:merge?other=2', 'Logged URL is correct');
 is($payload->{log_message}, 'Method: Unspecified.Paths', 'Logged message is as expected');
 
 # Verify backend was called.
@@ -153,8 +153,8 @@ is(scalar @bookstore_requests, 1, 'Backend was called.');
 
 $r = shift @bookstore_requests;
 is($r->{verb}, 'GET', 'Backend request was a get');
-is($r->{uri}, '/shelves/1:merge?other=2',
-   'Backend /shelves/1:merge?other=2 API was called');
+is($r->{uri}, '/shelves/1/:merge?other=2',
+   'Backend /shelves/1/:merge?other=2 API was called');
 
 ################################################################################
 
@@ -184,7 +184,7 @@ sub bookstore {
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
 
-  $server->on('GET', '/shelves/1:merge?other=2', <<'EOF');
+  $server->on('GET', '/shelves/1/:merge?other=2', <<'EOF');
 HTTP/1.1 200 OK
 Content-Type: application/json
 

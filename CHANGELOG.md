@@ -1,3 +1,13 @@
+# Release 1.8.0 12-09-2017
+
+- Auto detect custom verb to support : in the path. (#257)
+- Upgrade nginx to 1.13.4 (#242)
+- Adding ES256 for auth jwt validator (#231)
+- Support Nginx restart (#252)
+- Add IAP header support (#251)
+- Adding authz cache. (#225)
+
+
 # Release 1.7.0 22-08-2017
 
 - Fixed the server config file backward compatibility
