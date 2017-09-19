@@ -223,8 +223,7 @@ JSON_FILE="${LOG_DIRECTORY}/${TEST_ID}.json"
 
     "${ROOT}/test/client/esp_bookstore_test.py" \
       --host="${HOST}" --endpoints=true \
-      --api_key="${API_KEY}" --auth_token="${JWT_TOKEN}" \
-      --verbose=true
+      --api_key="${API_KEY}" --auth_token="${JWT_TOKEN}"
 
     [[ ${?} -eq 0 ]] \
       || ((BOOKSTORE_FAILURES++))

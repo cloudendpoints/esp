@@ -50,7 +50,6 @@ func RunBookstore(url string, service deploy.Service) bool {
 	}
 
 	out, err := utils.Run(path+"/test/client/esp_bookstore_test.py",
-		"--verbose=true",
 		"--host="+url,
 		"--api_key="+service.Key,
 		"--auth_token="+testToken,
