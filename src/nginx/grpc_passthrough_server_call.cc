@@ -46,25 +46,6 @@ namespace nginx {
 namespace {
 const ngx_str_t kContentTypeApplicationGrpc = ngx_string("application/grpc");
 
-// Builds a grpc_slice containing the same data as is contained in the
-// supplied nginx buffer.
-grpc_slice GrpcSliceFromNginxBuffer(ngx_buf_t *buf) {
-  if (!ngx_buf_in_memory(buf) && buf->file) {
-    // If the buffer's not in memory, we need to read the contents.
-    grpc_slice result = grpc_slice_malloc(ngx_buf_size(buf));
-    ngx_read_file(buf->file, GRPC_SLICE_START_PTR(result), ngx_buf_size(buf),
-                  buf->file_pos);
-    return result;
-  }
-
-  // Otherwise, just copy the buffer's data.
-  grpc_slice result = grpc_slice_from_copied_buffer(
-      reinterpret_cast<char *>(buf->pos), buf->last - buf->pos);
-
-  buf->pos += GRPC_SLICE_LENGTH(result);
-  return result;
-}
-
 // Deletes GRPC objects.
 //
 // This is used (instead of specializing std::default_deleter<>) in
@@ -200,6 +181,23 @@ bool NgxEspGrpcPassThroughServerCall::ConvertResponseMessage(
   return true;
 }
 
+grpc_slice NgxEspGrpcPassThroughServerCall::GrpcSliceFromNginxBuffer(
+    ngx_buf_t *buf) {
+  if (!ngx_buf_in_memory(buf) && buf->file) {
+    // If the buffer's not in memory, we need to read the contents.
+    grpc_slice result = grpc_slice_malloc(ngx_buf_size(buf));
+    ngx_read_file(buf->file, GRPC_SLICE_START_PTR(result), ngx_buf_size(buf),
+                  buf->file_pos);
+    return result;
+  }
+
+  // Otherwise, just copy the buffer's data.
+  grpc_slice result = grpc_slice_from_copied_buffer(
+      reinterpret_cast<char *>(buf->pos), buf->last - buf->pos);
+
+  buf->pos += GRPC_SLICE_LENGTH(result);
+  return result;
+}
 }  // namespace nginx
 }  // namespace api_manager
 }  // namespace google

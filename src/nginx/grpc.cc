@@ -30,6 +30,7 @@
 #include "src/nginx/environment.h"
 #include "src/nginx/error.h"
 #include "src/nginx/grpc_passthrough_server_call.h"
+#include "src/nginx/grpc_web_server_call.h"
 #include "src/nginx/module.h"
 #include "src/nginx/transcoded_grpc_server_call.h"
 #include "src/nginx/util.h"
@@ -123,6 +124,19 @@ std::multimap<std::string, std::string> ExtractMetadata(ngx_http_request_t *r) {
   return metadata;
 }
 
+bool IsGrpcWeb(ngx_http_request_t *r) {
+  if (r != nullptr) {
+    ::google::protobuf::StringPiece content_type =
+        ngx_str_to_stringpiece(r->headers_in.content_type->value);
+    if (r->method == NGX_HTTP_POST &&
+        (content_type == "application/grpc-web" ||
+         content_type == "application/grpc-web+proto")) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool CanBeTranscoded(ngx_esp_request_ctx_t *ctx) {
   // Verify that all the necessary pieces exist and the method has RPC info
   // configured
@@ -157,7 +171,6 @@ ngx_int_t GrpcBackendHandler(ngx_http_request_t *r) {
 
     if (status.ok()) {
       // We have a stub for this backend; proxy the call via libgrpc.
-
       const std::multimap<std::string, std::string> &headers =
           ExtractMetadata(r);
       std::shared_ptr<NgxEspGrpcPassThroughServerCall> server_call;
@@ -168,6 +181,30 @@ ngx_int_t GrpcBackendHandler(ngx_http_request_t *r) {
 
         ngx_log_debug1(NGX_LOG_DEBUG, r->connection->log, 0,
                        "GrpcBackendHandler: gRPC pass-through - method %s",
+                       method.c_str());
+
+        grpc::ProxyFlow::Start(espmf->grpc_queue.get(), std::move(server_call),
+                               std::move(stub), method, headers);
+        return NGX_DONE;
+      }
+    }
+  } else if (ctx && ctx->request_handler && IsGrpcWeb(r)) {
+    ctx->grpc_backend = true;
+    std::shared_ptr<::grpc::GenericStub> stub;
+    std::tie(status, stub) = GrpcGetStub(r, espcf, ctx);
+
+    if (status.ok()) {
+      // We have a stub for this backend; proxy the call via libgrpc.
+      const std::multimap<std::string, std::string> &headers =
+          ExtractMetadata(r);
+      std::shared_ptr<NgxEspGrpcWebServerCall> server_call;
+      status = NgxEspGrpcWebServerCall::Create(r, &server_call);
+
+      if (status.ok()) {
+        std::string method(reinterpret_cast<char *>(r->uri.data), r->uri.len);
+
+        ngx_log_debug1(NGX_LOG_DEBUG, r->connection->log, 0,
+                       "GrpcBackendHandler: gRPC-Web - method %s",
                        method.c_str());
 
         grpc::ProxyFlow::Start(espmf->grpc_queue.get(), std::move(server_call),
