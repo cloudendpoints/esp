@@ -1,7 +1,7 @@
 # Release 1.9.0 27-09-2017
 
-- Add start_esp options to allow more characters in headers
-- Added --check_metadata option to enable or disable checking metadata service
+- Add start_esp options to allow more characters in HTTP headers
+- Add --check_metadata option to disable checking metadata service
 - Add --pid_file flag to configure PID file location.
 - Add the support of JWK keys without the alg field (#274)
 
