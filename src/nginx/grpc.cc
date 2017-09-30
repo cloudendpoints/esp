@@ -125,7 +125,7 @@ std::multimap<std::string, std::string> ExtractMetadata(ngx_http_request_t *r) {
 }
 
 bool IsGrpcWeb(ngx_http_request_t *r) {
-  if (r != nullptr) {
+  if (r != nullptr && r->headers_in.content_type) {
     ::google::protobuf::StringPiece content_type =
         ngx_str_to_stringpiece(r->headers_in.content_type->value);
     if (r->method == NGX_HTTP_POST &&

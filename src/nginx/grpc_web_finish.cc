@@ -30,16 +30,12 @@ extern "C" {
 #include "src/http/ngx_http.h"
 }
 
-#define FAILED_TO_SEND_GRPC_WEB_TRAILERS \
-  "Failed to serialize the gRPC-Web trailers."
-
-#define RETURN_IF_NULL(r, condition, ret)                 \
-  do {                                                    \
-    if (condition == nullptr) {                           \
-      ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0, \
-                    FAILED_TO_SEND_GRPC_WEB_TRAILERS);    \
-      return ret;                                         \
-    }                                                     \
+#define RETURN_IF_NULL(r, condition, ret, message)                  \
+  do {                                                              \
+    if (condition == nullptr) {                                     \
+      ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0, message); \
+      return ret;                                                   \
+    }                                                               \
   } while (0)
 
 namespace google {
@@ -89,63 +85,70 @@ ngx_chain_t *AppendToEnd(ngx_http_request_t *r, ngx_chain_t *chain,
     c->buf = buffer;
     c->next = nullptr;
     end->next = c;
+    end = c;
   }
   return end;
 }
 
-ngx_buf_t *EncodesGrpcStatusCode(ngx_http_request_t *r, const Code &code) {
+ngx_chain_t *EncodesGrpcStatusCode(ngx_http_request_t *r, const Code &code,
+                                   size_t *length) {
+  ngx_chain_t *ngx_chain_status = ngx_alloc_chain_link(r->pool);
   size_t size = snprintf(nullptr, 0, kGrpcStatus, code);
-  uint8_t *status = static_cast<uint8_t *>(ngx_palloc(r->pool, size + 1));
-  if (status == nullptr) {
+  uint8_t *buffer = static_cast<uint8_t *>(ngx_palloc(r->pool, size + 1));
+  if (buffer == nullptr) {
     return nullptr;
   }
-  snprintf(reinterpret_cast<char *>(status), size + 1, kGrpcStatus, code);
+  snprintf(reinterpret_cast<char *>(buffer), size + 1, kGrpcStatus, code);
   ngx_buf_t *output = static_cast<ngx_buf_t *>(ngx_calloc_buf(r->pool));
   if (output == nullptr) {
     return nullptr;
   }
-  output->start = status;
+  output->start = buffer;
   output->pos = output->start;
-  output->end = status + size;
+  output->end = buffer + size;
   output->last = output->end;
   output->temporary = 1;
-  return output;
+  (*length) += size;
+  ngx_chain_status->buf = output;
+  ngx_chain_status->next = nullptr;
+  return ngx_chain_status;
 }
 
-ngx_buf_t *EncodesGrpcMessage(ngx_http_request_t *r,
-                              const std::string &message) {
+ngx_chain_t *EncodesGrpcMessage(ngx_http_request_t *r,
+                                const std::string &message, size_t *length) {
+  ngx_chain_t *ngx_chain_message = ngx_alloc_chain_link(r->pool);
   size_t size = snprintf(nullptr, 0, kGrpcMessage, message.c_str());
-  uint8_t *status = static_cast<uint8_t *>(ngx_palloc(r->pool, size + 1));
-  if (status == nullptr) {
+  uint8_t *buffer = static_cast<uint8_t *>(ngx_palloc(r->pool, size + 1));
+  if (buffer == nullptr) {
     return nullptr;
   }
-  snprintf(reinterpret_cast<char *>(status), size + 1, kGrpcMessage,
+  snprintf(reinterpret_cast<char *>(buffer), size + 1, kGrpcMessage,
            message.c_str());
   ngx_buf_t *output = static_cast<ngx_buf_t *>(ngx_calloc_buf(r->pool));
   if (output == nullptr) {
     return nullptr;
   }
-  output->start = status;
+  output->start = buffer;
   output->pos = output->start;
-  output->end = status + size;
+  output->end = buffer + size;
   output->last = output->end;
   output->temporary = 1;
-  return output;
+  (*length) += size;
+  ngx_chain_message->buf = output;
+  ngx_chain_message->next = nullptr;
+  return ngx_chain_message;
 }
 
-ngx_chain_t *EncodesGrpcTrailers(
+ngx_chain_t *EncodesGrpcCustomTrailers(
     ngx_http_request_t *r, std::multimap<std::string, std::string> &trailers,
-    size_t *length) {
-  if (trailers.empty()) {
-    return nullptr;
-  }
-
-  ngx_chain_t *output = ngx_alloc_chain_link(r->pool);
+    ngx_chain_t *output, size_t *length) {
   if (output == nullptr) {
     return nullptr;
   }
-  ngx_chain_t *current = output;
-
+  if (trailers.empty()) {
+    return nullptr;
+  }
+  ngx_chain_t *last = output;
   for (auto &trailer : trailers) {
     size_t size = trailer.first.size() + trailer.second.size() + 4;
     uint8_t *grpc_trailer = static_cast<uint8_t *>(ngx_palloc(r->pool, size));
@@ -167,14 +170,58 @@ ngx_chain_t *EncodesGrpcTrailers(
     output_buffer->end = grpc_trailer + size;
     output_buffer->last = output_buffer->end;
     output_buffer->temporary = 1;
-    current = AppendToEnd(r, current, output_buffer);
-    if (current == nullptr) {
+    last = AppendToEnd(r, last, output_buffer);
+    if (last == nullptr) {
       return nullptr;
     }
-
-    *length += size;
+    (*length) += size;
   }
-  return output;
+  return last;
+}
+
+ngx_chain_t *EncodesGrpcTrailersFrame(ngx_http_request_t *r,
+                                      ngx_chain_t *status, ngx_chain_t *message,
+                                      ngx_chain_t *custom_trailers,
+                                      ngx_chain_t *custom_trailers_last,
+                                      size_t total) {
+  ngx_chain_t *ngx_chain_trailers_frame = ngx_alloc_chain_link(r->pool);
+  if (ngx_chain_trailers_frame == nullptr) {
+    return nullptr;
+  }
+  ngx_buf_t *ngx_buf_trailers_frame =
+      static_cast<ngx_buf_t *>(ngx_calloc_buf(r->pool));
+  if (ngx_buf_trailers_frame == nullptr) {
+    return nullptr;
+  }
+
+  ngx_buf_trailers_frame->start =
+      static_cast<uint8_t *>(ngx_palloc(r->pool, 5));
+  if (ngx_buf_trailers_frame->start == nullptr) {
+    return nullptr;
+  }
+  NewFrame(GRPC_WEB_FH_TRAILER, total, ngx_buf_trailers_frame->start);
+  ngx_buf_trailers_frame->end = ngx_buf_trailers_frame->start + 5;
+  ngx_buf_trailers_frame->pos = ngx_buf_trailers_frame->start;
+  ngx_buf_trailers_frame->last = ngx_buf_trailers_frame->end;
+  ngx_buf_trailers_frame->temporary = 1;
+
+  ngx_chain_trailers_frame->buf = ngx_buf_trailers_frame;
+  ngx_chain_t *last = ngx_chain_trailers_frame;
+  last->next = status;
+  last = last->next;
+  if (message != nullptr) {
+    last->next = message;
+    last = last->next;
+  }
+  if (custom_trailers != nullptr) {
+    last->next = custom_trailers;
+    last = custom_trailers_last;
+  }
+  if (last->buf != nullptr) {
+    last->buf->last_buf = true;
+    last->buf->flush = true;
+  }
+  return ngx_chain_trailers_frame;
 }
 }  // namespace
 
@@ -184,45 +231,44 @@ ngx_int_t GrpcWebFinish(
   uint64_t length = 0;
 
   // Encodes GRPC status.
-  ngx_buf_t *grpc_status = EncodesGrpcStatusCode(r, status.CanonicalCode());
-  RETURN_IF_NULL(r, grpc_status, NGX_DONE);
-  length += grpc_status->end - grpc_status->start;
+  ngx_chain_t *grpc_status =
+      EncodesGrpcStatusCode(r, status.CanonicalCode(), &length);
+  RETURN_IF_NULL(r, grpc_status, NGX_DONE, "Failed to encode gRPC-Web status.");
 
   // Encodes GRPC message.
-  ngx_buf_t *grpc_message = nullptr;
+  ngx_chain_t *grpc_message = nullptr;
   if (!status.message().empty()) {
-    grpc_message = EncodesGrpcMessage(r, status.message());
-    RETURN_IF_NULL(r, grpc_message, NGX_DONE);
-    length += grpc_message->end - grpc_message->start;
+    grpc_message = EncodesGrpcMessage(r, status.message(), &length);
+    RETURN_IF_NULL(r, grpc_message, NGX_DONE,
+                   "Failed to encode gRPC-Web message.");
+    grpc_status->next = grpc_message;
   }
 
   // Encodes GRPC trailers.
-  ngx_chain_t *trailers = EncodesGrpcTrailers(r, response_trailers, &length);
-  RETURN_IF_NULL(r, trailers, NGX_DONE);
+  ngx_chain_t *trailers = nullptr;
+  ngx_chain_t *trailers_last = nullptr;
+  if (!response_trailers.empty()) {
+    trailers = ngx_alloc_chain_link(r->pool);
+    RETURN_IF_NULL(
+        r, trailers, NGX_DONE,
+        "Failed to allocate ngx_chain_t for gRPC-Web custom trailers.");
+    trailers_last =
+        EncodesGrpcCustomTrailers(r, response_trailers, trailers, &length);
+    RETURN_IF_NULL(r, trailers_last, NGX_DONE,
+                   "Failed to encode gRPC-Web custom trailers.");
+    grpc_message->next = trailers;
+  }
 
   // Encodes GRPC trailer frame.
-  ngx_buf_t *frame = static_cast<ngx_buf_t *>(ngx_calloc_buf(r->pool));
-  RETURN_IF_NULL(r, frame, NGX_DONE);
-  frame->start = static_cast<uint8_t *>(ngx_palloc(r->pool, 5));
-  RETURN_IF_NULL(r, frame->start, NGX_DONE);
-  NewFrame(GRPC_WEB_FH_TRAILER, length, frame->start);
-  frame->end = frame->start + 5;
-  frame->pos = frame->start;
-  frame->last = frame->end;
-  frame->temporary = 1;
+  ngx_chain_t *output = EncodesGrpcTrailersFrame(
+      r, grpc_status, grpc_message, trailers, trailers_last, length);
+  RETURN_IF_NULL(r, output, NGX_DONE,
+                 "Failed to encode gRPC-Web trailers frame.");
 
-  ngx_chain_t *output = AppendToEnd(r, r->out, frame);
-  RETURN_IF_NULL(r, output, NGX_DONE);
-  output = AppendToEnd(r, output, grpc_status);
-  RETURN_IF_NULL(r, output, NGX_DONE);
-  output = AppendToEnd(r, output, grpc_message);
-  RETURN_IF_NULL(r, output, NGX_DONE);
-  output->next = trailers;
-
-  ngx_int_t rc = ngx_http_send_special(r, NGX_HTTP_LAST);
+  ngx_int_t rc = ngx_http_output_filter(r, output);
   if (rc == NGX_ERROR) {
     ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
-                  "Failed to send the gRPC-Web trailers - rc=%d", rc);
+                  "Failed to send the gRPC-Web trailers frame - rc=%d", rc);
     return NGX_DONE;
   }
   return rc;
