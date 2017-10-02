@@ -82,7 +82,15 @@ is($t->waitforsocket("127.0.0.1:${GrpcBackendPort}"), 1, 'GRPC test server socke
 $t->run();
 is($t->waitforsocket("127.0.0.1:${NginxPort}"), 1, 'Nginx socket ready.');
 
-################################################################################
+##################################################################################
+#
+# Sends an unary call.
+# Request body:
+# --------------------------------------------------------------------------------
+# | 1 byte gRPC-Web flag | 4 bytes length | raw protobuf (ask for 10 bytes back) |
+# --------------------------------------------------------------------------------
+#
+##################################################################################
 
 my $response = ApiManager::http($NginxPort,qq{
 POST /grpc.testing.TestService/UnaryCall HTTP/1.0

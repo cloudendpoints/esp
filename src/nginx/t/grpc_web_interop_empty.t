@@ -83,6 +83,14 @@ $t->run();
 is($t->waitforsocket("127.0.0.1:${NginxPort}"), 1, 'Nginx socket ready.');
 
 ################################################################################
+#
+# Sends an empty call.
+# Request body:
+# ---------------------------------------------
+# | 1 byte gRPC-Web flag | 4 bytes length (0) | 
+# ---------------------------------------------
+#
+################################################################################
 
 my $response = ApiManager::http($NginxPort,qq{
 POST /grpc.testing.TestService/EmptyCall HTTP/1.0

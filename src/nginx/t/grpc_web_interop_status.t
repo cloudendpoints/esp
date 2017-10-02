@@ -83,7 +83,14 @@ $t->run();
 is($t->waitforsocket("127.0.0.1:${NginxPort}"), 1, 'Nginx socket ready.');
 
 ################################################################################
-
+#
+# Sends an unary call to trigger an error(4) with message('test').
+# Request body:
+# --------------------------------------------------------
+# | 1 byte gRPC-Web flag | 4 bytes length | raw protobuf |
+# --------------------------------------------------------
+#
+################################################################################
 my $response = ApiManager::http($NginxPort,qq{
 POST /grpc.testing.TestService/UnaryCall HTTP/1.0
 Host: 127.0.0.1:${NginxPort}

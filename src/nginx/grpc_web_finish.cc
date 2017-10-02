@@ -32,7 +32,7 @@ extern "C" {
 
 #define RETURN_IF_NULL(r, condition, ret, message)                  \
   do {                                                              \
-    if (condition == nullptr) {                                     \
+    if ((condition) == nullptr) {                                   \
       ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0, message); \
       return ret;                                                   \
     }                                                               \
