@@ -223,18 +223,18 @@ __EOF__
 
     echo ''
     echo 'Checking for presence of error.log'
-    ls "${DIR}"/error*.log || error_exit 'Cannot find any log files'
-
-    echo ''
-    echo "Analyzing NGINX error logs in ${DIR} ..."
-    cat >> "${NGINX_LOG_ANALYSIS}" << __EOF__
+    if ls "${DIR}"/error*.log; then
+      echo ''
+      echo "Analyzing NGINX error logs in ${DIR} ..."
+      cat >> "${NGINX_LOG_ANALYSIS}" << __EOF__
 
 **********************************************************************
 DIR: ${DIR}
 **********************************************************************
 __EOF__
-    grep -v "${KNOWN_ERRORS_REGEX}" "${DIR}"/error*.log \
-      >> "${NGINX_LOG_ANALYSIS}"
+      grep -v "${KNOWN_ERRORS_REGEX}" "${DIR}"/error*.log \
+        >> "${NGINX_LOG_ANALYSIS}"
+    fi
   done;
 
   printf "\e[31m

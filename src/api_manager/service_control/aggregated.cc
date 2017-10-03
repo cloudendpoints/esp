@@ -166,8 +166,8 @@ Aggregated::Aggregated(const ::google::api::Service& service,
       service_control_proto_(logs, metrics, labels, service.name(),
                              service.id()),
       url_(service_, server_config),
-      mismatched_check_config_id(service.id()),
-      mismatched_report_config_id(service.id()),
+      mismatched_check_config_id_(service.id()),
+      mismatched_report_config_id_(service.id()),
       max_report_size_(0) {
   if (sa_token_) {
     sa_token_->SetAudience(
@@ -261,20 +261,24 @@ Status Aggregated::Report(const ReportRequestInfo& info) {
   client_->Report(
       *request, response,
       [this, response](const ::google::protobuf::util::Status& status) {
-        if (service_control_proto_.service_config_id() !=
-            response->service_config_id()) {
-          if (mismatched_report_config_id != response->service_config_id()) {
-            env_->LogWarning(
-                "Received non-matching report response service config ID: '" +
-                response->service_config_id() + "', requested: '" +
-                service_control_proto_.service_config_id() + "'");
-            mismatched_report_config_id = response->service_config_id();
+        // When the callback comes, this object may have been deleted.
+        // In this case, client_ should have been freed.
+        if (client_) {
+          if (service_control_proto_.service_config_id() !=
+              response->service_config_id()) {
+            if (mismatched_report_config_id_ != response->service_config_id()) {
+              env_->LogWarning(
+                  "Received non-matching report response service config ID: '" +
+                  response->service_config_id() + "', requested: '" +
+                  service_control_proto_.service_config_id() + "'");
+              mismatched_report_config_id_ = response->service_config_id();
+            }
           }
-        }
 
-        if (!status.ok() && env_) {
-          env_->LogError(std::string("Service control report failed. " +
-                                     status.ToString()));
+          if (!status.ok() && env_) {
+            env_->LogError(std::string("Service control report failed. " +
+                                       status.ToString()));
+          }
         }
         delete response;
       });
@@ -314,12 +318,12 @@ void Aggregated::Check(
 
     if (service_control_proto_.service_config_id() !=
         response->service_config_id()) {
-      if (mismatched_check_config_id != response->service_config_id()) {
+      if (mismatched_check_config_id_ != response->service_config_id()) {
         env_->LogWarning(
             "Received non-matching check response service config ID: '" +
             response->service_config_id() + "', requested: '" +
             service_control_proto_.service_config_id() + "'");
-        mismatched_check_config_id = response->service_config_id();
+        mismatched_check_config_id_ = response->service_config_id();
       }
     }
 
