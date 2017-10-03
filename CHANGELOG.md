@@ -1,3 +1,10 @@
+# Release 1.9.0 27-09-2017
+
+- Add start_esp options to allow more characters in HTTP headers
+- Add --check_metadata option to disable checking metadata service
+- Add --pid_file flag to configure PID file location.
+- Add the support of JWK keys without the alg field (#274)
+
 # Release 1.8.0 12-09-2017
 
 - Auto detect custom verb to support : in the path. (#257)
