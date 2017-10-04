@@ -142,6 +142,10 @@ nginx_suite(
         "grpc_interop_status.t",
         "grpc_interop_streaming.t",
         "grpc_interop_unary.t",
+        "grpc_web_interop_empty.t",
+        "grpc_web_interop_status.t",
+        "grpc_web_interop_unary.t",
+        "grpc_web_interop_unary_large.t",
     ],
     deps = [
         ":perl_library",

@@ -23,64 +23,47 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#ifndef NGINX_GRPC_PASSTHROUGH_SERVER_CALL_H_
-#define NGINX_GRPC_PASSTHROUGH_SERVER_CALL_H_
+#ifndef SRC_NGINX_GRPC_WEB_SERVER_CALL_H_
+#define SRC_NGINX_GRPC_WEB_SERVER_CALL_H_
 
+#include <cstdint>
+#include <functional>
 #include <map>
-#include <string>
-#include <vector>
-
-extern "C" {
-#include "src/http/ngx_http.h"
-}
-
 #include "grpc++/support/byte_buffer.h"
 #include "include/api_manager/utils/status.h"
-#include "src/nginx/grpc_server_call.h"
+#include "src/nginx/grpc_passthrough_server_call.h"
 
 namespace google {
 namespace api_manager {
 namespace nginx {
 
-// grpc::ServerCall implementation for gRPC pass-through.
-//
-// Most of the ::grpc::ServerCall implementation is in the base class -
-// NgxEspGrpcServerCall. This class implements ServerCall's Finish() and
-// request/response conversion virtual functions defined by
-// NgxEspGrpcServerCall.
-class NgxEspGrpcPassThroughServerCall : public NgxEspGrpcServerCall {
+class NgxEspGrpcWebServerCall
+    : public google::api_manager::nginx::NgxEspGrpcPassThroughServerCall {
  public:
-  // Creates an instance of NgxEspGrpcPassThroughServerCall. If successful,
-  // returns an OK status and out points to the created instance. Otherwise,
-  // returns the error status.
-  static utils::Status Create(
-      ngx_http_request_t* r,
-      std::shared_ptr<NgxEspGrpcPassThroughServerCall>* out);
+  // Creates an instance of NgxEspGrpcWebServerCall. If successful, returns an
+  // OK status and out points to the created instance. Otherwise, returns the
+  // error status.
+  static utils::Status Create(ngx_http_request_t* r,
+                              std::shared_ptr<NgxEspGrpcWebServerCall>* out);
+
+  NgxEspGrpcWebServerCall(ngx_http_request_t* r);
+  virtual ~NgxEspGrpcWebServerCall();
+
+  // NgxEspGrpcWebServerCall is neither copyable nor movable.
+  NgxEspGrpcWebServerCall(const NgxEspGrpcWebServerCall&) = delete;
+  NgxEspGrpcWebServerCall& operator=(const NgxEspGrpcWebServerCall&) = delete;
 
  protected:
-  // Constructor
-  NgxEspGrpcPassThroughServerCall(ngx_http_request_t* r);
-
-  // Builds a grpc_slice containing the same data as is contained in the
-  // supplied nginx buffer.
-  grpc_slice GrpcSliceFromNginxBuffer(ngx_buf_t* buf);
-
-  virtual const ngx_str_t& response_content_type() const;
-
   // ServerCall::Finish() implementation
-  virtual void Finish(
+  void Finish(
       const utils::Status& status,
-      std::multimap<std::string, std::string> response_trailers);
+      std::multimap<std::string, std::string> response_trailers) override;
 
- private:
-  // NgxEspGrpcServerCall implementation
-  virtual bool ConvertRequestBody(std::vector<grpc_slice>* out);
-  virtual bool ConvertResponseMessage(const ::grpc::ByteBuffer& msg,
-                                      ngx_chain_t* out);
+  const ngx_str_t& response_content_type() const override;
 };
 
 }  // namespace nginx
 }  // namespace api_manager
 }  // namespace google
 
-#endif  // NGINX_GRPC_PASSTHROUGH_SERVER_CALL_H_
+#endif  // SRC_NGINX_GRPC_WEB_SERVER_CALL_H_
