@@ -494,7 +494,13 @@ bool PathMatcherBuilder<Method>::Register(std::string http_method,
   method_data->variables = std::move(ht->Variables());
   method_data->body_field_path = std::move(body_field_path);
 
-  InsertPathToNode(path_info, method_data.get(), http_method, true,
+  // Some patterns have same path_patterns with differnt methods; such as
+  // GET for /a/{id} and POST for /a/{name}
+  // If allow_cors is true, OPTIONS is added for all URL.
+  // OPTIONS will be added for /a/{id} and /a/{name}. They are different URL,
+  // but same pattern so they will be marked as duplicated.
+  // Allows duplication for OPTIONS
+  InsertPathToNode(path_info, method_data.get(), http_method, false,
                    root_ptr_.get());
   // Add the method_data to the methods_ vector for cleanup
   methods_.emplace_back(std::move(method_data));
