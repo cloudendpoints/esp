@@ -44,7 +44,9 @@ my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $MetadataPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(26);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(35);
+
+$t->write_file('server_config.pb.txt', ApiManager::disable_service_control_cache);
 
 # Use JSON configuration.
 ApiManager::write_file_expand($t, 'service.json', <<"EOF");
@@ -96,7 +98,7 @@ ApiManager::write_file_expand($t, 'service.json', <<"EOF");
 }
 EOF
 
-ApiManager::write_file_expand($t, 'nginx.conf', <<"EOF");
+$t->write_file_expand('nginx.conf', <<"EOF");
 %%TEST_GLOBALS%%
 daemon off;
 events {
@@ -114,7 +116,7 @@ http {
     location / {
       endpoints {
         api service.json;
-        %%TEST_CONFIG%%
+        server_config server_config.pb.txt;
         on;
       }
       proxy_pass http://127.0.0.1:${BackendPort};
@@ -153,64 +155,92 @@ $t->stop_daemons();
 
 ################################################################################
 
-#  my $json_body = ;
+sub verify_check {
+  my ($r, $call, $operation_name, $consumer_id) = @_;
 
+  like($r->{uri}, qr/:check$/, 'Check was called for ' . $call);
+  my $check = decode_json(ServiceControl::convert_proto($r->{body}, 'check_request', 'json'));
+  is($check->{operation}->{operationName}, $operation_name,
+     'Check matched operation name for ' . $call);
+  is($check->{operation}->{consumerId}, $consumer_id,
+     'Check matched consumer id for ' . $call);
+}
+
+sub verify_report {
+  my ($r, $call, $operation_name, $consumer_id) = @_;
+
+  like($r->{uri}, qr/:report$/, 'Report was called for ' . $call);
+  my $report_json = decode_json(ServiceControl::convert_proto($r->{body}, 'report_request', 'json'));
+  my @operations = @{$report_json->{operations}};
+  is(scalar @operations, 1, 'There are 1 operations total');
+  my $report = shift @operations;
+  is($report->{operationName}, $operation_name,
+     'Matched operation name for ' . $call);
+  if (defined $consumer_id) {
+    is($report->{consumerId}, $consumer_id, 'Report matched consumer id for ' . $call);
+  } else {
+    ok((not exists($report->{consumerId})), 'Report has empty consumerId for ' . $call);
+  }
+}
+
+# 1st call: Check is called since api-key is provided
+# 2nd call: Check is NOT called since api-key is not provided
+# 3rd call: Check is called since api-key is provided
+# 4th call: Check is NOT called since api-key is NOT provided
+# Report are called for all of them.
 my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
-is(scalar @servicecontrol_requests, 3, 'Service control was called 3 times.');
+is(scalar @servicecontrol_requests, 6, 'Service control was called 6 times.');
 
-my $report_request = pop @servicecontrol_requests;
-like($report_request->{uri}, qr/^.*:report$/, 'Report was called.');
-my $report_json = decode_json(ServiceControl::convert_proto($report_request->{body}, 'report_request', 'json'));
-my @operations = @{$report_json->{operations}};
-is(scalar @operations, 4, 'There are 4 operations total');
+my ($check1, $report1, $report2, $check3, $report3, $report4) = @servicecontrol_requests;
 
 # /shelves?key=this-is-an-api-key-1
+verify_check($check1,
+            '/shelves?key=this-is-an-api-key',
+            'ListShelves',
+            'api_key:this-is-an-api-key-1');
+
+verify_report($report1,
+            '/shelves?key=this-is-an-api-key',
+            'ListShelves',
+            'api_key:this-is-an-api-key-1');
+
 like($response1, qr/HTTP\/1\.1 200 OK/, 'Allow unregistered, provide API key - 200 OK');
 like($response1, qr/List of shelves\.$/, 'Allow unregistered, provide API key - body');
 
-my $r = shift @servicecontrol_requests;
-like($r->{uri}, qr/:check$/, 'Check was called for /shelves?key=this-is-an-api-key.');
-my $check = decode_json(ServiceControl::convert_proto($r->{body}, 'check_request', 'json'));
-is($check->{operation}->{operationName}, 'ListShelves',
-   'Allow unregistered, provide API key - method name');
-is($check->{operation}->{consumerId}, 'api_key:this-is-an-api-key-1',
-   'Allow unregistered, provide API key - consumer id is correct');
-my $report = shift @operations;
-is($report->{consumerId}, 'api_key:this-is-an-api-key-1',
-   'Allow unregistered, provide API key - report_body has correct consumerId');
-
 # /shelves/2
+verify_report($report2,
+              '/shelves/2',
+              'GetShelf',
+              undef);
+
 like($response2, qr/HTTP\/1\.1 200 OK/, 'Allow unregistered, no API key - 200 OK');
 like($response2, qr/Shelf 2\.$/, 'Allow unregistered, no API key - body');
 
-# Check is NOT called for this one.
-$report = shift @operations;
-ok((not exists($report->{consumerId})), 'Allow unregistered, no API key - empty consumerId');
-
 # /shelves/3/books?key=this-is-an-api-key-3
+verify_check($check3,
+            '/shelves/3/books?key=this-is-an-api-key-3',
+            'ListBooks',
+            'api_key:this-is-an-api-key-3');
+
+verify_report($report3,
+            '/shelves/3/books?key=this-is-an-api-key-3',
+            'ListBooks',
+            'api_key:this-is-an-api-key-3');
+
+
 like($response3, qr/HTTP\/1\.1 200 OK/, 'Disallow unregistered, provide API key - 200 OK');
 like($response3, qr/List of books on shelf 3\.$/, 'Disallow unregistered, provide API key - body');
 
-$r = shift @servicecontrol_requests;
-like($r->{uri}, qr/:check$/, 'Disallow unregistered, provide API key - :check');
-$check = decode_json(ServiceControl::convert_proto($r->{body}, 'check_request', 'json'));
-is($check->{operation}->{operationName}, 'ListBooks',
-   'Disallow unregistered, provide API key - method name');
-is($check->{operation}->{consumerId}, 'api_key:this-is-an-api-key-3',
-   'Disallow unregistered, provide API key - consumer id is correct');
-$report = shift @operations;
-is($report->{consumerId}, 'api_key:this-is-an-api-key-3',
-   'Disallow unregistered, provide API key - report_body has correct consumerId');
-
 # /shelves/4/books/4
+verify_report($report4,
+              '/shelves/4/books/4',
+              'GetBook',
+               undef);
+
 like($response4, qr/HTTP\/1\.1 401 Unauthorized/, 'Disallow unregistered, no API key - 401 Unauthorized');
 like($response4, qr/"message": "Method doesn't allow unregistered callers/,
      'Disallow unregistered, no API key - error body');
 
-is(scalar @servicecontrol_requests, 0,
-   'Disallow unregistered, no API key - check service control not called.');
-$report = shift @operations;
-ok((not exists($report->{consumerId})), 'Disallow unregistered, no API key - empty consumerId');
 
 ################################################################################
 
@@ -249,6 +279,7 @@ sub servicecontrol {
   my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
+  my $request_count = 0;
 
   $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:check', sub {
     my ($headers, $body, $client) = @_;
@@ -268,7 +299,10 @@ Content-Type: application/json
 Connection: close
 
 EOF
-    $t->write_file($done, ':report done');
+    $request_count++;
+    if ($request_count == 4) {
+        $t->write_file($done, ':report done');
+    }
   });
 
   $server->run();
