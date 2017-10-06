@@ -200,13 +200,7 @@ bool PathMatcherNode::InsertTemplate(
     PathMatcherLookupResult* const existing = InsertOrReturnExisting(
         &result_map_, http_method, PathMatcherLookupResult(method_data, false));
     if (existing != nullptr) {
-      existing->data = method_data;
       if (mark_duplicates) {
-#if 0
-        LOG(WARNING) << "The HTTP path '" << http_method << ":"
-                     << ConvertHttpRuleToString(*wrapper_graph->http_rule())
-                     << "' has already been registered.";
-#endif
         existing->is_multiple = true;
       }
       return false;

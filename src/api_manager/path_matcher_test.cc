@@ -622,47 +622,43 @@ TEST_F(PathMatcherTest, LookupSimplePaths) {
   EXPECT_EQ(LookupNoBindings("GET", "/otherprefix/suffix?foo=bar"), os);
 }
 
-TEST_F(PathMatcherTest, AllowDuplicate) {
-  MethodInfo* id = AddGetPath("/a/{id}");
-  MethodInfo* name = AddGetPath("/a/{name}");
+TEST_F(PathMatcherTest, ReplacevoidForPath) {
+  const std::string path = "/foo/bar";
+  auto first_mock_proc = AddGetPath(path);
+  EXPECT_NE(nullptr, first_mock_proc);
+  // Second call should fail
+  EXPECT_EQ(nullptr, AddGetPath(path));
   Build();
 
-  EXPECT_NE(nullptr, id);
-  EXPECT_NE(nullptr, name);
+  // Lookup result should get the first one.
+  EXPECT_EQ(LookupNoBindings("GET", path), first_mock_proc);
+}
 
-  // Lookup result could be either id or name
+TEST_F(PathMatcherTest, AllowDuplicate) {
+  MethodInfo* id = AddGetPath("/a/{id}");
+  EXPECT_NE(nullptr, id);
+  // Second call should fail
+  EXPECT_EQ(nullptr, AddGetPath("/a/{name}"));
+  Build();
+
   Bindings bindings;
-  MethodInfo* ret = Lookup("GET", "/a/x", &bindings);
-  EXPECT_TRUE(ret == id || ret == name);
+  // Lookup result should get the first one.
+  EXPECT_EQ(Lookup("GET", "/a/x", &bindings), id);
 }
 
 TEST_F(PathMatcherTest, DuplicatedOptions) {
   MethodInfo* get_id = AddPath("GET", "/a/{id}");
   MethodInfo* post_name = AddPath("POST", "/a/{name}");
   MethodInfo* options_id = AddPath("OPTIONS", "/a/{id}");
-  MethodInfo* options_name = AddPath("OPTIONS", "/a/{name}");
+  EXPECT_EQ(nullptr, AddPath("OPTIONS", "/a/{name}"));
   Build();
 
-  // Lookup result could be either id or name
   Bindings bindings;
-  MethodInfo* options_ret = Lookup("OPTIONS", "/a/x", &bindings);
-  EXPECT_TRUE(options_ret == options_id || options_ret == options_name);
+  // Lookup result should get the first one.
+  EXPECT_EQ(Lookup("OPTIONS", "/a/x", &bindings), options_id);
 
   EXPECT_EQ(Lookup("GET", "/a/x", &bindings), get_id);
   EXPECT_EQ(Lookup("POST", "/a/x", &bindings), post_name);
-}
-
-TEST_F(PathMatcherTest, ReplacevoidForPath) {
-  const std::string path = "/foo/bar";
-  auto first_mock_proc = AddGetPath(path);
-  auto second_mock_proc = AddGetPath(path);
-  Build();
-
-  EXPECT_NE(nullptr, first_mock_proc);
-  EXPECT_NE(nullptr, second_mock_proc);
-
-  auto result = LookupNoBindings("GET", path);
-  EXPECT_TRUE(result == first_mock_proc || result == second_mock_proc);
 }
 
 // If a path matches a complete branch of trie, but is longer than the branch
