@@ -69,20 +69,21 @@ ngx_esp_request_ctx_s::ngx_esp_request_ctx_s(ngx_http_request_t *r,
       backend_time(-1) {
   ngx_memzero(&wakeup_event, sizeof(wakeup_event));
   if (lc && lc->esp) {
-    std::string unparsed_request_path =
+    std::string rewrite_request_path =
         lc->esp->ReWriteURL(ngx_str_to_std(r->unparsed_uri));
 
-    if (unparsed_request_path.length() > 0) {
-      ngx_str_copy_from_std(r->pool, unparsed_request_path, &r->unparsed_uri);
+    if (rewrite_request_path.length() > 0) {
+      ngx_str_copy_from_std(r->pool, rewrite_request_path, &r->unparsed_uri);
 
       ngx_str_copy_from_std(r->pool,
-                            unparsed_request_path.substr(
-                                0, unparsed_request_path.find_first_of('?')),
+                            rewrite_request_path.substr(
+                                0, rewrite_request_path.find_first_of('?')),
                             &r->uri);
 
-      ngx_str_copy_from_std(r->pool, ngx_str_to_std(r->method_name) + " " +
-                                         unparsed_request_path + " " +
-                                         ngx_str_to_std(r->http_protocol),
+      ngx_str_copy_from_std(r->pool,
+                            ngx_str_to_std(r->method_name) + " " +
+                                rewrite_request_path + " " +
+                                ngx_str_to_std(r->http_protocol),
                             &r->request_line);
     }
 
