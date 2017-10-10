@@ -80,10 +80,9 @@ ngx_esp_request_ctx_s::ngx_esp_request_ctx_s(ngx_http_request_t *r,
                                 0, rewrite_request_path.find_first_of('?')),
                             &r->uri);
 
-      ngx_str_copy_from_std(r->pool,
-                            ngx_str_to_std(r->method_name) + " " +
-                                rewrite_request_path + " " +
-                                ngx_str_to_std(r->http_protocol),
+      ngx_str_copy_from_std(r->pool, ngx_str_to_std(r->method_name) + " " +
+                                         rewrite_request_path + " " +
+                                         ngx_str_to_std(r->http_protocol),
                             &r->request_line);
     }
 
