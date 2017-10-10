@@ -51,6 +51,13 @@ control {
 }
 EOF
 
+$t->write_file('server.pb.txt', <<"EOF");
+api_service_config {
+  base_path: "/api"
+}
+EOF
+
+
 ApiManager::write_file_expand($t, 'nginx.conf', <<"EOF");
 %%TEST_GLOBALS%%
 daemon off;
@@ -67,8 +74,8 @@ http {
       endpoints {
         api service.pb.txt;
         %%TEST_CONFIG%%
+        server_config server.pb.txt;
         on;
-        api_basepath /api;
       }
       proxy_pass http://127.0.0.1:${BackendPort};
     }

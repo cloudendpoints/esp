@@ -272,6 +272,31 @@ utils::Status ApiManagerImpl::GetServiceConfigRollouts(
   return utils::Status::OK;
 }
 
+std::string ApiManagerImpl::ReWriteURL(const std::string &url) {
+  auto server_config = global_context_->server_config();
+
+  if (server_config == nullptr ||
+      server_config->has_api_service_config() == false) {
+    return "";
+  }
+
+  auto base = server_config->api_service_config().base_path();
+  if (base.length() == 0 || base.length() > url.length() ||
+      url.compare(0, base.length(), base) != 0) {
+    return "";
+  }
+
+  if (base.length() == url.length()) {
+    return "/";
+  }
+
+  if (url.at(base.length()) != '/') {
+    return "";
+  }
+
+  return url.substr(base.length());
+}
+
 std::unique_ptr<RequestHandlerInterface> ApiManagerImpl::CreateRequestHandler(
     std::unique_ptr<Request> request_data) {
   return std::unique_ptr<RequestHandlerInterface>(new RequestHandler(

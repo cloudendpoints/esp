@@ -75,8 +75,6 @@ cc_library(
 cc_library(
     name = "api_manager",
     srcs = [
-        "api_base_path.cc",
-        "api_base_path.h",
         "api_manager_impl.cc",
         "check_auth.cc",
         "check_auth.h",

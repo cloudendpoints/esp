@@ -67,6 +67,10 @@ class ApiManagerImpl : public ApiManager {
   utils::Status GetServiceConfigRollouts(
       ServiceConfigRolloutsInfo *rollouts) override;
 
+  // Returns basepath stripped url. If rewriting is not required,
+  // returns empty string
+  std::string ReWriteURL(const std::string &url) override;
+
  private:
   // Use these configs according to the traffic percentage.
   void DeployConfigs(std::vector<std::pair<std::string, int>> &&list);

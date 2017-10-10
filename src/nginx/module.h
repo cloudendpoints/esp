@@ -157,9 +157,6 @@ typedef struct {
   // Server config
   ngx_str_t endpoints_server_config;
 
-  // API base path
-  ngx_str_t api_basepath;
-
   // The map of backends to GRPC stubs.  These are constructed
   // on-demand.
   ngx_esp_grpc_stub_map_t grpc_stubs;

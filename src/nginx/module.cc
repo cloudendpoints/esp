@@ -69,6 +69,23 @@ ngx_esp_request_ctx_s::ngx_esp_request_ctx_s(ngx_http_request_t *r,
       backend_time(-1) {
   ngx_memzero(&wakeup_event, sizeof(wakeup_event));
   if (lc && lc->esp) {
+    std::string unparsed_request_path =
+        lc->esp->ReWriteURL(ngx_str_to_std(r->unparsed_uri));
+
+    if (unparsed_request_path.length() > 0) {
+      ngx_str_copy_from_std(r->pool, unparsed_request_path, &r->unparsed_uri);
+
+      ngx_str_copy_from_std(r->pool,
+                            unparsed_request_path.substr(
+                                0, unparsed_request_path.find_first_of('?')),
+                            &r->uri);
+
+      ngx_str_copy_from_std(r->pool, ngx_str_to_std(r->method_name) + " " +
+                                         unparsed_request_path + " " +
+                                         ngx_str_to_std(r->http_protocol),
+                            &r->request_line);
+    }
+
     request_handler = lc->esp->CreateRequestHandler(
         std::unique_ptr<Request>(new NgxEspRequest(r)));
 
@@ -360,9 +377,6 @@ char *ngx_esp_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child) {
   }
   if (conf->endpoints_server_config.data == nullptr) {
     conf->endpoints_server_config = prev->endpoints_server_config;
-  }
-  if (conf->api_basepath.data == nullptr) {
-    conf->api_basepath = prev->api_basepath;
   }
 
   if (conf->endpoints_api) {
