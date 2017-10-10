@@ -64,10 +64,9 @@ void NgxEspRequest::SetRequestPath(const std::string &unparsed_request_path) {
       unparsed_request_path.substr(0, unparsed_request_path.find_first_of('?')),
       &r_->uri);
 
-  ngx_str_copy_from_std(r_->pool,
-                        ngx_str_to_std(r_->method_name) + " " +
-                            unparsed_request_path + " " +
-                            ngx_str_to_std(r_->http_protocol),
+  ngx_str_copy_from_std(r_->pool, ngx_str_to_std(r_->method_name) + " " +
+                                      unparsed_request_path + " " +
+                                      ngx_str_to_std(r_->http_protocol),
                         &r_->request_line);
 }
 
