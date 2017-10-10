@@ -139,7 +139,8 @@ class Config {
   // Load Backend info to MethodInfo.
   bool LoadBackends(ApiManagerEnvInterface *env);
 
-  const std::string getStripedPath(const std::string &path) const;
+  // Get api_basepath stripped request_path
+  const std::string GetStripedPath(const std::string &path) const;
 
   ::google::api::Service service_;
   std::shared_ptr<proto::ServerConfig> server_config_;
