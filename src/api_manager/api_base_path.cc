@@ -14,15 +14,9 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
-#include <iostream>
-
-#include "google/protobuf/stubs/status.h"
-#include "src/api_manager/cloud_trace/cloud_trace.h"
-#include "src/api_manager/config.h"
-#include "src/api_manager/quota_control.h"
+#include "src/api_manager/api_base_path.h"
 
 using ::google::api_manager::utils::Status;
-using ::google::protobuf::util::error::Code;
 
 namespace google {
 namespace api_manager {
