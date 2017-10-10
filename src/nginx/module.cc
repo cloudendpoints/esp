@@ -361,6 +361,9 @@ char *ngx_esp_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child) {
   if (conf->endpoints_server_config.data == nullptr) {
     conf->endpoints_server_config = prev->endpoints_server_config;
   }
+  if (conf->api_basepath.data == nullptr) {
+    conf->api_basepath = prev->api_basepath;
+  }
 
   if (conf->endpoints_api) {
     ngx_esp_loc_conf_t **ploc =

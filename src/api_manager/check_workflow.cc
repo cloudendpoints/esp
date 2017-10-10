@@ -15,6 +15,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "src/api_manager/check_workflow.h"
+#include "src/api_manager/api_base_path.h"
 #include "src/api_manager/check_auth.h"
 #include "src/api_manager/check_security_rules.h"
 #include "src/api_manager/check_service_control.h"
@@ -39,6 +40,8 @@ void CheckWorkflow::RegisterAll() {
   Register(CheckServiceControl);
   // Quota control
   Register(QuotaControl);
+  // Update API base path
+  Register(ApiBasePath);
 }
 
 void CheckWorkflow::Register(CheckHandler handler) {

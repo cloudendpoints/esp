@@ -56,6 +56,21 @@ std::string NgxEspRequest::GetUnparsedRequestPath() {
   return ngx_str_to_std(r_->unparsed_uri);
 }
 
+void NgxEspRequest::SetRequestPath(const std::string &unparsed_request_path) {
+  ngx_str_copy_from_std(r_->pool, unparsed_request_path, &r_->unparsed_uri);
+
+  ngx_str_copy_from_std(
+      r_->pool,
+      unparsed_request_path.substr(0, unparsed_request_path.find_first_of('?')),
+      &r_->uri);
+
+  ngx_str_copy_from_std(r_->pool,
+                        ngx_str_to_std(r_->method_name) + " " +
+                            unparsed_request_path + " " +
+                            ngx_str_to_std(r_->http_protocol),
+                        &r_->request_line);
+}
+
 ::google::api_manager::protocol::Protocol NgxEspRequest::GetFrontendProtocol() {
   ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
   if (ctx->grpc_pass_through) {

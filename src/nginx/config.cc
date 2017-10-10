@@ -232,6 +232,15 @@ const char *esp_set_server_config(ngx_conf_t *cf, ngx_esp_loc_conf_t *conf) {
   return reinterpret_cast<char *>(NGX_CONF_ERROR);
 }
 
+const char *esp_set_api_basepath(ngx_conf_t *cf, ngx_esp_loc_conf_t *conf) {
+  if (conf->api_basepath.data != nullptr) return "duplicate";
+  ngx_str_t *argv = reinterpret_cast<ngx_str_t *>(cf->args->elts);
+
+  conf->api_basepath = argv[1];
+
+  return NGX_CONF_OK;
+}
+
 // Enum specifying to which level of ESP configuration a setting applies.
 enum EspConfiguration {
   // Main configuration. A handler is passed ngx_esp_main_conf_t*.
@@ -312,6 +321,8 @@ esp_command_t esp_commands[] = {
     ESP_COMMAND("api_authentication", 1, 1, ESP_LOC_CONF,
                 esp_configure_api_authentication),
     ESP_COMMAND("server_config", 1, 1, ESP_LOC_CONF, esp_set_server_config),
+    // Set api base path
+    ESP_COMMAND("api_basepath", 1, 1, ESP_LOC_CONF, esp_set_api_basepath),
 };
 
 // Parses an individual directive supported in the `endpoints` block.
@@ -569,6 +580,18 @@ ngx_int_t ngx_esp_build_server_config(ngx_conf_t *cf, ngx_esp_loc_conf_t *lc,
     config.mutable_api_authentication_config()->set_force_disable(
         lc->api_authentication == 0);
   }
+
+  // Override API service config
+  if (lc->api_basepath.len > 0) {
+    config.mutable_api_service_config()->set_base_path(
+        ngx_str_to_std(lc->api_basepath));
+  }
+  // remove tailing '/'
+  std::string base_path = config.api_service_config().base_path();
+  while (base_path.rbegin() != base_path.rend() && *base_path.rbegin() == '/')
+    base_path.pop_back();
+
+  config.mutable_api_service_config()->set_base_path(base_path);
 
   // the config file from nginx config will override the ones from
   // server_config.

@@ -94,6 +94,10 @@ class Config {
   // Get the audience for the firebase server
   std::string GetFirebaseAudience();
 
+  // Return stripped heading base from the path
+  static const std::string GetStripedPath(const std::string &path,
+                                          const std::string &base);
+
  private:
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Config);
 
@@ -134,6 +138,8 @@ class Config {
 
   // Load Backend info to MethodInfo.
   bool LoadBackends(ApiManagerEnvInterface *env);
+
+  const std::string getStripedPath(const std::string &path) const;
 
   ::google::api::Service service_;
   std::shared_ptr<proto::ServerConfig> server_config_;

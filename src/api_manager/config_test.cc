@@ -71,6 +71,12 @@ service_control_config {
 }
 )";
 
+static const char kServerConfigBasePath[] = R"(
+ api_service_config {
+   base_path: "/api"
+ }
+)";
+
 const char kServiceNameConfig[] = "name: \"service-one\"\n";
 
 TEST(Config, ServerConfigProto) {
@@ -219,6 +225,25 @@ TEST(Config, MethodWithUnknownProvider) {
   const MethodInfo *method = config->GetMethodInfo("GET", "/method/good");
   ASSERT_NE(nullptr, method);
   ASSERT_EQ("Good.Method", method->name());
+}
+
+TEST(Config, MethodWithApiBasepath) {
+  ::testing::NiceMock<MockApiManagerEnvironment> env;
+
+  std::unique_ptr<Config> config =
+      Config::Create(&env, auth_config_with_some_errors, kServerConfigBasePath);
+  ASSERT_NE(nullptr, config.get());
+
+  const MethodInfo *method = config->GetMethodInfo("GET", "/method/good");
+  ASSERT_NE(nullptr, method);
+  ASSERT_EQ("Good.Method", method->name());
+
+  const MethodInfo *method2 = config->GetMethodInfo("GET", "/api/method/good");
+  ASSERT_NE(nullptr, method2);
+  ASSERT_EQ("Good.Method", method2->name());
+
+  // Check populating same method info
+  ASSERT_EQ(method, method2);
 }
 
 static const char usage_config[] =
@@ -633,7 +658,8 @@ TEST(Config, RpcMethodsWithHttpRulesAndVariableBindings) {
       }
     )";
 
-  std::unique_ptr<Config> config = Config::Create(&env, config_text, "");
+  std::unique_ptr<Config> config =
+      Config::Create(&env, config_text, kServerConfigBasePath);
   ASSERT_TRUE(config);
 
   MethodCallInfo list_shelves =
@@ -756,6 +782,33 @@ TEST(Config, RpcMethodsWithHttpRulesAndVariableBindings) {
   EXPECT_EQ((std::vector<std::string>{"book", "id"}),
             create_book_3.variable_bindings[1].field_path);
   EXPECT_EQ("123", create_book_3.variable_bindings[1].value);
+
+  MethodCallInfo create_book_4 =
+      config->GetMethodCallInfo("POST", "/api/shelves/321/books",
+                                "book.id=123&key=0&api_key=1&sys=2&system=3");
+
+  ASSERT_NE(nullptr, create_book_4.method_info);
+  EXPECT_EQ("/Bookstore/CreateBook",
+            create_book_4.method_info->rpc_method_full_name());
+  EXPECT_EQ("types.googleapis.com/Bookstore.CreateBookRequest",
+            create_book_4.method_info->request_type_url());
+  EXPECT_EQ(false, create_book_4.method_info->request_streaming());
+  EXPECT_EQ("types.googleapis.com/Bookstore.Book",
+            create_book_4.method_info->response_type_url());
+  EXPECT_EQ(false, create_book_4.method_info->response_streaming());
+  EXPECT_EQ("book", create_book_4.body_field_path);
+  ASSERT_EQ(2, create_book_4.variable_bindings.size());
+  EXPECT_EQ(std::vector<std::string>(1, "shelf"),
+            create_book_4.variable_bindings[0].field_path);
+  EXPECT_EQ("321", create_book_4.variable_bindings[0].value);
+  EXPECT_EQ((std::vector<std::string>{"book", "id"}),
+            create_book_4.variable_bindings[1].field_path);
+  EXPECT_EQ("123", create_book_4.variable_bindings[1].value);
+
+  MethodCallInfo create_book_5 =
+      config->GetMethodCallInfo("POST", "/apis/shelves/321/books",
+                                "book.id=123&key=0&api_key=1&sys=2&system=3");
+  ASSERT_EQ(nullptr, create_book_5.method_info);
 }
 
 TEST(Config, TestHttpOptions) {

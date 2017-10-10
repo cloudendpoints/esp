@@ -44,6 +44,10 @@ class Request {
   // It should be "Unparsed" original URL path.
   virtual std::string GetUnparsedRequestPath() = 0;
 
+  // Update r_->uri, r_->request_line, r_->unparsed_uri based on
+  // unparsed_request_path
+  virtual void SetRequestPath(const std::string &unparsed_request_path) = 0;
+
   // Gets Client IP
   // This will be used by service control Check() call.
   virtual std::string GetClientIP() = 0;

@@ -483,8 +483,9 @@ std::unique_ptr<Config> Config::Create(ApiManagerEnvInterface *env,
 
 const MethodInfo *Config::GetMethodInfo(const string &http_method,
                                         const string &url) const {
-  return path_matcher_ == nullptr ? nullptr
-                                  : path_matcher_->Lookup(http_method, url);
+  return path_matcher_ == nullptr
+             ? nullptr
+             : path_matcher_->Lookup(http_method, GetStripedPath(url));
 }
 
 MethodCallInfo Config::GetMethodCallInfo(
@@ -495,8 +496,8 @@ MethodCallInfo Config::GetMethodCallInfo(
     call_info.method_info = nullptr;
   } else {
     call_info.method_info = path_matcher_->Lookup(
-        http_method, url, query_params, &call_info.variable_bindings,
-        &call_info.body_field_path);
+        http_method, GetStripedPath(url), query_params,
+        &call_info.variable_bindings, &call_info.body_field_path);
   }
   return call_info;
 }
@@ -567,6 +568,48 @@ std::string Config::GetFirebaseServer() {
 
 std::string Config::GetFirebaseAudience() {
   return GetFirebaseServer() + kFirebaseAudience;
+}
+
+const std::string Config::GetStripedPath(const std::string &path,
+                                         const std::string &base) {
+  if (base.length() == 0) {
+    return path;
+  }
+
+  std::string base_path = base;
+  if (base_path.at(base_path.length() - 1) != '/') {
+    base_path.append("/");
+  }
+
+  std::string stripped = path;
+  if (stripped.at(stripped.length() - 1) != '/') {
+    stripped.append("/");
+  }
+
+  if (stripped.substr(0, base_path.length()) == base_path) {
+    stripped = "/" + stripped.substr(base_path.length());
+  }
+
+  while (stripped.rbegin() != stripped.rend() && *stripped.rbegin() == '/') {
+    stripped.pop_back();
+  }
+
+  if (stripped == "") {
+    stripped.append("/");
+  }
+
+  return stripped;
+}
+
+const std::string Config::GetStripedPath(const std::string &path) const {
+  if (server_config() == nullptr ||
+      server_config()->has_api_service_config() == false ||
+      server_config()->api_service_config().base_path().length() == 0) {
+    return path;
+  }
+
+  return GetStripedPath(path,
+                        server_config()->api_service_config().base_path());
 }
 
 }  // namespace api_manager
