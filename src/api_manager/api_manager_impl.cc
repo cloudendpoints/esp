@@ -272,29 +272,33 @@ utils::Status ApiManagerImpl::GetServiceConfigRollouts(
   return utils::Status::OK;
 }
 
-std::string ApiManagerImpl::ReWriteURL(const std::string &url) {
+bool ApiManagerImpl::ReWriteURL(const std::string &url,
+                                std::string *destination_url) {
   auto server_config = global_context_->server_config();
 
   if (server_config == nullptr ||
       server_config->has_api_service_config() == false) {
-    return "";
+    return false;
   }
 
   auto base = server_config->api_service_config().base_path();
   if (base.length() == 0 || base.length() > url.length() ||
       url.compare(0, base.length(), base) != 0) {
-    return "";
+    return false;
   }
 
   if (base.length() == url.length()) {
-    return "/";
+    destination_url->assign("/");
+    return true;
   }
 
   if (url.at(base.length()) != '/') {
-    return "";
+    return false;
   }
 
-  return url.substr(base.length());
+  destination_url->assign(url.substr(base.length()));
+
+  return true;
 }
 
 std::unique_ptr<RequestHandlerInterface> ApiManagerImpl::CreateRequestHandler(

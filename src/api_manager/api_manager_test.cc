@@ -487,12 +487,23 @@ TEST_F(ApiManagerTest, TestRewriteURLEnabled) {
       std::dynamic_pointer_cast<ApiManagerImpl>(
           MakeApiManager(std::move(env), kServerConfigWithApiServiceConfig)));
 
-  EXPECT_EQ(api_manager->ReWriteURL("/api"), "/");
-  EXPECT_EQ(api_manager->ReWriteURL("/api/"), "/");
-  EXPECT_EQ(api_manager->ReWriteURL("/api/test"), "/test");
-  EXPECT_EQ(api_manager->ReWriteURL("/apis/test"), "");
-  EXPECT_EQ(api_manager->ReWriteURL("/test"), "");
-  EXPECT_EQ(api_manager->ReWriteURL("/test/"), "");
+  std::string destination_url;
+
+  EXPECT_TRUE(api_manager->ReWriteURL("/api", &destination_url));
+  EXPECT_EQ(destination_url, "/");
+
+  EXPECT_TRUE(api_manager->ReWriteURL("/api/test", &destination_url));
+  EXPECT_EQ(destination_url, "/test");
+
+  EXPECT_TRUE(api_manager->ReWriteURL(
+      "/api/test?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI",
+      &destination_url));
+  EXPECT_EQ(destination_url,
+            "/test?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI");
+
+  EXPECT_FALSE(api_manager->ReWriteURL("/apis/test", &destination_url));
+  EXPECT_FALSE(api_manager->ReWriteURL("/test", &destination_url));
+  EXPECT_FALSE(api_manager->ReWriteURL("/test/", &destination_url));
 }
 
 TEST_F(ApiManagerTest, TestRewriteURLDisabled) {
@@ -503,12 +514,16 @@ TEST_F(ApiManagerTest, TestRewriteURLDisabled) {
       std::dynamic_pointer_cast<ApiManagerImpl>(MakeApiManager(
           std::move(env), kServerConfigWithoutApiServiceConfig)));
 
-  EXPECT_EQ(api_manager->ReWriteURL("/api"), "");
-  EXPECT_EQ(api_manager->ReWriteURL("/api/"), "");
-  EXPECT_EQ(api_manager->ReWriteURL("/api/test"), "");
-  EXPECT_EQ(api_manager->ReWriteURL("/apis/test"), "");
-  EXPECT_EQ(api_manager->ReWriteURL("/test"), "");
-  EXPECT_EQ(api_manager->ReWriteURL("/test/"), "");
+  std::string destination_url;
+
+  EXPECT_FALSE(api_manager->ReWriteURL("/api", &destination_url));
+  EXPECT_FALSE(api_manager->ReWriteURL("/api/test", &destination_url));
+  EXPECT_FALSE(api_manager->ReWriteURL(
+      "/api/test?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI",
+      &destination_url));
+  EXPECT_FALSE(api_manager->ReWriteURL("/apis/test", &destination_url));
+  EXPECT_FALSE(api_manager->ReWriteURL("/test", &destination_url));
+  EXPECT_FALSE(api_manager->ReWriteURL("/test/", &destination_url));
 }
 
 }  // namespace
