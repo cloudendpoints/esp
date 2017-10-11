@@ -103,6 +103,22 @@ const char kServerConfigWithNoServiceConfig[] = R"(
 }
 )";
 
+const char kServerConfigWithApiServiceConfig[] = R"(
+{
+  "api_service_config": {
+    "base_path": "/api"
+  }
+}
+)";
+
+const char kServerConfigWithoutApiServiceConfig[] = R"(
+{
+  "api_service_config": {
+    "base_path": ""
+  }
+}
+)";
+
 const char kServiceConfig1[] = R"(
 {
   "name": "bookstore.test.appspot.com",
@@ -461,6 +477,38 @@ TEST_F(ApiManagerTest, ServerConfigServiceConfigNotSpecifed) {
   api_manager->Init();
 
   EXPECT_FALSE(api_manager->Enabled());
+}
+
+TEST_F(ApiManagerTest, TestRewriteURLEnabled) {
+  std::unique_ptr<MockApiManagerEnvironment> env(
+      new ::testing::NiceMock<MockApiManagerEnvironment>());
+
+  std::shared_ptr<ApiManagerImpl> api_manager(
+      std::dynamic_pointer_cast<ApiManagerImpl>(
+          MakeApiManager(std::move(env), kServerConfigWithApiServiceConfig)));
+
+  EXPECT_EQ(api_manager->ReWriteURL("/api"), "/");
+  EXPECT_EQ(api_manager->ReWriteURL("/api/"), "/");
+  EXPECT_EQ(api_manager->ReWriteURL("/api/test"), "/test");
+  EXPECT_EQ(api_manager->ReWriteURL("/apis/test"), "");
+  EXPECT_EQ(api_manager->ReWriteURL("/test"), "");
+  EXPECT_EQ(api_manager->ReWriteURL("/test/"), "");
+}
+
+TEST_F(ApiManagerTest, TestRewriteURLDisabled) {
+  std::unique_ptr<MockApiManagerEnvironment> env(
+      new ::testing::NiceMock<MockApiManagerEnvironment>());
+
+  std::shared_ptr<ApiManagerImpl> api_manager(
+      std::dynamic_pointer_cast<ApiManagerImpl>(MakeApiManager(
+          std::move(env), kServerConfigWithoutApiServiceConfig)));
+
+  EXPECT_EQ(api_manager->ReWriteURL("/api"), "");
+  EXPECT_EQ(api_manager->ReWriteURL("/api/"), "");
+  EXPECT_EQ(api_manager->ReWriteURL("/api/test"), "");
+  EXPECT_EQ(api_manager->ReWriteURL("/apis/test"), "");
+  EXPECT_EQ(api_manager->ReWriteURL("/test"), "");
+  EXPECT_EQ(api_manager->ReWriteURL("/test/"), "");
 }
 
 }  // namespace
