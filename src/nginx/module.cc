@@ -49,6 +49,30 @@ namespace google {
 namespace api_manager {
 namespace nginx {
 
+namespace {
+
+// rewrite url based on api base_path
+ngx_int_t ngx_esp_rewrite_url(ngx_http_request_t *r, ngx_esp_loc_conf_t *lc) {
+  std::string destination_url;
+  if (lc->esp->ReWriteURL(ngx_str_to_std(r->unparsed_uri), &destination_url)) {
+    ngx_str_copy_from_std(r->pool, destination_url, &r->unparsed_uri);
+
+    ngx_str_copy_from_std(r->pool, ngx_str_to_std(r->method_name) + " " +
+                                       destination_url + " " +
+                                       ngx_str_to_std(r->http_protocol),
+                          &r->request_line);
+  }
+
+  std::string uri;
+  if (lc->esp->ReWriteURL(ngx_str_to_std(r->uri), &uri)) {
+    ngx_str_copy_from_std(r->pool, uri.substr(0, uri.find_first_of('?')),
+                          &r->uri);
+  }
+
+  return NGX_OK;
+}
+}
+
 struct wakeup_context_s {
  public:
   wakeup_context_s(ngx_http_request_t *r, ngx_esp_request_ctx_t *ctx)
@@ -69,20 +93,7 @@ ngx_esp_request_ctx_s::ngx_esp_request_ctx_s(ngx_http_request_t *r,
       backend_time(-1) {
   ngx_memzero(&wakeup_event, sizeof(wakeup_event));
   if (lc && lc->esp) {
-    std::string destination_url;
-    if (lc->esp->ReWriteURL(ngx_str_to_std(r->unparsed_uri),
-                            &destination_url)) {
-      ngx_str_copy_from_std(r->pool, destination_url, &r->unparsed_uri);
-
-      ngx_str_copy_from_std(r->pool, destination_url.substr(
-                                         0, destination_url.find_first_of('?')),
-                            &r->uri);
-
-      ngx_str_copy_from_std(r->pool, ngx_str_to_std(r->method_name) + " " +
-                                         destination_url + " " +
-                                         ngx_str_to_std(r->http_protocol),
-                            &r->request_line);
-    }
+    ngx_esp_rewrite_url(r, lc);
 
     request_handler = lc->esp->CreateRequestHandler(
         std::unique_ptr<Request>(new NgxEspRequest(r)));
