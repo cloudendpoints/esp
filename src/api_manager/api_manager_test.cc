@@ -111,6 +111,15 @@ const char kServerConfigWithApiServiceConfig[] = R"(
 }
 )";
 
+const char kServerConfigWithApiServiceConfigHard[] = R"(
+{
+  "api_service_config": {
+    "base_path": "/api",
+    "base_path_match_policy": "hard"
+  }
+}
+)";
+
 const char kServerConfigWithoutApiServiceConfig[] = R"(
 {
   "api_service_config": {
@@ -479,7 +488,7 @@ TEST_F(ApiManagerTest, ServerConfigServiceConfigNotSpecifed) {
   EXPECT_FALSE(api_manager->Enabled());
 }
 
-TEST_F(ApiManagerTest, TestRewriteURLEnabled) {
+TEST_F(ApiManagerTest, TestRewriteURLSoftMatchEnabled) {
   std::unique_ptr<MockApiManagerEnvironment> env(
       new ::testing::NiceMock<MockApiManagerEnvironment>());
 
@@ -489,21 +498,60 @@ TEST_F(ApiManagerTest, TestRewriteURLEnabled) {
 
   std::string destination_url;
 
-  EXPECT_TRUE(api_manager->ReWriteURL("/api", &destination_url));
+  EXPECT_EQ(api_manager->ReWriteURL("/api", &destination_url),
+            ApiBasepathRewriteAction::REWRITE);
   EXPECT_EQ(destination_url, "/");
 
-  EXPECT_TRUE(api_manager->ReWriteURL("/api/test", &destination_url));
+  EXPECT_EQ(api_manager->ReWriteURL("/api/test", &destination_url),
+            ApiBasepathRewriteAction::REWRITE);
   EXPECT_EQ(destination_url, "/test");
 
-  EXPECT_TRUE(api_manager->ReWriteURL(
-      "/api/test?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI",
-      &destination_url));
+  EXPECT_EQ(api_manager->ReWriteURL(
+                "/api/test?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI",
+                &destination_url),
+            ApiBasepathRewriteAction::REWRITE);
   EXPECT_EQ(destination_url,
             "/test?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI");
 
-  EXPECT_FALSE(api_manager->ReWriteURL("/apis/test", &destination_url));
-  EXPECT_FALSE(api_manager->ReWriteURL("/test", &destination_url));
-  EXPECT_FALSE(api_manager->ReWriteURL("/test/", &destination_url));
+  EXPECT_EQ(api_manager->ReWriteURL("/apis/test", &destination_url),
+            ApiBasepathRewriteAction::NONE);
+  EXPECT_EQ(api_manager->ReWriteURL("/test", &destination_url),
+            ApiBasepathRewriteAction::NONE);
+  EXPECT_EQ(api_manager->ReWriteURL("/test/", &destination_url),
+            ApiBasepathRewriteAction::NONE);
+}
+
+TEST_F(ApiManagerTest, TestRewriteURLHardMatchEnabled) {
+  std::unique_ptr<MockApiManagerEnvironment> env(
+      new ::testing::NiceMock<MockApiManagerEnvironment>());
+
+  std::shared_ptr<ApiManagerImpl> api_manager(
+      std::dynamic_pointer_cast<ApiManagerImpl>(MakeApiManager(
+          std::move(env), kServerConfigWithApiServiceConfigHard)));
+
+  std::string destination_url;
+
+  EXPECT_EQ(api_manager->ReWriteURL("/api", &destination_url),
+            ApiBasepathRewriteAction::REWRITE);
+  EXPECT_EQ(destination_url, "/");
+
+  EXPECT_EQ(api_manager->ReWriteURL("/api/test", &destination_url),
+            ApiBasepathRewriteAction::REWRITE);
+  EXPECT_EQ(destination_url, "/test");
+
+  EXPECT_EQ(api_manager->ReWriteURL(
+                "/api/test?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI",
+                &destination_url),
+            ApiBasepathRewriteAction::REWRITE);
+  EXPECT_EQ(destination_url,
+            "/test?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI");
+
+  EXPECT_EQ(api_manager->ReWriteURL("/apis/test", &destination_url),
+            ApiBasepathRewriteAction::REJECT);
+  EXPECT_EQ(api_manager->ReWriteURL("/test", &destination_url),
+            ApiBasepathRewriteAction::REJECT);
+  EXPECT_EQ(api_manager->ReWriteURL("/test/", &destination_url),
+            ApiBasepathRewriteAction::REJECT);
 }
 
 TEST_F(ApiManagerTest, TestRewriteURLDisabled) {
@@ -516,14 +564,23 @@ TEST_F(ApiManagerTest, TestRewriteURLDisabled) {
 
   std::string destination_url;
 
-  EXPECT_FALSE(api_manager->ReWriteURL("/api", &destination_url));
-  EXPECT_FALSE(api_manager->ReWriteURL("/api/test", &destination_url));
-  EXPECT_FALSE(api_manager->ReWriteURL(
-      "/api/test?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI",
-      &destination_url));
-  EXPECT_FALSE(api_manager->ReWriteURL("/apis/test", &destination_url));
-  EXPECT_FALSE(api_manager->ReWriteURL("/test", &destination_url));
-  EXPECT_FALSE(api_manager->ReWriteURL("/test/", &destination_url));
+  EXPECT_EQ(api_manager->ReWriteURL("/api", &destination_url),
+            ApiBasepathRewriteAction::NONE);
+
+  EXPECT_EQ(api_manager->ReWriteURL("/api/test", &destination_url),
+            ApiBasepathRewriteAction::NONE);
+
+  EXPECT_EQ(api_manager->ReWriteURL(
+                "/api/test?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI",
+                &destination_url),
+            ApiBasepathRewriteAction::NONE);
+
+  EXPECT_EQ(api_manager->ReWriteURL("/apis/test", &destination_url),
+            ApiBasepathRewriteAction::NONE);
+  EXPECT_EQ(api_manager->ReWriteURL("/test", &destination_url),
+            ApiBasepathRewriteAction::NONE);
+  EXPECT_EQ(api_manager->ReWriteURL("/test/", &destination_url),
+            ApiBasepathRewriteAction::NONE);
 }
 
 }  // namespace

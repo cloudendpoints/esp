@@ -41,7 +41,7 @@ my $NginxPort = ApiManager::pick_port();
 my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(13);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(18);
 
 # Save service name in the service configuration protocol buffer file.
 
@@ -91,11 +91,23 @@ $t->run();
 
 ################################################################################
 
-my $response = ApiManager::http_get($NginxPort,'/api/shelves?key=this-is-an-api-key');
+my $response_first = ApiManager::http_get($NginxPort,'/api/shelves?key=this-is-an-api-key');
+my $response_second = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key');
 
 $t->stop_daemons();
 
-my ($response_headers, $response_body) = split /\r\n\r\n/, $response, 2;
+my ($response_headers, $response_body) = split /\r\n\r\n/, $response_first, 2;
+
+like($response_headers, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');
+is($response_body, <<'EOF', 'Shelves returned in the response body.');
+{ "shelves": [
+    { "name": "shelves/1", "theme": "Fiction" },
+    { "name": "shelves/2", "theme": "Fantasy" }
+  ]
+}
+EOF
+
+($response_headers, $response_body) = split /\r\n\r\n/, $response_second, 2;
 
 like($response_headers, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');
 is($response_body, <<'EOF', 'Shelves returned in the response body.');
@@ -107,12 +119,19 @@ is($response_body, <<'EOF', 'Shelves returned in the response body.');
 EOF
 
 my @requests = ApiManager::read_http_stream($t, 'bookstore.log');
-is(scalar @requests, 1, 'Backend received one request');
+is(scalar @requests, 2, 'Backend received two requests');
 
 my $r = shift @requests;
 is($r->{verb}, 'GET', 'Backend request was a get');
 is($r->{uri}, '/shelves?key=this-is-an-api-key', 'Backend uri was /shelves');
 is($r->{headers}->{host}, "127.0.0.1:${BackendPort}", 'Host header was set');
+
+$r = shift @requests;
+is($r->{verb}, 'GET', 'Backend request was a get');
+is($r->{uri}, '/shelves?key=this-is-an-api-key', 'Backend uri was /shelves');
+is($r->{headers}->{host}, "127.0.0.1:${BackendPort}", 'Host header was set');
+
+
 
 @requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
 is(scalar @requests, 1, 'Service control received one request');
@@ -131,6 +150,16 @@ sub bookstore {
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
 
+  $server->on('GET', '/shelves?key=this-is-an-api-key', <<'EOF');
+HTTP/1.1 200 OK
+Connection: close
+
+{ "shelves": [
+    { "name": "shelves/1", "theme": "Fiction" },
+    { "name": "shelves/2", "theme": "Fantasy" }
+  ]
+}
+EOF
   $server->on('GET', '/shelves?key=this-is-an-api-key', <<'EOF');
 HTTP/1.1 200 OK
 Connection: close

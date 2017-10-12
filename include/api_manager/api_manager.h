@@ -45,6 +45,8 @@ struct ServiceConfigRolloutsInfo {
   std::map<std::string, int> percentages;
 };
 
+enum ApiBasepathRewriteAction { REWRITE, REJECT, NONE };
+
 class ApiManager {
  public:
   virtual ~ApiManager() {}
@@ -103,8 +105,8 @@ class ApiManager {
   virtual utils::Status GetServiceConfigRollouts(
       ServiceConfigRolloutsInfo *rollouts) = 0;
 
-  virtual bool ReWriteURL(const std::string &url,
-                          std::string *destination_url) = 0;
+  virtual ApiBasepathRewriteAction ReWriteURL(const std::string &url,
+                                              std::string *destination_url) = 0;
 
  protected:
   ApiManager() {}

@@ -248,6 +248,9 @@ struct ngx_esp_request_ctx_s {
 
   // Nginx variable $backend_url. set from service config.
   ngx_str_t backend_url;
+
+  // Reject current request?
+  ApiBasepathRewriteAction api_basepath_rewrite_action;
 };
 
 static_assert(std::is_standard_layout<ngx_esp_request_ctx_t>::value,

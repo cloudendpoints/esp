@@ -69,8 +69,8 @@ class ApiManagerImpl : public ApiManager {
 
   // Return true if url rewrite is required. Otherwise returns false
   // destination_url is the updated one
-  bool ReWriteURL(const std::string &url,
-                  std::string *destination_url) override;
+  ApiBasepathRewriteAction ReWriteURL(const std::string &url,
+                                      std::string *destination_url) override;
 
  private:
   // Use these configs according to the traffic percentage.

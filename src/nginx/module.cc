@@ -51,25 +51,34 @@ namespace nginx {
 
 namespace {
 
-// rewrite url based on api base_path
-ngx_int_t ngx_esp_rewrite_url(ngx_http_request_t *r, ngx_esp_loc_conf_t *lc) {
+// Rewrite url based on api base_path. Returns NGX_OK if rewrite was successful
+// or rewrite is not required. Otherwise, returns NGX_ERROR.
+// When this function returns NGX_ERROR, nginx should return 404 error.
+ApiBasepathRewriteAction ngx_esp_rewrite_url(ngx_http_request_t *r,
+                                             ngx_esp_loc_conf_t *lc) {
   std::string destination_url;
-  if (lc->esp->ReWriteURL(ngx_str_to_std(r->unparsed_uri), &destination_url)) {
+  ApiBasepathRewriteAction action =
+      lc->esp->ReWriteURL(ngx_str_to_std(r->unparsed_uri), &destination_url);
+
+  if (action == ApiBasepathRewriteAction::REWRITE) {
     ngx_str_copy_from_std(r->pool, destination_url, &r->unparsed_uri);
 
     ngx_str_copy_from_std(r->pool, ngx_str_to_std(r->method_name) + " " +
                                        destination_url + " " +
                                        ngx_str_to_std(r->http_protocol),
                           &r->request_line);
+  } else if (action == ApiBasepathRewriteAction::REJECT) {
+    return action;
   }
 
   std::string uri;
-  if (lc->esp->ReWriteURL(ngx_str_to_std(r->uri), &uri)) {
+  action = lc->esp->ReWriteURL(ngx_str_to_std(r->uri), &uri);
+  if (action == ApiBasepathRewriteAction::REWRITE) {
     ngx_str_copy_from_std(r->pool, uri.substr(0, uri.find_first_of('?')),
                           &r->uri);
   }
 
-  return NGX_OK;
+  return action;
 }
 }
 
@@ -93,7 +102,7 @@ ngx_esp_request_ctx_s::ngx_esp_request_ctx_s(ngx_http_request_t *r,
       backend_time(-1) {
   ngx_memzero(&wakeup_event, sizeof(wakeup_event));
   if (lc && lc->esp) {
-    ngx_esp_rewrite_url(r, lc);
+    api_basepath_rewrite_action = ngx_esp_rewrite_url(r, lc);
 
     request_handler = lc->esp->CreateRequestHandler(
         std::unique_ptr<Request>(new NgxEspRequest(r)));
@@ -633,6 +642,12 @@ Status ngx_http_esp_access_handler(ngx_http_request_t *r) {
   ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r);
   if (ctx == nullptr) {
     return Status(NGX_ERROR, "Missing esp request context.");
+  }
+
+  if (ctx->api_basepath_rewrite_action == ApiBasepathRewriteAction::REJECT) {
+    ctx->status = Status(Code::NOT_FOUND, "Method does not exist.",
+                         Status::SERVICE_CONTROL);
+    return ngx_http_esp_access_check_done(r, ctx);
   }
 
   std::string backend_address = ctx->request_handler->GetBackendAddress();
