@@ -65,7 +65,7 @@ values returned when you deployed the API:
 
         containers:
         - name: esp
-          image: b.gcr.io/endpoints/endpoints-runtime:0.3
+          image: gcr.io/endpoints-release/endpoints-runtime:1
           command: [
             "/usr/sbin/start_esp.py",
             "-p", "8080",
