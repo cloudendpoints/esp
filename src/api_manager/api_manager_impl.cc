@@ -287,36 +287,34 @@ ApiManager::ApiBasepathRewriteAction ApiManagerImpl::ReWriteURL(
     path_length = url.length();
   }
 
+  ApiBasepathRewriteAction mismatch_action =
+      server_config->api_service_config().base_path_hard_match()
+          ? ApiBasepathRewriteAction::REJECT
+          : ApiBasepathRewriteAction::NONE;
+
   auto base = server_config->api_service_config().base_path();
 
   if (base.length() > path_length) {
-    return server_config->api_service_config().base_path_hard_match()
-               ? ApiBasepathRewriteAction::REJECT
-               : ApiBasepathRewriteAction::NONE;
+    return mismatch_action;
   } else if (base.length() == path_length) {
     if (url.compare(0, path_length, base) == 0) {
       destination_url->assign("/");
       destination_url->append(url.substr(path_length));
       return ApiBasepathRewriteAction::REWRITE;
     } else {
-      return ApiBasepathRewriteAction::NONE;
+      return mismatch_action;
     }
   }
 
   if (url.compare(0, base.length(), base) != 0) {
-    return server_config->api_service_config().base_path_hard_match()
-               ? ApiBasepathRewriteAction::REJECT
-               : ApiBasepathRewriteAction::NONE;
+    return mismatch_action;
   }
 
   if (url.at(base.length()) != '/') {
-    return server_config->api_service_config().base_path_hard_match()
-               ? ApiBasepathRewriteAction::REJECT
-               : ApiBasepathRewriteAction::NONE;
+    return mismatch_action;
   }
 
   destination_url->assign(url.substr(base.length()));
-
   return ApiBasepathRewriteAction::REWRITE;
 }
 

@@ -534,6 +534,11 @@ TEST_F(ApiManagerTest, TestRewriteURLSoftMatchEnabled) {
   EXPECT_EQ(destination_url,
             "/?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI#test");
 
+  EXPECT_EQ(api_manager->ReWriteURL(
+                "/app?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI#test",
+                &destination_url),
+            ApiManager::ApiBasepathRewriteAction::NONE);
+
   EXPECT_EQ(
       api_manager->ReWriteURL("/?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI",
                               &destination_url),
@@ -610,6 +615,11 @@ TEST_F(ApiManagerTest, TestRewriteURLHardMatchEnabled) {
 
   EXPECT_EQ(api_manager->ReWriteURL(
                 "/test?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI",
+                &destination_url),
+            ApiManager::ApiBasepathRewriteAction::REJECT);
+
+  EXPECT_EQ(api_manager->ReWriteURL(
+                "/app?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI#test",
                 &destination_url),
             ApiManager::ApiBasepathRewriteAction::REJECT);
 
