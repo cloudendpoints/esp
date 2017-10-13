@@ -84,9 +84,6 @@ class ApiManagerImpl : public ApiManager {
   utils::Status AddAndDeployConfigs(
       std::vector<std::pair<std::string, int>> &&configs, bool initialize);
 
-  // Returns true if given path is matched with base path
-  bool CheckBasePathMatch(const std::string &path, const std::string &base);
-
   // The check work flow.
   std::shared_ptr<CheckWorkflow> check_workflow_;
 

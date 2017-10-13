@@ -41,7 +41,7 @@ my $NginxPort = ApiManager::pick_port();
 my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(27);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(31);
 
 # Save service name in the service configuration protocol buffer file.
 
@@ -58,7 +58,7 @@ service_control_config {
     flush_interval_ms: 100
   }
   report_aggregator_config {
-    cache_entries: 10
+    cache_entries: 0
     flush_interval_ms: 100
   }
 }
@@ -68,7 +68,7 @@ api_service_config {
 EOF
 
 
-ApiManager::write_file_expand($t, 'nginx.conf', <<"EOF");
+$t->write_file_expand('nginx.conf', <<"EOF");
 %%TEST_GLOBALS%%
 daemon off;
 events {
@@ -83,7 +83,6 @@ http {
     location / {
       endpoints {
         api service.pb.txt;
-        %%TEST_CONFIG%%
         server_config server.pb.txt;
         on;
       }
@@ -106,7 +105,7 @@ $t->run();
 my $response_first = ApiManager::http_get($NginxPort,'/api/shelves?key=this-is-an-api-key');
 my $response_second = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key');
 
-is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');
+is($t->waitforfile("$t->{_testdir}/${report_done}.2"), 1, 'Report body file ready.');
 
 
 $t->stop_daemons();
@@ -149,7 +148,20 @@ is($r->{headers}->{host}, "127.0.0.1:${BackendPort}", 'Host header was set');
 
 
 @requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
-is(scalar @requests, 3, 'Service control received one request');
+is(scalar @requests, 4, 'Service control received 4 requests');
+
+$r = shift @requests;
+is($r->{verb}, 'POST', ':check verb was post');
+is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:check', ':check was called');
+is($r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}", 'Host header was set');
+is($r->{headers}->{'content-type'}, 'application/x-protobuf', ':check Content-Type was protocol buffer');
+
+$r = shift @requests;
+is($r->{verb}, 'POST', ':check verb was post');
+is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:report', ':report was called');
+is($r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}", 'Host header was set');
+is($r->{headers}->{'content-type'}, 'application/x-protobuf', ':report Content-Type was protocol buffer');
+
 
 $r = shift @requests;
 is($r->{verb}, 'POST', ':check verb was post');
@@ -160,14 +172,7 @@ is($r->{headers}->{'content-type'}, 'application/x-protobuf', ':check Content-Ty
 
 $r = shift @requests;
 is($r->{verb}, 'POST', ':check verb was post');
-is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:check', ':check was called');
-is($r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}", 'Host header was set');
-is($r->{headers}->{'content-type'}, 'application/x-protobuf', ':check Content-Type was protocol buffer');
-
-
-$r = shift @requests;
-is($r->{verb}, 'POST', ':check verb was post');
-is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:report', ':check was called');
+is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:report', ':report was called');
 is($r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}", 'Host header was set');
 is($r->{headers}->{'content-type'}, 'application/x-protobuf', ':report Content-Type was protocol buffer');
 
@@ -202,6 +207,7 @@ sub servicecontrol {
   my $server = HttpServer->new( $port, $t->testdir() . '/' . $file )
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
+  my $index = 1;
 
   $server->on_sub( 'POST',
     '/v1/services/endpoints-test.cloudendpointsapis.com:check', sub {
@@ -220,7 +226,8 @@ HTTP/1.1 200 OK
 Connection: close
 
 EOF
-    $t->write_file($done, ':report done');
+    $t->write_file($done . "." . $index, ':report done');
+    $index++;
   });
 
   $server->run();

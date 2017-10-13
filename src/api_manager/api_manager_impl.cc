@@ -272,15 +272,6 @@ utils::Status ApiManagerImpl::GetServiceConfigRollouts(
   return utils::Status::OK;
 }
 
-bool ApiManagerImpl::CheckBasePathMatch(const std::string &path,
-                                        const std::string &base) {
-  return (base.length() > path.length() ||
-          path.compare(0, base.length(), base) != 0 ||
-          (path.length() != base.length() && path.at(base.length()) != '/'))
-             ? false
-             : true;
-}
-
 ApiManager::ApiBasepathRewriteAction ApiManagerImpl::ReWriteURL(
     const std::string &url, std::string *destination_url) {
   auto server_config = global_context_->server_config();
@@ -291,35 +282,41 @@ ApiManager::ApiBasepathRewriteAction ApiManagerImpl::ReWriteURL(
     return ApiBasepathRewriteAction::NONE;
   }
 
-  std::size_t path_end_pos = url.find_first_of('?');
-  std::string path =
-      (path_end_pos == std::string::npos) ? url : url.substr(0, path_end_pos);
-
-  bool append_slash = false;
-  if (path.length() == 0 || path.at(path.length() - 1) != '/') {
-    path.append("/");
-    append_slash = true;
+  std::size_t path_length = url.find_first_of('?');
+  if (path_length == std::string::npos) {
+    path_length = url.length();
   }
 
   auto base = server_config->api_service_config().base_path();
 
-  if (CheckBasePathMatch(path, base) == false) {
-    if (server_config->api_service_config().base_path_hard_match()) {
-      return ApiBasepathRewriteAction::REJECT;
+  if (base.length() > path_length) {
+    return server_config->api_service_config().base_path_hard_match()
+               ? ApiBasepathRewriteAction::REJECT
+               : ApiBasepathRewriteAction::NONE;
+  } else if (base.length() == path_length) {
+    if (url.compare(0, path_length, base) == 0) {
+      destination_url->assign("/");
+      destination_url->append(url.substr(path_length));
+      return ApiBasepathRewriteAction::REWRITE;
     } else {
       return ApiBasepathRewriteAction::NONE;
     }
   }
 
-  destination_url->assign(path.substr(base.length()));
-
-  if (append_slash && destination_url->length() > 1) {
-    destination_url->erase(destination_url->length() - 1);
+  if (url.compare(0, base.length(), base) != 0) {
+    return server_config->api_service_config().base_path_hard_match()
+               ? ApiBasepathRewriteAction::REJECT
+               : ApiBasepathRewriteAction::NONE;
   }
 
-  if (path_end_pos != std::string::npos) {
-    destination_url->append(url.substr(path_end_pos));
+  if (url.at(base.length()) != '/') {
+    return server_config->api_service_config().base_path_hard_match()
+               ? ApiBasepathRewriteAction::REJECT
+               : ApiBasepathRewriteAction::NONE;
   }
+
+  destination_url->assign(url.substr(base.length()));
+
   return ApiBasepathRewriteAction::REWRITE;
 }
 
