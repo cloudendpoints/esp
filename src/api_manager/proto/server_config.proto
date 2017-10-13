@@ -216,8 +216,9 @@ message ApiServiceConfig {
   // If the request url doesn't start with the base_path, then the base_path
   // striping will be ignored.
   string base_path = 1;
-  // "hard" will reject paths not matched with api_base. "soft" will not.
-  string base_path_match_policy = 2;
+  // If it is set to true, esp will reject paths not matched with api_base.
+  // The default value is false
+  bool base_path_hard_match = 2;
 }
 
 message Experimental {

@@ -45,10 +45,10 @@ struct ServiceConfigRolloutsInfo {
   std::map<std::string, int> percentages;
 };
 
-enum ApiBasepathRewriteAction { REWRITE, REJECT, NONE };
-
 class ApiManager {
  public:
+  enum ApiBasepathRewriteAction { REWRITE, REJECT, NONE };
+
   virtual ~ApiManager() {}
 
   // Returns true if either auth is required or service control is configured.

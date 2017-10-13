@@ -51,36 +51,38 @@ namespace nginx {
 
 namespace {
 
-// Rewrite url based on api base_path. Returns NGX_OK if rewrite was successful
-// or rewrite is not required. Otherwise, returns NGX_ERROR.
-// When this function returns NGX_ERROR, nginx should return 404 error.
-ApiBasepathRewriteAction ngx_esp_rewrite_url(ngx_http_request_t *r,
-                                             ngx_esp_loc_conf_t *lc) {
-  std::string destination_url;
-  ApiBasepathRewriteAction action =
-      lc->esp->ReWriteURL(ngx_str_to_std(r->unparsed_uri), &destination_url);
+// Updates r->uri and r->unparsed_uri, based on api basepath math.
+// Then returns ApiManager::ApiBasepathRewriteAction.
+// If the return value is ApiManager::ApiBasepathRewriteAction::REJECT,
+// then nginx should response status 404 NotFound
+ApiManager::ApiBasepathRewriteAction ngx_esp_rewrite_uri(
+    ngx_http_request_t *r, ngx_esp_loc_conf_t *lc) {
+  std::string unparsed_uri;
+  ApiManager::ApiBasepathRewriteAction unparsed_uri_action =
+      lc->esp->ReWriteURL(ngx_str_to_std(r->unparsed_uri), &unparsed_uri);
 
-  if (action == ApiBasepathRewriteAction::REWRITE) {
-    ngx_str_copy_from_std(r->pool, destination_url, &r->unparsed_uri);
-
-    ngx_str_copy_from_std(r->pool, ngx_str_to_std(r->method_name) + " " +
-                                       destination_url + " " +
-                                       ngx_str_to_std(r->http_protocol),
+  if (unparsed_uri_action == ApiManager::ApiBasepathRewriteAction::REWRITE) {
+    ngx_str_copy_from_std(r->pool, unparsed_uri, &r->unparsed_uri);
+    ngx_str_copy_from_std(r->pool,
+                          ngx_str_to_std(r->method_name) + " " + unparsed_uri +
+                              " " + ngx_str_to_std(r->http_protocol),
                           &r->request_line);
-  } else if (action == ApiBasepathRewriteAction::REJECT) {
-    return action;
+  } else if (unparsed_uri_action ==
+             ApiManager::ApiBasepathRewriteAction::REJECT) {
+    return unparsed_uri_action;
   }
 
   std::string uri;
-  action = lc->esp->ReWriteURL(ngx_str_to_std(r->uri), &uri);
-  if (action == ApiBasepathRewriteAction::REWRITE) {
+  ApiManager::ApiBasepathRewriteAction uri_action =
+      lc->esp->ReWriteURL(ngx_str_to_std(r->uri), &uri);
+  if (uri_action == ApiManager::ApiBasepathRewriteAction::REWRITE) {
     ngx_str_copy_from_std(r->pool, uri.substr(0, uri.find_first_of('?')),
                           &r->uri);
   }
 
-  return action;
+  return uri_action;
 }
-}
+}  // namespace
 
 struct wakeup_context_s {
  public:
@@ -102,7 +104,7 @@ ngx_esp_request_ctx_s::ngx_esp_request_ctx_s(ngx_http_request_t *r,
       backend_time(-1) {
   ngx_memzero(&wakeup_event, sizeof(wakeup_event));
   if (lc && lc->esp) {
-    api_basepath_rewrite_action = ngx_esp_rewrite_url(r, lc);
+    api_basepath_rewrite_action = ngx_esp_rewrite_uri(r, lc);
 
     request_handler = lc->esp->CreateRequestHandler(
         std::unique_ptr<Request>(new NgxEspRequest(r)));
@@ -644,9 +646,10 @@ Status ngx_http_esp_access_handler(ngx_http_request_t *r) {
     return Status(NGX_ERROR, "Missing esp request context.");
   }
 
-  if (ctx->api_basepath_rewrite_action == ApiBasepathRewriteAction::REJECT) {
+  if (ctx->api_basepath_rewrite_action ==
+      ApiManager::ApiBasepathRewriteAction::REJECT) {
     ctx->status = Status(Code::NOT_FOUND, "Method does not exist.",
-                         Status::SERVICE_CONTROL);
+                         Status::APPLICATION);
     return ngx_http_esp_access_check_done(r, ctx);
   }
 

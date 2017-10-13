@@ -272,51 +272,54 @@ utils::Status ApiManagerImpl::GetServiceConfigRollouts(
   return utils::Status::OK;
 }
 
-ApiBasepathRewriteAction ApiManagerImpl::ReWriteURL(
+bool ApiManagerImpl::CheckBasePathMatch(const std::string &path,
+                                        const std::string &base) {
+  return (base.length() > path.length() ||
+          path.compare(0, base.length(), base) != 0 ||
+          (path.length() != base.length() && path.at(base.length()) != '/'))
+             ? false
+             : true;
+}
+
+ApiManager::ApiBasepathRewriteAction ApiManagerImpl::ReWriteURL(
     const std::string &url, std::string *destination_url) {
   auto server_config = global_context_->server_config();
 
   if (server_config == nullptr ||
-      server_config->has_api_service_config() == false) {
+      server_config->has_api_service_config() == false ||
+      server_config->api_service_config().base_path().length() == 0) {
     return ApiBasepathRewriteAction::NONE;
+  }
+
+  std::size_t path_end_pos = url.find_first_of('?');
+  std::string path =
+      (path_end_pos == std::string::npos) ? url : url.substr(0, path_end_pos);
+
+  bool append_slash = false;
+  if (path.length() == 0 || path.at(path.length() - 1) != '/') {
+    path.append("/");
+    append_slash = true;
   }
 
   auto base = server_config->api_service_config().base_path();
-  if (base.length() == 0 || base.length() > url.length()) {
-    return ApiBasepathRewriteAction::NONE;
-  }
 
-  if (server_config->api_service_config().base_path_match_policy() == "hard") {
-    std::string check_url = url;
-    if (check_url.at(check_url.length() - 1) != '/') {
-      check_url.append("/");
-    }
-
-    std::string base_url = base;
-    if (base_url.at(base_url.length() - 1) != '/') {
-      base_url.append("/");
-    }
-
-    if (check_url.compare(0, base_url.length(), base_url) != 0) {
+  if (CheckBasePathMatch(path, base) == false) {
+    if (server_config->api_service_config().base_path_hard_match()) {
       return ApiBasepathRewriteAction::REJECT;
-    }
-  } else {
-    if (base.length() == 0 || base.length() > url.length() ||
-        url.compare(0, base.length(), base) != 0) {
+    } else {
       return ApiBasepathRewriteAction::NONE;
     }
   }
 
-  if (base.length() == url.length()) {
-    destination_url->assign("/");
-    return ApiBasepathRewriteAction::REWRITE;
+  destination_url->assign(path.substr(base.length()));
+
+  if (append_slash && destination_url->length() > 1) {
+    destination_url->erase(destination_url->length() - 1);
   }
 
-  if (url.at(base.length()) != '/') {
-    return ApiBasepathRewriteAction::NONE;
+  if (path_end_pos != std::string::npos) {
+    destination_url->append(url.substr(path_end_pos));
   }
-
-  destination_url->assign(url.substr(base.length()));
   return ApiBasepathRewriteAction::REWRITE;
 }
 

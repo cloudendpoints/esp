@@ -250,7 +250,7 @@ struct ngx_esp_request_ctx_s {
   ngx_str_t backend_url;
 
   // Reject current request?
-  ApiBasepathRewriteAction api_basepath_rewrite_action;
+  ApiManager::ApiBasepathRewriteAction api_basepath_rewrite_action;
 };
 
 static_assert(std::is_standard_layout<ngx_esp_request_ctx_t>::value,

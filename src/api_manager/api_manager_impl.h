@@ -67,10 +67,13 @@ class ApiManagerImpl : public ApiManager {
   utils::Status GetServiceConfigRollouts(
       ServiceConfigRolloutsInfo *rollouts) override;
 
-  // Return true if url rewrite is required. Otherwise returns false
-  // destination_url is the updated one
-  ApiBasepathRewriteAction ReWriteURL(const std::string &url,
-                                      std::string *destination_url) override;
+  // Returns ApiManager::ApiBasepathRewriteAction based on the request url
+  // and api basepath, configured in the service_config
+  // REJECT - Return 404
+  // REWRITE - Update url and unparsed_uri with destination_url
+  // NONE - Do nothing
+  ApiManager::ApiBasepathRewriteAction ReWriteURL(
+      const std::string &url, std::string *destination_url) override;
 
  private:
   // Use these configs according to the traffic percentage.
@@ -80,6 +83,9 @@ class ApiManagerImpl : public ApiManager {
   // is ok.
   utils::Status AddAndDeployConfigs(
       std::vector<std::pair<std::string, int>> &&configs, bool initialize);
+
+  // Returns true if given path is matched with base path
+  bool CheckBasePathMatch(const std::string &path, const std::string &base);
 
   // The check work flow.
   std::shared_ptr<CheckWorkflow> check_workflow_;
