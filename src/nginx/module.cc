@@ -70,6 +70,8 @@ ApiManager::ApiBasepathRewriteAction ngx_esp_rewrite_uri(
   } else if (unparsed_uri_action ==
              ApiManager::ApiBasepathRewriteAction::REJECT) {
     return unparsed_uri_action;
+  } else {
+    return ApiManager::ApiBasepathRewriteAction::NONE;
   }
 
   std::string uri;
