@@ -67,8 +67,7 @@ ApiManager::ApiBasepathRewriteAction ngx_esp_rewrite_uri(
                           ngx_str_to_std(r->method_name) + " " + unparsed_uri +
                               " " + ngx_str_to_std(r->http_protocol),
                           &r->request_line);
-  } else if (unparsed_uri_action ==
-             ApiManager::ApiBasepathRewriteAction::REJECT) {
+  } else {
     return unparsed_uri_action;
   }
 
