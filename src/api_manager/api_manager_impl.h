@@ -67,6 +67,14 @@ class ApiManagerImpl : public ApiManager {
   utils::Status GetServiceConfigRollouts(
       ServiceConfigRolloutsInfo *rollouts) override;
 
+  // Returns ApiManager::ApiBasepathRewriteAction based on the request url
+  // and api basepath, configured in the service_config
+  // REJECT - Return 404
+  // REWRITE - Update url and unparsed_uri with destination_url
+  // NONE - Do nothing
+  ApiManager::ApiBasepathRewriteAction ReWriteURL(
+      const std::string &url, std::string *destination_url) override;
+
  private:
   // Use these configs according to the traffic percentage.
   void DeployConfigs(std::vector<std::pair<std::string, int>> &&list);

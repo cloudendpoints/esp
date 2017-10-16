@@ -44,6 +44,9 @@ message ServerConfig {
   // Init Service Configs.
   ServiceConfigRollout service_config_rollout = 12;
 
+  // Common service API configuration
+  ApiServiceConfig api_service_config = 13;
+
   // The service config rollout strategy, [fixed|managed]
   // fixed:  never change service config dynamically.
   // managed: follow service management service config rollout.
@@ -203,6 +206,19 @@ message ServiceConfigRollout {
 
   // Latest rollout id.
   string rollout_id = 2;
+}
+
+// Common configurations for API service configuration
+message ApiServiceConfig {
+  // API base path. ESP strip the prefix from the request RUL.
+  // If base_bath set to "/api", then the reqeust url "/api/v2/products" will be
+  // converted to "/v2/products" internally.
+  // If the request url doesn't start with the base_path, then the base_path
+  // striping will be ignored.
+  string base_path = 1;
+  // If it is set to true, esp will reject paths not matched with api_base.
+  // The default value is false
+  bool base_path_hard_match = 2;
 }
 
 message Experimental {
