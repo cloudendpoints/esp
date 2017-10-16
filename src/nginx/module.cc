@@ -648,8 +648,8 @@ Status ngx_http_esp_access_handler(ngx_http_request_t *r) {
 
   if (ctx->api_basepath_rewrite_action ==
       ApiManager::ApiBasepathRewriteAction::REJECT) {
-    ctx->status = Status(Code::NOT_FOUND, "Method does not exist.",
-                         Status::APPLICATION);
+    ctx->status =
+        Status(Code::NOT_FOUND, "Method does not exist.", Status::APPLICATION);
     return ngx_http_esp_access_check_done(r, ctx);
   }
 
