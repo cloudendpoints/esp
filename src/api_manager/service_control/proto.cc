@@ -1232,47 +1232,17 @@ Status Proto::ConvertAllocateQuotaResponse(
       // Same as [google.rpc.Code.RESOURCE_EXHAUSTED][].
       return Status(Code::RESOURCE_EXHAUSTED, error.description());
 
-    case ::google::api::servicecontrol::v1::QuotaError::PROJECT_SUSPENDED:
-    // Consumer project has been suspended.
-    case ::google::api::servicecontrol::v1::QuotaError::SERVICE_NOT_ENABLED:
-    // Consumer has not enabled the service.
     case ::google::api::servicecontrol::v1::QuotaError::BILLING_NOT_ACTIVE:
-    // Consumer cannot access the service because billing is disabled.
-    case ::google::api::servicecontrol::v1::QuotaError::IP_ADDRESS_BLOCKED:
-    // IP address of the consumer is invalid for the specific consumer
-    // project.
-    case ::google::api::servicecontrol::v1::QuotaError::REFERER_BLOCKED:
-    // Referer address of the consumer request is invalid for the specific
-    // consumer project.
-    case ::google::api::servicecontrol::v1::QuotaError::CLIENT_APP_BLOCKED:
-      // Client application of the consumer request is invalid for the
-      // specific consumer project.
+      // Consumer cannot access the service because billing is disabled.
       return Status(Code::PERMISSION_DENIED, error.description());
 
     case ::google::api::servicecontrol::v1::QuotaError::PROJECT_DELETED:
     // Consumer's project has been marked as deleted (soft deletion).
-    case ::google::api::servicecontrol::v1::QuotaError::PROJECT_INVALID:
-    // Consumer's project number or ID does not represent a valid project.
     case ::google::api::servicecontrol::v1::QuotaError::API_KEY_INVALID:
     // Specified API key is invalid.
     case ::google::api::servicecontrol::v1::QuotaError::API_KEY_EXPIRED:
       // Specified API Key has expired.
       return Status(Code::INVALID_ARGUMENT, error.description());
-
-    case ::google::api::servicecontrol::v1::QuotaError::
-        PROJECT_STATUS_UNVAILABLE:
-    // The backend server for looking up project id/number is unavailable.
-    case ::google::api::servicecontrol::v1::QuotaError::
-        SERVICE_STATUS_UNAVAILABLE:
-    // The backend server for checking service status is unavailable.
-    case ::google::api::servicecontrol::v1::QuotaError::
-        BILLING_STATUS_UNAVAILABLE:
-    // The backend server for checking billing status is unavailable.
-    // Fail open for internal server errors per recommendation
-    case ::google::api::servicecontrol::v1::QuotaError::
-        QUOTA_SYSTEM_UNAVAILABLE:
-      // The backend server for checking quota limits is unavailable.
-      return Status::OK;
 
     default:
       return Status(Code::INTERNAL, error.description());
