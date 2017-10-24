@@ -41,7 +41,7 @@ my $NginxPort = ApiManager::pick_port();
 my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(31);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(49);
 
 # Save service name in the service configuration protocol buffer file.
 
@@ -63,7 +63,9 @@ service_control_config {
   }
 }
 api_service_config {
-  base_path: "/api"
+  rewrite: "/api/(.*) \$1"
+  rewrite: "/apis/(.*) \$1"
+  rewrite_log: true
 }
 EOF
 
@@ -104,14 +106,14 @@ $t->run();
 
 my $response_first = ApiManager::http_get($NginxPort,'/api/shelves?key=this-is-an-api-key');
 my $response_second = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key');
+my $response_third = ApiManager::http_get($NginxPort,'/apis/shelves?key=this-is-an-api-key');
+my $response_fourth = ApiManager::http_get($NginxPort,'/test/shelves?key=this-is-an-api-key');
 
 is($t->waitforfile("$t->{_testdir}/${report_done}.2"), 1, 'Report body file ready.');
-
 
 $t->stop_daemons();
 
 my ($response_headers, $response_body) = split /\r\n\r\n/, $response_first, 2;
-
 like($response_headers, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');
 is($response_body, <<'EOF', 'Shelves returned in the response body.');
 { "shelves": [
@@ -122,7 +124,6 @@ is($response_body, <<'EOF', 'Shelves returned in the response body.');
 EOF
 
 ($response_headers, $response_body) = split /\r\n\r\n/, $response_second, 2;
-
 like($response_headers, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');
 is($response_body, <<'EOF', 'Shelves returned in the response body.');
 { "shelves": [
@@ -132,10 +133,29 @@ is($response_body, <<'EOF', 'Shelves returned in the response body.');
 }
 EOF
 
+($response_headers, $response_body) = split /\r\n\r\n/, $response_third, 2;
+like($response_headers, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');
+is($response_body, <<'EOF', 'Shelves returned in the response body.');
+{ "shelves": [
+    { "name": "shelves/1", "theme": "Fiction" },
+    { "name": "shelves/2", "theme": "Fantasy" }
+  ]
+}
+EOF
+
+($response_headers, $response_body) = split /\r\n\r\n/, $response_fourth, 2;
+like($response_headers, qr/HTTP\/1\.1 404 Not Found/, 'Returned HTTP 404.');
+
+
 my @requests = ApiManager::read_http_stream($t, 'bookstore.log');
-is(scalar @requests, 2, 'Backend received two requests');
+is(scalar @requests, 3, 'Backend received three requests');
 
 my $r = shift @requests;
+is($r->{verb}, 'GET', 'Backend request was a get');
+is($r->{uri}, '/shelves?key=this-is-an-api-key', 'Backend uri was /shelves');
+is($r->{headers}->{host}, "127.0.0.1:${BackendPort}", 'Host header was set');
+
+$r = shift @requests;
 is($r->{verb}, 'GET', 'Backend request was a get');
 is($r->{uri}, '/shelves?key=this-is-an-api-key', 'Backend uri was /shelves');
 is($r->{headers}->{host}, "127.0.0.1:${BackendPort}", 'Host header was set');
@@ -148,7 +168,7 @@ is($r->{headers}->{host}, "127.0.0.1:${BackendPort}", 'Host header was set');
 
 
 @requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
-is(scalar @requests, 4, 'Service control received 4 requests');
+is(scalar @requests, 7, 'Service control received 7 requests');
 
 $r = shift @requests;
 is($r->{verb}, 'POST', ':check verb was post');
@@ -162,6 +182,17 @@ is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:report', ':rep
 is($r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}", 'Host header was set');
 is($r->{headers}->{'content-type'}, 'application/x-protobuf', ':report Content-Type was protocol buffer');
 
+$r = shift @requests;
+is($r->{verb}, 'POST', ':check verb was post');
+is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:check', ':check was called');
+is($r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}", 'Host header was set');
+is($r->{headers}->{'content-type'}, 'application/x-protobuf', ':check Content-Type was protocol buffer');
+
+$r = shift @requests;
+is($r->{verb}, 'POST', ':report verb was post');
+is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:report', ':report was called');
+is($r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}", 'Host header was set');
+is($r->{headers}->{'content-type'}, 'application/x-protobuf', ':report Content-Type was protocol buffer');
 
 $r = shift @requests;
 is($r->{verb}, 'POST', ':check verb was post');
@@ -169,6 +200,11 @@ is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:check', ':chec
 is($r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}", 'Host header was set');
 is($r->{headers}->{'content-type'}, 'application/x-protobuf', ':check Content-Type was protocol buffer');
 
+$r = shift @requests;
+is($r->{verb}, 'POST', ':report verb was post');
+is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:report', ':report was called');
+is($r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}", 'Host header was set');
+is($r->{headers}->{'content-type'}, 'application/x-protobuf', ':report Content-Type was protocol buffer');
 
 $r = shift @requests;
 is($r->{verb}, 'POST', ':report verb was post');
@@ -209,7 +245,7 @@ sub servicecontrol {
   local $SIG{PIPE} = 'IGNORE';
   my $index = 1;
 
-  $server->on_sub( 'POST',
+  $server->on_sub('POST',
     '/v1/services/endpoints-test.cloudendpointsapis.com:check', sub {
     my ($headers, $body, $client) = @_;
     print $client <<'EOF';

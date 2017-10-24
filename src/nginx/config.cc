@@ -27,6 +27,7 @@
 #include "src/nginx/config.h"
 
 #include <fcntl.h>
+#include <regex>
 #include <string>
 
 #include "google/protobuf/text_format.h"
@@ -588,6 +589,35 @@ ngx_int_t ngx_esp_build_server_config(ngx_conf_t *cf, ngx_esp_loc_conf_t *lc,
     }
 
     (*traffic_percentages)[ngx_str_to_std(file_name)] = 100.0;
+  }
+
+  // validate rewrite rule syntax
+  if (config.has_api_service_config()) {
+    std::unique_ptr<std::regex> rule_check;
+    for (auto rule : config.api_service_config().rewrite()) {
+      std::stringstream ss(rule);
+      std::istream_iterator<std::string> begin(ss);
+      std::istream_iterator<std::string> end;
+      std::vector<std::string> parts(begin, end);
+
+      if (parts.size() != 2) {
+        ngx_conf_log_error(
+            NGX_LOG_EMERG, cf, 0,
+            "Invalid rewrite rule format([regex] replacement): \"%s\"",
+            rule.c_str());
+        return NGX_ERROR;
+      }
+
+      try {
+        rule_check.reset(new std::regex(parts[0], std::regex::extended));
+      } catch (const std::regex_error &e) {
+        ngx_conf_log_error(
+            NGX_LOG_EMERG, cf, 0,
+            "Invalid regular expression in the rewrite rule: \"%s\"",
+            rule.c_str());
+        return NGX_ERROR;
+      }
+    }
   }
 
   // Reserialize

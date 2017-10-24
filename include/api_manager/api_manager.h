@@ -47,7 +47,7 @@ struct ServiceConfigRolloutsInfo {
 
 class ApiManager {
  public:
-  enum ApiBasepathRewriteAction { REWRITE, REJECT, NONE };
+  enum RewriteAction { REWRITE, NONE };
 
   virtual ~ApiManager() {}
 
@@ -105,8 +105,8 @@ class ApiManager {
   virtual utils::Status GetServiceConfigRollouts(
       ServiceConfigRolloutsInfo *rollouts) = 0;
 
-  virtual ApiBasepathRewriteAction ReWriteURL(const std::string &url,
-                                              std::string *destination_url) = 0;
+  virtual RewriteAction ReWriteURL(const std::string &url,
+                                   std::string *destination_url) = 0;
 
  protected:
   ApiManager() {}

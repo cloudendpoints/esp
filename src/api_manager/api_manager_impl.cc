@@ -36,6 +36,35 @@ ApiManagerImpl::ApiManagerImpl(std::unique_ptr<ApiManagerEnvInterface> env,
           new context::GlobalContext(std::move(env), server_config)) {
   check_workflow_ = std::unique_ptr<CheckWorkflow>(new CheckWorkflow);
   check_workflow_->RegisterAll();
+
+  if (global_context_->server_config() &&
+      global_context_->server_config()->has_api_service_config()) {
+    for (auto rule :
+         global_context_->server_config()->api_service_config().rewrite()) {
+      std::stringstream ss(rule);
+      std::istream_iterator<std::string> begin(ss);
+      std::istream_iterator<std::string> end;
+      std::vector<std::string> parts(begin, end);
+
+      if (parts.size() != 2) {
+        global_context_->env()->LogError("ERROR: invalid rewrite rule: " +
+                                         rule);
+        continue;
+      }
+
+      rewrite_rules_.push_back(new RewriteRule(parts[0], parts[1],
+                                               global_context_->env(),
+                                               global_context_->server_config()
+                                                   ->api_service_config()
+                                                   .rewrite_log()));
+    }
+  }
+}
+
+ApiManagerImpl::~ApiManagerImpl() {
+  for (auto rule : rewrite_rules_) {
+    delete rule;
+  }
 }
 
 utils::Status ApiManagerImpl::LoadServiceRollouts() {
@@ -272,50 +301,17 @@ utils::Status ApiManagerImpl::GetServiceConfigRollouts(
   return utils::Status::OK;
 }
 
-ApiManager::ApiBasepathRewriteAction ApiManagerImpl::ReWriteURL(
+ApiManager::RewriteAction ApiManagerImpl::ReWriteURL(
     const std::string &url, std::string *destination_url) {
   auto server_config = global_context_->server_config();
 
-  if (server_config == nullptr ||
-      server_config->has_api_service_config() == false ||
-      server_config->api_service_config().base_path().length() == 0) {
-    return ApiBasepathRewriteAction::NONE;
-  }
-
-  std::size_t path_length = url.find_first_of('?');
-  if (path_length == std::string::npos) {
-    path_length = url.length();
-  }
-
-  ApiBasepathRewriteAction mismatch_action =
-      server_config->api_service_config().base_path_hard_match()
-          ? ApiBasepathRewriteAction::REJECT
-          : ApiBasepathRewriteAction::NONE;
-
-  auto base = server_config->api_service_config().base_path();
-
-  if (base.length() > path_length) {
-    return mismatch_action;
-  } else if (base.length() == path_length) {
-    if (url.compare(0, path_length, base) == 0) {
-      destination_url->assign("/");
-      destination_url->append(url.substr(path_length));
-      return ApiBasepathRewriteAction::REWRITE;
-    } else {
-      return mismatch_action;
+  for (auto rewrite_rule : this->rewrite_rules_) {
+    if (rewrite_rule->Check(url, destination_url) == true) {
+      return RewriteAction::REWRITE;
     }
   }
 
-  if (url.compare(0, base.length(), base) != 0) {
-    return mismatch_action;
-  }
-
-  if (url.at(base.length()) != '/') {
-    return mismatch_action;
-  }
-
-  destination_url->assign(url.substr(base.length()));
-  return ApiBasepathRewriteAction::REWRITE;
+  return RewriteAction::NONE;
 }
 
 std::unique_ptr<RequestHandlerInterface> ApiManagerImpl::CreateRequestHandler(

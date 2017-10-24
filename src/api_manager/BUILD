@@ -95,6 +95,8 @@ cc_library(
         "quota_control.cc",
         "quota_control.h",
         "request_handler.cc",
+        "rewrite_rule.cc",
+        "rewrite_rule.h",
         "service_management_fetch.cc",
         "service_management_fetch.h",
         "weighted_selector.cc",
@@ -196,6 +198,21 @@ cc_test(
     size = "small",
     srcs = [
         "api_manager_test.cc",
+    ],
+    data = glob(["testdata/*.json"]),
+    linkstatic = 1,
+    deps = [
+        ":api_manager",
+        ":mock_api_manager_environment",
+        "//external:googletest_main",
+    ],
+)
+
+cc_test(
+    name = "rewrite_rule_test",
+    size = "small",
+    srcs = [
+        "rewrite_rule_test.cc",
     ],
     data = glob(["testdata/*.json"]),
     linkstatic = 1,

@@ -210,15 +210,17 @@ message ServiceConfigRollout {
 
 // Common configurations for API service configuration
 message ApiServiceConfig {
-  // API base path. ESP strip the prefix from the request RUL.
-  // If base_bath set to "/api", then the reqeust url "/api/v2/products" will be
-  // converted to "/v2/products" internally.
-  // If the request url doesn't start with the base_path, then the base_path
-  // striping will be ignored.
-  string base_path = 1;
-  // If it is set to true, esp will reject paths not matched with api_base.
+  // If the specified regular expression matches a request URI, URI is changed
+  // as specified in the replacement string. The rewrite rules are executed
+  // sequentially in order of their appearance in the configuration file.
+  // Syntax:  [regex] replacement
+  // regex follows ECMAScript regular expressions pattern syntax
+  repeated string rewrite = 1;
+
+  // Enables or disables logging of ESP rewrite processing results into the
+  // error_log at the info level.
   // The default value is false
-  bool base_path_hard_match = 2;
+  bool rewrite_log = 2;
 }
 
 message Experimental {
