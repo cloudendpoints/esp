@@ -114,8 +114,8 @@ const char kServerConfigWithApiServiceConfigRewriteRule[] = R"(
 {
   "api_service_config": {
     "rewrite": [
-      "/api/(.*)     $1    ",
-      "   /apis/(.*) /read$1   "
+      "/api/(.*)     /$1    ",
+      "   /apis/(.*) /read/$1   "
     ],
     "rewrite_log": true
   }

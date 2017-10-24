@@ -63,8 +63,8 @@ service_control_config {
   }
 }
 api_service_config {
-  rewrite: "/api/(.*) \$1"
-  rewrite: "/apis/(.*) \$1"
+  rewrite: "/api/(.*) /\$1"
+  rewrite: "/apis/(.*) /\$1"
   rewrite_log: true
 }
 EOF

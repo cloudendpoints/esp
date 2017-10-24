@@ -114,7 +114,7 @@ class RewriteRuleTest : public ::testing::Test {};
 TEST_F(RewriteRuleTest, Check) {
   MockTimerApiManagerEnvironment env;
 
-  RewriteRule rr("/api/(.*)", "$1", &env, false);
+  RewriteRule rr("/api/(.*)", "/$1", &env, false);
 
   std::string destination;
   EXPECT_TRUE(
@@ -131,7 +131,7 @@ TEST_F(RewriteRuleTest, Check) {
 TEST_F(RewriteRuleTest, InvalidRegexPattern) {
   MockTimerApiManagerEnvironment env;
 
-  RewriteRule rr("/api/\(.\\*\\)", "$1", &env, false);
+  RewriteRule rr("/api/\(.\\*\\)", "/$1", &env, false);
 
   std::string destination;
   EXPECT_FALSE(
@@ -149,7 +149,7 @@ TEST_F(RewriteRuleTest, InvalidRegexPattern) {
 TEST_F(RewriteRuleTest, CheckWithDebugInformation) {
   MockTimerApiManagerEnvironment env;
 
-  RewriteRule rr("/api/(.*)", "$1", &env, true);
+  RewriteRule rr("/api/(.*)", "/$1", &env, true);
 
   std::string destination;
   EXPECT_TRUE(
