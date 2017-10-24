@@ -42,7 +42,7 @@ esp_rewrite: replacement: /$1
 esp_rewrite: destination uri: /shelves?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI)";
 
 std::string kExpectedRewriteErrorLog =
-    "ERROR Invalid rewrite rule: \"/api/(.*\\)\", error: regex_error";
+    "ERROR Invalid rewrite rule: \"/api/(.\\*\\)\", error: regex_error";
 std::string kExpectedNotInitializedLog =
     "INFO Rewrite rule was not initialized";
 
