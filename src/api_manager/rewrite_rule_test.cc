@@ -33,16 +33,16 @@ namespace api_manager {
 namespace {
 
 std::string kExpectedRewriteLog =
-    R"(INFO esp_rewrite: matching rule: /api/(.*) $1
+    R"(INFO esp_rewrite: matching rule: /api/(.*) /$1
 esp_rewrite: regex=/api/(.*)
 esp_rewrite: request uri=/api/shelves?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI
 esp_rewrite: $0: /api/shelves?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI
-esp_rewrite: $1: /shelves?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI
-esp_rewrite: replacement: $1
+esp_rewrite: $1: shelves?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI
+esp_rewrite: replacement: /$1
 esp_rewrite: destination uri: /shelves?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI)";
 
 std::string kExpectedRewriteErrorLog =
-    "ERROR Invalid rewrite rule: \"/api/(.\\*\\)\", error: regex_error";
+    "ERROR Invalid rewrite rule: \"/api/(.*\\)\", error: regex_error";
 std::string kExpectedNotInitializedLog =
     "INFO Rewrite rule was not initialized";
 
