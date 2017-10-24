@@ -33,11 +33,8 @@ RewriteRule::RewriteRule(std::string regex, std::string replacement,
   try {
     regex_.reset(new std::regex(regex, std::regex::extended));
   } catch (const std::regex_error &e) {
-    env_->LogError("Invalid rewrite rule: \"" + regex +
-                   "\", error: " + e.what());
-    if (e.code() == std::regex_constants::error_brack) {
-      env_->LogError("The code was error_brack");
-    }
+    env_->LogError("Invalid rewrite rule: \"" + regex + "\", error: " +
+                   e.what());
 
     regex_.reset();
     return;
