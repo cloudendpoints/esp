@@ -216,8 +216,8 @@ message ApiServiceConfig {
   //    compatible regular expression checked against the request
   //    URI, which is the part after http://hostname
   //  replacement: where should the matching requests be sent. Modification to
-  //    the part matched by the pattern or absolute path. it doesn't allow
-  //    destinations starting with either "http://" or "https://"
+  //    the part matched by the pattern or absolute path. Replacement
+  //    starts with either "http://" or "https://" is not allowed
   //
   // ex. "^/?([a-z]+)/(.*)$ /api.foo?page=$1&id=$2"
   //        ---$1--- -$2-                  |     |
