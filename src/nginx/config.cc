@@ -628,7 +628,7 @@ ngx_int_t ngx_esp_build_server_config(ngx_conf_t *cf, ngx_esp_loc_conf_t *lc,
       if (strncmp(parts[1].c_str(), "http://", strlen("http://")) == 0 ||
           strncmp(parts[1].c_str(), "https://", strlen("https://")) == 0) {
         ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
-                           "Replacement starts with either \"with http://\" or"
+                           "Replacement starts with either \"http://\" or"
                            "\"https://\": \"%s\" is not allowed: \"%s\"",
                            rule.c_str());
         return NGX_ERROR;
