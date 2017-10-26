@@ -1,3 +1,8 @@
+# Release 1.10.0 24-10-2017
+
+- Fix a bug in path match for OPTIONS. (#285)
+- Bare minimum support for gRPC-Web. (#283)
+
 # Release 1.9.0 27-09-2017
 
 - Add start_esp options to allow more characters in HTTP headers
