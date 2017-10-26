@@ -59,6 +59,9 @@ class RewriteRule {
 
   bool Check(const std::string &uri, std::string *destination, bool debug_mode);
 
+  static bool ValidateRewriteRule(const std::string &rule,
+                                  std::string *error_msg);
+
  private:
   std::string regex_pattern_;
   pcre *regex_compiled_;

@@ -54,6 +54,71 @@ void restore_regex_malloc_free() {
 
 }  // namespace
 
+bool RewriteRule::ValidateRewriteRule(const std::string &rule,
+                                      std::string *error_msg) {
+  backup_regex_malloc_free();
+
+  std::stringstream ss(rule);
+  std::istream_iterator<std::string> begin(ss);
+  std::istream_iterator<std::string> end;
+  std::vector<std::string> parts(begin, end);
+
+  if (parts.size() != 2) {
+    error_msg->assign("Invalid rewrite rule format(pattern replacement): \"" +
+                      rule + "\"");
+    restore_regex_malloc_free();
+    return false;
+  }
+
+  if (strncmp(parts[1].c_str(), "http://", strlen("http://")) == 0 ||
+      strncmp(parts[1].c_str(), "https://", strlen("https://")) == 0) {
+    error_msg->assign(
+        "Replacement starts with either \"http://\" or \"https://\": is not "
+        "allowed: \"" +
+        rule + "\"");
+    restore_regex_malloc_free();
+    return false;
+  }
+
+  pcre *regex_compiled;
+  pcre_extra *regex_extra;
+
+  const char *pcre_error_str;
+  int pcre_error_offset;
+  regex_compiled = pcre_compile(parts[0].c_str(), 0, &pcre_error_str,
+                                &pcre_error_offset, NULL);
+  if (regex_compiled == NULL) {
+    error_msg->assign("Invalid regular expression in the rewrite rule: \"" +
+                      rule + "\"");
+
+    restore_regex_malloc_free();
+    return false;
+  }
+
+  regex_extra = pcre_study(regex_compiled, 0, &pcre_error_str);
+  if (pcre_error_str != NULL) {
+    error_msg->assign("Invalid regular expression in the rewrite rule: \"" +
+                      rule + "\"");
+
+    pcre_free(regex_compiled);
+    restore_regex_malloc_free();
+    return false;
+  }
+
+  pcre_free(regex_compiled);
+
+  if (regex_extra != NULL) {
+#ifdef PCRE_CONFIG_JIT
+    pcre_free_study(regex_extra);
+#else
+    pcre_free(pcreExtra);
+#endif
+  }
+
+  restore_regex_malloc_free();
+  return true;
+}
+
 RewriteRule::RewriteRule(std::string regex, std::string replacement,
                          ApiManagerEnvInterface *env)
     : regex_pattern_(regex),
@@ -222,33 +287,29 @@ bool RewriteRule::Check(const std::string &uri, std::string *destination,
                 << " " << this->replacement_ << std::endl;
   }
 
-  // At this point, rc contains the number of substring matches found...
+  // At this point, pcre_exec_ret contains the number of substring matches found
   if (pcre_exec_ret == 0) {
     rewrite_log << kEspRewriteTitle
                 << ": too many substrings were found to fit in sub_str_vec!"
                 << std::endl;
-    // Set rc to the max number of substring matches possible.
+    // Set pcre_exec_ret to the max number of substring matches possible.
     pcre_exec_ret = kMaxRegexMathCount / 3;
   }
-
-  std::vector<std::string> match;
-
-  const char *psub_str_match_str;
-  for (int j = 0; j < pcre_exec_ret; j++) {
-    pcre_get_substring(uri.c_str(), sub_str_vec, pcre_exec_ret, j,
-                       &(psub_str_match_str));
-    match.push_back(psub_str_match_str);
-  }
-  pcre_free_substring(psub_str_match_str);
 
   if (debug_mode) {
     rewrite_log << kEspRewriteTitle << ": regex=" << regex_pattern_
                 << std::endl;
     rewrite_log << kEspRewriteTitle << ": request uri=" << uri << std::endl;
-    for (size_t i = 0; i < match.size(); i++) {
-      rewrite_log << kEspRewriteTitle << ": $" << std::to_string(i) << ": "
-                  << std::string(match[i]) << std::endl;
+
+    const char *psub_str_match_str;
+    for (int j = 0; j < pcre_exec_ret; j++) {
+      pcre_get_substring(uri.c_str(), sub_str_vec, pcre_exec_ret, j,
+                         &(psub_str_match_str));
+
+      rewrite_log << kEspRewriteTitle << ": $" << std::to_string(j) << ": "
+                  << std::string(psub_str_match_str) << std::endl;
     }
+    pcre_free_substring(psub_str_match_str);
 
     rewrite_log << kEspRewriteTitle << ": replacement: " << replacement_
                 << std::endl;
@@ -262,8 +323,12 @@ bool RewriteRule::Check(const std::string &uri, std::string *destination,
         ss << it->text;
         break;
       case ReplacementPartType::REPLACEMENT:
-        if (it->index >= 0 && it->index < (int)match.size()) {
-          ss << match[it->index];
+        const char *psub_str_match_str;
+        if (it->index >= 0 && it->index < pcre_exec_ret) {
+          pcre_get_substring(uri.c_str(), sub_str_vec, pcre_exec_ret, it->index,
+                             &(psub_str_match_str));
+          ss << psub_str_match_str;
+          pcre_free_substring(psub_str_match_str);
         }
         break;
       default:

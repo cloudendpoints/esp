@@ -39,18 +39,19 @@ ApiManagerImpl::ApiManagerImpl(std::unique_ptr<ApiManagerEnvInterface> env,
 
   if (global_context_->server_config() &&
       global_context_->server_config()->has_api_service_config()) {
+    std::string error_msg;
     for (auto rule :
          global_context_->server_config()->api_service_config().rewrite()) {
+      if (google::api_manager::RewriteRule::ValidateRewriteRule(
+              rule, &error_msg) == false) {
+        global_context_->env()->LogError(error_msg.c_str());
+        continue;
+      }
+
       std::stringstream ss(rule);
       std::istream_iterator<std::string> begin(ss);
       std::istream_iterator<std::string> end;
       std::vector<std::string> parts(begin, end);
-
-      if (parts.size() != 2) {
-        global_context_->env()->LogError("ERROR: invalid rewrite rule: " +
-                                         rule);
-        continue;
-      }
 
       rewrite_rules_.push_back(std::unique_ptr<RewriteRule>(
           new RewriteRule(parts[0], parts[1], global_context_->env())));
