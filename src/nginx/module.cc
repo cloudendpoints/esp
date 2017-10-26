@@ -42,8 +42,8 @@
 #include "src/nginx/util.h"
 #include "src/nginx/version.h"
 
-using ::google::protobuf::util::error::Code;
 using ::google::api_manager::utils::Status;
+using ::google::protobuf::util::error::Code;
 
 namespace google {
 namespace api_manager {
@@ -51,29 +51,58 @@ namespace nginx {
 
 namespace {
 
-// Updates r->uri and r->unparsed_uri, based on api basepath math.
-// Then returns ApiManager::ApiBasepathRewriteAction.
-void ngx_esp_rewrite_uri(ngx_http_request_t *r, ngx_esp_loc_conf_t *lc) {
-  std::string unparsed_uri;
-  ApiManager::RewriteAction unparsed_uri_action =
-      lc->esp->ReWriteURL(ngx_str_to_std(r->unparsed_uri), &unparsed_uri);
+// Internal debugging header
+std::string kXEndpointsDebugUrlRewrite = "x-endpoints-debug-url-rewrite";
 
-  if (unparsed_uri_action == ApiManager::RewriteAction::REWRITE) {
+// decode encoded uri
+void url_decode(const std::string &uri, std::string &decoded) {
+  decoded.reserve(uri.length());
+  for (std::size_t i = 0; i < uri.length(); i++) {
+    if (int(uri[i]) == 37) {
+      int ii;
+      sscanf(uri.substr(i + 1, 2).c_str(), "%x", &ii);
+      char ch = static_cast<char>(ii);
+      decoded.append(std::string(1, ch));
+      i = i + 2;
+    } else {
+      decoded.append(std::string(1, uri[i]));
+    }
+  }
+}
+
+// Internally redirect request based on rewrite rule in server config
+void ngx_esp_rewrite_uri(ngx_http_request_t *r, ngx_esp_loc_conf_t *lc) {
+  std::string debug_header;
+
+  auto h = ngx_esp_find_headers_in(
+      r, reinterpret_cast<u_char *>(
+             const_cast<char *>(kXEndpointsDebugUrlRewrite.c_str())),
+      kXEndpointsDebugUrlRewrite.length());
+  if (h && h->value.len > 0) {
+    debug_header.assign(ngx_str_to_std(h->value));
+  }
+
+  // set rewrite debug mode
+  std::transform(debug_header.begin(), debug_header.end(), debug_header.begin(),
+                 ::tolower);
+  bool debug_mode = debug_header == "true";
+
+  std::string unparsed_uri;
+  if (lc->esp->ReWriteURL(ngx_str_to_std(r->unparsed_uri), &unparsed_uri,
+                          debug_mode)) {
+    // update r->unparsed_uri
     ngx_str_copy_from_std(r->pool, unparsed_uri, &r->unparsed_uri);
     ngx_str_copy_from_std(r->pool,
                           ngx_str_to_std(r->method_name) + " " + unparsed_uri +
                               " " + ngx_str_to_std(r->http_protocol),
                           &r->request_line);
-  } else {
-    return;
-  }
 
-  std::string uri;
-  ApiManager::RewriteAction uri_action =
-      lc->esp->ReWriteURL(ngx_str_to_std(r->uri), &uri);
-  if (uri_action == ApiManager::RewriteAction::REWRITE) {
-    ngx_str_copy_from_std(r->pool, uri.substr(0, uri.find_first_of('?')),
-                          &r->uri);
+    std::size_t found = unparsed_uri.find_first_of('?');
+    if (found != std::string::npos) {
+      std::string uri;
+      url_decode(unparsed_uri.substr(0, unparsed_uri.find_first_of('?')), uri);
+      ngx_str_copy_from_std(r->pool, uri, &r->uri);
+    }
   }
 }
 

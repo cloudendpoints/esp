@@ -52,18 +52,9 @@ ApiManagerImpl::ApiManagerImpl(std::unique_ptr<ApiManagerEnvInterface> env,
         continue;
       }
 
-      rewrite_rules_.push_back(new RewriteRule(parts[0], parts[1],
-                                               global_context_->env(),
-                                               global_context_->server_config()
-                                                   ->api_service_config()
-                                                   .rewrite_log()));
+      rewrite_rules_.push_back(std::unique_ptr<RewriteRule>(
+          new RewriteRule(parts[0], parts[1], global_context_->env())));
     }
-  }
-}
-
-ApiManagerImpl::~ApiManagerImpl() {
-  for (auto rule : rewrite_rules_) {
-    delete rule;
   }
 }
 
@@ -301,17 +292,17 @@ utils::Status ApiManagerImpl::GetServiceConfigRollouts(
   return utils::Status::OK;
 }
 
-ApiManager::RewriteAction ApiManagerImpl::ReWriteURL(
-    const std::string &url, std::string *destination_url) {
+bool ApiManagerImpl::ReWriteURL(const std::string &url,
+                                std::string *destination_url, bool debug_mode) {
   auto server_config = global_context_->server_config();
 
-  for (auto rewrite_rule : this->rewrite_rules_) {
-    if (rewrite_rule->Check(url, destination_url) == true) {
-      return RewriteAction::REWRITE;
+  for (auto &rewrite_rule : this->rewrite_rules_) {
+    if (rewrite_rule->Check(url, destination_url, debug_mode) == true) {
+      return true;
     }
   }
 
-  return RewriteAction::NONE;
+  return false;
 }
 
 std::unique_ptr<RequestHandlerInterface> ApiManagerImpl::CreateRequestHandler(

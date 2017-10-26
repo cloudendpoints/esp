@@ -116,8 +116,7 @@ const char kServerConfigWithApiServiceConfigRewriteRule[] = R"(
     "rewrite": [
       "/api/(.*)     /$1    ",
       "   /apis/(.*) /read/$1   "
-    ],
-    "rewrite_log": true
+    ]
   }
 }
 )";
@@ -498,16 +497,16 @@ TEST_F(ApiManagerTest, RewriteRuleTest) {
 
   std::string destination;
 
-  EXPECT_EQ(api_manager->ReWriteURL("/api/services?key=test", &destination),
-            ApiManager::RewriteAction::REWRITE);
+  EXPECT_TRUE(
+      api_manager->ReWriteURL("/api/services?key=test", &destination, false));
   EXPECT_EQ("/services?key=test", destination);
 
-  EXPECT_EQ(api_manager->ReWriteURL("/apis/services?key=test", &destination),
-            ApiManager::RewriteAction::REWRITE);
+  EXPECT_TRUE(
+      api_manager->ReWriteURL("/apis/services?key=test", &destination, false));
   EXPECT_EQ("/read/services?key=test", destination);
 
-  EXPECT_EQ(api_manager->ReWriteURL("/services?key=test", &destination),
-            ApiManager::RewriteAction::NONE);
+  EXPECT_FALSE(
+      api_manager->ReWriteURL("/services?key=test", &destination, false));
 
   EXPECT_FALSE(api_manager->Enabled());
 }

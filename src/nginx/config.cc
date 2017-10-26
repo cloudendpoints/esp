@@ -27,7 +27,6 @@
 #include "src/nginx/config.h"
 
 #include <fcntl.h>
-#include <regex>
 #include <string>
 
 #include "google/protobuf/text_format.h"
@@ -46,6 +45,16 @@ namespace nginx {
 using ::google::api_manager::proto::ServerConfig;
 
 namespace {
+
+// Function pointers for backup
+void *(*origin_pcre_malloc)(size_t);
+void (*origin_pcre_free)(void *);
+
+// Internal memory allocation function
+void *esp_regex_malloc(size_t size) { return malloc(size); }
+
+// Internal memory free fucntion
+void esp_regex_free(void *p) { free(p); }
 
 // Allocates extra_bytes more and initializes them with '\0'.
 ngx_int_t ngx_esp_read_file_impl(const char *filename, ngx_pool_t *pool,
@@ -593,7 +602,15 @@ ngx_int_t ngx_esp_build_server_config(ngx_conf_t *cf, ngx_esp_loc_conf_t *lc,
 
   // validate rewrite rule syntax
   if (config.has_api_service_config()) {
-    std::unique_ptr<std::regex> rule_check;
+    pcre *regex_compiled_;
+    pcre_extra *regex_extra_;
+
+    // backup functional pointers of pcre memory functions
+    origin_pcre_malloc = pcre_malloc;
+    origin_pcre_free = pcre_free;
+    pcre_malloc = esp_regex_malloc;
+    pcre_free = esp_regex_free;
+
     for (auto rule : config.api_service_config().rewrite()) {
       std::stringstream ss(rule);
       std::istream_iterator<std::string> begin(ss);
@@ -608,16 +625,53 @@ ngx_int_t ngx_esp_build_server_config(ngx_conf_t *cf, ngx_esp_loc_conf_t *lc,
         return NGX_ERROR;
       }
 
-      try {
-        rule_check.reset(new std::regex(parts[0], std::regex::extended));
-      } catch (const std::regex_error &e) {
+      if (strncmp(parts[1].c_str(), "http://", strlen("http://")) == 0 ||
+          strncmp(parts[1].c_str(), "https://", strlen("https://")) == 0) {
+        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                           "Rewrite rule replacement rule doesn't support "
+                           "external redirection: \"%s\"",
+                           rule.c_str());
+        return NGX_ERROR;
+      }
+
+      const char *pcre_error_str;
+      int pcre_error_offset;
+      regex_compiled_ = pcre_compile(parts[0].c_str(), 0, &pcre_error_str,
+                                     &pcre_error_offset, NULL);
+      if (regex_compiled_ == NULL) {
         ngx_conf_log_error(
             NGX_LOG_EMERG, cf, 0,
             "Invalid regular expression in the rewrite rule: \"%s\"",
             rule.c_str());
+
         return NGX_ERROR;
       }
+
+      regex_extra_ = pcre_study(regex_compiled_, 0, &pcre_error_str);
+      if (pcre_error_str != NULL) {
+        ngx_conf_log_error(
+            NGX_LOG_EMERG, cf, 0,
+            "Invalid regular expression in the rewrite rule: \"%s\"",
+            rule.c_str());
+
+        pcre_free(regex_compiled_);
+        return NGX_ERROR;
+      }
+
+      pcre_free(regex_compiled_);
+
+      if (regex_extra_ != NULL) {
+#ifdef PCRE_CONFIG_JIT
+        pcre_free_study(regex_extra_);
+#else
+        pcre_free(pcreExtra);
+#endif
+      }
     }
+
+    // retore functional pointer
+    pcre_malloc = origin_pcre_malloc;
+    pcre_free = origin_pcre_free;
   }
 
   // Reserialize

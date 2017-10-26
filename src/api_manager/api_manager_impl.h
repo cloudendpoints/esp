@@ -34,8 +34,6 @@ class ApiManagerImpl : public ApiManager {
   ApiManagerImpl(std::unique_ptr<ApiManagerEnvInterface> env,
                  const std::string &server_config);
 
-  virtual ~ApiManagerImpl();
-
   bool Enabled() const override;
 
   const std::string &service_name() const override;
@@ -70,13 +68,10 @@ class ApiManagerImpl : public ApiManager {
   utils::Status GetServiceConfigRollouts(
       ServiceConfigRolloutsInfo *rollouts) override;
 
-  // Returns ApiManager::ApiBasepathRewriteAction based on the request url
-  // and api basepath, configured in the service_config
-  // REJECT - Return 404
-  // REWRITE - Update url and unparsed_uri with destination_url
-  // NONE - Do nothing
-  ApiManager::RewriteAction ReWriteURL(const std::string &url,
-                                       std::string *destination_url) override;
+  // Returns true if rewrite rule should be applied. Request uri should be
+  // updated to destination_url. Otherwise returns false
+  bool ReWriteURL(const std::string &url, std::string *destination_url,
+                  bool debug_mode) override;
 
  private:
   // Use these configs according to the traffic percentage.
@@ -107,7 +102,7 @@ class ApiManagerImpl : public ApiManager {
   // set to "managed"
   std::unique_ptr<ConfigManager> config_manager_;
 
-  std::vector<RewriteRule *> rewrite_rules_;
+  std::vector<std::unique_ptr<RewriteRule>> rewrite_rules_;
 };
 
 }  // namespace api_manager

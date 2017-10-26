@@ -19,9 +19,10 @@
 
 #include <cctype>
 #include <iostream>
-#include <regex>
 #include <sstream>
 #include <vector>
+
+#include "pcre.h"
 
 #include "include/api_manager/api_manager.h"
 #include "include/api_manager/utils/status.h"
@@ -48,19 +49,23 @@ class RewriteRule {
   };
 
   RewriteRule(std::string regex, std::string replacement,
-              ApiManagerEnvInterface *env, bool debug_mode);
+              ApiManagerEnvInterface *env);
 
-  virtual ~RewriteRule() {}
+  virtual ~RewriteRule();
 
-  bool Check(const std::string &uri, std::string *destination);
+  bool Check(const std::string &uri, std::string *destination) {
+    return Check(uri, destination, false);
+  }
+
+  bool Check(const std::string &uri, std::string *destination, bool debug_mode);
 
  private:
   std::string regex_pattern_;
-  std::unique_ptr<std::regex> regex_;
+  pcre *regex_compiled_;
+  pcre_extra *regex_extra_;
   std::string replacement_;
   std::vector<ReplacementSegment> replacement_parts_;
   ApiManagerEnvInterface *env_;
-  bool debug_mode_;
 };
 
 }  // namespace api_manager

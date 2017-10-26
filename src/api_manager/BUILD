@@ -123,6 +123,7 @@ cc_library(
         "//external:cloud_trace",
         "//external:googletest_prod",
         "//external:grpc++",
+        "//external:pcre",
         "//external:protobuf",
         "//external:service_config",
         "//external:servicecontrol",

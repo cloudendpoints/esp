@@ -42,7 +42,7 @@ esp_rewrite: replacement: /$1
 esp_rewrite: destination uri: /shelves?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI)";
 
 std::string kExpectedRewriteErrorLog =
-    "ERROR Invalid rewrite rule: \"/api/(.\\*\\)\", error: regex_error";
+    "ERROR Invalid rewrite rule: \"/api/(.\\*\\)\", error: missing )";
 std::string kExpectedNotInitializedLog =
     "INFO Rewrite rule was not initialized";
 
@@ -111,34 +111,71 @@ class MockTimerApiManagerEnvironment : public MockApiManagerEnvironmentWithLog {
 
 class RewriteRuleTest : public ::testing::Test {};
 
-TEST_F(RewriteRuleTest, Check) {
+TEST_F(RewriteRuleTest, MatchAndReplacementPattern) {
   MockTimerApiManagerEnvironment env;
 
-  RewriteRule rr("/api/(.*)", "/$1", &env, false);
+  struct testData {
+    std::string pattern;
+    std::string replacement;
+    std::string uri;
+    bool matched;
+    std::string destination;
+  } test_cases[] = {{
+                        "^/apis/shelves\\?id=(.*)&key=(.*)$",         //
+                        "/shelves/$1?key=$2",                         //
+                        "/apis/shelves?id=1&key=this-is-an-api-key",  //
+                        true,                                         //
+                        "/shelves/1?key=this-is-an-api-key"           //
+                    },
+                    {
+                        "^/api/(.*)$",                          //
+                        "/$1",                                  //
+                        "/api/shelves?key=this-is-an-api-key",  //
+                        true,                                   //
+                        "/shelves?key=this-is-an-api-key"       //
+                    },
+                    {
+                        "^/api/(.*)$",                          //
+                        "/$$1",                                 //
+                        "/api/shelves?key=this-is-an-api-key",  //
+                        true,                                   //
+                        "/$shelves?key=this-is-an-api-key"      //
+                    },
+                    {
+                        "^/api/v(1|2)/([^/]+)/([^.]+.+)",  //
+                        "/api/$2/v$1/$3",                  //
+                        "/api/v1/service/list",            //
+                        true,                              //
+                        "/api/service/v1/list"             //
+                    },
+                    {
+                        "^/api/(.*)$",                              //
+                        "/$1",                                      //
+                        "/foo/api/shelves?key=this-is-an-api-key",  //
+                        false,                                      //
+                        ""                                          //
+                    }};
 
-  std::string destination;
-  EXPECT_TRUE(
-      rr.Check("/api/shelves?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI",
-               &destination));
-  EXPECT_EQ("/shelves?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI",
-            destination);
-  EXPECT_FALSE(rr.Check("/shelves?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI",
-                        &destination));
+  for (auto tc : test_cases) {
+    RewriteRule rr(tc.pattern, tc.replacement, &env);
 
-  EXPECT_EQ(env.getLogMessage().size(), 0);
+    std::string destination;
+    EXPECT_EQ(rr.Check(tc.uri, &destination, false), tc.matched);
+    EXPECT_EQ(tc.destination, destination);
+  }
 }
 
 TEST_F(RewriteRuleTest, InvalidRegexPattern) {
   MockTimerApiManagerEnvironment env;
 
-  RewriteRule rr("/api/\(.\\*\\)", "/$1", &env, false);
+  RewriteRule rr("/api/\(.\\*\\)", "/$1", &env);
 
   std::string destination;
   EXPECT_FALSE(
       rr.Check("/api/shelves?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI",
-               &destination));
+               &destination, true));
   EXPECT_FALSE(rr.Check("/shelves?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI",
-                        &destination));
+                        &destination, true));
 
   EXPECT_EQ(env.getLogMessage().size(), 3);
   EXPECT_EQ(env.getLogMessage()[0], kExpectedRewriteErrorLog);
@@ -149,17 +186,18 @@ TEST_F(RewriteRuleTest, InvalidRegexPattern) {
 TEST_F(RewriteRuleTest, CheckWithDebugInformation) {
   MockTimerApiManagerEnvironment env;
 
-  RewriteRule rr("/api/(.*)", "/$1", &env, true);
+  RewriteRule rr("/api/(.*)", "/$1", &env);
 
   std::string destination;
   EXPECT_TRUE(
       rr.Check("/api/shelves?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI",
-               &destination));
+               &destination, true));
   EXPECT_EQ("/shelves?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI",
             destination);
   EXPECT_FALSE(rr.Check("/shelves?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI",
-                        &destination));
+                        &destination, true));
 
+  EXPECT_EQ(env.getLogMessage().size(), 2);
   EXPECT_EQ(env.getLogMessage()[0], kExpectedRewriteLog);
 }
 

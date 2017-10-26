@@ -64,11 +64,9 @@ service_control_config {
 }
 api_service_config {
   rewrite: "/api/(.*) /\$1"
-  rewrite: "/apis/(.*) /\$1"
-  rewrite_log: true
+  rewrite: "/apis/shelves\\\\?id=(.*)&key=(.*) /shelves/\$1?key=\$2"
 }
 EOF
-
 
 $t->write_file_expand('nginx.conf', <<"EOF");
 %%TEST_GLOBALS%%
@@ -106,8 +104,8 @@ $t->run();
 
 my $response_first = ApiManager::http_get($NginxPort,'/api/shelves?key=this-is-an-api-key');
 my $response_second = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key');
-my $response_third = ApiManager::http_get($NginxPort,'/apis/shelves?key=this-is-an-api-key');
-my $response_fourth = ApiManager::http_get($NginxPort,'/test/shelves?key=this-is-an-api-key');
+my $response_third = ApiManager::http_get($NginxPort,'/apis/shelves?id=1&key=this-is-an-api-key');
+my $response_fourth = ApiManager::http_get($NginxPort,'/apis_bad/shelves?id=1&key=this-is-an-api-key');
 
 is($t->waitforfile("$t->{_testdir}/${report_done}.2"), 1, 'Report body file ready.');
 
@@ -136,18 +134,14 @@ EOF
 ($response_headers, $response_body) = split /\r\n\r\n/, $response_third, 2;
 like($response_headers, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');
 is($response_body, <<'EOF', 'Shelves returned in the response body.');
-{ "shelves": [
-    { "name": "shelves/1", "theme": "Fiction" },
-    { "name": "shelves/2", "theme": "Fantasy" }
-  ]
-}
+{ "name": "shelves/1", "theme": "Fiction" },
 EOF
 
 ($response_headers, $response_body) = split /\r\n\r\n/, $response_fourth, 2;
 like($response_headers, qr/HTTP\/1\.1 404 Not Found/, 'Returned HTTP 404.');
 
-
 my @requests = ApiManager::read_http_stream($t, 'bookstore.log');
+
 is(scalar @requests, 3, 'Backend received three requests');
 
 my $r = shift @requests;
@@ -162,10 +156,8 @@ is($r->{headers}->{host}, "127.0.0.1:${BackendPort}", 'Host header was set');
 
 $r = shift @requests;
 is($r->{verb}, 'GET', 'Backend request was a get');
-is($r->{uri}, '/shelves?key=this-is-an-api-key', 'Backend uri was /shelves');
+is($r->{uri}, '/shelves/1?key=this-is-an-api-key', 'Backend uri was /shelves');
 is($r->{headers}->{host}, "127.0.0.1:${BackendPort}", 'Host header was set');
-
-
 
 @requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
 is(scalar @requests, 7, 'Service control received 7 requests');
@@ -232,6 +224,16 @@ Connection: close
     { "name": "shelves/2", "theme": "Fantasy" }
   ]
 }
+EOF
+  });
+
+  $server->on_sub('GET', '/shelves/1?key=this-is-an-api-key',sub {
+    my ($headers, $body, $client) = @_;
+    print $client <<'EOF';
+HTTP/1.1 200 OK
+Connection: close
+
+{ "name": "shelves/1", "theme": "Fiction" },
 EOF
   });
 
