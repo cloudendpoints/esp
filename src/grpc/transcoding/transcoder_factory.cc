@@ -24,6 +24,7 @@
 #include "google/protobuf/io/zero_copy_stream.h"
 #include "google/protobuf/stubs/common.h"
 #include "google/protobuf/stubs/status.h"
+#include "google/protobuf/util/json_util.h"
 #include "grpc_transcoding/json_request_translator.h"
 #include "grpc_transcoding/message_stream.h"
 #include "grpc_transcoding/response_to_json_translator.h"
@@ -129,8 +130,10 @@ pbutil::Status MethodCallInfoToRequestInfo(TypeHelper* type_helper,
 
 }  // namespace
 
-TranscoderFactory::TranscoderFactory(const ::google::api::Service& service)
-    : type_helper_(service.types(), service.enums()) {}
+TranscoderFactory::TranscoderFactory(const ::google::api::Service& service,
+	const ::google::protobuf::util::JsonPrintOptions& json_print_options)
+    : type_helper_(service.types(), service.enums()),
+      json_print_options_(json_print_options) {}
 
 pbutil::Status TranscoderFactory::Create(
     const MethodCallInfo& call_info, pbio::ZeroCopyInputStream* request_input,
@@ -157,7 +160,8 @@ pbutil::Status TranscoderFactory::Create(
   std::unique_ptr<ResponseToJsonTranslator> response_translator(
       new ResponseToJsonTranslator(
           type_helper_.Resolver(), call_info.method_info->response_type_url(),
-          call_info.method_info->response_streaming(), response_input));
+          call_info.method_info->response_streaming(), response_input,
+          json_print_options_));
 
   // Create the Transcoder
   transcoder->reset(new TranscoderImpl(std::move(request_translator),

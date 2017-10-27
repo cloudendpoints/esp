@@ -50,6 +50,10 @@ class ApiManagerImpl : public ApiManager {
     return global_context_->DisableLogStatus();
   };
 
+  bool get_always_print_primitive_fields() override {
+    return global_context_->AlwaysPrintPrimitiveFields();
+  };
+
   utils::Status GetStatistics(ApiManagerStatistics *statistics) const override;
 
   // Add a new service config.
