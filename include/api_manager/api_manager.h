@@ -47,8 +47,6 @@ struct ServiceConfigRolloutsInfo {
 
 class ApiManager {
  public:
-  enum ApiBasepathRewriteAction { REWRITE, REJECT, NONE };
-
   virtual ~ApiManager() {}
 
   // Returns true if either auth is required or service control is configured.
@@ -105,8 +103,8 @@ class ApiManager {
   virtual utils::Status GetServiceConfigRollouts(
       ServiceConfigRolloutsInfo *rollouts) = 0;
 
-  virtual ApiBasepathRewriteAction ReWriteURL(const std::string &url,
-                                              std::string *destination_url) = 0;
+  virtual bool ReWriteURL(const char *uri, const size_t uri_len,
+                          std::string *destination_url, bool debug_mode) = 0;
 
  protected:
   ApiManager() {}

@@ -19,6 +19,7 @@
 #include "src/api_manager/config_manager.h"
 #include "src/api_manager/context/global_context.h"
 #include "src/api_manager/context/service_context.h"
+#include "src/api_manager/rewrite_rule.h"
 #include "src/api_manager/service_control/interface.h"
 #include "src/api_manager/weighted_selector.h"
 
@@ -67,13 +68,10 @@ class ApiManagerImpl : public ApiManager {
   utils::Status GetServiceConfigRollouts(
       ServiceConfigRolloutsInfo *rollouts) override;
 
-  // Returns ApiManager::ApiBasepathRewriteAction based on the request url
-  // and api basepath, configured in the service_config
-  // REJECT - Return 404
-  // REWRITE - Update url and unparsed_uri with destination_url
-  // NONE - Do nothing
-  ApiManager::ApiBasepathRewriteAction ReWriteURL(
-      const std::string &url, std::string *destination_url) override;
+  // Returns true if rewrite rule should be applied. Request uri should be
+  // updated to destination_url. Otherwise returns false
+  bool ReWriteURL(const char *uri, const size_t uri_len,
+                  std::string *destination_url, bool debug_mode) override;
 
  private:
   // Use these configs according to the traffic percentage.
@@ -103,6 +101,8 @@ class ApiManagerImpl : public ApiManager {
   // A config manager will be initialized when server_config.rollout_strategy is
   // set to "managed"
   std::unique_ptr<ConfigManager> config_manager_;
+
+  std::vector<std::unique_ptr<RewriteRule>> rewrite_rules_;
 };
 
 }  // namespace api_manager

@@ -42,8 +42,8 @@
 #include "src/nginx/util.h"
 #include "src/nginx/version.h"
 
-using ::google::protobuf::util::error::Code;
 using ::google::api_manager::utils::Status;
+using ::google::protobuf::util::error::Code;
 
 namespace google {
 namespace api_manager {
@@ -51,36 +51,65 @@ namespace nginx {
 
 namespace {
 
-// Updates r->uri and r->unparsed_uri, based on api basepath math.
-// Then returns ApiManager::ApiBasepathRewriteAction.
-// If the return value is ApiManager::ApiBasepathRewriteAction::REJECT,
-// then nginx should response status 404 NotFound
-ApiManager::ApiBasepathRewriteAction ngx_esp_rewrite_uri(
-    ngx_http_request_t *r, ngx_esp_loc_conf_t *lc) {
-  std::string unparsed_uri;
-  ApiManager::ApiBasepathRewriteAction unparsed_uri_action =
-      lc->esp->ReWriteURL(ngx_str_to_std(r->unparsed_uri), &unparsed_uri);
+// Internal debugging header
+static ngx_str_t kXEndpointsDebugUrlRewrite =
+    ngx_string("x-endpoints-debug-url-rewrite");
 
-  if (unparsed_uri_action == ApiManager::ApiBasepathRewriteAction::REWRITE) {
+// decode encoded uri
+void url_decode(const std::string &uri, std::string &decoded) {
+  decoded.reserve(uri.length());
+  for (std::size_t i = 0; i < uri.length(); i++) {
+    if (int(uri[i]) == 37) {
+      if (uri.length() > i + 2 && isxdigit(uri[i + 1]) &&
+          isxdigit(uri[i + 2])) {
+        int ii;
+        sscanf(uri.substr(i + 1, 2).c_str(), "%x", &ii);
+
+        char ch = static_cast<char>(ii);
+        decoded.append(1, ch);
+        i = i + 2;
+      } else {
+        decoded.append(1, uri[i]);
+      }
+    } else {
+      decoded.append(1, uri[i]);
+    }
+  }
+}
+
+// Internally redirect request based on rewrite rule in server config
+void ngx_esp_rewrite_uri(ngx_http_request_t *r, ngx_esp_loc_conf_t *lc) {
+  std::string debug_header;
+
+  auto h = ngx_esp_find_headers_in(r, kXEndpointsDebugUrlRewrite.data,
+                                   kXEndpointsDebugUrlRewrite.len);
+  if (h && h->value.len > 0) {
+    debug_header.assign(ngx_str_to_std(h->value));
+    std::transform(debug_header.begin(), debug_header.end(),
+                   debug_header.begin(), ::tolower);
+  }
+
+  bool debug_mode = (debug_header == "true");
+
+  std::string unparsed_uri;
+  if (lc->esp->ReWriteURL((const char *)r->unparsed_uri.data,
+                          r->unparsed_uri.len, &unparsed_uri, debug_mode)) {
+    // update r->unparsed_uri
     ngx_str_copy_from_std(r->pool, unparsed_uri, &r->unparsed_uri);
     ngx_str_copy_from_std(r->pool,
                           ngx_str_to_std(r->method_name) + " " + unparsed_uri +
                               " " + ngx_str_to_std(r->http_protocol),
                           &r->request_line);
-  } else {
-    return unparsed_uri_action;
-  }
 
-  std::string uri;
-  ApiManager::ApiBasepathRewriteAction uri_action =
-      lc->esp->ReWriteURL(ngx_str_to_std(r->uri), &uri);
-  if (uri_action == ApiManager::ApiBasepathRewriteAction::REWRITE) {
-    ngx_str_copy_from_std(r->pool, uri.substr(0, uri.find_first_of('?')),
-                          &r->uri);
+    std::size_t found = unparsed_uri.find_first_of('?');
+    if (found != std::string::npos) {
+      std::string uri;
+      url_decode(unparsed_uri.substr(0, unparsed_uri.find_first_of('?')), uri);
+      ngx_str_copy_from_std(r->pool, uri, &r->uri);
+    }
   }
-
-  return uri_action;
 }
+
 }  // namespace
 
 struct wakeup_context_s {
@@ -103,7 +132,7 @@ ngx_esp_request_ctx_s::ngx_esp_request_ctx_s(ngx_http_request_t *r,
       backend_time(-1) {
   ngx_memzero(&wakeup_event, sizeof(wakeup_event));
   if (lc && lc->esp) {
-    api_basepath_rewrite_action = ngx_esp_rewrite_uri(r, lc);
+    ngx_esp_rewrite_uri(r, lc);
 
     request_handler = lc->esp->CreateRequestHandler(
         std::unique_ptr<Request>(new NgxEspRequest(r)));
@@ -643,13 +672,6 @@ Status ngx_http_esp_access_handler(ngx_http_request_t *r) {
   ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r);
   if (ctx == nullptr) {
     return Status(NGX_ERROR, "Missing esp request context.");
-  }
-
-  if (ctx->api_basepath_rewrite_action ==
-      ApiManager::ApiBasepathRewriteAction::REJECT) {
-    ctx->status =
-        Status(Code::NOT_FOUND, "Method does not exist.", Status::APPLICATION);
-    return ngx_http_esp_access_check_done(r, ctx);
   }
 
   std::string backend_address = ctx->request_handler->GetBackendAddress();
