@@ -174,7 +174,8 @@ TEST_F(RewriteRuleTest, MatchAndReplacementPattern) {
     RewriteRule rr(tc.pattern, tc.replacement, &env);
 
     std::string destination;
-    EXPECT_EQ(rr.Check(tc.uri, &destination, false), tc.matched);
+    EXPECT_EQ(rr.Check(tc.uri.c_str(), tc.uri.length(), &destination, false),
+              tc.matched);
     EXPECT_EQ(tc.destination, destination);
   }
 }
@@ -185,11 +186,14 @@ TEST_F(RewriteRuleTest, InvalidRegexPattern) {
   RewriteRule rr("/api/\(.\\*\\)", "/$1", &env);
 
   std::string destination;
+  EXPECT_FALSE(rr.Check(
+      "/api/shelves?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI",
+      strlen("/api/shelves?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI"),
+      &destination, true));
   EXPECT_FALSE(
-      rr.Check("/api/shelves?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI",
+      rr.Check("/shelves?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI",
+               strlen("/shelves?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI"),
                &destination, true));
-  EXPECT_FALSE(rr.Check("/shelves?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI",
-                        &destination, true));
 
   EXPECT_EQ(env.getLogMessage().size(), 3);
   EXPECT_EQ(env.getLogMessage()[0], kExpectedRewriteErrorLog);
@@ -203,13 +207,16 @@ TEST_F(RewriteRuleTest, CheckWithDebugInformation) {
   RewriteRule rr("/api/(.*)", "/$1", &env);
 
   std::string destination;
-  EXPECT_TRUE(
-      rr.Check("/api/shelves?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI",
-               &destination, true));
+  EXPECT_TRUE(rr.Check(
+      "/api/shelves?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI",
+      strlen("/api/shelves?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI"),
+      &destination, true));
   EXPECT_EQ("/shelves?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI",
             destination);
-  EXPECT_FALSE(rr.Check("/shelves?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI",
-                        &destination, true));
+  EXPECT_FALSE(
+      rr.Check("/shelves?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI",
+               strlen("/shelves?key=AIzaSyCfvOENA9MbRupfKQau2X_l8NGMVWF_byI"),
+               &destination, true));
 
   EXPECT_EQ(env.getLogMessage().size(), 2);
   EXPECT_EQ(env.getLogMessage()[0], kExpectedRewriteLog);

@@ -70,8 +70,8 @@ class ApiManagerImpl : public ApiManager {
 
   // Returns true if rewrite rule should be applied. Request uri should be
   // updated to destination_url. Otherwise returns false
-  bool ReWriteURL(const std::string &url, std::string *destination_url,
-                  bool debug_mode) override;
+  bool ReWriteURL(const char *uri, const size_t uri_len,
+                  std::string *destination_url, bool debug_mode) override;
 
  private:
   // Use these configs according to the traffic percentage.

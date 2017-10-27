@@ -103,8 +103,8 @@ class ApiManager {
   virtual utils::Status GetServiceConfigRollouts(
       ServiceConfigRolloutsInfo *rollouts) = 0;
 
-  virtual bool ReWriteURL(const std::string &url, std::string *destination_url,
-                          bool debug_mode) = 0;
+  virtual bool ReWriteURL(const char *uri, const size_t uri_len,
+                          std::string *destination_url, bool debug_mode) = 0;
 
  protected:
   ApiManager() {}

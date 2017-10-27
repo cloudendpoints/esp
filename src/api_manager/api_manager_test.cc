@@ -497,16 +497,18 @@ TEST_F(ApiManagerTest, RewriteRuleTest) {
 
   std::string destination;
 
-  EXPECT_TRUE(
-      api_manager->ReWriteURL("/api/services?key=test", &destination, false));
+  EXPECT_TRUE(api_manager->ReWriteURL("/api/services?key=test",
+                                      strlen("/api/services?key=test"),
+                                      &destination, false));
   EXPECT_EQ("/services?key=test", destination);
 
-  EXPECT_TRUE(
-      api_manager->ReWriteURL("/apis/services?key=test", &destination, false));
+  EXPECT_TRUE(api_manager->ReWriteURL("/apis/services?key=test",
+                                      strlen("/apis/services?key=test"),
+                                      &destination, false));
   EXPECT_EQ("/read/services?key=test", destination);
 
-  EXPECT_FALSE(
-      api_manager->ReWriteURL("/services?key=test", &destination, false));
+  EXPECT_FALSE(api_manager->ReWriteURL(
+      "/services?key=test", strlen("/services?key=test"), &destination, false));
 
   EXPECT_FALSE(api_manager->Enabled());
 }

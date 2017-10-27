@@ -293,12 +293,13 @@ utils::Status ApiManagerImpl::GetServiceConfigRollouts(
   return utils::Status::OK;
 }
 
-bool ApiManagerImpl::ReWriteURL(const std::string &url,
+bool ApiManagerImpl::ReWriteURL(const char *uri, const size_t uri_len,
                                 std::string *destination_url, bool debug_mode) {
   auto server_config = global_context_->server_config();
 
   for (auto &rewrite_rule : this->rewrite_rules_) {
-    if (rewrite_rule->Check(url, destination_url, debug_mode) == true) {
+    if (rewrite_rule->Check(uri, uri_len, destination_url, debug_mode) ==
+        true) {
       return true;
     }
   }

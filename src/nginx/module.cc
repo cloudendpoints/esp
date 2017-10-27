@@ -92,8 +92,8 @@ void ngx_esp_rewrite_uri(ngx_http_request_t *r, ngx_esp_loc_conf_t *lc) {
   bool debug_mode = (debug_header == "true");
 
   std::string unparsed_uri;
-  if (lc->esp->ReWriteURL(ngx_str_to_std(r->unparsed_uri), &unparsed_uri,
-                          debug_mode)) {
+  if (lc->esp->ReWriteURL((const char *)r->unparsed_uri.data,
+                          r->unparsed_uri.len, &unparsed_uri, debug_mode)) {
     // update r->unparsed_uri
     ngx_str_copy_from_std(r->pool, unparsed_uri, &r->unparsed_uri);
     ngx_str_copy_from_std(r->pool,

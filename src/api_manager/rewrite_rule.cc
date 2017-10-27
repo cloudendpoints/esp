@@ -219,8 +219,8 @@ RewriteRule::~RewriteRule() {
   }
 }
 
-bool RewriteRule::Check(const std::string &uri, std::string *destination,
-                        bool debug_mode) {
+bool RewriteRule::Check(const char *uri, size_t uri_len,
+                        std::string *destination, bool debug_mode) {
   if (regex_compiled_ == NULL) {
     if (debug_mode) {
       env_->LogInfo("Rewrite rule was not initialized");
@@ -233,10 +233,10 @@ bool RewriteRule::Check(const std::string &uri, std::string *destination,
   std::stringstream rewrite_log;
 
   int sub_str_vec[kMaxRegexMathCount];
-  int pcre_exec_ret = pcre_exec(regex_compiled_, regex_extra_, uri.c_str(),
-                                uri.length(),  // length of string
-                                0,             // Start looking at this point
-                                0,             // OPTIONS
+  int pcre_exec_ret = pcre_exec(regex_compiled_, regex_extra_, uri,
+                                uri_len,  // length of string
+                                0,        // Start looking at this point
+                                0,        // OPTIONS
                                 sub_str_vec,
                                 kMaxRegexMathCount);  // Length of sub_str_vec
 
@@ -298,7 +298,7 @@ bool RewriteRule::Check(const std::string &uri, std::string *destination,
 
     const char *psub_str_match_str;
     for (int j = 0; j < pcre_exec_ret; j++) {
-      pcre_get_substring(uri.c_str(), sub_str_vec, pcre_exec_ret, j,
+      pcre_get_substring(uri, sub_str_vec, pcre_exec_ret, j,
                          &(psub_str_match_str));
 
       rewrite_log << kEspRewriteTitle << ": $" << std::to_string(j) << ": "
@@ -320,7 +320,7 @@ bool RewriteRule::Check(const std::string &uri, std::string *destination,
       case ReplacementPartType::REPLACEMENT:
         const char *psub_str_match_str;
         if (it->index >= 0 && it->index < pcre_exec_ret) {
-          pcre_get_substring(uri.c_str(), sub_str_vec, pcre_exec_ret, it->index,
+          pcre_get_substring(uri, sub_str_vec, pcre_exec_ret, it->index,
                              &(psub_str_match_str));
           ss << psub_str_match_str;
           pcre_free_substring(psub_str_match_str);

@@ -45,7 +45,8 @@ class RewriteRule {
   // Returns true if the request uri is matched to regex pattern.
   // If request uri and patter match, destination will have the replace uri.
   // Otherwise returns false.
-  bool Check(const std::string &uri, std::string *destination, bool debug_mode);
+  bool Check(const char *uri, size_t uri_len, std::string *destination,
+             bool debug_mode);
 
   // Validate rewrite rule
   // Return true if format is correct. Otherwise returns false
