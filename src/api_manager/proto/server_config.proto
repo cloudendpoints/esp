@@ -224,4 +224,6 @@ message ApiServiceConfig {
 message Experimental {
   // Disable timed printouts of ESP status to the error log.
   bool disable_log_status = 1;
+  // Configure response to JSON translator option for JsonPrintOptions:
+  bool always_print_primitive_fields = 2;
 }
