@@ -24,39 +24,44 @@ namespace {
 // module title
 const std::string kEspRewriteTitle = "esp_rewrite";
 
+// Maximum number of matching segment for regular expression
 const int kMaxRegexMathCount = 100;
-
-// Function pointers for backup
-void *(*origin_pcre_malloc)(size_t);
-void (*origin_pcre_free)(void *);
 
 // Internal memory allocation function
 void *esp_regex_malloc(size_t size) { return malloc(size); }
 
-// Internal memory free fucntion
+// Internal memory free function
 void esp_regex_free(void *p) { free(p); }
 
 // Backup and override pcre_malloc function pointer which was overridden by
 // nginx. Since nginx is single thread model, it is safe to override and restore
-void backup_regex_malloc_free() {
-  origin_pcre_malloc = pcre_malloc;
-  origin_pcre_free = pcre_free;
+class PcreMemoryFunctionOverride {
+ public:
+  PcreMemoryFunctionOverride() {
+    origin_pcre_malloc_ = pcre_malloc;
+    origin_pcre_free_ = pcre_free;
+    pcre_malloc = esp_regex_malloc;
+    pcre_free = esp_regex_free;
+  }
 
-  pcre_malloc = esp_regex_malloc;
-  pcre_free = esp_regex_free;
-}
+  virtual ~PcreMemoryFunctionOverride() {
+    // Restore saved function pointer
+    pcre_malloc = origin_pcre_malloc_;
+    pcre_free = origin_pcre_free_;
+  }
 
-// Restore saved function pointer
-void restore_regex_malloc_free() {
-  pcre_malloc = origin_pcre_malloc;
-  pcre_free = origin_pcre_free;
-}
+ private:
+  // backup for pcre_malloc
+  void *(*origin_pcre_malloc_)(size_t);
+  // backup for pcre_free
+  void (*origin_pcre_free_)(void *);
+};
 
 }  // namespace
 
 bool RewriteRule::ValidateRewriteRule(const std::string &rule,
                                       std::string *error_msg) {
-  backup_regex_malloc_free();
+  PcreMemoryFunctionOverride scoped_override;
 
   std::stringstream ss(rule);
   std::istream_iterator<std::string> begin(ss);
@@ -66,7 +71,6 @@ bool RewriteRule::ValidateRewriteRule(const std::string &rule,
   if (parts.size() != 2) {
     error_msg->assign("Invalid rewrite rule format(pattern replacement): \"" +
                       rule + "\"");
-    restore_regex_malloc_free();
     return false;
   }
 
@@ -76,7 +80,6 @@ bool RewriteRule::ValidateRewriteRule(const std::string &rule,
         "Replacement starts with either \"http://\" or \"https://\": is not "
         "allowed: \"" +
         rule + "\"");
-    restore_regex_malloc_free();
     return false;
   }
 
@@ -91,7 +94,6 @@ bool RewriteRule::ValidateRewriteRule(const std::string &rule,
     error_msg->assign("Invalid regular expression in the rewrite rule: \"" +
                       rule + "\"");
 
-    restore_regex_malloc_free();
     return false;
   }
 
@@ -101,7 +103,6 @@ bool RewriteRule::ValidateRewriteRule(const std::string &rule,
                       rule + "\"");
 
     pcre_free(regex_compiled);
-    restore_regex_malloc_free();
     return false;
   }
 
@@ -115,7 +116,6 @@ bool RewriteRule::ValidateRewriteRule(const std::string &rule,
 #endif
   }
 
-  restore_regex_malloc_free();
   return true;
 }
 
@@ -126,7 +126,7 @@ RewriteRule::RewriteRule(std::string regex, std::string replacement,
       regex_extra_(NULL),
       replacement_(replacement),
       env_(env) {
-  backup_regex_malloc_free();
+  PcreMemoryFunctionOverride scoped_override;
 
   const char *pcre_error_str;
   int pcre_error_offset;
@@ -147,8 +147,6 @@ RewriteRule::RewriteRule(std::string regex, std::string replacement,
     pcre_free(regex_compiled_);
     return;
   }
-
-  restore_regex_malloc_free();
 
   std::string segment;
   ReplacementPartType status = ReplacementPartType::TEXT;
@@ -208,7 +206,7 @@ RewriteRule::RewriteRule(std::string regex, std::string replacement,
 }
 
 RewriteRule::~RewriteRule() {
-  backup_regex_malloc_free();
+  PcreMemoryFunctionOverride scoped_override;
 
   pcre_free(regex_compiled_);
 
@@ -219,8 +217,6 @@ RewriteRule::~RewriteRule() {
     pcre_free(pcreExtra);
 #endif
   }
-
-  restore_regex_malloc_free();
 }
 
 bool RewriteRule::Check(const std::string &uri, std::string *destination,
@@ -232,7 +228,7 @@ bool RewriteRule::Check(const std::string &uri, std::string *destination,
     return false;
   }
 
-  backup_regex_malloc_free();
+  PcreMemoryFunctionOverride scoped_override;
 
   std::stringstream rewrite_log;
 
@@ -278,7 +274,6 @@ bool RewriteRule::Check(const std::string &uri, std::string *destination,
       env_->LogInfo(rewrite_log.str());
     }
 
-    restore_regex_malloc_free();
     return false;
   }
 
@@ -345,7 +340,6 @@ bool RewriteRule::Check(const std::string &uri, std::string *destination,
     env_->LogInfo(rewrite_log.str());
   }
 
-  restore_regex_malloc_free();
   return true;
 }
 

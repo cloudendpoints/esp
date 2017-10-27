@@ -52,20 +52,27 @@ namespace nginx {
 namespace {
 
 // Internal debugging header
-std::string kXEndpointsDebugUrlRewrite = "x-endpoints-debug-url-rewrite";
+static ngx_str_t kXEndpointsDebugUrlRewrite =
+    ngx_string("x-endpoints-debug-url-rewrite");
 
 // decode encoded uri
 void url_decode(const std::string &uri, std::string &decoded) {
   decoded.reserve(uri.length());
   for (std::size_t i = 0; i < uri.length(); i++) {
     if (int(uri[i]) == 37) {
-      int ii;
-      sscanf(uri.substr(i + 1, 2).c_str(), "%x", &ii);
-      char ch = static_cast<char>(ii);
-      decoded.append(std::string(1, ch));
-      i = i + 2;
+      if (uri.length() > i + 2 && isxdigit(uri[i + 1]) &&
+          isxdigit(uri[i + 2])) {
+        int ii;
+        sscanf(uri.substr(i + 1, 2).c_str(), "%x", &ii);
+
+        char ch = static_cast<char>(ii);
+        decoded.append(1, ch);
+        i = i + 2;
+      } else {
+        decoded.append(1, uri[i]);
+      }
     } else {
-      decoded.append(std::string(1, uri[i]));
+      decoded.append(1, uri[i]);
     }
   }
 }
@@ -74,18 +81,15 @@ void url_decode(const std::string &uri, std::string &decoded) {
 void ngx_esp_rewrite_uri(ngx_http_request_t *r, ngx_esp_loc_conf_t *lc) {
   std::string debug_header;
 
-  auto h = ngx_esp_find_headers_in(
-      r, reinterpret_cast<u_char *>(
-             const_cast<char *>(kXEndpointsDebugUrlRewrite.c_str())),
-      kXEndpointsDebugUrlRewrite.length());
+  auto h = ngx_esp_find_headers_in(r, kXEndpointsDebugUrlRewrite.data,
+                                   kXEndpointsDebugUrlRewrite.len);
   if (h && h->value.len > 0) {
     debug_header.assign(ngx_str_to_std(h->value));
+    std::transform(debug_header.begin(), debug_header.end(),
+                   debug_header.begin(), ::tolower);
   }
 
-  // set rewrite debug mode
-  std::transform(debug_header.begin(), debug_header.end(), debug_header.begin(),
-                 ::tolower);
-  bool debug_mode = debug_header == "true";
+  bool debug_mode = (debug_header == "true");
 
   std::string unparsed_uri;
   if (lc->esp->ReWriteURL(ngx_str_to_std(r->unparsed_uri), &unparsed_uri,

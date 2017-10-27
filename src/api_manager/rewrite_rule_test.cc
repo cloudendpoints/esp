@@ -149,6 +149,20 @@ TEST_F(RewriteRuleTest, MatchAndReplacementPattern) {
                         "/api/service/v1/list"             //
                     },
                     {
+                        "^/api/v(1|2)/([^/]+)/([^.]+.+)",  //
+                        "/api/$$2/v$1/$3",                 //
+                        "/api/v1/service/list",            //
+                        true,                              //
+                        "/api/$service/v1/list"            //
+                    },
+                    {
+                        "^/api/v(1|2)/([^/]+)/([^.]+.+)",  //
+                        "/api/static",                     //
+                        "/api/v1/service/list",            //
+                        true,                              //
+                        "/api/static"                      //
+                    },
+                    {
                         "^/api/(.*)$",                              //
                         "/$1",                                      //
                         "/foo/api/shelves?key=this-is-an-api-key",  //

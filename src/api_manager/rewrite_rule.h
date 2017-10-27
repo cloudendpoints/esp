@@ -37,37 +37,53 @@ namespace api_manager {
 
 class RewriteRule {
  public:
+  RewriteRule(std::string regex, std::string replacement,
+              ApiManagerEnvInterface *env);
+
+  virtual ~RewriteRule();
+
+  // Returns true if the request uri is matched to regex pattern.
+  // If request uri and patter match, destination will have the replace uri.
+  // Otherwise returns false.
+  bool Check(const std::string &uri, std::string *destination, bool debug_mode);
+
+  // Validate rewrite rule
+  // Return true if format is correct. Otherwise returns false
+  static bool ValidateRewriteRule(const std::string &rule,
+                                  std::string *error_msg);
+
+ private:
+  // Parts matched to "(\$[0-9]+)" are REPLACEMENT, others are TEXT
   enum ReplacementPartType { TEXT, REPLACEMENT };
 
+  // segment for replacement pattern
   struct ReplacementSegment {
+    // Replacement part type
     ReplacementPartType type;
+    // For REPLACEMENT type
+    // matched pattern index for the segment
     int index;
+    // For TEXT type
+    // text will be appended
     std::string text;
 
     ReplacementSegment(ReplacementPartType type, int index, std::string text)
         : type(type), index(index), text(text) {}
   };
 
-  RewriteRule(std::string regex, std::string replacement,
-              ApiManagerEnvInterface *env);
-
-  virtual ~RewriteRule();
-
-  bool Check(const std::string &uri, std::string *destination) {
-    return Check(uri, destination, false);
-  }
-
-  bool Check(const std::string &uri, std::string *destination, bool debug_mode);
-
-  static bool ValidateRewriteRule(const std::string &rule,
-                                  std::string *error_msg);
-
- private:
+  // original pcre regular expression pattern
   std::string regex_pattern_;
+
+  // pcre compiled and studied pointers
   pcre *regex_compiled_;
   pcre_extra *regex_extra_;
+
+  // original replacement string
   std::string replacement_;
+  // parsed replacement string
   std::vector<ReplacementSegment> replacement_parts_;
+
+  // ApiManager environment for error logging
   ApiManagerEnvInterface *env_;
 };
 
