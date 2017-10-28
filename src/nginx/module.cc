@@ -142,7 +142,8 @@ ngx_esp_request_ctx_s::ngx_esp_request_ctx_s(ngx_http_request_t *r,
     if (it != lc->transcoder_factory_map.end()) {
       transcoder_factory = it->second;
     } else {
-      ::google::protobuf::util::JsonPrintOptions json_print_options = ::google::protobuf::util::JsonPrintOptions();
+      ::google::protobuf::util::JsonPrintOptions json_print_options =
+          ::google::protobuf::util::JsonPrintOptions();
       if (lc->esp->get_always_print_primitive_fields()) {
         json_print_options.always_print_primitive_fields = true;
       }

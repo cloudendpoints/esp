@@ -61,9 +61,10 @@ namespace transcoding {
 class TranscoderFactory {
  public:
   // service - The service config for which the factory is created
-  TranscoderFactory(const ::google::api::Service& service_config,
-                    const ::google::protobuf::util::JsonPrintOptions& json_print_options =
-                          ::google::protobuf::util::JsonPrintOptions());
+  TranscoderFactory(
+      const ::google::api::Service& service_config,
+      const ::google::protobuf::util::JsonPrintOptions& json_print_options =
+          ::google::protobuf::util::JsonPrintOptions());
 
   // Creates a Transcoder object to transcode a single client request
   // call_info - contains all the necessary info for setting up transcoding

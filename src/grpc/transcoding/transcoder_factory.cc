@@ -130,8 +130,9 @@ pbutil::Status MethodCallInfoToRequestInfo(TypeHelper* type_helper,
 
 }  // namespace
 
-TranscoderFactory::TranscoderFactory(const ::google::api::Service& service,
-	const ::google::protobuf::util::JsonPrintOptions& json_print_options)
+TranscoderFactory::TranscoderFactory(
+    const ::google::api::Service& service,
+    const ::google::protobuf::util::JsonPrintOptions& json_print_options)
     : type_helper_(service.types(), service.enums()),
       json_print_options_(json_print_options) {}
 
@@ -158,10 +159,10 @@ pbutil::Status TranscoderFactory::Create(
 
   // Create a ResponseToJsonTranslator for translating the response
   std::unique_ptr<ResponseToJsonTranslator> response_translator(
-      new ResponseToJsonTranslator(
-          type_helper_.Resolver(), call_info.method_info->response_type_url(),
-          call_info.method_info->response_streaming(), response_input,
-          json_print_options_));
+      new ResponseToJsonTranslator(type_helper_.Resolver(),
+                                   call_info.method_info->response_type_url(),
+                                   call_info.method_info->response_streaming(),
+                                   response_input, json_print_options_));
 
   // Create the Transcoder
   transcoder->reset(new TranscoderImpl(std::move(request_translator),
