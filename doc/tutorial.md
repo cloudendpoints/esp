@@ -16,9 +16,16 @@ On Mac OS X, install:
 
 On Linux, install:
 
+    # Software packages needed for building ESP
     sudo apt-get install -y \
          g++ git openjdk-8-jdk openjdk-8-source \
          pkg-config unzip uuid-dev zip zlib1g-dev
+
+    # Software packages needed for building ESP
+    sudo apt-get install libtool m4 autotools-dev automake
+
+    # Software packages needed for running ESP tests
+    sudo apt-get install libio-socket-ssl-perl
 
 ## Bazel ##
 
@@ -37,7 +44,8 @@ script variable `BAZEL_VERSION=<SHA>`.
 # Building ESP #
 
 Clone the ESP [GitHub repository](https://github.com/cloudendpoints/esp),
-initialize Git submodules, and build ESP using Bazel:
+initialize Git submodules, and build ESP using Bazel. Detailed instructions
+for building ESP on Ubuntu 16.04 can be found in the [document](/doc/build-esp-on-ubuntu-16-04.md).
 
     # Clone the ESP repository
     git clone https://github.com/cloudendpoints/esp
