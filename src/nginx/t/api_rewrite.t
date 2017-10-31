@@ -107,7 +107,7 @@ my $response_second = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-a
 my $response_third = ApiManager::http_get($NginxPort,'/apis/shelves?id=1&key=this-is-an-api-key');
 my $response_fourth = ApiManager::http_get($NginxPort,'/apis_bad/shelves?id=1&key=this-is-an-api-key');
 
-is($t->waitforfile("$t->{_testdir}/${report_done}.2"), 1, 'Report body file ready.');
+is($t->waitforfile("$t->{_testdir}/${report_done}.4"), 1, 'Report body file ready.');
 
 $t->stop_daemons();
 
