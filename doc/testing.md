@@ -26,7 +26,12 @@ The ESP binary location is:
 
 # Running unit and integratino tests #
 
-    # Run ESP unit and integration tests
+libio-socket-ssl-perl is needed to run ESP tests: 
+
+    sudo apt-get install libio-socket-ssl-perl
+
+Run ESP unit and integration tests:
+
     bazel test //src/... //third_party:all
 
 # Running ASAN and TSAN tests #

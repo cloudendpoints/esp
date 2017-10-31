@@ -62,6 +62,7 @@ To download the Extensible Service Proxy source code, clone the ESP repository:
 
 To find out more about building, running, and testing ESP, please review
 
+* [Build ESP on Ubuntu 16.04](/doc/build-esp-on-ubuntu-16-04.md)
 * [ESP Tutorial](/doc/tutorial.md)
 * [Testing ESP with Bazel](/doc/testing.md)
 * [Run ESP on Kubernetes](/doc/k8s/README.md)
