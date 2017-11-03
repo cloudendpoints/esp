@@ -143,6 +143,17 @@ function set_ssh_keys() {
   fi
 }
 
+
+function download_nginx_error_logs() {
+  local NGINX_ERROR_LOG_FILE="${LOG_DIRECTORY}/nginx_error.log"
+
+  gcloud config set project "${PROJECT}"
+  gcloud logging read "resource.labels.project_id=${PROJECT} AND \
+    resource.labels.version_id=${VERSION} AND \
+    logName=projects/${PROJECT}/logs/appengine.googleapis.com%2Fnginx.error" 2>&1 \
+    | tee "${NGINX_ERROR_LOG_FILE}"
+}
+
 function download_nginx_logs() {
   local vm_id vm_zone vm_name
 
@@ -204,7 +215,7 @@ function download_nginx_logs() {
 case "${COMMAND}" in
   create | deploy)  retry -n 5 -s 10 deploy_application;;
   delete         )  delete_application;;
-  nginx-logs     )  download_nginx_logs;;
+  nginx-logs     )  download_nginx_error_logs;;
   *              )  usage "Unknown command ${COMMAND}."
 esac
 
