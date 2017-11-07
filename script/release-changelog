@@ -144,6 +144,6 @@ printf '\e[31m
 \e[0m'
 
 if [ "${DIRECTORY}" != "." ]; then
-  pop_tool()
+  pop_tool
 fi
 
