@@ -58,7 +58,6 @@ def test(run, n, c, t, d):
             '-t', str(t),
             '-c', str(c),
             '-r', str(1),
-            '--verbose',
             '-H', '"Content-Type:application/json"']
 
     if 'headers' in run:

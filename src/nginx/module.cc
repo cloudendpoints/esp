@@ -42,12 +42,75 @@
 #include "src/nginx/util.h"
 #include "src/nginx/version.h"
 
-using ::google::protobuf::util::error::Code;
 using ::google::api_manager::utils::Status;
+using ::google::protobuf::util::error::Code;
 
 namespace google {
 namespace api_manager {
 namespace nginx {
+
+namespace {
+
+// Internal debugging header
+static ngx_str_t kXEndpointsDebugUrlRewrite =
+    ngx_string("x-endpoints-debug-url-rewrite");
+
+// decode encoded uri
+void url_decode(const std::string &uri, std::string &decoded) {
+  decoded.reserve(uri.length());
+  for (std::size_t i = 0; i < uri.length(); i++) {
+    if (int(uri[i]) == 37) {
+      if (uri.length() > i + 2 && isxdigit(uri[i + 1]) &&
+          isxdigit(uri[i + 2])) {
+        int ii;
+        sscanf(uri.substr(i + 1, 2).c_str(), "%x", &ii);
+
+        char ch = static_cast<char>(ii);
+        decoded.append(1, ch);
+        i = i + 2;
+      } else {
+        decoded.append(1, uri[i]);
+      }
+    } else {
+      decoded.append(1, uri[i]);
+    }
+  }
+}
+
+// Internally redirect request based on rewrite rule in server config
+void ngx_esp_rewrite_uri(ngx_http_request_t *r, ngx_esp_loc_conf_t *lc) {
+  std::string debug_header;
+
+  auto h = ngx_esp_find_headers_in(r, kXEndpointsDebugUrlRewrite.data,
+                                   kXEndpointsDebugUrlRewrite.len);
+  if (h && h->value.len > 0) {
+    debug_header.assign(ngx_str_to_std(h->value));
+    std::transform(debug_header.begin(), debug_header.end(),
+                   debug_header.begin(), ::tolower);
+  }
+
+  bool debug_mode = (debug_header == "true");
+
+  std::string unparsed_uri;
+  if (lc->esp->ReWriteURL((const char *)r->unparsed_uri.data,
+                          r->unparsed_uri.len, &unparsed_uri, debug_mode)) {
+    // update r->unparsed_uri
+    ngx_str_copy_from_std(r->pool, unparsed_uri, &r->unparsed_uri);
+    ngx_str_copy_from_std(r->pool,
+                          ngx_str_to_std(r->method_name) + " " + unparsed_uri +
+                              " " + ngx_str_to_std(r->http_protocol),
+                          &r->request_line);
+
+    std::size_t found = unparsed_uri.find_first_of('?');
+    if (found != std::string::npos) {
+      std::string uri;
+      url_decode(unparsed_uri.substr(0, unparsed_uri.find_first_of('?')), uri);
+      ngx_str_copy_from_std(r->pool, uri, &r->uri);
+    }
+  }
+}
+
+}  // namespace
 
 struct wakeup_context_s {
  public:
@@ -69,6 +132,8 @@ ngx_esp_request_ctx_s::ngx_esp_request_ctx_s(ngx_http_request_t *r,
       backend_time(-1) {
   ngx_memzero(&wakeup_event, sizeof(wakeup_event));
   if (lc && lc->esp) {
+    ngx_esp_rewrite_uri(r, lc);
+
     request_handler = lc->esp->CreateRequestHandler(
         std::unique_ptr<Request>(new NgxEspRequest(r)));
 
@@ -77,8 +142,13 @@ ngx_esp_request_ctx_s::ngx_esp_request_ctx_s(ngx_http_request_t *r,
     if (it != lc->transcoder_factory_map.end()) {
       transcoder_factory = it->second;
     } else {
+      ::google::protobuf::util::JsonPrintOptions json_print_options =
+          ::google::protobuf::util::JsonPrintOptions();
+      if (lc->esp->get_always_print_primitive_fields()) {
+        json_print_options.always_print_primitive_fields = true;
+      }
       transcoder_factory = std::make_shared<transcoding::TranscoderFactory>(
-          lc->esp->service(config_id));
+          lc->esp->service(config_id), json_print_options);
       lc->transcoder_factory_map[config_id] = transcoder_factory;
     }
   }

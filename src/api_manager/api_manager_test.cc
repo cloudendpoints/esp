@@ -103,6 +103,24 @@ const char kServerConfigWithNoServiceConfig[] = R"(
 }
 )";
 
+const char kServerConfigWithApiServiceConfig[] = R"(
+{
+  "api_service_config": {
+  }
+}
+)";
+
+const char kServerConfigWithApiServiceConfigRewriteRule[] = R"(
+{
+  "api_service_config": {
+    "rewrite": [
+      "/api/(.*)     /$1    ",
+      "   /apis/(.*) /read/$1   "
+    ]
+  }
+}
+)";
+
 const char kServiceConfig1[] = R"(
 {
   "name": "bookstore.test.appspot.com",
@@ -459,6 +477,38 @@ TEST_F(ApiManagerTest, ServerConfigServiceConfigNotSpecifed) {
   EXPECT_FALSE(api_manager->Enabled());
 
   api_manager->Init();
+
+  EXPECT_FALSE(api_manager->Enabled());
+}
+
+TEST_F(ApiManagerTest, RewriteRuleTest) {
+  std::unique_ptr<MockApiManagerEnvironment> env(
+      new ::testing::NiceMock<MockApiManagerEnvironment>());
+
+  std::shared_ptr<ApiManagerImpl> api_manager(
+      std::dynamic_pointer_cast<ApiManagerImpl>(MakeApiManager(
+          std::move(env), kServerConfigWithApiServiceConfigRewriteRule)));
+  EXPECT_FALSE(api_manager->LoadServiceRollouts().ok());
+
+  EXPECT_TRUE(api_manager);
+  EXPECT_FALSE(api_manager->Enabled());
+
+  api_manager->Init();
+
+  std::string destination;
+
+  EXPECT_TRUE(api_manager->ReWriteURL("/api/services?key=test",
+                                      strlen("/api/services?key=test"),
+                                      &destination, false));
+  EXPECT_EQ("/services?key=test", destination);
+
+  EXPECT_TRUE(api_manager->ReWriteURL("/apis/services?key=test",
+                                      strlen("/apis/services?key=test"),
+                                      &destination, false));
+  EXPECT_EQ("/read/services?key=test", destination);
+
+  EXPECT_FALSE(api_manager->ReWriteURL(
+      "/services?key=test", strlen("/services?key=test"), &destination, false));
 
   EXPECT_FALSE(api_manager->Enabled());
 }

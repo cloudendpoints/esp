@@ -159,10 +159,10 @@ class Aggregated : public Interface {
   ProtoPool<::google::api::servicecontrol::v1::ReportRequest> report_pool_;
 
   // Mismatched config ID received for a check request
-  std::string mismatched_check_config_id;
+  std::string mismatched_check_config_id_;
 
   // Mismatched config ID received for a report request
-  std::string mismatched_report_config_id;
+  std::string mismatched_report_config_id_;
 
   // Maximum report size send to server.
   uint64_t max_report_size_;

@@ -505,6 +505,7 @@ cc_proto_library(
         "google/api/servicecontrol/v1/log_entry.proto",
         "google/api/servicecontrol/v1/metric_value.proto",
         "google/api/servicecontrol/v1/operation.proto",
+        "google/api/servicecontrol/v1/quota_controller.proto",
         "google/api/servicecontrol/v1/service_controller.proto",
         "google/api/servicemanagement/v1/servicemanager.proto",
         "google/api/servicemanagement/v1/resources.proto",
@@ -578,7 +579,7 @@ cc_proto_library(
 
     native.new_git_repository(
         name = "googleapis_git",
-        commit = "e679edc20680a64d8a0b8b6d95ea10f03a926bc3",  # July 21, 2017
+        commit = "ec795a6a63eaf529c225ec45fa9de535bff53c99",  # Oct 16, 2017
         remote = "https://github.com/googleapis/googleapis.git",
         build_file_content = BUILD,
     )
@@ -614,7 +615,7 @@ def servicecontrol_client_repositories(bind=True):
 
     native.git_repository(
         name = "servicecontrol_client_git",
-        commit = "3f082c9d7b465074c78835cc64478bb0ef91e694",
+        commit = "8e74821887889b852565c3fda40596f0e0ef9f5b", # Oct 11, 2017
         remote = "https://github.com/cloudendpoints/service-control-client-cxx.git",
     )
 

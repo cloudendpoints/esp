@@ -152,6 +152,26 @@ const char kPublicKeyJwk[] =
     "ZDtLd1i24STUw39KH0pcSdfFbL2NtEZdNeam1DDdk0iUtJSPZliUHJBI_pj8M-2Mn_"
     "oA8jBuI8YKwBqYkZCN1I95Q\",\"e\": \"AQAB\"}]}";
 
+// No alg field in the JWK key
+const char kPublicKeyJwkNoAlg[] =
+    "{\"keys\": [{\"kty\": \"RSA\",\"use\": "
+    "\"sig\",\"kid\": \"62a93512c9ee4c7f8067b5a216dade2763d32a47\",\"n\": "
+    "\"0YWnm_eplO9BFtXszMRQNL5UtZ8HJdTH2jK7vjs4XdLkPW7YBkkm_"
+    "2xNgcaVpkW0VT2l4mU3KftR-6s3Oa5Rnz5BrWEUkCTVVolR7VYksfqIB2I_"
+    "x5yZHdOiomMTcm3DheUUCgbJRv5OKRnNqszA4xHn3tA3Ry8VO3X7BgKZYAUh9fyZTFLlkeAh0-"
+    "bLK5zvqCmKW5QgDIXSxUTJxPjZCgfx1vmAfGqaJb-"
+    "nvmrORXQ6L284c73DUL7mnt6wj3H6tVqPKA27j56N0TB1Hfx4ja6Slr8S4EB3F1luYhATa1PKU"
+    "SH8mYDW11HolzZmTQpRoLV8ZoHbHEaTfqX_aYahIw\",\"e\": \"AQAB\"},{\"kty\": "
+    "\"RSA\",\"use\": \"sig\",\"kid\": "
+    "\"b3319a147514df7ee5e4bcdee51350cc890cc89e\",\"n\": "
+    "\"qDi7Tx4DhNvPQsl1ofxxc2ePQFcs-L0mXYo6TGS64CY_"
+    "2WmOtvYlcLNZjhuddZVV2X88m0MfwaSA16wE-"
+    "RiKM9hqo5EY8BPXj57CMiYAyiHuQPp1yayjMgoE1P2jvp4eqF-"
+    "BTillGJt5W5RuXti9uqfMtCQdagB8EC3MNRuU_KdeLgBy3lS3oo4LOYd-"
+    "74kRBVZbk2wnmmb7IhP9OoLc1-7-9qU1uhpDxmE6JwBau0mDSwMnYDS4G_ML17dC-"
+    "ZDtLd1i24STUw39KH0pcSdfFbL2NtEZdNeam1DDdk0iUtJSPZliUHJBI_pj8M-2Mn_"
+    "oA8jBuI8YKwBqYkZCN1I95Q\",\"e\": \"AQAB\"}]}";
+
 const char kPublicKeyX509[] =
     "{\"62a93512c9ee4c7f8067b5a216dade2763d32a47\": \"-----BEGIN "
     "CERTIFICATE-----"
@@ -423,6 +443,13 @@ TEST_F(JwtValidatorTest, OkTokenX509) {
 TEST_F(JwtValidatorTest, OkTokenJwk) {
   char *token = esp_get_auth_token(kOkPrivateKey, kAudience);
   TestTokenWithPubkey(token, kPublicKeyJwk);
+
+  esp_grpc_free(token);
+}
+
+TEST_F(JwtValidatorTest, OkTokenJwkNoAlg) {
+  char *token = esp_get_auth_token(kOkPrivateKey, kAudience);
+  TestTokenWithPubkey(token, kPublicKeyJwkNoAlg);
 
   esp_grpc_free(token);
 }

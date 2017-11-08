@@ -72,22 +72,6 @@ TEST(AllocateQuotaResponseTest,
 }
 
 TEST(AllocateQuotaResponseTest,
-     AbortedWithInvalidArgumentWhenRespIsBlockedWithProjectSuspended) {
-  Status result =
-      ConvertAllocateQuotaErrorToStatus(QuotaError::PROJECT_SUSPENDED);
-  EXPECT_EQ(Code::PERMISSION_DENIED, result.code());
-}
-
-TEST(AllocateQuotaResponseTest,
-     AbortedWithPermissionDeniedWhenRespIsBlockedWithServiceNotEnabled) {
-  Status result = ConvertAllocateQuotaErrorToStatus(
-      QuotaError::SERVICE_NOT_ENABLED,
-      "API api_xxxx is not enabled for the project.", "api_xxxx");
-  EXPECT_EQ(Code::PERMISSION_DENIED, result.code());
-  EXPECT_EQ(result.message(), "API api_xxxx is not enabled for the project.");
-}
-
-TEST(AllocateQuotaResponseTest,
      AbortedWithPermissionDeniedWhenRespIsBlockedWithBillingNotActivated) {
   Status result = ConvertAllocateQuotaErrorToStatus(
       QuotaError::BILLING_NOT_ACTIVE,
@@ -95,34 +79,6 @@ TEST(AllocateQuotaResponseTest,
   EXPECT_EQ(Code::PERMISSION_DENIED, result.code());
   EXPECT_EQ(result.message(),
             "API api_xxxx has billing disabled. Please enable it..");
-}
-
-TEST(AllocateQuotaResponseTest,
-     AbortedWithPermissionDeniedWhenRespIsBlockedWithIpAddressBlocked) {
-  Status result =
-      ConvertAllocateQuotaErrorToStatus(QuotaError::IP_ADDRESS_BLOCKED);
-  EXPECT_EQ(Code::PERMISSION_DENIED, result.code());
-}
-
-TEST(AllocateQuotaResponseTest,
-     AbortedWithPermissionDeniedWhenRespIsBlockedWithRefererBlocked) {
-  Status result =
-      ConvertAllocateQuotaErrorToStatus(QuotaError::REFERER_BLOCKED);
-  EXPECT_EQ(Code::PERMISSION_DENIED, result.code());
-}
-
-TEST(AllocateQuotaResponseTest,
-     AbortedWithPermissionDeniedWhenRespIsBlockedWithClientAppBlocked) {
-  Status result =
-      ConvertAllocateQuotaErrorToStatus(QuotaError::CLIENT_APP_BLOCKED);
-  EXPECT_EQ(Code::PERMISSION_DENIED, result.code());
-}
-
-TEST(AllocateQuotaResponseTest,
-     AbortedWithPermissionDeniedWhenResponseIsBlockedWithProjectInvalid) {
-  Status result =
-      ConvertAllocateQuotaErrorToStatus(QuotaError::PROJECT_INVALID);
-  EXPECT_EQ(Code::INVALID_ARGUMENT, result.code());
 }
 
 TEST(AllocateQuotaResponseTest,
@@ -144,39 +100,6 @@ TEST(AllocateQuotaResponseTest,
   Status result =
       ConvertAllocateQuotaErrorToStatus(QuotaError::API_KEY_EXPIRED);
   EXPECT_EQ(Code::INVALID_ARGUMENT, result.code());
-}
-
-TEST(AllocateQuotaResponseTest,
-     AcceptOKWhenRespIsBlockedWithProjectStatusUnavailable) {
-  Status result =
-      ConvertAllocateQuotaErrorToStatus(QuotaError::PROJECT_STATUS_UNVAILABLE);
-  EXPECT_EQ(Code::OK, result.code());
-}
-
-TEST(AllocateQuotaResponseTest,
-     AcceptOKWhenRespIsBlockedWithServiceStatusUnavailable) {
-  Status result =
-      ConvertAllocateQuotaErrorToStatus(QuotaError::SERVICE_STATUS_UNAVAILABLE);
-  EXPECT_EQ(Code::OK, result.code());
-}
-
-TEST(AllocateQuotaResponseTest,
-     AcceptOKWhenRespIsBlockedWithBillingStatusUnavailable) {
-  Status result =
-      ConvertAllocateQuotaErrorToStatus(QuotaError::BILLING_STATUS_UNAVAILABLE);
-  EXPECT_EQ(Code::OK, result.code());
-}
-
-TEST(AllocateQuotaResponseTest, FailOpenWhenResponseIsUnknownBillingStatus) {
-  EXPECT_TRUE(
-      ConvertAllocateQuotaErrorToStatus(QuotaError::BILLING_STATUS_UNAVAILABLE)
-          .ok());
-}
-
-TEST(AllocateQuotaResponseTest, FailOpenWhenResponseIsUnknownServiceStatus) {
-  EXPECT_TRUE(
-      ConvertAllocateQuotaErrorToStatus(QuotaError::SERVICE_STATUS_UNAVAILABLE)
-          .ok());
 }
 
 }  // namespace service_control

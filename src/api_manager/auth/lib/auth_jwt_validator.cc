@@ -569,10 +569,6 @@ grpc_jwt_verifier_status JwtValidatorImpl::ExtractAndVerifyJwkKeys(
   // JWK format from https://tools.ietf.org/html/rfc7518#section-6.
   for (jkey = jwk_keys->child; jkey != nullptr; jkey = jkey->next) {
     if (jkey->type != GRPC_JSON_OBJECT) continue;
-    const char *alg = GetStringValue(jkey, "alg");
-    if (alg == nullptr || strcmp(alg, header_->alg) != 0) {
-      continue;
-    }
     const char *kid = GetStringValue(jkey, "kid");
     if (kid == nullptr ||
         (header_->kid != nullptr && strcmp(kid, header_->kid) != 0)) {

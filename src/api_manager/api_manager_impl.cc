@@ -36,6 +36,27 @@ ApiManagerImpl::ApiManagerImpl(std::unique_ptr<ApiManagerEnvInterface> env,
           new context::GlobalContext(std::move(env), server_config)) {
   check_workflow_ = std::unique_ptr<CheckWorkflow>(new CheckWorkflow);
   check_workflow_->RegisterAll();
+
+  if (global_context_->server_config() &&
+      global_context_->server_config()->has_api_service_config()) {
+    std::string error_msg;
+    for (auto rule :
+         global_context_->server_config()->api_service_config().rewrite()) {
+      if (google::api_manager::RewriteRule::ValidateRewriteRule(
+              rule, &error_msg) == false) {
+        global_context_->env()->LogError(error_msg.c_str());
+        continue;
+      }
+
+      std::stringstream ss(rule);
+      std::istream_iterator<std::string> begin(ss);
+      std::istream_iterator<std::string> end;
+      std::vector<std::string> parts(begin, end);
+
+      rewrite_rules_.push_back(std::unique_ptr<RewriteRule>(
+          new RewriteRule(parts[0], parts[1], global_context_->env())));
+    }
+  }
 }
 
 utils::Status ApiManagerImpl::LoadServiceRollouts() {
@@ -270,6 +291,20 @@ utils::Status ApiManagerImpl::GetServiceConfigRollouts(
   }
 
   return utils::Status::OK;
+}
+
+bool ApiManagerImpl::ReWriteURL(const char *uri, const size_t uri_len,
+                                std::string *destination_url, bool debug_mode) {
+  auto server_config = global_context_->server_config();
+
+  for (auto &rewrite_rule : this->rewrite_rules_) {
+    if (rewrite_rule->Check(uri, uri_len, destination_url, debug_mode) ==
+        true) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 std::unique_ptr<RequestHandlerInterface> ApiManagerImpl::CreateRequestHandler(

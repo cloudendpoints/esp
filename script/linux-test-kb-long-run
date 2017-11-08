@@ -89,7 +89,7 @@ while true; do
   echo "Auth token is: ${JWT_TOKEN}"
 
   echo "Starting bookstore test at $(date)."
-  ./esp_bookstore_test.py --verbose=true \
+  ./esp_bookstore_test.py \
       --host=${HOST} \
       --api_key=${API_KEY} \
       --auth_token=${JWT_TOKEN} \
@@ -97,7 +97,7 @@ while true; do
     || ((BOOKSTORE_FAILURES++))
 
   echo "Starting bookstore API Key restriction test at $(date)."
-  ./esp_bookstore_key_restriction_test.py --verbose=true \
+  ./esp_bookstore_key_restriction_test.py \
       --host=${HOST} \
       --allow_unverified_cert=true \
       --key_restriction_tests=${ROOT}/test/bookstore/test/key_restriction_test.json.template \
@@ -106,7 +106,7 @@ while true; do
 
 # temporary disabled for unstable test
 #  echo "Starting bookstore quota control test at $(date)."
-#  ./esp_bookstore_quota_test.py --verbose=true \
+#  ./esp_bookstore_quota_test.py \
 #      --host=${HOST} \
 #      --api_key=${API_KEY} \
 #      --auth_token=${JWT_TOKEN} \

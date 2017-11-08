@@ -20,6 +20,7 @@
 #include "google/api/service.pb.h"
 #include "google/protobuf/io/zero_copy_stream.h"
 #include "google/protobuf/stubs/status.h"
+#include "google/protobuf/util/json_util.h"
 #include "grpc_transcoding/transcoder.h"
 #include "grpc_transcoding/transcoder_input_stream.h"
 #include "grpc_transcoding/type_helper.h"
@@ -60,7 +61,10 @@ namespace transcoding {
 class TranscoderFactory {
  public:
   // service - The service config for which the factory is created
-  TranscoderFactory(const ::google::api::Service& service_config);
+  TranscoderFactory(
+      const ::google::api::Service& service_config,
+      const ::google::protobuf::util::JsonPrintOptions& json_print_options =
+          ::google::protobuf::util::JsonPrintOptions());
 
   // Creates a Transcoder object to transcode a single client request
   // call_info - contains all the necessary info for setting up transcoding
@@ -77,6 +81,7 @@ class TranscoderFactory {
 
  private:
   ::google::grpc::transcoding::TypeHelper type_helper_;
+  ::google::protobuf::util::JsonPrintOptions json_print_options_;
 };
 
 }  // namespace transcoding

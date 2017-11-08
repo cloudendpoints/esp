@@ -44,6 +44,9 @@ message ServerConfig {
   // Init Service Configs.
   ServiceConfigRollout service_config_rollout = 12;
 
+  // Common service API configuration
+  ApiServiceConfig api_service_config = 13;
+
   // The service config rollout strategy, [fixed|managed]
   // fixed:  never change service config dynamically.
   // managed: follow service management service config rollout.
@@ -205,7 +208,29 @@ message ServiceConfigRollout {
   string rollout_id = 2;
 }
 
+// Common configurations for API service configuration
+message ApiServiceConfig {
+  // A rewrite consists of two arguments separated by spaces. The arguments are:
+  //
+  //  pattern: which incoming URLs should be affected by the rule. PCRE
+  //    compatible regular expression checked against the request
+  //    URI, which is the part after http://hostname
+  //  replacement: where should the matching requests be sent. Modification to
+  //    the part matched by the pattern or absolute path. Replacement
+  //    starts with either "http://" or "https://" is not allowed
+  //
+  // ex. "^/?([a-z]+)/(.*)$ /api.foo?page=$1&id=$2"
+  //        ---$1--- -$2-                  |     |
+  //            |      +-------------------+-----+
+  //            +--------------------------+
+  //
+  // Rewrite rules are executed sequentially in the order of "repeated" field.
+  repeated string rewrite = 1;
+}
+
 message Experimental {
   // Disable timed printouts of ESP status to the error log.
   bool disable_log_status = 1;
+  // Configure response to JSON translator option for JsonPrintOptions:
+  bool always_print_primitive_fields = 2;
 }

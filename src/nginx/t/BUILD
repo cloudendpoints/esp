@@ -142,6 +142,10 @@ nginx_suite(
         "grpc_interop_status.t",
         "grpc_interop_streaming.t",
         "grpc_interop_unary.t",
+        "grpc_web_interop_empty.t",
+        "grpc_web_interop_status.t",
+        "grpc_web_interop_unary.t",
+        "grpc_web_interop_unary_large.t",
     ],
     deps = [
         ":perl_library",
@@ -182,6 +186,7 @@ nginx_suite(
     nginx = "//src/nginx/main:nginx-esp",
     tests = [
         "aggregated_check_report.t",
+        "api_rewrite.t",
         "auth_disabled.t",
         "auth_no_auth.t",
         "auth_no_pkey.t",

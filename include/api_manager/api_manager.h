@@ -73,6 +73,9 @@ class ApiManager {
   // This function checks server_config for that flag.
   virtual bool get_logging_status_disabled() = 0;
 
+  // server_config experimental option to print primitive fields in JSON output
+  virtual bool get_always_print_primitive_fields() = 0;
+
   // Creates a RequestHandler to handle check and report for each request.
   // Its usage:
   //  1) Creates a RequestHandler object for each request,
@@ -102,6 +105,9 @@ class ApiManager {
 
   virtual utils::Status GetServiceConfigRollouts(
       ServiceConfigRolloutsInfo *rollouts) = 0;
+
+  virtual bool ReWriteURL(const char *uri, const size_t uri_len,
+                          std::string *destination_url, bool debug_mode) = 0;
 
  protected:
   ApiManager() {}

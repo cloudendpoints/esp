@@ -34,6 +34,7 @@
 #include "google/protobuf/util/type_resolver.h"
 #include "google/protobuf/util/type_resolver_util.h"
 #include "src/api_manager/proto/server_config.pb.h"
+#include "src/api_manager/rewrite_rule.h"
 #include "src/nginx/module.h"
 #include "src/nginx/status.h"
 #include "src/nginx/util.h"
@@ -588,6 +589,18 @@ ngx_int_t ngx_esp_build_server_config(ngx_conf_t *cf, ngx_esp_loc_conf_t *lc,
     }
 
     (*traffic_percentages)[ngx_str_to_std(file_name)] = 100.0;
+  }
+
+  // validate rewrite rule syntax
+  if (config.has_api_service_config()) {
+    std::string error_msg;
+    for (auto rule : config.api_service_config().rewrite()) {
+      if (google::api_manager::RewriteRule::ValidateRewriteRule(
+              rule, &error_msg) == false) {
+        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, error_msg.c_str());
+        return NGX_ERROR;
+      }
+    }
   }
 
   // Reserialize

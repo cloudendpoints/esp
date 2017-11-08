@@ -112,10 +112,6 @@ class PathMatcherBuilder {
   PathMatcherPtr<Method> Build();
 
  private:
-  // Inserts a path to a PathMatcherNode.
-  void InsertPathToNode(const PathMatcherNode::PathInfo& path,
-                        void* method_data, std::string http_method,
-                        bool mark_duplicates, PathMatcherNode* root_ptr);
   // A root node shared by all services, i.e. paths of all services will be
   // registered to this node.
   std::unique_ptr<PathMatcherNode> root_ptr_;
@@ -409,8 +405,9 @@ Method PathMatcher<Method>::Lookup(
 
   PathMatcherLookupResult lookup_result =
       LookupInPathMatcherNode(*root_ptr_, parts, http_method);
-  // Return nullptr if nothing is found or the result is marked for duplication.
-  if (lookup_result.data == nullptr || lookup_result.is_multiple) {
+  // Return nullptr if nothing is found.
+  // Not need to check duplication. Only first item is stored for duplicated
+  if (lookup_result.data == nullptr) {
     return nullptr;
   }
   MethodData* method_data = reinterpret_cast<MethodData*>(lookup_result.data);
@@ -442,8 +439,9 @@ Method PathMatcher<Method>::Lookup(const std::string& http_method,
 
   PathMatcherLookupResult lookup_result =
       LookupInPathMatcherNode(*root_ptr_, parts, http_method);
-  // Return nullptr if nothing is found or the result is marked for duplication.
-  if (lookup_result.data == nullptr || lookup_result.is_multiple) {
+  // Return nullptr if nothing is found.
+  // Not need to check duplication. Only first item is stored for duplicated
+  if (lookup_result.data == nullptr) {
     return nullptr;
   }
   MethodData* method_data = reinterpret_cast<MethodData*>(lookup_result.data);
@@ -458,18 +456,6 @@ PathMatcherBuilder<Method>::PathMatcherBuilder()
 template <class Method>
 PathMatcherPtr<Method> PathMatcherBuilder<Method>::Build() {
   return PathMatcherPtr<Method>(new PathMatcher<Method>(std::move(*this)));
-}
-
-template <class Method>
-void PathMatcherBuilder<Method>::InsertPathToNode(
-    const PathMatcherNode::PathInfo& path, void* method_data,
-    std::string http_method, bool mark_duplicates, PathMatcherNode* root_ptr) {
-  if (root_ptr->InsertPath(path, http_method, method_data, mark_duplicates)) {
-    //    VLOG(3) << "Registered WrapperGraph for " <<
-    //    http_template.as_string();
-  } else {
-    //    VLOG(3) << "Replaced WrapperGraph for " << http_template.as_string();
-  }
 }
 
 // This wrapper converts the |http_rule| into a HttpTemplate. Then, inserts the
@@ -494,8 +480,9 @@ bool PathMatcherBuilder<Method>::Register(std::string http_method,
   method_data->variables = std::move(ht->Variables());
   method_data->body_field_path = std::move(body_field_path);
 
-  InsertPathToNode(path_info, method_data.get(), http_method, true,
-                   root_ptr_.get());
+  if (!root_ptr_->InsertPath(path_info, http_method, method_data.get(), true)) {
+    return false;
+  }
   // Add the method_data to the methods_ vector for cleanup
   methods_.emplace_back(std::move(method_data));
   if (!ht->verb().empty()) {

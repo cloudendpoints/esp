@@ -496,6 +496,12 @@ sub verify_http_json_response {
   return 1;
 }
 
+sub http_response_body {
+  my ($response, $expected_body) = @_;
+  my ($headers, $actual_body) = split /\r\n\r\n/, $response, 2;
+  return $actual_body;
+}
+
 # Initial port is 8080 or $TEST_PORT env variable. A test is allowed to use 10
 # subsequent ports.
 sub available_port_range {

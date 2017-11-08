@@ -173,6 +173,7 @@ function run_esp_test() {
       k) esp_args+=(-k);;
     esac
   done
+  esp_args+=("--check_metadata")
 
   #
   for l in ${LINKS[@]}; do docker_args+=(--link="${l}"); done

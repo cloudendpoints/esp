@@ -43,12 +43,12 @@ EOF
   exit 1
 }
 
-function push_proxy() {
+function push_tool() {
   echo "Push directory "
   pushd ${1}
 }
 
-function pop_proxy() {
+function pop_tool() {
   popd
 }
 
@@ -71,11 +71,10 @@ done
 [[ -n "${LAST_COMMIT}" ]] || usage "Must provide last commit sha or tag via '-l' parameter."
 
 if [ "${DIRECTORY}" != "." ]; then
-  push_proxy ${DIRECTORY}
+  push_tool ${DIRECTORY}
 fi
 
-VERSION=$(command cat ${ROOT}/src/nginx/version) \
-  || error_exit "Cannot determine release version."
+VERSION=$(command cat ${ROOT}/src/nginx/version)
 
 echo $(pwd)
 
@@ -145,6 +144,6 @@ printf '\e[31m
 \e[0m'
 
 if [ "${DIRECTORY}" != "." ]; then
-  pop_proxy()
+  pop_tool
 fi
 

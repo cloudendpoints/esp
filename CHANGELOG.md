@@ -1,3 +1,23 @@
+# Release 1.11.0 07-11-2017
+
+- Added --rewrite argument supporting rewrite rule
+- Added --client_max_body_size argument
+- Added --transcoding_always_print_primitive_fields true/false (#227)
+- Added always_print_primitive_fields experimental option (#295)
+- Added rewrite rule support instead of basepath match (#292)
+
+# Release 1.10.0 24-10-2017
+
+- Fix a bug in path match for OPTIONS. (#285)
+- Bare minimum support for gRPC-Web. (#283)
+
+# Release 1.9.0 27-09-2017
+
+- Add start_esp options to allow more characters in HTTP headers
+- Add --check_metadata option to disable checking metadata service
+- Add --pid_file flag to configure PID file location.
+- Add the support of JWK keys without the alg field (#274)
+
 # Release 1.8.0 12-09-2017
 
 - Auto detect custom verb to support : in the path. (#257)
