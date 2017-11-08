@@ -1,3 +1,11 @@
+# Release 1.11.0 07-11-2017
+
+- Added --rewrite argument supporting rewrite rule
+- Added --client_max_body_size argument
+- Added --transcoding_always_print_primitive_fields true/false (#227)
+- Added always_print_primitive_fields experimental option (#295)
+- Added rewrite rule support instead of basepath match (#292)
+
 # Release 1.10.0 24-10-2017
 
 - Fix a bug in path match for OPTIONS. (#285)
