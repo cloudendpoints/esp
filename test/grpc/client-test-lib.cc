@@ -49,8 +49,8 @@ using ::grpc::Channel;
 using ::grpc::ChannelArguments;
 using ::grpc::ChannelCredentials;
 using ::grpc::ClientContext;
-using ::grpc::ClientAsyncReaderWriterInterface;
-using ::grpc::ClientAsyncResponseReaderInterface;
+using ::grpc::ClientAsyncReaderWriter;
+using ::grpc::ClientAsyncResponseReader;
 using ::grpc::ClientReaderWriter;
 using ::grpc::CompletionQueue;
 using ::grpc::CreateCustomChannel;
@@ -236,7 +236,7 @@ class Echo {
   ClientContext ctx_;
   EchoResponse response_;
   Status status_;
-  std::unique_ptr<ClientAsyncResponseReaderInterface<EchoResponse>> rpc_;
+  std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> rpc_;
 };
 
 class EchoReport {
@@ -278,7 +278,7 @@ class EchoReport {
   ClientContext ctx_;
   ReportRequest response_;
   Status status_;
-  std::unique_ptr<ClientAsyncResponseReaderInterface<ReportRequest>> rpc_;
+  std::unique_ptr<ClientAsyncResponseReader<ReportRequest>> rpc_;
 };
 
 class EchoStream {
@@ -420,8 +420,7 @@ class EchoStream {
   int max_in_flight_ = 0;
   Status status_;
   Status status_expected_;
-  std::unique_ptr<ClientAsyncReaderWriterInterface<EchoRequest, EchoResponse>>
-      rpc_;
+  std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>> rpc_;
   int start_time_;  // stream start time
 };
 
@@ -715,7 +714,7 @@ class ProbeCallLimit {
     EchoResponse *response = new EchoResponse();
     Status *status = new Status();
     ClientContext *ctx = new ClientContext();
-    ClientAsyncResponseReaderInterface<EchoResponse> *rpc =
+    ClientAsyncResponseReader<EchoResponse> *rpc =
         pc->server_stub_->AsyncEcho(ctx, pc->desc_.request(), pc->cq_)
             .release();
 
@@ -756,8 +755,7 @@ class ProbeCallLimit {
   ClientContext cork_ctx_;
   // The latest received state from the Cork() streaming RPC.
   CorkState cork_state_;
-  std::unique_ptr<ClientAsyncReaderWriterInterface<CorkRequest, CorkState>>
-      cork_rpc_;
+  std::unique_ptr<ClientAsyncReaderWriter<CorkRequest, CorkState>> cork_rpc_;
   std::unique_ptr<Alarm> alarm_;
 };
 
@@ -914,9 +912,8 @@ class ProbeDownstreamMessageLimit {
   ClientContext stream_ctx_;
   CorkState cork_state_;
   EchoResponse stream_response_;
-  std::unique_ptr<ClientAsyncReaderWriterInterface<CorkRequest, CorkState>>
-      cork_rpc_;
-  std::unique_ptr<ClientAsyncReaderWriterInterface<EchoRequest, EchoResponse>>
+  std::unique_ptr<ClientAsyncReaderWriter<CorkRequest, CorkState>> cork_rpc_;
+  std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>>
       stream_rpc_;
   int downstream_message_limit_ = 0;
   bool saw_timeout_ = false;
@@ -1049,7 +1046,7 @@ class ProbeUpstreamMessageLimit {
   std::function<void(bool, const TestResult &)> done_;
   ClientContext stream_ctx_;
   EchoResponse stream_response_;
-  std::unique_ptr<ClientAsyncReaderWriterInterface<EchoRequest, EchoResponse>>
+  std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>>
       stream_rpc_;
   int upstream_message_limit_ = 0;
   bool saw_timeout_ = false;
