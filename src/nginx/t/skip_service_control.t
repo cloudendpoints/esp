@@ -45,7 +45,7 @@ my $ServiceControlPort = ApiManager::pick_port();
 my $MetadataPort = ApiManager::pick_port();
 my $CloudTracePort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(9);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(8);
 
 # Use JSON configuration.
 ApiManager::write_file_expand($t, 'service.json', <<"EOF");
@@ -152,9 +152,6 @@ $t->stop_daemons();
 # Verify servicecontrol was not called.
 is($t->read_file('servicecontrol.log'), '', 'Service control was not called.');
 
-# Verify metadata server was not called.
-is($t->read_file('metadata.log'), '', 'Metadata server was not called.');
-
 # Verify cloud trace server was not called.
 is($t->read_file('cloudtrace.log'), '', 'Cloud trace server was not called.');
 
@@ -190,6 +187,28 @@ sub metadata {
   my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
+
+  my $response_header = <<'EOF';
+HTTP/1.1 200 OK
+Metadata-Flavor: Google
+Content-Type: application/json
+
+EOF
+
+  $server->on('GET', '/computeMetadata/v1/?recursive=true',
+    $response_header . ApiManager::get_metadata_response_body);
+
+  $server->on('GET', '/computeMetadata/v1/instance/service-accounts/default/token', <<'EOF');
+HTTP/1.1 200 OK
+Metadata-Flavor: Google
+Content-Type: application/json
+
+{
+ "access_token":"ya29.7gFRTEGmovWacYDnQIpC9X9Qp8cH0sgQyWVrZaB1Eg1WoAhQMSG4L2rtaHk1",
+ "expires_in":200,
+ "token_type":"Bearer"
+}
+EOF
 
   $server->run();
 }
