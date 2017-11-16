@@ -47,7 +47,8 @@ void CheckServiceControl(std::shared_ptr<context::RequestContext> context,
                           Status::SERVICE_CONTROL));
     }
     return;
-  } else if (!context->service_context()->service_control()) {
+  } else if (!context->service_context()->service_control() ||
+             context->method()->skip_service_control()) {
     TRACE(trace_span) << "Service control check is not needed";
     continuation(Status::OK);
     return;
