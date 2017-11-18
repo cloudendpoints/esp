@@ -846,7 +846,7 @@ def initialize() {
 }
 
 def DefaultNode(Closure body) {
-  podTemplate(label: 'debian-8', cloud: 'kubernetes', containers: [
+  podTemplate(label: 'debian-8-pod', cloud: 'kubernetes', containers: [
       containerTemplate(
           name: 'debian-8',
           image: SLAVE_IMAGE,
@@ -869,7 +869,7 @@ def DefaultNode(Closure body) {
           envVars: [
               envVar(key: 'PLATFORM', value: 'debian-8')
           ])]) {
-    node('debian-8') {
+    node('debian-8-pod') {
       container('debian-8') {
         body()
       }
@@ -878,7 +878,7 @@ def DefaultNode(Closure body) {
 }
 
 def BuildNode(Closure body) {
-  podTemplate(label: 'debian-8', cloud: 'kubernetes', containers: [
+  podTemplate(label: 'debian-8-pod', cloud: 'kubernetes', containers: [
       containerTemplate(
           name: 'debian-8',
           image: SLAVE_IMAGE,
@@ -901,7 +901,7 @@ def BuildNode(Closure body) {
           envVars: [
               envVar(key: 'PLATFORM', value: 'debian-8')
           ])]) {
-    node('debian-8') {
+    node('debian-8-pod') {
       container('debian-8') {
         body()
       }
