@@ -54,13 +54,7 @@ SUPPORTED_STAGES = [
 
 // Supported VM Images
 DEBIAN_JESSIE = 'debian-8'
-UBUNTU_XENIAL = 'ubuntu-16-04'
-
-// Slaves Docker tags
-DOCKER_SLAVES = [
-    (DEBIAN_JESSIE): 'gcr.io/endpoints-jenkins/debian-8-slave',
-    (UBUNTU_XENIAL): 'gcr.io/endpoints-jenkins/ubuntu-16-04-slave'
-]
+SLAVE_IMAGE = 'gcr.io/endpoints-jenkins/debian-8:0.3'
 
 // Release Qualification end to end tests.
 // If RAPTURE_REPO build parameter is set only those test will run.
@@ -82,17 +76,15 @@ ESP_RUNTIME_VERSION = ''
 BUCKET = ''
 BAZEL_ARGS = ''
 BAZEL_BUILD_ARGS = ''
-DEFAULT_SLAVE_LABEL = ''
 CLUSTER = ''
 PROJECT_ID = ''
 TOOLS_BUCKET = ''
 ZONE = ''
 
-node {
+DefaultNode {
   BUCKET = failIfNullOrEmpty(env.BUCKET, 'BUCKET must be set.')
   BAZEL_ARGS = getWithDefault(env.BAZEL_ARGS)
   BAZEL_BUILD_ARGS = getWithDefault(env.BAZEL_BUILD_ARGS)
-  DEFAULT_SLAVE_LABEL = getWithDefault(env.DEFAULT_SLAVE_LABEL, DEBIAN_JESSIE)
   CLUSTER = failIfNullOrEmpty(env.GKE_CLUSTER, 'GKE_CLUSTER must be set')
   PROJECT_ID = failIfNullOrEmpty(env.PROJECT_ID, 'PROJECT_ID must be set')
   TOOLS_BUCKET = failIfNullOrEmpty(env.TOOLS_BUCKET, 'TOOLS_BUCKET must be set')
@@ -102,20 +94,11 @@ node {
 }
 
 node('master') {
-  def nodeLabel = getParam('SLAVE_LABEL', DEFAULT_SLAVE_LABEL)
-  def buildNodeLabel = getBuildSlaveLabel(nodeLabel)
   def builtArtifacts = false
   try {
     if (runStage(CLEANUP_STAGE)) {
       stage('Test Cleanup') {
-        cleanupOldTests(nodeLabel)
-      }
-    }
-    if (runStage(SLAVE_UPDATE_STAGE)) {
-      stage('Slave Update') {
-        node(nodeLabel) {
-          buildNewDockerSlave(nodeLabel)
-        }
+        cleanupOldTests()
       }
     }
     if (runStage(PRESUBMIT)) {
@@ -124,7 +107,7 @@ node('master') {
           def success = true
           updatePresubmit('run')
           try {
-            presubmit(buildNodeLabel)
+            presubmit()
           } catch (Exception e) {
             success = false
             throw e
@@ -136,21 +119,21 @@ node('master') {
     }
     if (runStage(E2E_STAGE)) {
       stage('Build Artifacts') {
-        buildArtifacts(buildNodeLabel)
+        buildArtifacts()
         builtArtifacts = true
       }
       stage('E2E Tests') {
-        e2eTest(nodeLabel)
+        e2eTest()
       }
     }
     if (runStage(PERFORMANCE_STAGE)) {
       if (!builtArtifacts) {
         stage('Build Artifacts') {
-          buildArtifacts(buildNodeLabel, false, false)
+          buildArtifacts(false, false)
         }
       }
       stage('Performance Test') {
-        performance(nodeLabel)
+        performance()
       }
     }
     def releaseQualJob = getParam('RELEASE_QUAL_JOB')
@@ -177,23 +160,23 @@ node('master') {
   }
 }
 
-def cleanupOldTests(nodeLabel) {
+def cleanupOldTests() {
   def branches = [
       'cleanup_endpoints-jenkins': {
         // Delete 6 days old namespaces and GCE instances on endpoints-jenkins.
-        node(nodeLabel) {
+        DefaultNode {
           testCleanup(6, PROJECT_ID, '-i -n')
         }
       },
       'cleanup_esp-load-test': {
         // Delete 2 days old Flex versions on esp-load-test.
-        node(nodeLabel) {
+        DefaultNode {
           testCleanup(2, 'esp-load-test', '-v')
         }
       },
       'cleanup_esp-long-run': {
         // Delete 7 days old Flex versions on esp-long-run.
-        node(nodeLabel) {
+        DefaultNode {
           testCleanup(7, 'esp-long-run', '-v')
         }
       }
@@ -201,24 +184,24 @@ def cleanupOldTests(nodeLabel) {
   parallel(branches)
 }
 
-def buildArtifacts(nodeLabel, buildBookstore = true, buildGrpcTest = true) {
+def buildArtifacts(buildBookstore = true, buildGrpcTest = true) {
   def branches = [
       'packages': {
-        node(nodeLabel) {
+        BuildNode {
           buildPackages()
         }
       }
   ]
   if (buildBookstore) {
     branches['bookstore'] = {
-      node(nodeLabel) {
+      BuildNode {
         buildBookstoreImage()
       }
     }
   }
   if (buildGrpcTest) {
     branches['grpc_test'] = {
-      node(nodeLabel) {
+      BuildNode {
         buildGrcpTest()
       }
     }
@@ -226,47 +209,47 @@ def buildArtifacts(nodeLabel, buildBookstore = true, buildGrpcTest = true) {
   parallel(branches)
 }
 
-def presubmit(nodeLabel) {
+def presubmit() {
   def branches = [
       'asan': {
-        node(nodeLabel) {
+        BuildNode {
           presubmitTests('asan')
         }
       },
       'build-and-test': {
-        node(nodeLabel) {
+        BuildNode {
           presubmitTests('build-and-test')
         }
       },
       'release': {
-        node(nodeLabel) {
+        BuildNode {
           presubmitTests('release')
           presubmitTests('docker-tests', false)
         }
       },
       'tsan': {
-        node(nodeLabel) {
+        BuildNode {
           presubmitTests('tsan')
         }
       },
   ]
   // Do validation and
-  node(nodeLabel) {
+  BuildNode {
     presubmitTests('check-files')
   }
   parallel(branches)
 }
 
 
-def performance(nodeLabel) {
+def performance() {
   def branches = [
       'jenkins-post-submit-perf-test': {
-        node(nodeLabel) {
+        DefaultNode {
           localPerformanceTest()
         }
       },
       'jenkins-perf-test-vm-esp': {
-        node(nodeLabel) {
+        DefaultNode {
           flexPerformance()
         }
       }
@@ -274,64 +257,64 @@ def performance(nodeLabel) {
   parallel(branches)
 }
 
-def e2eTest(nodeLabel) {
+def e2eTest() {
   // Please Update script/validate_release.py when adding or removing test.
   // Storing as [key, value] as Jenkins groovy cannot iterate over maps :(.
   // Please don't remove gke-custom-http test. It is important to test
   // custom nginx config.
   def branches = [
       ['gce-debian-8', {
-        node(nodeLabel) {
+        DefaultNode {
           e2eGCE(DEBIAN_JESSIE, 'fixed')
         }
       }],
       ['gce-debian-8-managed', {
-        node(nodeLabel) {
+        DefaultNode {
           e2eGCE(DEBIAN_JESSIE, 'managed')
         }
       }],
       ['gke-tight-http', {
-        node(nodeLabel) {
+        DefaultNode {
           e2eGKE('tight', 'http', 'fixed')
         }
       }],
       ['gke-tight-http-managed', {
-        node(nodeLabel) {
+        DefaultNode {
           e2eGKE('tight', 'http', 'managed')
         }
       }],
       ['gke-loose-http', {
-        node(nodeLabel) {
+        DefaultNode {
           e2eGKE('loose', 'http', 'fixed')
         }
       }],
       ['gke-custom-http', {
-        node(nodeLabel) {
+        DefaultNode {
           e2eGKE('custom', 'http', 'fixed')
         }
       }],
       ['gke-tight-https', {
-        node(nodeLabel) {
+        DefaultNode {
           e2eGKE('tight', 'https', 'fixed')
         }
       }],
       ['gke-loose-https', {
-        node(nodeLabel) {
+        DefaultNode {
           e2eGKE('loose', 'https', 'fixed')
         }
       }],
       ['flex', {
-        node(nodeLabel) {
+        DefaultNode {
           e2eFlex()
         }
       }],
       ['gke-tight-http2-echo', {
-        node(nodeLabel) {
+        DefaultNode {
           e2eGKE('tight', 'http2', 'fixed', 'echo')
         }
       }],
       ['gke-tight-http2-interop', {
-        node(nodeLabel) {
+        DefaultNode {
           e2eGKE('tight', 'http2', 'fixed', 'interop')
         }
       }],
@@ -528,30 +511,6 @@ def updatePresubmit(flow, success = false) {
   setGitHubPullRequestStatus(context: env.JOB_NAME, message: message, state: state)
 }
 
-def buildNewDockerSlave(nodeLabel) {
-  setupNode()
-  def dockerImage = "${DOCKER_SLAVES[nodeLabel]}:${GIT_SHA}"
-  // Test Slave image setup in Jenkins
-  def testDockerImage = "${DOCKER_SLAVES[nodeLabel]}:test"
-  // Slave image setup in Jenkins
-  def finalDockerImage = "${DOCKER_SLAVES[nodeLabel]}:latest"
-  echo("Building ${testDockerImage}")
-  sh("script/jenkins-build-docker-slave -b " +
-      "-i ${dockerImage} " +
-      "-t ${testDockerImage} " +
-      "-s ${nodeLabel} " +
-      "-T \"${TOOLS_BUCKET}\"")
-  echo("Testing ${testDockerImage}")
-  node(getTestSlaveLabel(nodeLabel)) {
-    checkoutSourceCode()
-    sh('jenkins/slaves/slave-test')
-  }
-  echo("Retagging ${testDockerImage} to ${dockerImage}")
-  sh("script/jenkins-build-docker-slave " +
-      "-i ${testDockerImage} " +
-      "-t ${finalDockerImage}")
-}
-
 def e2eCommonOptions(testId, prefix = '') {
   def uniqueID = getUniqueID(testId, true)
   def skipCleanup = getParam('SKIP_CLEANUP', false) ? "-s" : ""
@@ -734,14 +693,6 @@ def sendFailureNotification() {
       replyTo: 'esp-alerts-jenkins@google.com'
 }
 
-def getTestSlaveLabel(label) {
-  return "${label}-test"
-}
-
-def getBuildSlaveLabel(label) {
-  return "${label}-build"
-}
-
 def createServerConfigTag() {
   def serverConfig = getParam('SERVER_CONFIG')
   if (serverConfig != '') {
@@ -892,4 +843,68 @@ def initialize() {
   }
   // Updating submodules and cleaning files.
   sh('script/setup && script/obliterate')
+}
+
+def DefaultNode(Closure body) {
+  podTemplate(label: 'debian-8', cloud: 'kubernetes', containers: [
+      containerTemplate(
+          name: 'debian-8',
+          image: SLAVE_IMAGE,
+          command: 'cat',
+          ttyEnabled: true,
+          privileged: true,
+          alwaysPullImage: false,
+          workingDir: '/home/jenkins',
+          resourceRequestCpu: '500m',
+          resourceLimitCpu: '2000m',
+          resourceRequestMemory: '512Mi',
+          resourceLimitMemory: '8Gi',
+          livenessProbe: containerLivenessProbe(
+              execArgs: 'some --command',
+              initialDelaySeconds: 30,
+              timeoutSeconds: 1,
+              failureThreshold: 3,
+              periodSeconds: 10,
+              successThreshold: 1),
+          envVars: [
+              envVar(key: 'PLATFORM', value: 'debian-8')
+          ])]) {
+    node('debian-8') {
+      container('debian-8') {
+        body()
+      }
+    }
+  }
+}
+
+def BuildNode(Closure body) {
+  podTemplate(label: 'debian-8', cloud: 'kubernetes', containers: [
+      containerTemplate(
+          name: 'debian-8',
+          image: SLAVE_IMAGE,
+          command: 'cat',
+          ttyEnabled: true,
+          privileged: true,
+          alwaysPullImage: false,
+          workingDir: '/home/jenkins',
+          resourceRequestCpu: '500m',
+          resourceLimitCpu: '4000m',
+          resourceRequestMemory: '512Mi',
+          resourceLimitMemory: '20Gi',
+          livenessProbe: containerLivenessProbe(
+              execArgs: 'some --command',
+              initialDelaySeconds: 30,
+              timeoutSeconds: 1,
+              failureThreshold: 3,
+              periodSeconds: 10,
+              successThreshold: 1),
+          envVars: [
+              envVar(key: 'PLATFORM', value: 'debian-8')
+          ])]) {
+    node('debian-8') {
+      container('debian-8') {
+        body()
+      }
+    }
+  }
 }
