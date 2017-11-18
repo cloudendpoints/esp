@@ -44,7 +44,6 @@ done
 
 set_git
 script/linux-prep-machine || error_exit 'Could not prep machine.'
-script/linux-install-software || error_exit 'Could not update the tools.'
 retry -n 5 ${GCLOUD} config set compute/zone "${ZONE}"
 retry -n 5 ${GCLOUD} container clusters get-credentials "${CLUSTER}"
 
