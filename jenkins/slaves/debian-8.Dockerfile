@@ -29,4 +29,10 @@ ENV PATH /usr/lib/google-cloud-sdk/bin:${PATH}
 ADD jenkins/slaves/entrypoint /usr/local/bin/entrypoint
 RUN chmod +rx /usr/local/bin/entrypoint
 
+# Adding a Jenkins User
+ENV HOME /home/jenkins
+RUN groupadd -g 10000 jenkins
+RUN useradd -c "Jenkins user" -d ${HOME} -u 10000 -g 10000 -G docker,sudo -m jenkins -s /bin/bash
+USER jenkins
+
 ENTRYPOINT ["/usr/local/bin/entrypoint"]
