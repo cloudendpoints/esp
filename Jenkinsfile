@@ -859,13 +859,6 @@ def DefaultNode(Closure body) {
           resourceLimitCpu: '2000m',
           resourceRequestMemory: '512Mi',
           resourceLimitMemory: '8Gi',
-          livenessProbe: containerLivenessProbe(
-              execArgs: 'some --command',
-              initialDelaySeconds: 30,
-              timeoutSeconds: 1,
-              failureThreshold: 3,
-              periodSeconds: 10,
-              successThreshold: 1),
           envVars: [
               envVar(key: 'PLATFORM', value: 'debian-8')
           ])]) {
@@ -891,13 +884,6 @@ def BuildNode(Closure body) {
           resourceLimitCpu: '4000m',
           resourceRequestMemory: '512Mi',
           resourceLimitMemory: '20Gi',
-          livenessProbe: containerLivenessProbe(
-              execArgs: 'some --command',
-              initialDelaySeconds: 30,
-              timeoutSeconds: 1,
-              failureThreshold: 3,
-              periodSeconds: 10,
-              successThreshold: 1),
           envVars: [
               envVar(key: 'PLATFORM', value: 'debian-8')
           ])]) {
