@@ -30,4 +30,4 @@ if [[ ${UID} -ne 0 ]]; then
   SUDO=sudo
 fi
 ${SUDO} service docker start
-/usr/local/bin/jenkins-slave "${@}"
+exec "$@"
