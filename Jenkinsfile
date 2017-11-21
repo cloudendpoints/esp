@@ -850,7 +850,7 @@ def DefaultNode(Closure body) {
       containerTemplate(
           name: 'debian-8',
           image: SLAVE_IMAGE,
-          command: 'cat',
+          args: 'cat',
           ttyEnabled: true,
           privileged: true,
           alwaysPullImage: false,
@@ -875,7 +875,7 @@ def BuildNode(Closure body) {
       containerTemplate(
           name: 'debian-8',
           image: SLAVE_IMAGE,
-          command: 'cat',
+          args: 'cat',
           ttyEnabled: true,
           privileged: true,
           alwaysPullImage: false,
