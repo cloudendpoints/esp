@@ -160,7 +160,8 @@ nginx_suite(
     ],
     nginx = "//src/nginx/main:nginx-esp",
     tests = [
-        "grpc_interop_ministress.t",
+        # grpc_interop_ministress is disabled as it is a flaky test
+        #"grpc_interop_ministress.t",
     ],
     deps = [
         ":perl_library",

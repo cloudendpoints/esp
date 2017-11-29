@@ -42,9 +42,9 @@ function install_clang() {
   echo 'Installing clang'
   clear_apt \
   && ${SUDO} apt-get -qqy install {clang,clang-format}-"${CLANG_VERSION}" \
-  && ${SUDO} cp -f /usr/bin/clang-3.8 /usr/bin/clang \
-  && ${SUDO} cp -f /usr/bin/clang++-3.8 /usr/bin/clang++ \
-  && ${SUDO} cp -f /usr/bin/clang-format-3.8 /usr/bin/clang-format \
+  && ${SUDO} cp -f "/usr/bin/clang-${CLANG_VERSION}" /usr/bin/clang \
+  && ${SUDO} cp -f "/usr/bin/clang++-${CLANG_VERSION}" /usr/bin/clang++ \
+  && ${SUDO} cp -f "/usr/bin/clang-format-${CLANG_VERSION}" /usr/bin/clang-format \
   && return 0
   return 1
 }
