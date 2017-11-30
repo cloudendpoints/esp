@@ -34,7 +34,8 @@ def nginx_test(name, nginx, data=None, env=None, config=None, **kwargs):
 
   if data == None:
     data = []
-  data += [ nginx ]
+  if nginx not in data:
+    data += [ nginx ]
 
   if env == None:
     env = {}
