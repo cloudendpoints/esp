@@ -880,9 +880,9 @@ def BuildNode(Closure body) {
           privileged: true,
           alwaysPullImage: false,
           workingDir: '/home/jenkins',
-          resourceRequestCpu: '500m',
-          resourceLimitCpu: '4000m',
-          resourceRequestMemory: '512Mi',
+          resourceRequestCpu: '1000m',
+          resourceLimitCpu: '8000m',
+          resourceRequestMemory: '1024Mi',
           resourceLimitMemory: '20Gi',
           envVars: [
               envVar(key: 'PLATFORM', value: 'debian-8')
