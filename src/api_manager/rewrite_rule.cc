@@ -269,8 +269,8 @@ bool RewriteRule::Check(const char *uri, size_t uri_len,
       }
 
       rewrite_log << kEspRewriteTitle << ": matching rule: " << regex_pattern_
-                  << ", request uri: " << uri << ", error: " << msg
-                  << std::endl;
+                  << ", request uri: " << std::string(uri, uri_len)
+                  << ", error: " << msg << std::endl;
       env_->LogInfo(rewrite_log.str());
     }
 
@@ -294,7 +294,8 @@ bool RewriteRule::Check(const char *uri, size_t uri_len,
   if (debug_mode) {
     rewrite_log << kEspRewriteTitle << ": regex=" << regex_pattern_
                 << std::endl;
-    rewrite_log << kEspRewriteTitle << ": request uri=" << uri << std::endl;
+    rewrite_log << kEspRewriteTitle
+                << ": request uri=" << std::string(uri, uri_len) << std::endl;
 
     const char *psub_str_match_str;
     for (int j = 0; j < pcre_exec_ret; j++) {
