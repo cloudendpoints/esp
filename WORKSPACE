@@ -49,7 +49,6 @@ git_repository(
 )
 
 load("@iap_jwt_verify_nginx//:iap_jwt_verify_nginx.bzl", "iap_jwt_verify_nginx_repositories")
-
 iap_jwt_verify_nginx_repositories(True)
 
 # Required by gRPC.
@@ -163,11 +162,11 @@ git_repository(
 #
 git_repository(
     name = "io_bazel_rules_go",
-    commit = "ae70411645c171b2056d38a6a959e491949f9afe",  # 0.5.4
+    commit = "2d9f328a9723baf2d037ba9db28d9d0e30683938",  # Apr 6, 2017 (buildifier fix)
     remote = "https://github.com/bazelbuild/rules_go.git",
 )
 
-load("@io_bazel_rules_go//go:def.bzl", "go_repositories", "go_repository")
+load("@io_bazel_rules_go//go:def.bzl", "go_repositories", "go_repository", "new_go_repository")
 
 go_repositories()
 
@@ -181,4 +180,3 @@ new_git_repository(
 load("//test/grpc:repositories.bzl", "grpc_go_repositories")
 
 grpc_go_repositories()
-
