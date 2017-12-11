@@ -75,7 +75,7 @@ ESP_RUNTIME_VERSION = ''
 // Global Variables defined in Jenkins
 BUCKET = ''
 BAZEL_ARGS = ''
-BAZEL_BUILD_ARGS = ''
+BAZEL_BUILD_ARGS = '--subcommands --jobs=2'
 CLUSTER = ''
 PROJECT_ID = ''
 TOOLS_BUCKET = ''
