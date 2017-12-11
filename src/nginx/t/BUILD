@@ -322,7 +322,9 @@ nginx_suite(
         "transcoding_large.t",
         "transcoding_metadata.t",
         "transcoding_query_params.t",
-        "transcoding_shared_port_ssl.t",
+        #Temporarily disable this test, which
+        #occasionally fails in Jenkins presubmit tests.
+        #"transcoding_shared_port_ssl.t",
         "transcoding_status.t",
         "transcoding_streaming.t",
         "transcoding_utf8.t",

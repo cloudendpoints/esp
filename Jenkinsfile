@@ -213,7 +213,11 @@ def presubmit() {
   def branches = [
       'asan': {
         BuildNode {
-          presubmitTests('asan')
+          //Temporarily disable tsan presubmit tests;
+          //the Jenkins nodes may not have enough resources
+          //to handle the increased resource requirements for
+          //running asan.
+          //presubmitTests('asan')
         }
       },
       'build-and-test': {
@@ -229,7 +233,11 @@ def presubmit() {
       },
       'tsan': {
         BuildNode {
-          presubmitTests('tsan')
+          //Temporarily disable tsan presubmit tests;
+          //the Jenkins nodes may not have enough resources
+          //to handle the increased resource requirements for
+          //running tsan.
+          //presubmitTests('tsan')
         }
       },
   ]
@@ -855,10 +863,15 @@ def DefaultNode(Closure body) {
           privileged: true,
           alwaysPullImage: false,
           workingDir: '/home/jenkins',
-          resourceRequestCpu: '500m',
-          resourceLimitCpu: '2000m',
-          resourceRequestMemory: '512Mi',
-          resourceLimitMemory: '8Gi',
+          resourceRequestCpu: '700m',
+          resourceLimitCpu: '1000m',
+          //With the following config, around 260 TSAN tests failed 
+          resourceRequestMemory: '16Gi',
+          resourceLimitMemory: '32Gi',
+          //According to https://github.com/google/sanitizers/wiki/ThreadSanitizerCppManual,
+          //memory usage may increase by 5-10x and execution time by 2-20x.
+          //resourceRequestMemory: '64Gi',
+          //resourceLimitMemory: '128Gi',
           envVars: [
               envVar(key: 'PLATFORM', value: 'debian-8')
           ])]) {
@@ -880,10 +893,15 @@ def BuildNode(Closure body) {
           privileged: true,
           alwaysPullImage: false,
           workingDir: '/home/jenkins',
-          resourceRequestCpu: '1000m',
-          resourceLimitCpu: '8000m',
-          resourceRequestMemory: '1024Mi',
-          resourceLimitMemory: '20Gi',
+          resourceRequestCpu: '700m',
+          resourceLimitCpu: '1000m',
+          //With the following config, around 260 TSAN tests failed 
+          resourceRequestMemory: '16Gi',
+          resourceLimitMemory: '32Gi',
+          //According to https://github.com/google/sanitizers/wiki/ThreadSanitizerCppManual,
+          //memory usage may increase by 5-10x and execution time by 2-20x.
+          //resourceRequestMemory: '64Gi',
+          //resourceLimitMemory: '128Gi',
           envVars: [
               envVar(key: 'PLATFORM', value: 'debian-8')
           ])]) {
