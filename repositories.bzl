@@ -138,7 +138,7 @@ genrule(
 def protobuf_repositories(bind=True):
     native.git_repository(
         name = "protobuf_git",
-        commit = "80a37e0782d2d702d52234b62dd4b9ec74fd2c95",  # 3.4.0
+        commit = "a6189acd18b00611c1dc7042299ad75486f08a1a",  # istio branch
         remote = "https://github.com/google/protobuf.git",
     )
 
@@ -427,7 +427,7 @@ def grpc_repositories(bind=True):
 
     native.git_repository(
         name = "grpc_git",
-        commit = "b45b83ca2798126781fc878f459090ab881dcdf0", # v1.6.0
+        commit = "5cb6a1f86129fc2833de9a27cfe174260934342b", # v1.4.2
         remote = "https://github.com/grpc/grpc.git",
     )
 
