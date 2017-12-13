@@ -73,14 +73,14 @@ ngx_chain_t* FindNonEmptyChainLink(ngx_chain_t* cl) {
 
 NgxRequestZeroCopyInputStream::NgxRequestZeroCopyInputStream(
     ngx_http_request_t* r)
-    : r_(r), cl_(nullptr), buf_(nullptr), pos_(0), status_(utils::Status::OK) {}
+    : r_(r), cl_(nullptr), buf_(nullptr), status_(utils::Status::OK) {}
 
 bool NgxRequestZeroCopyInputStream::Next(const void** data, int* size) {
   if (!status_.ok()) {
     return false;
   }
 
-  if (!buf_ || pos_ >= buf_->last) {
+  if (!buf_ || buf_->pos >= buf_->last) {
     // Either we don't have a current buffer or it is exhausted. Advance to the
     // next buffer.
     if (!NextBuffer()) {
@@ -93,26 +93,26 @@ bool NgxRequestZeroCopyInputStream::Next(const void** data, int* size) {
     }
   }
   // We have a non-empty buffer at this point.
-  *data = pos_;
-  *size = static_cast<int>(buf_->last - pos_);
+  *data = buf_->pos;
+  *size = static_cast<int>(buf_->last - buf_->pos);
 
-  ngx_log_debug1(
+  ngx_log_debug3(
       NGX_LOG_DEBUG_HTTP, r_->connection->log, 0,
-      "NgxRequestZeroCopyInputStream: Next => %s",
+      "NgxRequestZeroCopyInputStream: Next %d %p => %s", *size, *data,
       std::string(reinterpret_cast<const char*>(*data), *size).c_str());
 
   // Advance the positions
   //  - advance buf_->pos to mark everything before buf_->last consumed
-  //  - advance pos_ to buf_->last as we are returning the remaining buffer
   buf_->pos = buf_->last;
-  pos_ = buf_->last;
 
   return true;
 }
 
 void NgxRequestZeroCopyInputStream::BackUp(int count) {
-  if (buf_ && 0 < count && count <= pos_ - buf_->pos) {
-    pos_ -= count;
+  ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r_->connection->log, 0,
+                 "NgxRequestZeroCopyInputStream: BackUp %d", count);
+  if (buf_ && 0 < count && count <= buf_->pos - buf_->start) {
+    buf_->pos -= count;
   }
 }
 
@@ -122,7 +122,7 @@ void NgxRequestZeroCopyInputStream::BackUp(int count) {
   }
 
   // Bytes left in the current buffer
-  auto total = buf_ ? (buf_->last - pos_) : 0;
+  auto total = buf_ ? (buf_->last - buf_->pos) : 0;
 
   // Bytes left in the subsequent buffers
   auto cl = cl_ ? cl_->next : nullptr;
@@ -165,7 +165,9 @@ bool NgxRequestZeroCopyInputStream::NextBuffer() {
     // In-memory buffer, so we can use it as-is.
     buf_ = cl_->buf;
   }
-  pos_ = buf_->pos;
+  ngx_log_debug3(NGX_LOG_DEBUG_HTTP, r_->connection->log, 0,
+                 "NgxRequestZeroCopyInputStream: NextBuffer %p %p %p",
+                 buf_->start, buf_->pos, buf_->last);
   return true;
 }
 

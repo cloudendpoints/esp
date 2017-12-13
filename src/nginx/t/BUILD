@@ -317,6 +317,7 @@ nginx_suite(
         "transcoding_bindings.t",
         "transcoding_deep_struct.t",
         "transcoding_errors.t",
+        "transcoding_h2.t",
         "transcoding_head.t",
         "transcoding_ignore_unknown_fields.t",
         "transcoding_large.t",

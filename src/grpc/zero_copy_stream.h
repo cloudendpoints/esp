@@ -57,6 +57,7 @@ class GrpcZeroCopyInputStream
   bool Skip(int count) { return false; }                     // not supported
   ::google::protobuf::int64 ByteCount() const { return 0; }  // Not implemented
   int64_t BytesAvailable() const;
+  bool Finished() const { return finished_; }
 
  private:
   GrpcMessageSerializer serializer_;

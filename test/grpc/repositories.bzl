@@ -25,53 +25,53 @@
 ################################################################################
 #
 
-load("@io_bazel_rules_go//go:def.bzl", "go_repository")
+load("@io_bazel_rules_go//go:def.bzl", "new_go_repository")
 
 def grpc_go_repositories():
-    go_repository(
+    new_go_repository(
         name = "org_golang_google_grpc",
-        commit = "91999f444f2aa89f2f873c8429a424701309bec4",
+        commit = "9bf8ea0a8282ebecd1aa474c926e3028f5c22a4c",
         importpath = "google.golang.org/grpc",
     )
 
-    go_repository(
+    new_go_repository(
         name = "com_github_golang_protobuf",
-        commit = "17ce1425424ab154092bbb43af630bd647f3bb0d",
+        commit = "fec3b39b059c0f88fa6b20f5ed012b1aa203a8b4",
         importpath = "github.com/golang/protobuf",
     )
 
-    go_repository(
+    new_go_repository(
         name = "org_golang_google_genproto",
-        commit = "ee236bd376b077c7a89f260c026c4735b195e459",
+        commit = "bb3573be0c484136831138976d444b8754777aff",
         importpath = "google.golang.org/genproto",
     )
 
-    go_repository(
+    new_go_repository(
         name = "org_golang_x_net",
-        commit = "66aacef3dd8a676686c7ae3716979581e8b03c47",
+        commit = "513929065c19401a1c7b76ecd942f9f86a0c061b",
         importpath = "golang.org/x/net",
     )
 
-    go_repository(
+    new_go_repository(
         name = "org_golang_x_oauth2",
-        commit = "d89af98d7c6bba047c5a2622f36bc14b8766df85",
+        commit = "f047394b6d14284165300fd82dad67edb3a4d7f6",
         importpath = "golang.org/x/oauth2",
     )
 
-    go_repository(
+    new_go_repository(
         name = "com_google_cloud_go",
-        commit = "2b74e2e25316cfd9e46b74e444cdeceb78786dc5",
+        commit = "0625e1e4bfc1aa7a07d6285541fa9020feab1013",
         importpath = "cloud.google.com/go",
     )
 
-    go_repository(
+    new_go_repository(
         name = "com_github_googleapis_gax_go",
-        commit = "2cadd475a3e966ec9b77a21afc530dbacec6d613",
+        commit = "9af46dd5a1713e8b5cd71106287eba3cefdde50b",
         importpath = "github.com/googleapis/gax-go",
     )
 
-    go_repository(
+    new_go_repository(
         name = "org_golang_x_text",
-        commit = "bd91bbf73e9a4a801adbfb97133c992678533126",
+        commit = "19e51611da83d6be54ddafce4a4af510cb3e9ea4",
         importpath = "golang.org/x/text",
     )
