@@ -41,12 +41,14 @@ PRESUBMIT = 'PRESUBMIT'
 // To do so, add a String Build Parameter in your project and call it 'STAGE'
 // Set that build parameter to the stage that you want to start.
 CLEANUP_STAGE = '_CLEANUP'
+GCE_METADATA_SSH_KEYS_CLEANUP_STAGE = '_CLEANUP_GCE_METADATA_SSH_KEYS'
 SLAVE_UPDATE_STAGE = '_SLAVE_UPDATE'
 
 SUPPORTED_STAGES = [
     ALL_STAGES,
     E2E_STAGE,
     CLEANUP_STAGE,
+    GCE_METADATA_SSH_KEYS_CLEANUP_STAGE,
     PERFORMANCE_STAGE,
     PRESUBMIT,
     SLAVE_UPDATE_STAGE,
@@ -99,6 +101,11 @@ node('master') {
     if (runStage(CLEANUP_STAGE)) {
       stage('Test Cleanup') {
         cleanupOldTests()
+      }
+    }
+    if (runStage(GCE_METADATA_SSH_KEYS_CLEANUP_STAGE)) {
+      stage('Clean up GCE metadata ssh keys') {
+        cleanupGceMetadataSshKeys()
       }
     }
     if (runStage(PRESUBMIT)) {
@@ -178,6 +185,19 @@ def cleanupOldTests() {
         // Delete 7 days old Flex versions on esp-long-run.
         DefaultNode {
           testCleanup(7, 'esp-long-run', '-v')
+        }
+      }
+  ]
+  parallel(branches)
+}
+
+def cleanupGceMetadataSshKeys() {
+  def branches = [
+      'cleanup_gce_metadata_ssh_keys': {
+        // Clean up GCE metadata ssh keys to prevent exhausting
+        // the storage space of the GCE metadata.
+        DefaultNode {
+          runCleanupGceMetadataSshKeys()
         }
       }
   ]
@@ -498,6 +518,11 @@ def buildAndStash(buildTarget, stashTarget, name) {
 def testCleanup(daysOld, project, flags) {
   setupNode()
   sh("script/jenkins-tests-cleanup.sh -d ${daysOld} -p ${project} -f ${flags}")
+}
+
+def runCleanupGceMetadataSshKeys() {
+  setupNode()
+  sh("gcloud compute project-info remove-metadata --keys=ssh-keys")
 }
 
 // flow can be run or verify
