@@ -166,7 +166,8 @@ function set_esp_remote_rollout_info_env() {
 
   case "${target_env}" in
     'gce' )
-      endpoint_status=`gcloud compute ssh "${INSTANCE_NAME}" --command="curl \"$endpoint_status_url\""`;;
+      set_ssh_private_key
+      endpoint_status=`${GCLOUD} compute ssh "${INSTANCE_NAME}" --command="curl \"$endpoint_status_url\""`;;
     'gke' )
       endpoint_status=`curl "$endpoint_status_url"`;;
   esac
