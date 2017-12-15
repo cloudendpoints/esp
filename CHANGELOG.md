@@ -1,3 +1,9 @@
+# Release 1.12.0 14-12-2017
+
+- Fix transcoding issue with h2 (#320)
+- Fix possible segmentation fault in rewrite rule debugging mode (#318)
+- Change skip_service_control not to skip auth. (#311)
+
 # Release 1.11.0 07-11-2017
 
 - Added --rewrite argument supporting rewrite rule
