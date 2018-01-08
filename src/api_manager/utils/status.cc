@@ -399,7 +399,11 @@ Code Status::CanonicalCode() const {
   status.set_message(message_);
 
   ::google::rpc::DebugInfo info;
-  info.set_detail(Status::ErrorCauseToString(error_cause_));
+  if (!grpc_status_details_.empty()) {
+    info.set_detail(grpc_status_details_);
+  } else {
+    info.set_detail(Status::ErrorCauseToString(error_cause_));
+  }
   status.add_details()->PackFrom(info);
 
   return status;

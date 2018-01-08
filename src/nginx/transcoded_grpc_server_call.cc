@@ -37,6 +37,8 @@
 #include "src/nginx/util.h"
 
 extern "C" {
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/slice/b64.h"
 #include "src/http/v2/ngx_http_v2_module.h"
 }
 
@@ -46,6 +48,8 @@ namespace nginx {
 
 namespace {
 const ngx_str_t kContentTypeApplicationJson = ngx_string("application/json");
+
+const std::string kGrpcStatusDetailsBin = "grpc-status-details-bin";
 }
 
 NgxEspTranscodedGrpcServerCall::NgxEspTranscodedGrpcServerCall(
@@ -112,6 +116,20 @@ void NgxEspTranscodedGrpcServerCall::Finish(
   }
 
   if (!status.ok()) {
+    // If grpc response trailers have a "grpc-status-details-bin" header, 
+    // decode value in that header and pass the value into status.
+    const auto &it = response_trailers.find(kGrpcStatusDetailsBin);
+    if (it != response_trailers.end() && !it->second.empty()) {
+      static grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+      ::grpc::Slice value_slice(
+          grpc_base64_decode_with_len(&exec_ctx, it->second.c_str(),
+                                      it->second.length(), false),
+          ::grpc::Slice::STEAL_REF);
+      std::string binary_value(
+          reinterpret_cast<const char *>(value_slice.begin()),
+          value_slice.size());
+      const_cast<utils::Status&>(status).set_grpc_status_details(std::move(binary_value));      
+    }
     HandleError(status);
     return;
   }

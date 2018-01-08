@@ -100,6 +100,11 @@ class Status final {
   // Returns a JSON representation of the error as a canonical status
   std::string ToJson() const;
 
+  // Sets detailed error information to this status.
+  void set_grpc_status_details(const std::string& details) {
+    grpc_status_details_ = details;
+  }
+
  private:
   // Constructs the OK status.
   Status();
@@ -115,6 +120,11 @@ class Status final {
 
   // Error cause indicating the origin of the error.
   ErrorCause error_cause_;
+
+  // Detailed information of a grpc response error. If gRPC response trailers 
+  // have a "grpc-status-details-bin" header, the decoded value of that 
+  // header is stored here.
+  std::string grpc_status_details_;
 };
 
 }  // namespace utils
