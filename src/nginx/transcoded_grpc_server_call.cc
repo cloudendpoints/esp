@@ -129,9 +129,10 @@ void NgxEspTranscodedGrpcServerCall::Finish(
           reinterpret_cast<const char*>(value_slice.begin()),
           value_slice.size());
 
-      ::google::rpc::Status& grpc_status_details =
-          const_cast<utils::Status &>(status).mutable_grpc_status_details();
-      if (grpc_status_details.ParseFromString(binary_value)) {
+      ::google::rpc::Status* grpc_status_details =
+          const_cast<utils::Status &>(status).create_grpc_status_details();
+      if (grpc_status_details != nullptr &&
+        grpc_status_details->ParseFromString(binary_value)) {
         const_cast<utils::Status &>(status).set_has_grpc_status_details(true);
       }
     }

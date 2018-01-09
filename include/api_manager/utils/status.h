@@ -50,7 +50,7 @@ class Status final {
   // is constructed. Error cause is optional and defaults to INTERNAL.
   Status(int code, const std::string& message);
   Status(int code, const std::string& message, ErrorCause error_cause);
-  ~Status() {}
+  ~Status();
 
   bool operator==(const Status& x) const;
   bool operator!=(const Status& x) const { return !operator==(x); }
@@ -100,13 +100,16 @@ class Status final {
   // Returns a JSON representation of the error as a canonical status
   std::string ToJson() const;
 
-  // Accessor to grpc_status_details_ member of this status.
-  ::google::rpc::Status& mutable_grpc_status_details() {
+  // create a ::google::rpc::Status object pointed by grpc_status_details_,
+  // and return grpc_status_details_.
+  ::google::rpc::Status* create_grpc_status_details() {
+    grpc_status_details_ = new ::google::rpc::Status();
     return grpc_status_details_;
   }
-  // mutator to has_grpc_status_details_ member of this status.
+
+  // mutator to has_grpc_status_details_ of this status.
   void set_has_grpc_status_details(bool has_details) {
-    has_grpc_status_details_ = has_details;
+    has_grpc_status_details_ = true;
   }
 
  private:
@@ -126,9 +129,9 @@ class Status final {
   ErrorCause error_cause_;
 
   // If gRPC response trailers have a "grpc-status-details-bin" header, which
-  // contains a ::google::rpc::Status object in wire format and base64 encoded,
-  // store the object in this member.
-  ::google::rpc::Status grpc_status_details_;
+  // contains a ::google::rpc::Status message in wire format and base64 encoded,
+  // create an object pointed by grpc_status_details_ and store the message.
+  ::google::rpc::Status* grpc_status_details_;
 
   // Indicates whether "grpc-status-details-bin" header is received. If true,
   // grpc_status_details_ stores the value in that header.

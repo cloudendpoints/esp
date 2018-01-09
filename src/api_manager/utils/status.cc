@@ -30,12 +30,20 @@ Status::Status(int code, const std::string& message, ErrorCause error_cause)
     : code_(code == 200 ? Code::OK : code),
       message_(message),
       error_cause_(error_cause),
+      grpc_status_details_(nullptr),
       has_grpc_status_details_(false) {}
 
 Status::Status(int code, const std::string& message)
     : Status(code, message, Status::INTERNAL) {}
 
 Status::Status() : Status(Code::OK, "", Status::INTERNAL) {}
+
+Status::~Status() {
+  if (grpc_status_details_) {
+    delete grpc_status_details_;
+    grpc_status_details_ = nullptr;
+  }
+}
 
 bool Status::operator==(const Status& x) const {
   if (code_ != x.code_ || message_ != x.message_ ||
@@ -396,7 +404,7 @@ Code Status::CanonicalCode() const {
 
 ::google::rpc::Status Status::ToCanonicalProto() const {
   if (has_grpc_status_details_) {
-    return grpc_status_details_;
+    return *grpc_status_details_;
   }
 
   ::google::rpc::Status status;
