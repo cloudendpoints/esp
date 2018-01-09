@@ -29,7 +29,8 @@ namespace utils {
 Status::Status(int code, const std::string& message, ErrorCause error_cause)
     : code_(code == 200 ? Code::OK : code),
       message_(message),
-      error_cause_(error_cause) {}
+      error_cause_(error_cause),
+      has_grpc_status_details_(false) {}
 
 Status::Status(int code, const std::string& message)
     : Status(code, message, Status::INTERNAL) {}
@@ -394,16 +395,16 @@ Code Status::CanonicalCode() const {
 }
 
 ::google::rpc::Status Status::ToCanonicalProto() const {
+  if (has_grpc_status_details_) {
+    return grpc_status_details_;
+  }
+
   ::google::rpc::Status status;
   status.set_code(CanonicalCode());
   status.set_message(message_);
 
   ::google::rpc::DebugInfo info;
-  if (!grpc_status_details_.empty()) {
-    info.set_detail(grpc_status_details_);
-  } else {
-    info.set_detail(Status::ErrorCauseToString(error_cause_));
-  }
+  info.set_detail(Status::ErrorCauseToString(error_cause_));
   status.add_details()->PackFrom(info);
 
   return status;

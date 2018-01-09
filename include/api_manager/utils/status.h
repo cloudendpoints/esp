@@ -100,9 +100,13 @@ class Status final {
   // Returns a JSON representation of the error as a canonical status
   std::string ToJson() const;
 
-  // Sets detailed error information to this status.
-  void set_grpc_status_details(const std::string& details) {
-    grpc_status_details_ = details;
+  // Accessor to grpc_status_details_ member of this status.
+  ::google::rpc::Status& mutable_grpc_status_details() {
+    return grpc_status_details_;
+  }
+  // mutator to has_grpc_status_details_ member of this status.
+  void set_has_grpc_status_details(bool has_details) {
+    has_grpc_status_details_ = has_details;
   }
 
  private:
@@ -121,10 +125,14 @@ class Status final {
   // Error cause indicating the origin of the error.
   ErrorCause error_cause_;
 
-  // Detailed information of a grpc response error. If gRPC response trailers 
-  // have a "grpc-status-details-bin" header, the decoded value of that 
-  // header is stored here.
-  std::string grpc_status_details_;
+  // If gRPC response trailers have a "grpc-status-details-bin" header, which
+  // contains a ::google::rpc::Status object in wire format and base64 encoded,
+  // store the object in this member.
+  ::google::rpc::Status grpc_status_details_;
+
+  // Indicates whether "grpc-status-details-bin" header is received. If true,
+  // grpc_status_details_ stores the value in that header.
+  bool has_grpc_status_details_;
 };
 
 }  // namespace utils

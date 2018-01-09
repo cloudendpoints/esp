@@ -116,19 +116,24 @@ void NgxEspTranscodedGrpcServerCall::Finish(
   }
 
   if (!status.ok()) {
-    // If grpc response trailers have a "grpc-status-details-bin" header, 
-    // decode value in that header and pass the value into status.
+    // If grpc response trailers have a "grpc-status-details-bin" header,
+    // use base64 to decode that value, parse it to proto and save it in status.
     const auto &it = response_trailers.find(kGrpcStatusDetailsBin);
     if (it != response_trailers.end() && !it->second.empty()) {
       static grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
       ::grpc::Slice value_slice(
-          grpc_base64_decode_with_len(&exec_ctx, it->second.c_str(),
-                                      it->second.length(), false),
+      grpc_base64_decode_with_len(&exec_ctx, it->second.c_str(),
+                                  it->second.length(), false),
           ::grpc::Slice::STEAL_REF);
       std::string binary_value(
-          reinterpret_cast<const char *>(value_slice.begin()),
+          reinterpret_cast<const char*>(value_slice.begin()),
           value_slice.size());
-      const_cast<utils::Status&>(status).set_grpc_status_details(std::move(binary_value));      
+
+      ::google::rpc::Status &grpc_status_details =
+          const_cast<utils::Status &>(status).mutable_grpc_status_details();
+      if (grpc_status_details.ParseFromString(binary_value)) {
+        const_cast<utils::Status &>(status).set_has_grpc_status_details(true);
+      }
     }
     HandleError(status);
     return;
