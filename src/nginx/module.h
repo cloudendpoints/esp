@@ -248,6 +248,11 @@ struct ngx_esp_request_ctx_s {
 
   // Nginx variable $backend_url. set from service config.
   ngx_str_t backend_url;
+
+  // If gRPC response have a "grpc-status-details-bin" header, which
+  // contains a ::google::rpc::Status message in wire format and base64 encoded,
+  // create an object pointed by grpc_status_details and store the message here.
+  std::unique_ptr<::google::rpc::Status> grpc_status_details;
 };
 
 static_assert(std::is_standard_layout<ngx_esp_request_ctx_t>::value,

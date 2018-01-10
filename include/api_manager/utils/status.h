@@ -50,7 +50,7 @@ class Status final {
   // is constructed. Error cause is optional and defaults to INTERNAL.
   Status(int code, const std::string& message);
   Status(int code, const std::string& message, ErrorCause error_cause);
-  ~Status();
+  ~Status() {}
 
   bool operator==(const Status& x) const;
   bool operator!=(const Status& x) const { return !operator==(x); }
@@ -63,6 +63,13 @@ class Status final {
 
   // Constructs a Status object from a protobuf Status.
   static Status FromProto(const ::google::protobuf::util::Status& proto_status);
+
+  // Converts a |proto_status| of ::google::rpc::Status into a JSON string,
+  // and returns the JSON string in |result|. The options field is a OR'd set
+  // of the available JsonOptions. If the conversion failed, generates an error
+  // status and returns the error status in a JSON string.
+  static void StatusProtoToJson(const ::google::rpc::Status& proto_status,
+                                std::string* result, int options);
 
   // Pre-defined OK status.
   static const Status& OK;
@@ -100,18 +107,6 @@ class Status final {
   // Returns a JSON representation of the error as a canonical status
   std::string ToJson() const;
 
-  // create a ::google::rpc::Status object pointed by grpc_status_details_,
-  // and return grpc_status_details_.
-  ::google::rpc::Status* create_grpc_status_details() {
-    grpc_status_details_ = new ::google::rpc::Status();
-    return grpc_status_details_;
-  }
-
-  // mutator to has_grpc_status_details_ of this status.
-  void set_has_grpc_status_details(bool has_details) {
-    has_grpc_status_details_ = true;
-  }
-
  private:
   // Constructs the OK status.
   Status();
@@ -127,15 +122,6 @@ class Status final {
 
   // Error cause indicating the origin of the error.
   ErrorCause error_cause_;
-
-  // If gRPC response trailers have a "grpc-status-details-bin" header, which
-  // contains a ::google::rpc::Status message in wire format and base64 encoded,
-  // create an object pointed by grpc_status_details_ and store the message.
-  ::google::rpc::Status* grpc_status_details_;
-
-  // Indicates whether "grpc-status-details-bin" header is received. If true,
-  // grpc_status_details_ stores the value in that header.
-  bool has_grpc_status_details_;
 };
 
 }  // namespace utils

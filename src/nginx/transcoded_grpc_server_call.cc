@@ -50,7 +50,7 @@ namespace {
 const ngx_str_t kContentTypeApplicationJson = ngx_string("application/json");
 
 const std::string kGrpcStatusDetailsBin = "grpc-status-details-bin";
-}
+}  // namespace
 
 NgxEspTranscodedGrpcServerCall::NgxEspTranscodedGrpcServerCall(
     ngx_http_request_t *r,
@@ -120,20 +120,26 @@ void NgxEspTranscodedGrpcServerCall::Finish(
     // use base64 to decode that value, parse it to proto and save it in status.
     const auto &it = response_trailers.find(kGrpcStatusDetailsBin);
     if (it != response_trailers.end() && !it->second.empty()) {
-      static grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-      ::grpc::Slice value_slice(
-      grpc_base64_decode_with_len(&exec_ctx, it->second.c_str(),
-                                  it->second.length(), false),
-          ::grpc::Slice::STEAL_REF);
-      std::string binary_value(
-          reinterpret_cast<const char*>(value_slice.begin()),
-          value_slice.size());
+      ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
+      if (ctx) {
+        static grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+        ::grpc::Slice value_slice(
+            grpc_base64_decode_with_len(&exec_ctx, it->second.c_str(),
+                                        it->second.length(), false),
+            ::grpc::Slice::STEAL_REF);
+        std::string binary_value(
+            reinterpret_cast<const char *>(value_slice.begin()),
+            value_slice.size());
 
-      ::google::rpc::Status* grpc_status_details =
-          const_cast<utils::Status &>(status).create_grpc_status_details();
-      if (grpc_status_details != nullptr &&
-        grpc_status_details->ParseFromString(binary_value)) {
-        const_cast<utils::Status &>(status).set_has_grpc_status_details(true);
+        if (ctx->grpc_status_details == nullptr) {
+          ctx->grpc_status_details = std::unique_ptr<::google::rpc::Status>();
+        } else {
+          ctx->grpc_status_details.reset(new ::google::rpc::Status);
+        }
+
+        if (!ctx->grpc_status_details->ParseFromString(binary_value)) {
+          ctx->grpc_status_details.reset();
+        }
       }
     }
     HandleError(status);
