@@ -44,7 +44,7 @@ nginx_repositories(
 # Needs to come after nginx
 git_repository(
     name = "iap_jwt_verify_nginx",
-    commit = "d3b47d8017ae808a891b5ce6e22315d0b2652baf",
+    commit = "cbdfb7aa74897230c23a46162e3fbe0209cb659a",  # Jan 8, 2018
     remote = "https://github.com/GoogleCloudPlatform/appengine-sidecars-docker",
 )
 
