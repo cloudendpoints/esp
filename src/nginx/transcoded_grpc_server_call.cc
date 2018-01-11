@@ -132,8 +132,7 @@ void NgxEspTranscodedGrpcServerCall::Finish(
             value_slice.size());
 
         ctx->grpc_status_details.reset(new ::google::rpc::Status);
-        bool parse = ctx->grpc_status_details->ParseFromString(binary_value);
-        if (!parse) {
+        if (!ctx->grpc_status_details->ParseFromString(binary_value)) {
           ngx_log_error(
               NGX_LOG_DEBUG, r_->connection->log, 0,
               "Failed to parse grpc-status-details-bin header into proto.");

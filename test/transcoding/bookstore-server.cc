@@ -172,16 +172,8 @@ class BookstoreServiceImpl : public Bookstore::Service {
     detail_status.set_message(error_details);
     std::string detail_status_bin = detail_status.SerializeAsString();
 
-    char* detail_status_encoded = grpc_base64_encode(
-        detail_status_bin.data(), detail_status_bin.size(), 0, 0);
-
-    if (detail_status_encoded != nullptr) {
-      ::grpc::Status status(grpc::NOT_FOUND, error_details,
-                            std::string(detail_status_encoded));
-      gpr_free(detail_status_encoded);
-      return status;
-    }
-    return ::grpc::Status(grpc::NOT_FOUND, "Shelf not found");
+    return ::grpc::Status(grpc::NOT_FOUND, "Shelf not found",
+                          std::string(detail_status_bin));
   }
 
   ::grpc::Status DeleteShelf(::grpc::ServerContext*,
