@@ -31,9 +31,6 @@
 #include <string>
 #include <vector>
 
-#include <grpc/support/alloc.h>
-
-#include "google/protobuf/stubs/status.h"
 #include "google/protobuf/util/json_util.h"
 #include "google/protobuf/util/type_resolver.h"
 #include "google/protobuf/util/type_resolver_util.h"
@@ -41,10 +38,6 @@
 #include "grpc++/grpc++.h"
 #include "test/transcoding/bookstore.grpc.pb.h"
 #include "test/transcoding/bookstore.pb.h"
-
-extern "C" {
-#include "src/core/lib/slice/b64.h"
-}
 
 namespace endpoints {
 namespace examples {
