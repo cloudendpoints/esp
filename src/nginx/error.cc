@@ -209,10 +209,12 @@ ngx_int_t ngx_esp_error_body_filter(ngx_http_request_t *r, ngx_chain_t *in) {
         ngx_buf_t *body = nullptr;
         ngx_str_t json_error;
 
+        // if there is grpc-status-detail-bin response header, generate error
+        // json body with that header.
         if (ctx->grpc_status_details != nullptr) {
           std::string status_details_in_json;
           utils::Status::StatusProtoToJson(
-              *(ctx->grpc_status_details), &status_details_in_json,
+              *ctx->grpc_status_details, &status_details_in_json,
               utils::JsonOptions::PRETTY_PRINT |
                   utils::JsonOptions::OUTPUT_DEFAULTS);
           if (ngx_str_copy_from_std(r->pool, status_details_in_json,

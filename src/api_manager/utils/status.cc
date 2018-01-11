@@ -239,9 +239,8 @@ bool Status::operator==(const Status& x) const {
                 proto_status.error_message().ToString());
 }
 
-/* static */ void Status::StatusProtoToJson(
-    const ::google::rpc::Status& proto_status, std::string* result,
-    int options) {
+void Status::StatusProtoToJson(const ::google::rpc::Status& proto_status,
+                               std::string* result, int options) {
   Status status = ProtoToJson(proto_status, result, options);
   if (!status.ok()) {
     // If translation failed, try outputting the json translation failure itself
