@@ -31,12 +31,20 @@
 #include <string>
 #include <vector>
 
+#include <grpc/support/alloc.h>
+
+#include "google/protobuf/stubs/status.h"
 #include "google/protobuf/util/json_util.h"
 #include "google/protobuf/util/type_resolver.h"
 #include "google/protobuf/util/type_resolver_util.h"
+#include "google/rpc/status.pb.h"
 #include "grpc++/grpc++.h"
 #include "test/transcoding/bookstore.grpc.pb.h"
 #include "test/transcoding/bookstore.pb.h"
+
+extern "C" {
+#include "src/core/lib/slice/b64.h"
+}
 
 namespace endpoints {
 namespace examples {
@@ -157,6 +165,22 @@ class BookstoreServiceImpl : public Bookstore::Service {
       }
     }
 
+    ::google::rpc::Status detail_status;
+    detail_status.set_code(grpc::NOT_FOUND);
+    std::string error_details =
+        "Cannot find shelf " + std::to_string(request->shelf());
+    detail_status.set_message(error_details);
+    std::string detail_status_bin = detail_status.SerializeAsString();
+
+    char* detail_status_encoded = grpc_base64_encode(
+        detail_status_bin.data(), detail_status_bin.size(), 0, 0);
+
+    if (detail_status_encoded != nullptr) {
+      ::grpc::Status status(grpc::NOT_FOUND, error_details,
+                            std::string(detail_status_encoded));
+      gpr_free(detail_status_encoded);
+      return status;
+    }
     return ::grpc::Status(grpc::NOT_FOUND, "Shelf not found");
   }
 
@@ -356,9 +380,9 @@ class BookstoreServiceImpl : public Bookstore::Service {
   std::multimap<int, Book> books_;
 };
 
-}  // namespace bookstore {
-}  // namespace examples {
-}  // namespace endpoints {
+}  // namespace bookstore
+}  // namespace examples
+}  // namespace endpoints
 
 int main(int argc, char** argv) {
   auto address = argc > 1 ? argv[1] : "localhost:8081";

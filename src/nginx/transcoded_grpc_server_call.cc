@@ -131,13 +131,12 @@ void NgxEspTranscodedGrpcServerCall::Finish(
             reinterpret_cast<const char *>(value_slice.begin()),
             value_slice.size());
 
-        if (ctx->grpc_status_details == nullptr) {
-          ctx->grpc_status_details = std::unique_ptr<::google::rpc::Status>();
-        } else {
-          ctx->grpc_status_details.reset(new ::google::rpc::Status);
-        }
-
-        if (!ctx->grpc_status_details->ParseFromString(binary_value)) {
+        ctx->grpc_status_details.reset(new ::google::rpc::Status);
+        bool parse = ctx->grpc_status_details->ParseFromString(binary_value);
+        if (!parse) {
+          ngx_log_error(
+              NGX_LOG_DEBUG, r_->connection->log, 0,
+              "Failed to parse grpc-status-details-bin header into proto.");
           ctx->grpc_status_details.reset();
         }
       }
