@@ -29,12 +29,13 @@
 //
 
 #include "src/nginx/error.h"
+#include "src/api_manager/utils/marshalling.h"
 #include "src/nginx/grpc_finish.h"
 #include "src/nginx/module.h"
 #include "src/nginx/util.h"
 
-using ::google::protobuf::util::error::Code;
 using ::google::api_manager::utils::Status;
+using ::google::protobuf::util::error::Code;
 
 namespace google {
 namespace api_manager {
@@ -207,8 +208,21 @@ ngx_int_t ngx_esp_error_body_filter(ngx_http_request_t *r, ngx_chain_t *in) {
         // Serialize error as JSON
         ngx_buf_t *body = nullptr;
         ngx_str_t json_error;
-        if (ngx_str_copy_from_std(r->pool, ctx->status.ToJson(), &json_error) !=
-            NGX_OK) {
+
+        // if there is grpc-status-detail-bin response header, generate error
+        // json body with that header.
+        if (ctx->grpc_status_details != nullptr) {
+          std::string status_details_in_json;
+          utils::Status::StatusProtoToJson(
+              *ctx->grpc_status_details, &status_details_in_json,
+              utils::JsonOptions::PRETTY_PRINT |
+                  utils::JsonOptions::OUTPUT_DEFAULTS);
+          if (ngx_str_copy_from_std(r->pool, status_details_in_json,
+                                    &json_error) != NGX_OK) {
+            return NGX_ERROR;
+          }
+        } else if (ngx_str_copy_from_std(r->pool, ctx->status.ToJson(),
+                                         &json_error) != NGX_OK) {
           return NGX_ERROR;
         }
 
