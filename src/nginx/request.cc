@@ -36,7 +36,7 @@ namespace nginx {
 namespace {
 
 ngx_int_t ngx_list_delete_elt(ngx_list_t *list, ngx_list_part_t *cur,
-                                     ngx_uint_t i) {
+                              ngx_uint_t i) {
   u_char *s, *d, *last;
 
   s = (u_char *)cur->elts + i * list->size;
