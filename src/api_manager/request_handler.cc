@@ -29,6 +29,22 @@ using google::devtools::cloudtrace::v1::Traces;
 namespace google {
 namespace api_manager {
 
+namespace {
+// The header key to send endpoint api user info.
+const char kEndpointApiUserInfo[] = "X-Endpoint-API-UserInfo";
+}
+
+RequestHandler::RequestHandler(
+    std::shared_ptr<CheckWorkflow> check_workflow,
+    std::shared_ptr<context::ServiceContext> service_context,
+    std::unique_ptr<Request> request_data)
+    : context_(new context::RequestContext(service_context,
+                                           std::move(request_data))),
+      check_workflow_(check_workflow) {
+  // Remove X-Endpoint-API-UserInfo header from clients
+  context_->request()->RemoveHeaderToBackend(kEndpointApiUserInfo);
+}
+
 void RequestHandler::Check(std::function<void(Status status)> continuation) {
   auto interception = [continuation, this](Status status) {
     if (status.ok() && context_->cloud_trace()) {

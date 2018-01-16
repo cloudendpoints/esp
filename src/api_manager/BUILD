@@ -95,8 +95,6 @@ cc_library(
         "quota_control.cc",
         "quota_control.h",
         "request_handler.cc",
-        "request_preprocess.cc",
-        "request_preprocess.h",
         "rewrite_rule.cc",
         "rewrite_rule.h",
         "service_management_fetch.cc",

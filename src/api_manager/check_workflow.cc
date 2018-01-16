@@ -20,7 +20,6 @@
 #include "src/api_manager/check_service_control.h"
 #include "src/api_manager/fetch_metadata.h"
 #include "src/api_manager/quota_control.h"
-#include "src/api_manager/request_preprocess.h"
 
 using ::google::api_manager::utils::Status;
 
@@ -28,8 +27,6 @@ namespace google {
 namespace api_manager {
 
 void CheckWorkflow::RegisterAll() {
-  // Validate request
-  Register(RequestValidator);
   // Fetchs GCE metadata.
   Register(FetchGceMetadata);
   // Fetchs service account token.

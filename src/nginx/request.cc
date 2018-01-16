@@ -33,6 +33,65 @@ namespace google {
 namespace api_manager {
 namespace nginx {
 
+namespace {
+
+ngx_int_t ngx_list_delete_elt(ngx_list_t *list, ngx_list_part_t *cur,
+                                     ngx_uint_t i) {
+  u_char *s, *d, *last;
+
+  s = (u_char *)cur->elts + i * list->size;
+  d = s + list->size;
+  last = (u_char *)cur->elts + cur->nelts * list->size;
+
+  while (d < last) {
+    *s++ = *d++;
+  }
+  cur->nelts--;
+
+  return NGX_OK;
+}
+
+// Remove the selected element from the ngx_list
+ngx_int_t ngx_list_delete(ngx_list_t *list, void *elt) {
+  u_char *data;
+  ngx_uint_t i;
+  ngx_list_part_t *part, *pre;
+
+  part = &list->part;
+  pre = part;
+  data = (u_char *)part->elts;
+
+  for (i = 0; /* void */; i++) {
+    if (i >= part->nelts) {
+      if (part->next == NULL) {
+        break;
+      }
+
+      i = 0;
+      pre = part;
+      part = part->next;
+      data = (u_char *)part->elts;
+    }
+
+    if ((data + i * list->size) == (u_char *)elt) {
+      if (&list->part != part && part->nelts == 1) {
+        pre->next = part->next;
+        if (part == list->last) {
+          list->last = pre;
+        }
+
+        return NGX_OK;
+      }
+
+      return ngx_list_delete_elt(list, part, i);
+    }
+  }
+
+  return NGX_ERROR;
+}
+
+}  // namespace
+
 NgxEspRequest::NgxEspRequest(ngx_http_request_t *r) : r_(r) {}
 
 NgxEspRequest::~NgxEspRequest() {
@@ -182,6 +241,28 @@ utils::Status NgxEspRequest::AddHeaderToBackend(const std::string &key,
   return utils::Status::OK;
 }
 
+utils::Status NgxEspRequest::RemoveHeaderToBackend(const std::string &key) {
+  ngx_table_elt_t *h = nullptr;
+
+  for (auto &h_in : r_->headers_in) {
+    if (key.size() == h_in.key.len &&
+        strncasecmp(key.c_str(), reinterpret_cast<const char *>(h_in.key.data),
+                    h_in.key.len) == 0) {
+      h = &h_in;
+      break;
+    }
+  }
+
+  if (h != nullptr) {
+    if (ngx_list_delete(&(r_->headers_in.headers), h) != NGX_OK) {
+      return utils::Status(Code::INTERNAL, "Failed to remove header");
+    }
+  }
+
+  return utils::Status::OK;
+}
+
 }  // namespace nginx
 }  // namespace api_manager
+
 }  // namespace google
