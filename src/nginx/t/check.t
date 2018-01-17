@@ -106,7 +106,7 @@ is($r->{verb}, 'GET', 'Backend request was a get');
 is($r->{uri}, '/shelves?key=this-is-an-api-key', 'Backend uri was /shelves');
 is($r->{headers}->{host}, "127.0.0.1:${BackendPort}", 'Host header was set');
 is($r->{headers}->{'x-endpoint-api-userinfo'}, undef,
-    'X-Endpoint-API-UserInfo should be added to backend');
+    'X-Endpoint-API-UserInfo should not be added to backend');
 
 @requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
 is(scalar @requests, 1, 'Service control received one request');
