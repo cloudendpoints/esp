@@ -37,9 +37,14 @@ RequestHandler::RequestHandler(
     : context_(new context::RequestContext(service_context,
                                            std::move(request_data))),
       check_workflow_(check_workflow) {
-  // Remove X-Endpoint-API-UserInfo header from clients
-  context_->request()->RemoveHeaderToBackend(
-      google::api_manager::auth::kEndpointApiUserInfo);
+  // Remove x-endponts-api-userinfo from downstream client.
+  // It should be set by the last Endpoint proxy to prevent users spoofing.
+  std::string buffer;
+  if (context_->request()->FindHeader(
+          google::api_manager::auth::kEndpointApiUserInfo, &buffer)) {
+    context_->request()->AddHeaderToBackend(
+        google::api_manager::auth::kEndpointApiUserInfo, "");
+  }
 }
 
 void RequestHandler::Check(std::function<void(Status status)> continuation) {

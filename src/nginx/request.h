@@ -58,7 +58,6 @@ class NgxEspRequest : public Request {
   virtual void SetAuthToken(const std::string &auth_token);
   virtual utils::Status AddHeaderToBackend(const std::string &key,
                                            const std::string &value);
-  virtual utils::Status RemoveHeaderToBackend(const std::string &key);
   virtual bool FindQuery(const std::string &name, std::string *query);
   virtual bool FindHeader(const std::string &name, std::string *header);
 

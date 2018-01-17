@@ -183,25 +183,6 @@ utils::Status NgxEspRequest::AddHeaderToBackend(const std::string &key,
   return utils::Status::OK;
 }
 
-utils::Status NgxEspRequest::RemoveHeaderToBackend(const std::string &key) {
-  ngx_table_elt_t *h = nullptr;
-
-  for (auto &h_in : r_->headers_in) {
-    if (key.size() == h_in.key.len &&
-        strncasecmp(key.c_str(), reinterpret_cast<const char *>(h_in.key.data),
-                    h_in.key.len) == 0) {
-      h = &h_in;
-      break;
-    }
-  }
-
-  if (h != nullptr) {
-    AddHeaderToBackend(google::api_manager::auth::kEndpointApiUserInfo, "");
-  }
-
-  return utils::Status::OK;
-}
-
 }  // namespace nginx
 }  // namespace api_manager
 
