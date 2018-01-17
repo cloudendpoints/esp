@@ -49,9 +49,6 @@ const char kBearer[] = "Bearer ";
 // The lifetime of a public key cache entry. Unit: seconds.
 const int kPubKeyCacheDuration = 300;
 
-// The header key to send endpoint api user info.
-const char kEndpointApiUserInfo[] = "X-Endpoint-API-UserInfo";
-
 // An AuthChecker object is created for every incoming request. It authenticates
 // the request, extracts user info from the auth token and sets it to the
 // request context.
@@ -395,7 +392,7 @@ void AuthChecker::PassUserInfoOnSuccess() {
   }
   char *base64_json_buf = auth::esp_base64_encode(
       json_buf, strlen(json_buf), true, false, true /*padding*/);
-  context_->request()->AddHeaderToBackend(kEndpointApiUserInfo,
+  context_->request()->AddHeaderToBackend(auth::kEndpointApiUserInfo,
                                           base64_json_buf);
   auth::esp_grpc_free(json_buf);
   auth::esp_grpc_free(base64_json_buf);
