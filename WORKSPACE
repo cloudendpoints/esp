@@ -26,7 +26,7 @@
 #
 # A Bazel (http://bazel.io) workspace for the Google Cloud Endpoints runtime.
 
-ESP_TOOL = "208c7dbe32c851fe17c6fd3b816a49e55c976b66"
+ESP_TOOL = "84fc189e6bbbef08939a526bb4d8324b6176343b"
 
 git_repository(
     name = "nginx",
@@ -44,12 +44,11 @@ nginx_repositories(
 # Needs to come after nginx
 git_repository(
     name = "iap_jwt_verify_nginx",
-    commit = "d3b47d8017ae808a891b5ce6e22315d0b2652baf",
+    commit = "cbdfb7aa74897230c23a46162e3fbe0209cb659a",  # Jan 8, 2018
     remote = "https://github.com/GoogleCloudPlatform/appengine-sidecars-docker",
 )
 
 load("@iap_jwt_verify_nginx//:iap_jwt_verify_nginx.bzl", "iap_jwt_verify_nginx_repositories")
-
 iap_jwt_verify_nginx_repositories(True)
 
 # Required by gRPC.
@@ -152,11 +151,11 @@ git_repository(
 #
 git_repository(
     name = "io_bazel_rules_go",
-    commit = "ae70411645c171b2056d38a6a959e491949f9afe",  # 0.5.4
+    commit = "2d9f328a9723baf2d037ba9db28d9d0e30683938",  # Apr 6, 2017 (buildifier fix)
     remote = "https://github.com/bazelbuild/rules_go.git",
 )
 
-load("@io_bazel_rules_go//go:def.bzl", "go_repositories", "go_repository")
+load("@io_bazel_rules_go//go:def.bzl", "go_repositories", "go_repository", "new_go_repository")
 
 go_repositories()
 
@@ -170,4 +169,3 @@ new_git_repository(
 load("//test/grpc:repositories.bzl", "grpc_go_repositories")
 
 grpc_go_repositories()
-

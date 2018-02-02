@@ -1,3 +1,16 @@
+# Release 1.13.0 24-01-2018
+
+- Add option to generate self-signed certificate at start
+- Added enable_websocket argument to start_esp
+- Remove X-Endpoint-API-UserInfo header from clients (#339)
+- support "grpc-status-details-bin" (#334)
+
+# Release 1.12.0 14-12-2017
+
+- Fix transcoding issue with h2 (#320)
+- Fix possible segmentation fault in rewrite rule debugging mode (#318)
+- Change skip_service_control not to skip auth. (#311)
+
 # Release 1.11.0 07-11-2017
 
 - Added --rewrite argument supporting rewrite rule

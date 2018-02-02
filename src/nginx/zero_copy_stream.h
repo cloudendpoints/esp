@@ -76,9 +76,6 @@ class NgxRequestZeroCopyInputStream
   // file-based)
   ngx_buf_t* buf_;
 
-  // The current position in the buffer
-  u_char* pos_;
-
   utils::Status status_;
 };
 

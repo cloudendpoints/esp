@@ -48,6 +48,7 @@ cc_binary(
     deps = [
         ":bookstore",
         "//external:grpc++",
+        "//external:servicecontrol",
     ],
 )
 

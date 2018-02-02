@@ -33,6 +33,7 @@ use src::nginx::t::ApiManager;   # Must be first (sets up import path to the Ngi
 use src::nginx::t::HttpServer;
 use Test::Nginx;  # Imports Nginx's test module
 use Test::More;   # And the test framework
+use Data::Dumper;
 
 ################################################################################
 
@@ -83,7 +84,12 @@ $t->run();
 
 ################################################################################
 
-my $response = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key');
+my $response = ApiManager::http($NginxPort,<<'EOF');
+GET /shelves?key=this-is-an-api-key HTTP/1.0
+Host: localhost
+x-endpoint-api-userinfo: Should be removed
+
+EOF
 
 $t->stop_daemons();
 
@@ -102,11 +108,12 @@ my @requests = ApiManager::read_http_stream($t, 'bookstore.log');
 is(scalar @requests, 1, 'Backend received one request');
 
 my $r = shift @requests;
+
 is($r->{verb}, 'GET', 'Backend request was a get');
 is($r->{uri}, '/shelves?key=this-is-an-api-key', 'Backend uri was /shelves');
 is($r->{headers}->{host}, "127.0.0.1:${BackendPort}", 'Host header was set');
-is($r->{headers}->{'x-endpoint-api-userinfo'}, undef,
-    'X-Endpoint-API-UserInfo should not be added to backend');
+is($r->{headers}->{'x-endpoint-api-userinfo'}, '',
+    'X-Endpoint-API-UserInfo should be removed from the request headers');
 
 @requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
 is(scalar @requests, 1, 'Service control received one request');

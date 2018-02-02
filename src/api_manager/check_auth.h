@@ -20,6 +20,10 @@
 
 namespace google {
 namespace api_manager {
+namespace auth {
+// The header key to send endpoint api user info.
+const char kEndpointApiUserInfo[] = "X-Endpoint-API-UserInfo";
+}  // namespace auth
 
 // This function checks auth for a given request.
 // It is called by CheckWorkflow class when processing a request.

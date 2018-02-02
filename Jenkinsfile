@@ -213,7 +213,11 @@ def presubmit() {
   def branches = [
       'asan': {
         BuildNode {
-          presubmitTests('asan')
+          //Temporarily disable the asan presubmit tests
+          //as a workaround before the Jenkins problem is resolved.
+          //To-do: enable the asan presubmit tests after 
+          //the Jenkins problem is resolved.
+          //presubmitTests('asan')
         }
       },
       'build-and-test': {
@@ -229,7 +233,11 @@ def presubmit() {
       },
       'tsan': {
         BuildNode {
-          presubmitTests('tsan')
+          //Temporarily disable the tsan presubmit tests
+          //as a workaround before the Jenkins problem is resolved.
+          //To-do: enable the tsan presubmit tests after 
+          //the Jenkins problem is resolved.
+          //presubmitTests('tsan')
         }
       },
   ]
@@ -881,7 +889,7 @@ def BuildNode(Closure body) {
           alwaysPullImage: false,
           workingDir: '/home/jenkins',
           resourceRequestCpu: '2000m',
-          resourceLimitCpu: '16000m',
+          resourceLimitCpu: '8000m',
           resourceRequestMemory: '4Gi',
           resourceLimitMemory: '32Gi',
           envVars: [
