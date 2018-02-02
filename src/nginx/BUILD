@@ -24,7 +24,7 @@
 #
 ###############################################################################
 #
-load("@protobuf_bzl//:protobuf.bzl", "cc_proto_library")
+load("@protobuf_git//:protobuf.bzl", "cc_proto_library")
 
 exports_files(["version"])
 

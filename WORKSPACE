@@ -106,17 +106,6 @@ grpc_repositories()
 
 transcoding_repositories()
 
-# Workaround for Bazel > 0.4.0 since it needs newer protobuf.bzl from:
-# https://github.com/google/protobuf/pull/2246
-# Do not use this git_repository for anything else than protobuf.bzl
-new_git_repository(
-    name = "protobuf_bzl",
-    # Injecting an empty BUILD file to prevent using any build target
-    build_file_content = "",
-    commit = "05090726144b6e632c50f47720ff51049bfcbef6",
-    remote = "https://github.com/google/protobuf.git",
-)
-
 git_repository(
     name = "gflags_git",
     commit = "fe57e5af4db74ab298523f06d2c43aa895ba9f98",  # 2016-07-22
@@ -139,7 +128,7 @@ git_repository(
 #
 git_repository(
     name = "io_bazel_rules_pex",
-    commit = "d4af3ca0a015e8b2d2a81a4df1df51bb0fa0bba0",
+    commit = "6af30588d4f11cafcb744c50935cc37f029e6e7f",
     remote = "https://github.com/benley/bazel_rules_pex.git",
 )
 
@@ -153,7 +142,7 @@ pex_repositories()
 
 git_repository(
     name = "io_bazel_rules_perl",
-    commit = "f6211c2db1e54d0a30bc3c3a718f2b5d45f02a22",
+    commit = "5510c0ee04152aed9c5d1aba3ddb01daab336ad5",
     remote = "https://github.com/bazelbuild/rules_perl.git",
 )
 
