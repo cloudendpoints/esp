@@ -144,7 +144,6 @@ my $expected_report_body = ServiceControl::gen_report_body({
   'url' => '/shelves?key=api-key',
   'api_key' => 'api-key',
   'producer_project_id' => 'endpoints-test',
-  'location' => 'us-central1',
   'api_method' =>  'ListShelves',
   'http_method' => 'GET',
   'log_message' => 'Method: ListShelves',

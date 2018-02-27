@@ -213,7 +213,6 @@ my $expected_report_body = {
    'operationName' => 'test.Bookstore.ListShelves',
    'consumerId' => 'api_key:this-is-key',
    'labels' => {
-    'cloud.googleapis.com/location' => 'us-central1',
     'servicecontrol.googleapis.com/service_agent' => ServiceControl::service_agent(),
     'servicecontrol.googleapis.com/platform' => 'unknown',
     'servicecontrol.googleapis.com/user_agent' => 'ESP',
@@ -228,7 +227,6 @@ my $expected_report_body = {
       'api_version'=> 'v1',
       'url' => '/shelves?key=this-is-key',
       'api_method' => 'test.Bookstore.ListShelves',
-      'location' => 'us-central1',
       'log_message' => 'Method: test.Bookstore.ListShelves',
       'http_response_code' => 200,
       'request_size_in_bytes' => 55,
