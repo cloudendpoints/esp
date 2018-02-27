@@ -114,7 +114,6 @@ my $expected_report_body = ServiceControl::gen_report_body({
   'url' => '/shelves',
   'producer_project_id' => 'endpoints-test',
   'no_consumer_data' => 1,
-  'location' => 'us-central1',
   'api_method' =>  'ListShelves',
   'http_method' => 'GET',
   'log_message' => 'Method: ListShelves',
