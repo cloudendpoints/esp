@@ -1,3 +1,9 @@
+# Release 1.14.0 01-03-2018
+
+- add --worker-processes argument to scale nginx workers with number of cores
+- Fixed the args.rollout_id not defined bug when --service_json_path is specified
+- Not to set default location (#353)
+
 # Release 1.13.0 24-01-2018
 
 - Add option to generate self-signed certificate at start
