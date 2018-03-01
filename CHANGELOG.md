@@ -1,8 +1,6 @@
 # Release 1.14.0 01-03-2018
 
-- add --worker-processes argument
-- Fix a bug in nginx-auto.conf.template
-- scale nginx workers with number of cores
+- add --worker-processes argument to scale nginx workers with number of cores
 - Fixed the args.rollout_id not defined bug when --service_json_path is specified
 - Not to set default location (#353)
 
