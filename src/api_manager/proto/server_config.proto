@@ -233,4 +233,14 @@ message Experimental {
   bool disable_log_status = 1;
   // Configure response to JSON translator option for JsonPrintOptions:
   bool always_print_primitive_fields = 2;
+
+  // Defines the request header field whose value will be used to be used
+  // as the real client address.
+  string client_real_ip_header = 3;
+
+  // Defines the position of the client IP address. If the value is not defined
+  // or set to 0, then client_real_ip_header will be ignored.
+  // Positive number(>=1) will take the IP address from left to right and
+  // negative number (<= -1)will be take it from the right to left
+  int32 client_real_ip_position = 4;
 }

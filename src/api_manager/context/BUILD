@@ -56,3 +56,15 @@ cc_library(
         "//src/api_manager/utils",
     ],
 )
+
+cc_test(
+    name = "request_context_test",
+    size = "small",
+    srcs = [
+        "request_context_test.cc",
+    ],
+    deps = [
+        "//src/api_manager:api_manager",
+        "//external:googletest_main",
+    ],
+)

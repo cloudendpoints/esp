@@ -154,6 +154,11 @@ class RequestContext {
   // Extracts api-key
   void ExtractApiKey();
 
+  // Find real client IP address based on Experimental.client_real_ip_header,
+  // Experimental.client_real_ip_position settings.
+  // Otherwise returns request_->GetClientIP()
+  const std::string FindRealClientIPAddress();
+
   // The ApiManagerImpl object.
   std::shared_ptr<context::ServiceContext> service_context_;
 
