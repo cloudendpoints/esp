@@ -31,9 +31,9 @@ use warnings;
 
 use src::nginx::t::ApiManager;   # Must be first (sets up import path to the Nginx test module)
 use src::nginx::t::HttpServer;
-use src::nginx::t::ServiceControl;
 use Test::Nginx;  # Imports Nginx's test module
 use Test::More;   # And the test framework
+use Data::Dumper;
 
 ################################################################################
 
@@ -42,17 +42,15 @@ my $NginxPort = ApiManager::pick_port();
 my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(16);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(14);
 
 # Save service name in the service configuration protocol buffer file.
-my $config = ApiManager::get_bookstore_service_config_allow_unregistered .
-             ApiManager::read_test_file('testdata/logs_metrics.pb.txt') . <<"EOF";
-producer_project_id: "endpoints-test"
+
+$t->write_file('service.pb.txt', ApiManager::get_bookstore_service_config . <<"EOF");
 control {
   environment: "http://127.0.0.1:${ServiceControlPort}"
 }
 EOF
-$t->write_file('service.pb.txt', $config);
 
 ApiManager::write_file_expand($t, 'nginx.conf', <<"EOF");
 %%TEST_GLOBALS%%
@@ -78,21 +76,21 @@ http {
 }
 EOF
 
-my $report_done = 'report_done';
-
 $t->run_daemon(\&bookstore, $t, $BackendPort, 'bookstore.log');
-$t->run_daemon(\&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log', $report_done);
-
+$t->run_daemon(\&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log');
 is($t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'Bookstore socket ready.');
 is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control socket ready.');
-
 $t->run();
 
 ################################################################################
 
-my $response = ApiManager::http_get($NginxPort,'/shelves?key=api-key');
+my $response = ApiManager::http($NginxPort,<<'EOF');
+GET /shelves?key=this-is-an-api-key HTTP/1.0
+Host: localhost
+x-endpoint-api-userinfo: Should be removed
 
-is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');
+EOF
+
 $t->stop_daemons();
 
 my ($response_headers, $response_body) = split /\r\n\r\n/, $response, 2;
@@ -106,86 +104,25 @@ is($response_body, <<'EOF', 'Shelves returned in the response body.');
 }
 EOF
 
-my @requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
-is(scalar @requests, 2, 'Service control received 2 requests.');
+my @requests = ApiManager::read_http_stream($t, 'bookstore.log');
+is(scalar @requests, 1, 'Backend received one request');
 
 my $r = shift @requests;
-is($r->{verb}, 'POST', 'Service control :check was post');
+
+is($r->{verb}, 'GET', 'Backend request was a get');
+is($r->{uri}, '/shelves?key=this-is-an-api-key', 'Backend uri was /shelves');
+is($r->{headers}->{host}, "127.0.0.1:${BackendPort}", 'Host header was set');
+is($r->{headers}->{'x-endpoint-api-userinfo'}, '',
+    'X-Endpoint-API-UserInfo should be removed from the request headers');
+
+@requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
+is(scalar @requests, 1, 'Service control received one request');
+
+$r = shift @requests;
+is($r->{verb}, 'POST', ':check verb was post');
 is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:check', ':check was called');
-is($r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}", 'Host header was set for :check');
+is($r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}", 'Host header was set');
 is($r->{headers}->{'content-type'}, 'application/x-protobuf', ':check Content-Type was protocol buffer');
-
-my $check_body = ServiceControl::convert_proto($r->{body}, 'check_request', 'json');
-my $expected_check_body = {
-  'serviceName' => 'endpoints-test.cloudendpointsapis.com',
-  'serviceConfigId' => '2016-08-25r1',
-  'operation' => {
-     'consumerId' => 'api_key:api-key',
-     'operationName' => 'ListShelves',
-     'labels' => {
-        'servicecontrol.googleapis.com/caller_ip' => '127.0.0.1',
-        'servicecontrol.googleapis.com/service_agent' => ServiceControl::service_agent(),
-        'servicecontrol.googleapis.com/user_agent' => 'ESP',
-     }
-  }
-};
-ok(ServiceControl::compare_json($check_body, $expected_check_body), 'Check body is received.');
-
-my $r = shift @requests;
-is($r->{verb}, 'POST', 'Service control :report was post');
-is($r->{uri}, '/v1/services/endpoints-test.cloudendpointsapis.com:report', ':report was called');
-is($r->{headers}->{host}, "127.0.0.1:${ServiceControlPort}", 'Host header was set for :report');
-is($r->{headers}->{'content-type'}, 'application/x-protobuf', ':report Content-Type was protocol buffer');
-
-my $report_body = ServiceControl::convert_proto($r->{body}, 'report_request', 'json');
-my $expected_report_body = ServiceControl::gen_report_body({
-  'serviceConfigId' => '2016-08-25r1',
-  'serviceName' =>  'endpoints-test.cloudendpointsapis.com',
-  'url' => '/shelves?key=api-key',
-  'api_key' => 'api-key',
-  'producer_project_id' => 'endpoints-test',
-  'api_method' =>  'ListShelves',
-  'http_method' => 'GET',
-  'log_message' => 'Method: ListShelves',
-  'response_code' => '200',
-  'request_size' => 51,
-  'response_size' => 208,
-  'request_bytes' => 51,
-  'response_bytes' => 208,
-  });
-
-ok(ServiceControl::compare_json($report_body, $expected_report_body), 'Report body is received.');
-
-################################################################################
-
-sub servicecontrol {
-  my ($t, $port, $file, $done) = @_;
-  my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
-    or die "Can't create test server socket: $!\n";
-  local $SIG{PIPE} = 'IGNORE';
-
-  $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:check', sub {
-    my ($headers, $body, $client) = @_;
-    print $client <<'EOF';
-HTTP/1.1 200 OK
-Connection: close
-
-EOF
-  });
-
-  $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:report', sub {
-    my ($headers, $body, $client) = @_;
-    print $client <<'EOF';
-HTTP/1.1 200 OK
-Connection: close
-
-EOF
-
-    $t->write_file($done, ':report done');
-  });
-
-  $server->run();
-}
 
 ################################################################################
 
@@ -195,9 +132,7 @@ sub bookstore {
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
 
-  $server->on_sub('GET', '/shelves', sub {
-    my ($headers, $body, $client) = @_;
-    print $client <<'EOF';
+  $server->on('GET', '/shelves?key=this-is-an-api-key', <<'EOF');
 HTTP/1.1 200 OK
 Connection: close
 
@@ -207,7 +142,19 @@ Connection: close
   ]
 }
 EOF
-  });
+  $server->run();
+}
+
+sub servicecontrol {
+  my ($t, $port, $file) = @_;
+  my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
+    or die "Can't create test server socket: $!\n";
+  local $SIG{PIPE} = 'IGNORE';
+  $server->on('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:check', <<'EOF');
+HTTP/1.1 200 OK
+Connection: close
+
+EOF
   $server->run();
 }
 

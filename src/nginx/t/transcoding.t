@@ -204,7 +204,6 @@ my $expected_report_body = ServiceControl::gen_report_body({
   'api_key' => 'api-key',
   'backend_protocol' => 'grpc',
   'producer_project_id' => 'endpoints-transcoding-test',
-  'location' => 'us-central1',
   'api_name' =>  'endpoints.examples.bookstore.Bookstore',
   'api_version' =>  'v1',
   'http_method' => 'GET',

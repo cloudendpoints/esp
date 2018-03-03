@@ -34,6 +34,7 @@
 #include "google/protobuf/util/json_util.h"
 #include "google/protobuf/util/type_resolver.h"
 #include "google/protobuf/util/type_resolver_util.h"
+#include "google/rpc/status.pb.h"
 #include "grpc++/grpc++.h"
 #include "test/transcoding/bookstore.grpc.pb.h"
 #include "test/transcoding/bookstore.pb.h"
@@ -157,7 +158,15 @@ class BookstoreServiceImpl : public Bookstore::Service {
       }
     }
 
-    return ::grpc::Status(grpc::NOT_FOUND, "Shelf not found");
+    ::google::rpc::Status detail_status;
+    detail_status.set_code(grpc::NOT_FOUND);
+    std::string error_details =
+        "Cannot find shelf " + std::to_string(request->shelf());
+    detail_status.set_message(error_details);
+    std::string detail_status_bin = detail_status.SerializeAsString();
+
+    return ::grpc::Status(grpc::NOT_FOUND, "Shelf not found",
+                          std::string(detail_status_bin));
   }
 
   ::grpc::Status DeleteShelf(::grpc::ServerContext*,
@@ -356,9 +365,9 @@ class BookstoreServiceImpl : public Bookstore::Service {
   std::multimap<int, Book> books_;
 };
 
-}  // namespace bookstore {
-}  // namespace examples {
-}  // namespace endpoints {
+}  // namespace bookstore
+}  // namespace examples
+}  // namespace endpoints
 
 int main(int argc, char** argv) {
   auto address = argc > 1 ? argv[1] : "localhost:8081";

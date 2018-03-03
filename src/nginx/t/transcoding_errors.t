@@ -45,9 +45,9 @@ my $GrpcServerPort = ApiManager::pick_port();
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(30);
 
 $t->write_file('service.pb.txt',
-  ApiManager::get_transcoding_test_service_config(
-    'endpoints-transcoding-test.cloudendpointsapis.com',
-    "http://127.0.0.1:${ServiceControlPort}"));
+    ApiManager::get_transcoding_test_service_config(
+        'endpoints-transcoding-test.cloudendpointsapis.com',
+        "http://127.0.0.1:${ServiceControlPort}"));
 
 ApiManager::write_file_expand($t, 'nginx.conf', <<EOF);
 %%TEST_GLOBALS%%
@@ -87,8 +87,8 @@ my $response = ApiManager::http_get($NginxPort,'/shelves?key=api-key-1');
 like($response, qr/HTTP\/1\.1 403 Forbidden/, 'Got a 403.');
 like($response, qr/Content-Type: application\/json/i, 'Content-type is application/json');
 like($response,
-  qr/API endpoints-transcoding-test.cloudendpointsapis.com is not enabled for the project./i,
-  "the message from service-control was propogated.");
+    qr/API endpoints-transcoding-test.cloudendpointsapis.com is not enabled for the project./i,
+    "the message from service-control was propogated.");
 
 
 # 2. The backend is not running yet. We should get 503.
@@ -116,18 +116,18 @@ is($t->waitforsocket("127.0.0.1:${GrpcServerPort}"), 1, "GRPC test server socket
 my $try = 0;
 my $max_tries = 5;
 while ($try < $max_tries) {
-  $response = ApiManager::http_get($NginxPort, '/shelves?key=test-api-key');
-  if ($response =~ qr/HTTP\/1.. 200 OK/) {
-    last;
-  } else {
-    # sleep 1 second before trying again
-    sleep(1);
-    $try++;
-  }
+    $response = ApiManager::http_get($NginxPort, '/shelves?key=test-api-key');
+    if ($response =~ qr/HTTP\/1.. 200 OK/) {
+        last;
+    } else {
+        # sleep 1 second before trying again
+        sleep(1);
+        $try++;
+    }
 }
 
 if ($try == $max_tries) {
-  fail('Failed to make a successful call after starting the backend.');
+    fail('Failed to make a successful call after starting the backend.');
 }
 
 ################################################################################
@@ -137,7 +137,8 @@ $response = ApiManager::http_get($NginxPort,'/shelves/100?key=api-key-3');
 
 like($response, qr/HTTP\/1\.1 404 Not Found/, 'Got a 404.');
 like($response, qr/Content-Type: application\/json/i, 'Content-type is application/json');
-like($response, qr/Shelf not found/i, "the message from the backend was propogated.");
+# This error message is from grpc-status-details-bin header from gRPC backend.
+like($response, qr/Cannot find shelf 100/i, "the message from the backend was propogated.");
 
 # 4. Calling a method that does not exist
 $response = ApiManager::http_get($NginxPort,'/non-existing-method?key=api-key-4');
@@ -208,20 +209,20 @@ $response = ApiManager::http_get($NginxPort,'/shelves/1');
 like($response, qr/HTTP\/1\.1 401 Unauthorized/, 'Got a 401.');
 like($response, qr/Content-Type: application\/json/i, 'Content-type is application/json');
 like($response, qr/Method doesn't allow unregistered callers/i,
-  'Got the "unregistered caller" message');
+    'Got the "unregistered caller" message');
 
 ################################################################################
 
 sub service_control {
-  my ($t, $port, $file) = @_;
+    my ($t, $port, $file) = @_;
 
-  my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
-    or die "Can't create test server socket: $!\n";
+    my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
+        or die "Can't create test server socket: $!\n";
 
-  local $SIG{PIPE} = 'IGNORE';
+    local $SIG{PIPE} = 'IGNORE';
 
-  # Failed check response
-  my $failed_check = ServiceControl::convert_proto(<<'EOF', 'check_response', 'binary');
+    # Failed check response
+    my $failed_check = ServiceControl::convert_proto(<<'EOF', 'check_response', 'binary');
 {
   "operationId": "ListShelves:7b3f4c4f-f29c-4391-b35e-0a676427fec8",
   "checkErrors": [
@@ -233,41 +234,41 @@ sub service_control {
 }
 EOF
 
-  my $first_check = 1;
+    my $first_check = 1;
 
-  $server->on_sub('POST', '/v1/services/endpoints-transcoding-test.cloudendpointsapis.com:check', sub {
-    my ($headers, $body, $client) = @_;
+    $server->on_sub('POST', '/v1/services/endpoints-transcoding-test.cloudendpointsapis.com:check', sub {
+            my ($headers, $body, $client) = @_;
 
-    # Fail the first check to simulate service-control error and succeed the rest
-    if ($first_check) {
-      print $client <<EOF . $failed_check;
+            # Fail the first check to simulate service-control error and succeed the rest
+            if ($first_check) {
+                print $client <<EOF . $failed_check;
 HTTP/1.1 200 OK
 Connection: close
 
 EOF
-      $first_check = 0;
-    } else {
-      print $client <<EOF;
-HTTP/1.1 200 OK
-Content-Type: application/json
-Connection: close
-
-EOF
-    }
-  });
-
-  $server->on_sub('POST', '/v1/services/endpoints-transcoding-test.cloudendpointsapis.com:report', sub {
-    my ($headers, $body, $client) = @_;
-    print $client <<EOF;
+                $first_check = 0;
+            } else {
+                print $client <<EOF;
 HTTP/1.1 200 OK
 Content-Type: application/json
 Connection: close
 
 EOF
-  });
+            }
+        });
+
+    $server->on_sub('POST', '/v1/services/endpoints-transcoding-test.cloudendpointsapis.com:report', sub {
+            my ($headers, $body, $client) = @_;
+            print $client <<EOF;
+HTTP/1.1 200 OK
+Content-Type: application/json
+Connection: close
+
+EOF
+        });
 
 
-  $server->run();
+    $server->run();
 }
 
 ################################################################################

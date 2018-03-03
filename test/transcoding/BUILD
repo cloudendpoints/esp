@@ -28,7 +28,7 @@ package(default_visibility = [
     "//src/nginx/t:__pkg__",
 ])
 
-load("@protobuf_bzl//:protobuf.bzl", "cc_proto_library")
+load("@protobuf_git//:protobuf.bzl", "cc_proto_library")
 
 cc_proto_library(
     name = "bookstore",
@@ -48,6 +48,7 @@ cc_binary(
     deps = [
         ":bookstore",
         "//external:grpc++",
+        "//external:servicecontrol",
     ],
 )
 

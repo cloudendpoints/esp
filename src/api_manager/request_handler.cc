@@ -19,6 +19,7 @@
 #include "google/devtools/cloudtrace/v1/trace.pb.h"
 #include "google/protobuf/stubs/logging.h"
 #include "src/api_manager/auth/service_account_token.h"
+#include "src/api_manager/check_auth.h"
 #include "src/api_manager/check_workflow.h"
 #include "src/api_manager/cloud_trace/cloud_trace.h"
 #include "src/api_manager/utils/marshalling.h"
@@ -28,6 +29,23 @@ using google::devtools::cloudtrace::v1::Traces;
 
 namespace google {
 namespace api_manager {
+
+RequestHandler::RequestHandler(
+    std::shared_ptr<CheckWorkflow> check_workflow,
+    std::shared_ptr<context::ServiceContext> service_context,
+    std::unique_ptr<Request> request_data)
+    : context_(new context::RequestContext(service_context,
+                                           std::move(request_data))),
+      check_workflow_(check_workflow) {
+  // Remove x-endponts-api-userinfo from downstream client.
+  // It should be set by the last Endpoint proxy to prevent users spoofing.
+  std::string buffer;
+  if (context_->request()->FindHeader(
+          google::api_manager::auth::kEndpointApiUserInfo, &buffer)) {
+    context_->request()->AddHeaderToBackend(
+        google::api_manager::auth::kEndpointApiUserInfo, "");
+  }
+}
 
 void RequestHandler::Check(std::function<void(Status status)> continuation) {
   auto interception = [continuation, this](Status status) {

@@ -134,7 +134,6 @@ my $expected_report_body = ServiceControl::gen_report_body({
   'api_key' => 'this-is-an-api-key',
   'api_name' =>  'test.grpc.Test',
   'producer_project_id' => 'endpoints-grpc-test',
-  'location' => 'us-central1',
   'http_method' => 'POST',
   'log_message' => 'Method: test.grpc.Test.EchoStream',
   'response_code' => '200',
