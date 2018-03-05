@@ -167,7 +167,8 @@ class ClientIPExtractionTest : public ::testing::Test {
   int callback_run_count_;
 };
 
-std::string extractClientIP(std::string serverConfig, std::string remote_ip,
+// Extracts client IP address from the request based on the server configuration
+std::string ExtractClientIP(std::string serverConfig, std::string remote_ip,
                             std::map<std::string, std::string> headers) {
   std::unique_ptr<ApiManagerEnvInterface> env(new MockApiManagerEnvironment());
 
@@ -202,7 +203,7 @@ TEST_F(ClientIPExtractionTest, ClientIPAddressNoOverrideTest) {
   )";
 
   EXPECT_EQ("4.4.4.4",
-            extractClientIP(kServerConfigWithoutClientIPExperiment, "4.4.4.4",
+            ExtractClientIP(kServerConfigWithoutClientIPExperiment, "4.4.4.4",
                             {{"X-Forwarded-For", "1.1.1.1, 2.2.2.2, 3.3.3.3"},
                              {"apiKey", "test-api-key"}}));
 }
@@ -219,7 +220,7 @@ TEST_F(ClientIPExtractionTest, ClientIPAddressOverrideTest) {
   )";
 
   EXPECT_EQ("2.2.2.2",
-            extractClientIP(kServerConfigWithClientIPExperimentSecondFromLast,
+            ExtractClientIP(kServerConfigWithClientIPExperimentSecondFromLast,
                             "4.4.4.4",
                             {{"X-Forwarded-For", "1.1.1.1, 2.2.2.2, 3.3.3.3"},
                              {"apiKey", "test-api-key"}}));
@@ -237,7 +238,7 @@ TEST_F(ClientIPExtractionTest, ClientIPAddressOverrideLastTest) {
   )";
 
   EXPECT_EQ("3.3.3.3",
-            extractClientIP(kServerConfigWithClientIPExperimentLast, "4.4.4.4",
+            ExtractClientIP(kServerConfigWithClientIPExperimentLast, "4.4.4.4",
                             {{"X-Forwarded-For", "1.1.1.1, 2.2.2.2, 3.3.3.3"},
                              {"apiKey", "test-api-key"}}));
 }
@@ -255,7 +256,7 @@ TEST_F(ClientIPExtractionTest, ClientIPAddressOverrideOutOfIndexTest) {
 
   EXPECT_EQ(
       "4.4.4.4",
-      extractClientIP(kServerConfigWithClientIPExperimentOutOfIndex, "4.4.4.4",
+      ExtractClientIP(kServerConfigWithClientIPExperimentOutOfIndex, "4.4.4.4",
                       {{"X-Forwarded-For", "1.1.1.1, 2.2.2.2, 3.3.3.3"},
                        {"apiKey", "test-api-key"}}));
 }
@@ -272,7 +273,7 @@ TEST_F(ClientIPExtractionTest, ClientIPAddressOverrideFirstIndexTest) {
   )";
 
   EXPECT_EQ("1.1.1.1",
-            extractClientIP(kServerConfigWithClientIPExperimentFirst, "4.4.4.4",
+            ExtractClientIP(kServerConfigWithClientIPExperimentFirst, "4.4.4.4",
                             {{"X-Forwarded-For", "1.1.1.1, 2.2.2.2, 3.3.3.3"},
                              {"apiKey", "test-api-key"}}));
 }
@@ -288,7 +289,7 @@ TEST_F(ClientIPExtractionTest, ClientIPAddressOverrideSecondIndexTest) {
   }
   )";
 
-  EXPECT_EQ("2.2.2.2", extractClientIP(
+  EXPECT_EQ("2.2.2.2", ExtractClientIP(
                            kServerConfigWithClientIPExperimentSecond, "4.4.4.4",
                            {{"X-Forwarded-For", "1.1.1.1, 2.2.2.2, 3.3.3.3"},
                             {"apiKey", "test-api-key"}}));
