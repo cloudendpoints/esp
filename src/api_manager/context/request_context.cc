@@ -351,7 +351,9 @@ const std::string RequestContext::FindRealClientIPAddress() {
       serverConfig->real_client_ip_from_header_config()
               .client_real_ip_header()
               .length() > 0 &&
-      request_->FindHeader(kXForwardedForHeader, &client_real_ip_header)) {
+      request_->FindHeader(serverConfig->real_client_ip_from_header_config()
+                               .client_real_ip_header(),
+                           &client_real_ip_header)) {
     // split headers
     std::vector<std::string> secments;
     split(client_real_ip_header, kClientIPHeaderDelimeter, &secments);
