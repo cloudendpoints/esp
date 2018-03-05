@@ -58,10 +58,10 @@ cc_library(
 )
 
 cc_test(
-    name = "request_context_test",
+    name = "client_ip_extraction_test",
     size = "small",
     srcs = [
-        "request_context_test.cc",
+        "client_ip_extraction_test.cc",
     ],
     deps = [
         "//src/api_manager:api_manager",

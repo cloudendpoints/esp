@@ -47,8 +47,8 @@ message ServerConfig {
   // Common service API configuration
   ApiServiceConfig api_service_config = 13;
 
-  // Real client IP address from the static header with position configuration
-  RealClientIPFromHeaderConfig real_client_ip_from_header_config = 14;
+  // Get client IP address from the static header with position configuration
+  ClientIPExtractionConfig client_ip_extraction_config = 14;
 
   // The service config rollout strategy, [fixed|managed]
   // fixed:  never change service config dynamically.
@@ -231,21 +231,14 @@ message ApiServiceConfig {
   repeated string rewrite = 1;
 }
 
-// Real client IP address from the header with position configuration
-message RealClientIPFromHeaderConfig {
-  // Defines the request header field whose value will be used to be used
-  // as the real client address.
-  string client_real_ip_header = 1;
+// Get client IP address from the header with position configuration
+message ClientIPExtractionConfig {
+  // Defines HTTP header name where client IP will be extracted.
+  string client_ip_header = 1;
 
   // Defines the position of the client IP address.
-  // If the value is >= 0, it will take the IP address from left to right
-  // starting from 0. And if the value is negative number (<0) then it will take
-  // the IP address from right to left starting from -1.
-  //
-  // ex.  X-Forwarded-For: 1.1.1.1, 2.2.2.2, 3.3.3.3.3
-  //                       0        1        2
-  //                      -3       -2       -1
-  int32 client_real_ip_position = 2;
+  // Same as the array index in many languages, such as Python.
+  int32 client_ip_position = 2;
 }
 
 message Experimental {

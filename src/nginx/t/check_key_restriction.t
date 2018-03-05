@@ -56,9 +56,9 @@ service_control_config {
     flush_interval_ms: 1000
   }
 }
-real_client_ip_from_header_config {
-  client_real_ip_header: "X-Forwarded-For"
-  client_real_ip_position: -2
+client_ip_extraction_config {
+  client_ip_header: "X-Forwarded-For"
+  client_ip_position: -2
 }
 EOF
 

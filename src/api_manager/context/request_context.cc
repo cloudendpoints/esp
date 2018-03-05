@@ -216,7 +216,7 @@ void RequestContext::FillOperationInfo(service_control::OperationInfo *info) {
   info->producer_project_id = service_context()->project_id();
   info->referer = http_referer_;
   info->request_start_time = start_time_;
-  info->client_ip = FindRealClientIPAddress();
+  info->client_ip = FindClientIPAddress();
   info->client_host = request_->GetClientHost();
 }
 
@@ -343,35 +343,29 @@ void RequestContext::FillReportRequestInfo(
   }
 }
 
-const std::string RequestContext::FindRealClientIPAddress() {
+const std::string RequestContext::FindClientIPAddress() {
   auto serverConfig = service_context_->config()->server_config();
-  std::string client_real_ip_header;
+  std::string client_ip_header;
 
-  if (serverConfig->has_real_client_ip_from_header_config() &&
-      serverConfig->real_client_ip_from_header_config()
-              .client_real_ip_header()
-              .length() > 0 &&
-      request_->FindHeader(serverConfig->real_client_ip_from_header_config()
-                               .client_real_ip_header(),
-                           &client_real_ip_header)) {
+  if (serverConfig->has_client_ip_extraction_config() &&
+      serverConfig->client_ip_extraction_config().client_ip_header().length() >
+          0 &&
+      request_->FindHeader(
+          serverConfig->client_ip_extraction_config().client_ip_header(),
+          &client_ip_header)) {
     // split headers
     std::vector<std::string> secments;
-    split(client_real_ip_header, kClientIPHeaderDelimeter, &secments);
-    int client_real_ip_header_position =
-        serverConfig->real_client_ip_from_header_config()
-            .client_real_ip_position();
+    split(client_ip_header, kClientIPHeaderDelimeter, &secments);
+    int client_ip_header_position =
+        serverConfig->client_ip_extraction_config().client_ip_position();
 
-    // adjust positive position
-    if (client_real_ip_header_position >= 0) {
-      client_real_ip_header_position++;
+    if (client_ip_header_position < 0) {
+      client_ip_header_position = secments.size() + client_ip_header_position;
     }
 
-    // check the index is valid
-    if (secments.size() > (std::size_t)abs(client_real_ip_header_position)) {
-      return trim(
-          secments[(client_real_ip_header_position > 0)
-                       ? client_real_ip_header_position - 1
-                       : secments.size() + client_real_ip_header_position]);
+    if (client_ip_header_position >= 0 &&
+        client_ip_header_position < (int)secments.size()) {
+      return trim(secments[client_ip_header_position]);
     }
   }
 
