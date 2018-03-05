@@ -42,16 +42,6 @@ namespace context {
 
 namespace {
 
-const char kServerConfigWithClientIPExperimentSecond[] =
-    R"(
-{
-  "client_ip_extraction_config": {
-    "client_ip_header": "X-Forwarded-For",
-    "client_ip_position": 1
-  }
-}
-)";
-
 const char kServiceConfig1[] =
     R"(
 {
@@ -288,6 +278,16 @@ TEST_F(ClientIPExtractionTest, ClientIPAddressOverrideFirstIndexTest) {
 }
 
 TEST_F(ClientIPExtractionTest, ClientIPAddressOverrideSecondIndexTest) {
+  const char kServerConfigWithClientIPExperimentSecond[] =
+      R"(
+  {
+    "client_ip_extraction_config": {
+      "client_ip_header": "X-Forwarded-For",
+      "client_ip_position": 1
+    }
+  }
+  )";
+
   EXPECT_EQ("2.2.2.2", extractClientIP(
                            kServerConfigWithClientIPExperimentSecond, "4.4.4.4",
                            {{"X-Forwarded-For", "1.1.1.1, 2.2.2.2, 3.3.3.3"},
