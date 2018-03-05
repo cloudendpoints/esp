@@ -67,9 +67,6 @@ const char kXAndroidCert[] = "x-android-cert";
 // Header for IOS bundle identifier, used for api key restriction check.
 const char kXIosBundleId[] = "x-ios-bundle-identifier";
 
-// Default location
-const char kDefaultLocation[] = "us-central1";
-
 // Genereates a UUID string
 std::string GenerateUUID() {
   char uuid_buf[kMaxUUIDBufSize];
@@ -227,8 +224,6 @@ void RequestContext::FillLocation(service_control::ReportRequestInfo *info) {
   if (service_context()->gce_metadata()->has_valid_data() &&
       !service_context()->gce_metadata()->zone().empty()) {
     info->location = service_context()->gce_metadata()->zone();
-  } else {
-    info->location = kDefaultLocation;
   }
 }
 

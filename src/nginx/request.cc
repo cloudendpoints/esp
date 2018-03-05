@@ -26,6 +26,7 @@
 //
 #include "src/nginx/request.h"
 
+#include "src/api_manager/check_auth.h"
 #include "src/nginx/module.h"
 #include "src/nginx/util.h"
 
@@ -184,4 +185,5 @@ utils::Status NgxEspRequest::AddHeaderToBackend(const std::string &key,
 
 }  // namespace nginx
 }  // namespace api_manager
+
 }  // namespace google

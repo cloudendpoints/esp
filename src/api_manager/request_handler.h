@@ -28,10 +28,7 @@ class RequestHandler : public RequestHandlerInterface {
  public:
   RequestHandler(std::shared_ptr<CheckWorkflow> check_workflow,
                  std::shared_ptr<context::ServiceContext> service_context,
-                 std::unique_ptr<Request> request_data)
-      : context_(new context::RequestContext(service_context,
-                                             std::move(request_data))),
-        check_workflow_(check_workflow) {}
+                 std::unique_ptr<Request> request_data);
 
   virtual ~RequestHandler(){};
 

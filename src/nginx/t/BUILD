@@ -54,6 +54,7 @@ nginx_suite(
         "auth_ok_check_fail.t",
         "auth_pass_user_info.t",
         "auth_pkey_cache.t",
+        "auth_remove_user_info.t",
         "auth_redirect.t",
         "auth_unreachable_pkey.t",
         "new_http.t",

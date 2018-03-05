@@ -37,6 +37,8 @@
 #include "src/nginx/util.h"
 
 extern "C" {
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/slice/b64.h"
 #include "src/http/v2/ngx_http_v2_module.h"
 }
 
@@ -46,7 +48,9 @@ namespace nginx {
 
 namespace {
 const ngx_str_t kContentTypeApplicationJson = ngx_string("application/json");
-}
+
+const std::string kGrpcStatusDetailsBin = "grpc-status-details-bin";
+}  // namespace
 
 NgxEspTranscodedGrpcServerCall::NgxEspTranscodedGrpcServerCall(
     ngx_http_request_t *r,
@@ -112,6 +116,30 @@ void NgxEspTranscodedGrpcServerCall::Finish(
   }
 
   if (!status.ok()) {
+    // If grpc response trailers have a "grpc-status-details-bin" header,
+    // use base64 to decode that value, parse it to proto and save it in status.
+    const auto &it = response_trailers.find(kGrpcStatusDetailsBin);
+    if (it != response_trailers.end() && !it->second.empty()) {
+      ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
+      if (ctx) {
+        static grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+        ::grpc::Slice value_slice(
+            grpc_base64_decode_with_len(&exec_ctx, it->second.c_str(),
+                                        it->second.length(), false),
+            ::grpc::Slice::STEAL_REF);
+        std::string binary_value(
+            reinterpret_cast<const char *>(value_slice.begin()),
+            value_slice.size());
+
+        ctx->grpc_status_details.reset(new ::google::rpc::Status);
+        if (!ctx->grpc_status_details->ParseFromString(binary_value)) {
+          ngx_log_error(
+              NGX_LOG_DEBUG, r_->connection->log, 0,
+              "Failed to parse grpc-status-details-bin header into proto.");
+          ctx->grpc_status_details.reset();
+        }
+      }
+    }
     HandleError(status);
     return;
   }

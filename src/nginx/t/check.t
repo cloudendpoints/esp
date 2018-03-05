@@ -41,7 +41,7 @@ my $NginxPort = ApiManager::pick_port();
 my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(13);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(14);
 
 # Save service name in the service configuration protocol buffer file.
 
@@ -105,6 +105,8 @@ my $r = shift @requests;
 is($r->{verb}, 'GET', 'Backend request was a get');
 is($r->{uri}, '/shelves?key=this-is-an-api-key', 'Backend uri was /shelves');
 is($r->{headers}->{host}, "127.0.0.1:${BackendPort}", 'Host header was set');
+is($r->{headers}->{'x-endpoint-api-userinfo'}, undef,
+    'X-Endpoint-API-UserInfo should not be added to backend');
 
 @requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
 is(scalar @requests, 1, 'Service control received one request');

@@ -126,7 +126,6 @@ sub gen_report_labels {
   my $labels = {
     'servicecontrol.googleapis.com/service_agent' => service_agent(),
     'servicecontrol.googleapis.com/user_agent' => 'ESP',
-    'cloud.googleapis.com/location' => $in->{location},
     '/response_code' => $in->{response_code},
     '/status_code' => Status::http_response_code_to_status_code($in->{response_code}),
     '/response_code_class' => (($in->{response_code} / 100) % 10) . "xx",
@@ -139,6 +138,7 @@ sub gen_report_labels {
   $labels->{'/protocol'} = $in->{protocol} if exists $in->{protocol};
   $labels->{'servicecontrol.googleapis.com/backend_protocol'} = $in->{backend_protocol} if exists $in->{backend_protocol};
   $labels->{'serviceruntime.googleapis.com/api_version'} = $in->{api_version} if exists $in->{api_version};
+  $labels->{'cloud.googleapis.com/location'} => $in->{location} if exists $in->{location};
 
   if (exists $in->{platform}) {
     $labels->{'servicecontrol.googleapis.com/platform'} = $in->{platform};
