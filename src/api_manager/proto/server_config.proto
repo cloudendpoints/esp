@@ -47,6 +47,9 @@ message ServerConfig {
   // Common service API configuration
   ApiServiceConfig api_service_config = 13;
 
+  // Real client IP address from the static header with position configuration
+  RealClientIPFromHeaderConfig real_client_ip_from_header_config = 14;
+
   // The service config rollout strategy, [fixed|managed]
   // fixed:  never change service config dynamically.
   // managed: follow service management service config rollout.
@@ -228,19 +231,26 @@ message ApiServiceConfig {
   repeated string rewrite = 1;
 }
 
+// Real client IP address from the header with position configuration
+message RealClientIPFromHeaderConfig {
+  // Defines the request header field whose value will be used to be used
+  // as the real client address.
+  string client_real_ip_header = 1;
+
+  // Defines the position of the client IP address.
+  // If the value is >= 0, it will take the IP address from left to right
+  // starting from 0. And if the value is negative number (<0) then it will take
+  // the IP address from right to left starting from -1.
+  //
+  // ex.  X-Forwarded-For: 1.1.1.1, 2.2.2.2, 3.3.3.3.3
+  //                       0        1        2
+  //                      -3       -2       -1
+  int32 client_real_ip_position = 2;
+}
+
 message Experimental {
   // Disable timed printouts of ESP status to the error log.
   bool disable_log_status = 1;
   // Configure response to JSON translator option for JsonPrintOptions:
   bool always_print_primitive_fields = 2;
-
-  // Defines the request header field whose value will be used to be used
-  // as the real client address.
-  string client_real_ip_header = 3;
-
-  // Defines the position of the client IP address. If the value is not defined
-  // or set to 0, then client_real_ip_header will be ignored.
-  // Positive number(>=1) will take the IP address from left to right and
-  // negative number (<= -1)will be take it from the right to left
-  int32 client_real_ip_position = 4;
 }

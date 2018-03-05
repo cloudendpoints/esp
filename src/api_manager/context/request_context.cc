@@ -79,14 +79,13 @@ std::string GenerateUUID() {
   return uuid_buf;
 }
 
-inline std::vector<std::string> &split(const std::string &s, char delim,
-                                       std::vector<std::string> &elems) {
+inline void split(const std::string &s, char delim,
+                  std::vector<std::string> *elems) {
   std::stringstream ss(s);
   std::string item;
   while (std::getline(ss, item, delim)) {
-    elems.push_back(item);
+    elems->push_back(item);
   }
-  return elems;
 }
 
 inline const std::string trim(std::string &str) {
@@ -349,24 +348,33 @@ void RequestContext::FillReportRequestInfo(
   }
 }
 
-const std::string RequestContext::FindReadClientIPAddress() {
+const std::string RequestContext::FindRealClientIPAddress() {
   auto serverConfig = service_context_->config()->server_config();
   std::string client_real_ip_header;
 
-  if (serverConfig->has_experimental() &&
-      serverConfig->experimental().client_real_ip_header().length() > 0 &&
-      serverConfig->experimental().client_real_ip_position() != 0 &&
-      request_->FindHeader(serverConfig->experimental().client_real_ip_header(),
-                           &client_real_ip_header)) {
+  if (serverConfig->has_real_client_ip_from_header_config() &&
+      serverConfig->real_client_ip_from_header_config()
+              .client_real_ip_header()
+              .length() > 0 &&
+      request_->FindHeader(kXForwardedForHeader, &client_real_ip_header)) {
     // split headers
     std::vector<std::string> secments;
-    secments = split(client_real_ip_header, kClientIPHeaderDelimeter, secments);
+    split(client_real_ip_header, kClientIPHeaderDelimeter, &secments);
+    int client_real_ip_header_position =
+        serverConfig->real_client_ip_from_header_config()
+            .client_real_ip_position();
 
-    if (secments.size() >
-        (std::size_t)abs(
-            serverConfig->experimental().client_real_ip_position())) {
-      int index = serverConfig->experimental().client_real_ip_position();
-      return trim(secments[(index > 0) ? index - 1 : secments.size() + index]);
+    // adjust positive position
+    if (client_real_ip_header_position >= 0) {
+      client_real_ip_header_position++;
+    }
+
+    // check the index is valid
+    if (secments.size() > (std::size_t)abs(client_real_ip_header_position)) {
+      return trim(
+          secments[(client_real_ip_header_position > 0)
+                       ? client_real_ip_header_position - 1
+                       : secments.size() + client_real_ip_header_position]);
     }
   }
 

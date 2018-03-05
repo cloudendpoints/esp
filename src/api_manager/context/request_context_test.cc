@@ -14,17 +14,17 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
-#include <map>
-#include <string>
 #include <iostream>
+#include <map>
 #include <memory>
+#include <string>
 
-#include "gtest/gtest.h"
 #include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 //#include "src/api_manager/mock_api_manager_environment.h"
-#include "src/api_manager/context/service_context.h"
 #include "src/api_manager/context/request_context.h"
+#include "src/api_manager/context/service_context.h"
 //#include "src/api_manager/mock_request.h"
 //#include "src/api_manager/api_manager_impl.h"
 #include "include/api_manager/request.h"
@@ -55,8 +55,7 @@ const char kServerConfigWithoutClientIPExperiment[] =
 const char kServerConfigWithClientIPExperimentOutOfIndex[] =
     R"(
 {
-  "experimental": {
-    "disable_log_status": false,
+  "real_client_ip_from_header_config": {
     "client_real_ip_header": "X-Forwarded-For",
     "client_real_ip_position": -5
   }
@@ -66,8 +65,7 @@ const char kServerConfigWithClientIPExperimentOutOfIndex[] =
 const char kServerConfigWithClientIPExperimentSecondFromLast[] =
     R"(
 {
-  "experimental": {
-    "disable_log_status": false,
+  "real_client_ip_from_header_config": {
     "client_real_ip_header": "X-Forwarded-For",
     "client_real_ip_position": -2
   }
@@ -77,8 +75,7 @@ const char kServerConfigWithClientIPExperimentSecondFromLast[] =
 const char kServerConfigWithClientIPExperimentLast[] =
     R"(
 {
-  "experimental": {
-    "disable_log_status": false,
+  "real_client_ip_from_header_config": {
     "client_real_ip_header": "X-Forwarded-For",
     "client_real_ip_position": -1
   }
@@ -88,8 +85,17 @@ const char kServerConfigWithClientIPExperimentLast[] =
 const char kServerConfigWithClientIPExperimentFirst[] =
     R"(
 {
-  "experimental": {
-    "disable_log_status": false,
+  "real_client_ip_from_header_config": {
+    "client_real_ip_header": "X-Forwarded-For",
+    "client_real_ip_position": 0
+  }
+}
+)";
+
+const char kServerConfigWithClientIPExperimentSecond[] =
+    R"(
+{
+  "real_client_ip_from_header_config": {
     "client_real_ip_header": "X-Forwarded-For",
     "client_real_ip_position": 1
   }
@@ -127,17 +133,14 @@ const char kServiceConfig1[] =
 // Simulate periodic timer event on creation
 class MockPeriodicTimer : public PeriodicTimer {
  public:
-  MockPeriodicTimer() {
-  }
+  MockPeriodicTimer() {}
   MockPeriodicTimer(std::function<void()> continuation)
       : continuation_(continuation) {
     continuation_();
   }
 
-  virtual ~MockPeriodicTimer() {
-  }
-  void Stop() {
-  }
+  virtual ~MockPeriodicTimer() {}
+  void Stop() {}
 
  private:
   std::function<void()> continuation_;
@@ -145,8 +148,7 @@ class MockPeriodicTimer : public PeriodicTimer {
 
 class MockApiManagerEnvironment : public ApiManagerEnvInterface {
  public:
-  virtual ~MockApiManagerEnvironment() {
-  }
+  virtual ~MockApiManagerEnvironment() {}
 
   void Log(LogLevel level, const char *message) override {
     // std::cout << __FILE__ << ":" << __LINE__ << " " << message << std::endl;
@@ -156,23 +158,18 @@ class MockApiManagerEnvironment : public ApiManagerEnvInterface {
     return std::unique_ptr<PeriodicTimer>(new MockPeriodicTimer(continuation));
   }
 
-  void RunHTTPRequest(std::unique_ptr<HTTPRequest> request) override {
-  }
+  void RunHTTPRequest(std::unique_ptr<HTTPRequest> request) override {}
 
-  virtual void RunGRPCRequest(std::unique_ptr<GRPCRequest> request) override {
-  }
+  virtual void RunGRPCRequest(std::unique_ptr<GRPCRequest> request) override {}
 };
 
 class MockRequest : public Request {
  public:
-  MockRequest(const std::string& client_ip,
-              const std::map<std::string, std::string>& header)
-      : client_ip_(client_ip),
-        header_(header) {
-  }
+  MockRequest(const std::string &client_ip,
+              const std::map<std::string, std::string> &header)
+      : client_ip_(client_ip), header_(header) {}
 
-  virtual ~MockRequest() {
-  }
+  virtual ~MockRequest() {}
 
   bool FindHeader(const std::string &name, std::string *header) override {
     auto it = header_.find(name);
@@ -184,31 +181,23 @@ class MockRequest : public Request {
     return false;
   }
 
-  std::string GetClientIP() {
-    return client_ip_;
-  }
+  std::string GetClientIP() { return client_ip_; }
 
-  std::string GetRequestHTTPMethod() override {
-    return "GET";
-  }
+  std::string GetRequestHTTPMethod() override { return "GET"; }
 
-  std::string GetQueryParameters() override {
-    return "";
-  }
+  std::string GetQueryParameters() override { return ""; }
 
-  std::string GetUnparsedRequestPath() override {
-    return "/echo";
-  }
+  std::string GetUnparsedRequestPath() override { return "/echo"; }
 
   bool FindQuery(const std::string &name, std::string *query) override {
     return false;
   }
 
   MOCK_METHOD2(AddHeaderToBackend,
-      utils::Status(const std::string &, const std::string &));
+               utils::Status(const std::string &, const std::string &));
   MOCK_METHOD1(SetAuthToken, void(const std::string &));
   MOCK_METHOD0(GetFrontendProtocol,
-      ::google::api_manager::protocol::Protocol());
+               ::google::api_manager::protocol::Protocol());
   MOCK_METHOD0(GetBackendProtocol, ::google::api_manager::protocol::Protocol());
   MOCK_METHOD0(GetRequestPath, std::string());
   MOCK_METHOD0(GetInsecureCallerID, std::string());
@@ -217,169 +206,186 @@ class MockRequest : public Request {
   MOCK_METHOD0(GetGrpcResponseBytes, int64_t());
   MOCK_METHOD0(GetGrpcRequestMessageCounts, int64_t());
   MOCK_METHOD0(GetGrpcResponseMessageCounts, int64_t());
-private:
+
+ private:
   const std::string client_ip_;
   const std::map<std::string, std::string> header_;
 };
-
 }
 
 class RequestContextTest : public ::testing::Test {
  protected:
-RequestContextTest()
-    : callback_run_count_(0) {
-}
+  RequestContextTest() : callback_run_count_(0) {}
 
-void SetUp() {
-  callback_run_count_ = 0;
-  call_history_.clear();
-}
+  void SetUp() {
+    callback_run_count_ = 0;
+    call_history_.clear();
+  }
 
  protected:
-std::vector<std::string> call_history_;
-int callback_run_count_;
+  std::vector<std::string> call_history_;
+  int callback_run_count_;
 };
 
 TEST_F(RequestContextTest, ClientIPAddressNoOverrideTest) {
-std::unique_ptr<ApiManagerEnvInterface> env(new MockApiManagerEnvironment());
+  std::unique_ptr<ApiManagerEnvInterface> env(new MockApiManagerEnvironment());
 
-std::shared_ptr<context::GlobalContext> global_context(
-    new context::GlobalContext(
-        std::move(env), std::string(kServerConfigWithoutClientIPExperiment)));
+  std::shared_ptr<context::GlobalContext> global_context(
+      new context::GlobalContext(
+          std::move(env), std::string(kServerConfigWithoutClientIPExperiment)));
 
-std::unique_ptr<Config> config = Config::Create(global_context->env(),
-                                                std::string(kServiceConfig1));
+  std::unique_ptr<Config> config =
+      Config::Create(global_context->env(), std::string(kServiceConfig1));
 
-std::shared_ptr<context::ServiceContext> service_context(
-    new context::ServiceContext(global_context, std::move(config)));
+  std::shared_ptr<context::ServiceContext> service_context(
+      new context::ServiceContext(global_context, std::move(config)));
 
-std::unique_ptr<MockRequest> request(
-    new MockRequest("4.4.4.4", {
-                        {"X-Forwarded-For", "1.1.1.1, 2.2.2.2, 3.3.3.3"}, {
-                            "apiKey", "test-api-key"}}));
+  std::unique_ptr<MockRequest> request(new MockRequest(
+      "4.4.4.4", {{"X-Forwarded-For", "1.1.1.1, 2.2.2.2, 3.3.3.3"},
+                  {"apiKey", "test-api-key"}}));
 
-RequestContext context(service_context, std::move(request));
+  RequestContext context(service_context, std::move(request));
 
-service_control::CheckRequestInfo info;
+  service_control::CheckRequestInfo info;
 
-context.FillCheckRequestInfo(&info);
+  context.FillCheckRequestInfo(&info);
 
-EXPECT_EQ("4.4.4.4", info.client_ip);
-
+  EXPECT_EQ("4.4.4.4", info.client_ip);
 }
 
 TEST_F(RequestContextTest, ClientIPAddressOverrideTest) {
-std::unique_ptr<ApiManagerEnvInterface> env(new MockApiManagerEnvironment());
+  std::unique_ptr<ApiManagerEnvInterface> env(new MockApiManagerEnvironment());
 
-std::shared_ptr<context::GlobalContext> global_context(
-    new context::GlobalContext(
-        std::move(env),
-        std::string(kServerConfigWithClientIPExperimentSecondFromLast)));
+  std::shared_ptr<context::GlobalContext> global_context(
+      new context::GlobalContext(
+          std::move(env),
+          std::string(kServerConfigWithClientIPExperimentSecondFromLast)));
 
-std::unique_ptr<Config> config = Config::Create(global_context->env(),
-                                                std::string(kServiceConfig1));
+  std::unique_ptr<Config> config =
+      Config::Create(global_context->env(), std::string(kServiceConfig1));
 
-std::shared_ptr<context::ServiceContext> service_context(
-    new context::ServiceContext(global_context, std::move(config)));
+  std::shared_ptr<context::ServiceContext> service_context(
+      new context::ServiceContext(global_context, std::move(config)));
 
-std::unique_ptr<MockRequest> request(
-    new MockRequest("4.4.4.4", {
-                        {"X-Forwarded-For", "1.1.1.1, 2.2.2.2, 3.3.3.3"}, {
-                            "apiKey", "test-api-key"}}));
+  std::unique_ptr<MockRequest> request(new MockRequest(
+      "4.4.4.4", {{"X-Forwarded-For", "1.1.1.1, 2.2.2.2, 3.3.3.3"},
+                  {"apiKey", "test-api-key"}}));
 
-RequestContext context(service_context, std::move(request));
+  RequestContext context(service_context, std::move(request));
 
-service_control::CheckRequestInfo info;
+  service_control::CheckRequestInfo info;
 
-context.FillCheckRequestInfo(&info);
+  context.FillCheckRequestInfo(&info);
 
-EXPECT_EQ("2.2.2.2", info.client_ip);
-
+  EXPECT_EQ("2.2.2.2", info.client_ip);
 }
 
 TEST_F(RequestContextTest, ClientIPAddressOverrideLastTest) {
-std::unique_ptr<ApiManagerEnvInterface> env(new MockApiManagerEnvironment());
+  std::unique_ptr<ApiManagerEnvInterface> env(new MockApiManagerEnvironment());
 
-std::shared_ptr<context::GlobalContext> global_context(
-    new context::GlobalContext(
-        std::move(env), std::string(kServerConfigWithClientIPExperimentLast)));
+  std::shared_ptr<context::GlobalContext> global_context(
+      new context::GlobalContext(
+          std::move(env),
+          std::string(kServerConfigWithClientIPExperimentLast)));
 
-std::unique_ptr<Config> config = Config::Create(global_context->env(),
-                                                std::string(kServiceConfig1));
+  std::unique_ptr<Config> config =
+      Config::Create(global_context->env(), std::string(kServiceConfig1));
 
-std::shared_ptr<context::ServiceContext> service_context(
-    new context::ServiceContext(global_context, std::move(config)));
+  std::shared_ptr<context::ServiceContext> service_context(
+      new context::ServiceContext(global_context, std::move(config)));
 
-std::unique_ptr<MockRequest> request(
-    new MockRequest("4.4.4.4", {
-                        {"X-Forwarded-For", "1.1.1.1, 2.2.2.2, 3.3.3.3"}, {
-                            "apiKey", "test-api-key"}}));
+  std::unique_ptr<MockRequest> request(new MockRequest(
+      "4.4.4.4", {{"X-Forwarded-For", "1.1.1.1, 2.2.2.2, 3.3.3.3"},
+                  {"apiKey", "test-api-key"}}));
 
-RequestContext context(service_context, std::move(request));
+  RequestContext context(service_context, std::move(request));
 
-service_control::CheckRequestInfo info;
+  service_control::CheckRequestInfo info;
 
-context.FillCheckRequestInfo(&info);
+  context.FillCheckRequestInfo(&info);
 
-EXPECT_EQ("3.3.3.3", info.client_ip);
-
+  EXPECT_EQ("3.3.3.3", info.client_ip);
 }
 
 TEST_F(RequestContextTest, ClientIPAddressOverrideOutOfIndexTest) {
-std::unique_ptr<ApiManagerEnvInterface> env(new MockApiManagerEnvironment());
+  std::unique_ptr<ApiManagerEnvInterface> env(new MockApiManagerEnvironment());
 
-std::shared_ptr<context::GlobalContext> global_context(
-    new context::GlobalContext(
-        std::move(env),
-        std::string(kServerConfigWithClientIPExperimentOutOfIndex)));
+  std::shared_ptr<context::GlobalContext> global_context(
+      new context::GlobalContext(
+          std::move(env),
+          std::string(kServerConfigWithClientIPExperimentOutOfIndex)));
 
-std::unique_ptr<Config> config = Config::Create(global_context->env(),
-                                                std::string(kServiceConfig1));
+  std::unique_ptr<Config> config =
+      Config::Create(global_context->env(), std::string(kServiceConfig1));
 
-std::shared_ptr<context::ServiceContext> service_context(
-    new context::ServiceContext(global_context, std::move(config)));
+  std::shared_ptr<context::ServiceContext> service_context(
+      new context::ServiceContext(global_context, std::move(config)));
 
-std::unique_ptr<MockRequest> request(
-    new MockRequest("4.4.4.4", {
-                        {"X-Forwarded-For", "1.1.1.1, 2.2.2.2, 3.3.3.3"}, {
-                            "apiKey", "test-api-key"}}));
+  std::unique_ptr<MockRequest> request(new MockRequest(
+      "4.4.4.4", {{"X-Forwarded-For", "1.1.1.1, 2.2.2.2, 3.3.3.3"},
+                  {"apiKey", "test-api-key"}}));
 
-RequestContext context(service_context, std::move(request));
+  RequestContext context(service_context, std::move(request));
 
-service_control::CheckRequestInfo info;
+  service_control::CheckRequestInfo info;
 
-context.FillCheckRequestInfo(&info);
+  context.FillCheckRequestInfo(&info);
 
-EXPECT_EQ("4.4.4.4", info.client_ip);
-
+  EXPECT_EQ("4.4.4.4", info.client_ip);
 }
 
 TEST_F(RequestContextTest, ClientIPAddressOverrideFirstIndexTest) {
-std::unique_ptr<ApiManagerEnvInterface> env(new MockApiManagerEnvironment());
+  std::unique_ptr<ApiManagerEnvInterface> env(new MockApiManagerEnvironment());
 
-std::shared_ptr<context::GlobalContext> global_context(
-    new context::GlobalContext(
-        std::move(env), std::string(kServerConfigWithClientIPExperimentFirst)));
+  std::shared_ptr<context::GlobalContext> global_context(
+      new context::GlobalContext(
+          std::move(env),
+          std::string(kServerConfigWithClientIPExperimentFirst)));
 
-std::unique_ptr<Config> config = Config::Create(global_context->env(),
-                                                std::string(kServiceConfig1));
+  std::unique_ptr<Config> config =
+      Config::Create(global_context->env(), std::string(kServiceConfig1));
 
-std::shared_ptr<context::ServiceContext> service_context(
-    new context::ServiceContext(global_context, std::move(config)));
+  std::shared_ptr<context::ServiceContext> service_context(
+      new context::ServiceContext(global_context, std::move(config)));
 
-std::unique_ptr<MockRequest> request(
-    new MockRequest("4.4.4.4", {
-                        {"X-Forwarded-For", "1.1.1.1, 2.2.2.2, 3.3.3.3"}, {
-                            "apiKey", "test-api-key"}}));
+  std::unique_ptr<MockRequest> request(new MockRequest(
+      "4.4.4.4", {{"X-Forwarded-For", "1.1.1.1, 2.2.2.2, 3.3.3.3"},
+                  {"apiKey", "test-api-key"}}));
 
-RequestContext context(service_context, std::move(request));
+  RequestContext context(service_context, std::move(request));
 
-service_control::CheckRequestInfo info;
+  service_control::CheckRequestInfo info;
 
-context.FillCheckRequestInfo(&info);
+  context.FillCheckRequestInfo(&info);
 
-EXPECT_EQ("1.1.1.1", info.client_ip);
+  EXPECT_EQ("1.1.1.1", info.client_ip);
+}
 
+TEST_F(RequestContextTest, ClientIPAddressOverrideSecondIndexTest) {
+  std::unique_ptr<ApiManagerEnvInterface> env(new MockApiManagerEnvironment());
+
+  std::shared_ptr<context::GlobalContext> global_context(
+      new context::GlobalContext(
+          std::move(env),
+          std::string(kServerConfigWithClientIPExperimentSecond)));
+
+  std::unique_ptr<Config> config =
+      Config::Create(global_context->env(), std::string(kServiceConfig1));
+
+  std::shared_ptr<context::ServiceContext> service_context(
+      new context::ServiceContext(global_context, std::move(config)));
+
+  std::unique_ptr<MockRequest> request(new MockRequest(
+      "4.4.4.4", {{"X-Forwarded-For", "1.1.1.1, 2.2.2.2, 3.3.3.3"},
+                  {"apiKey", "test-api-key"}}));
+
+  RequestContext context(service_context, std::move(request));
+
+  service_control::CheckRequestInfo info;
+
+  context.FillCheckRequestInfo(&info);
+
+  EXPECT_EQ("2.2.2.2", info.client_ip);
 }
 
 }  // namespace context
