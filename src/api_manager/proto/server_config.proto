@@ -47,6 +47,9 @@ message ServerConfig {
   // Common service API configuration
   ApiServiceConfig api_service_config = 13;
 
+  // Get client IP address from the static header with position configuration
+  ClientIPExtractionConfig client_ip_extraction_config = 14;
+
   // The service config rollout strategy, [fixed|managed]
   // fixed:  never change service config dynamically.
   // managed: follow service management service config rollout.
@@ -226,6 +229,16 @@ message ApiServiceConfig {
   //
   // Rewrite rules are executed sequentially in the order of "repeated" field.
   repeated string rewrite = 1;
+}
+
+// Get client IP address from the header with position configuration
+message ClientIPExtractionConfig {
+  // Defines HTTP header name where client IP will be extracted.
+  string client_ip_header = 1;
+
+  // Defines the position of the client IP address.
+  // Same as the array index in many languages, such as Python.
+  int32 client_ip_position = 2;
 }
 
 message Experimental {

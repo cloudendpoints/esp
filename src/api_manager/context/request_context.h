@@ -154,6 +154,11 @@ class RequestContext {
   // Extracts api-key
   void ExtractApiKey();
 
+  // Find client IP address based on the
+  // ServerConfig.client_ip_extraction_config. If it is not configured or
+  // doesn't match, returns request_->GetClientIP()
+  const std::string FindClientIPAddress();
+
   // The ApiManagerImpl object.
   std::shared_ptr<context::ServiceContext> service_context_;
 
