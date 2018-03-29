@@ -26,8 +26,6 @@ class GceMetadata {
  public:
   enum FetchState {
     NONE = 0,
-    // Fetching,
-    FETCHING,
     // Fetch failed
     FAILED,
     // Data is go
