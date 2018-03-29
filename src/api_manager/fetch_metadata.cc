@@ -83,16 +83,11 @@ void GlobalFetchGceMetadata(std::shared_ptr<context::GlobalContext> context,
       env->LogDebug("Metadata fetch previously failed. Skipping with error.");
       continuation(Status(Code::INTERNAL, kFailedMetadataFetch));
       return;
-    case GceMetadata::FETCHING:
-      env->LogDebug("Another request fetching metadata. Duplicate fetch.");
-      continuation(Status(Code::UNAVAILABLE, kFailedMetadataFetch));
-      return;
     case GceMetadata::NONE:
     default:
       env->LogDebug("Fetching metadata.");
   }
 
-  context->gce_metadata()->set_state(GceMetadata::FETCHING);
   FetchMetadata(
       context.get(), kComputeMetadata,
       [context, continuation](Status status, std::map<std::string, std::string>,
