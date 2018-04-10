@@ -136,15 +136,6 @@ void GlobalFetchServiceAccountToken(
       // the token fetch, while subsequent requests in the window reuse
       // the old token.
       break;
-    case auth::ServiceAccountToken::FETCHING:
-      env->LogDebug("Service account token fetch in progress");
-      // If token is still valid, continue
-      if (token->is_access_token_valid(0)) {
-        continuation(Status::OK);
-      } else {
-        continuation(Status(Code::UNAVAILABLE, kFetchingToken));
-      }
-      return;
     case auth::ServiceAccountToken::FAILED:
       // permanent failure
       continuation(Status(Code::INTERNAL, kFailedTokenFetch));
@@ -154,7 +145,6 @@ void GlobalFetchServiceAccountToken(
       env->LogDebug("Need to fetch service account token");
   }
 
-  token->set_state(auth::ServiceAccountToken::FETCHING);
   FetchMetadata(context.get(), kMetadataServiceAccountToken,
                 [env, token, continuation](
                     Status status, std::map<std::string, std::string> &&,

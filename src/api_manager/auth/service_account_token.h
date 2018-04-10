@@ -38,7 +38,7 @@ class ServiceAccountToken {
   utils::Status SetClientAuthSecret(const std::string& secret);
 
   // Fetching state of the token from the metadata server
-  enum FetchState { NONE = 0, FETCHING, FETCHED, FAILED };
+  enum FetchState { NONE = 0, FETCHED, FAILED };
 
   // Set fetching state
   void set_state(FetchState state) { state_ = state; }
