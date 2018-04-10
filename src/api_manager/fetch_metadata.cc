@@ -143,6 +143,7 @@ void GlobalFetchServiceAccountToken(
         continuation(Status::OK);
         return;
       }
+      break;
     case auth::ServiceAccountToken::FAILED:
       // permanent failure
       continuation(Status(Code::INTERNAL, kFailedTokenFetch));
