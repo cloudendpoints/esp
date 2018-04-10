@@ -141,10 +141,9 @@ void GlobalFetchServiceAccountToken(
       // If token is still valid, continue
       if (token->is_access_token_valid(0)) {
         continuation(Status::OK);
-      } else {
-        continuation(Status(Code::UNAVAILABLE, kFetchingToken));
+        return;
       }
-      return;
+      break;
     case auth::ServiceAccountToken::FAILED:
       // permanent failure
       continuation(Status(Code::INTERNAL, kFailedTokenFetch));
