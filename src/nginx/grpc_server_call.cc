@@ -98,11 +98,10 @@ ngx_int_t ngx_esp_write_output(ngx_http_request_t *r, ngx_chain_t *out,
   }
 
   // If write data is bufferred by SSL, ngx_http_ouput_filter() may return
-  // NGX_AGAIN.
-  // ngx_handle_write_event() will not work since r->connection->write could be
-  // either active or ready. To work around this prolem, change return code to
-  // NGX_OK
-  // to continue the data flow.
+  // NGX_AGAIN. ngx_handle_write_event() may not add an event to the queue
+  // if r->connection->write is either "active" or "ready". In this case,
+  // gRPC data flow will stop. To work around this problem, change return
+  // code to NGX_OK to continue the data flow.
   if (r->connection->write->active || r->connection->write->ready) {
     return NGX_OK;
   }
