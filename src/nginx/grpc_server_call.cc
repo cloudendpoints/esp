@@ -97,6 +97,16 @@ ngx_int_t ngx_esp_write_output(ngx_http_request_t *r, ngx_chain_t *out,
     return rc;
   }
 
+  // If write data is bufferred by SSL, ngx_http_ouput_filter() may return
+  // NGX_AGAIN.
+  // ngx_handle_write_event() will not work since r->connection->write could be
+  // either active or ready. To work around this prolem, change return code to
+  // NGX_OK
+  // to continue the data flow.
+  if (r->connection->write->active || r->connection->write->ready) {
+    return NGX_OK;
+  }
+
   ngx_http_core_loc_conf_t *clcf = reinterpret_cast<ngx_http_core_loc_conf_t *>(
       ngx_http_get_module_loc_conf(r, ngx_http_core_module));
 
