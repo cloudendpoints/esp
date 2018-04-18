@@ -97,6 +97,18 @@ ngx_int_t ngx_esp_write_output(ngx_http_request_t *r, ngx_chain_t *out,
     return rc;
   }
 
+  // If data is bufferred by the SSL, call ngx_http_output_filter() again
+  // to flush it out.
+  if (r->connection->buffered & NGX_SSL_BUFFERED) {
+    rc = ngx_http_output_filter(r, nullptr);
+    if (rc == NGX_OK) {
+      return NGX_OK;
+    }
+    if (rc != NGX_AGAIN) {
+      return rc;
+    }
+  }
+
   ngx_http_core_loc_conf_t *clcf = reinterpret_cast<ngx_http_core_loc_conf_t *>(
       ngx_http_get_module_loc_conf(r, ngx_http_core_module));
 
