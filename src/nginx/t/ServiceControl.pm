@@ -150,8 +150,6 @@ sub gen_report_labels {
     $labels->{'servicecontrol.googleapis.com/platform'} = 'unknown';
   }
 
-
-
   if (exists $in->{api_key}) {
     $labels->{'/credential_id'} = 'apikey:' . $in->{api_key};
   } elsif (exists $in->{jwtAuth}) {
