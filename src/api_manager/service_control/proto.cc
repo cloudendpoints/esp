@@ -56,6 +56,9 @@ const char kConsumerQuotaUsedCount[] =
 
 const char kQuotaName[] = "/quota_name";
 
+// Default location
+const char kDefaultLocation[] = "us-central1";
+
 struct SupportedMetric {
   const char* name;
   ::google::api::MetricDescriptor_MetricKind metric_kind;
@@ -629,6 +632,8 @@ Status set_location(const SupportedLabel& l, const ReportRequestInfo& info,
                     Map<std::string, std::string>* labels) {
   if (!info.location.empty()) {
     (*labels)[l.name] = info.location;
+  } else {
+    (*labels)[l.name] = kDefaultLocation;
   }
   return Status::OK;
 }
