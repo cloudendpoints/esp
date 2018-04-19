@@ -138,13 +138,19 @@ sub gen_report_labels {
   $labels->{'/protocol'} = $in->{protocol} if exists $in->{protocol};
   $labels->{'servicecontrol.googleapis.com/backend_protocol'} = $in->{backend_protocol} if exists $in->{backend_protocol};
   $labels->{'serviceruntime.googleapis.com/api_version'} = $in->{api_version} if exists $in->{api_version};
-  $labels->{'cloud.googleapis.com/location'} => $in->{location} if exists $in->{location};
+  if (exists $in->{location}) {
+    $labels->{'cloud.googleapis.com/location'} = $in->{location};
+  } else {
+    $labels->{'cloud.googleapis.com/location'} = 'us-central1';
+  }
 
   if (exists $in->{platform}) {
     $labels->{'servicecontrol.googleapis.com/platform'} = $in->{platform};
   } else {
     $labels->{'servicecontrol.googleapis.com/platform'} = 'unknown';
   }
+
+
 
   if (exists $in->{api_key}) {
     $labels->{'/credential_id'} = 'apikey:' . $in->{api_key};
@@ -168,7 +174,6 @@ sub gen_log_entry {
     exists $in->{producer_project_id};
   $payload->{api_key} = $in->{api_key} if exists $in->{api_key};
   $payload->{referer} = $in->{referer} if exists $in->{referer};
-  $payload->{location} = $in->{location} if exists $in->{location};
   $payload->{request_size_in_bytes} = $in->{request_size} if exists $in->{request_size};
   $payload->{response_size_in_bytes} = $in->{response_size} if exists $in->{response_size};
   $payload->{log_message} = $in->{log_message} if exists $in->{log_message};
