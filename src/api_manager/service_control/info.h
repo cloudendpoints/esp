@@ -15,8 +15,6 @@
 #ifndef API_MANAGER_SERVICE_CONTROL_INFO_H_
 #define API_MANAGER_SERVICE_CONTROL_INFO_H_
 
-#include "google/protobuf/stubs/stringpiece.h"
-
 #include "google/api/quota.pb.h"
 
 #include <time.h>
