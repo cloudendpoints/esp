@@ -861,8 +861,8 @@ def DefaultNode(Closure body) {
           workingDir: '/home/jenkins',
           resourceRequestCpu: '2000m',
           resourceLimitCpu: '8000m',
-          resourceRequestMemory: '32Gi',
-          resourceLimitMemory: '64Gi',
+          resourceRequestMemory: '2Gi',
+          resourceLimitMemory: '8Gi',
           envVars: [
               envVar(key: 'PLATFORM', value: 'debian-8')
           ])]) {
@@ -886,7 +886,7 @@ def BuildNode(Closure body) {
           workingDir: '/home/jenkins',
           resourceRequestCpu: '2000m',
           resourceLimitCpu: '8000m',
-          resourceRequestMemory: '32Gi',
+          resourceRequestMemory: '8Gi',
           resourceLimitMemory: '64Gi',
           envVars: [
               envVar(key: 'PLATFORM', value: 'debian-8')
