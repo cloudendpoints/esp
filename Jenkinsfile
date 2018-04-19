@@ -865,8 +865,8 @@ def DefaultNode(Closure body) {
           workingDir: '/home/jenkins',
           resourceRequestCpu: '2000m',
           resourceLimitCpu: '8000m',
-          resourceRequestMemory: '2Gi',
-          resourceLimitMemory: '8Gi',
+          resourceRequestMemory: '4Gi',
+          resourceLimitMemory: '64Gi',
           envVars: [
               envVar(key: 'PLATFORM', value: 'debian-8')
           ])]) {
