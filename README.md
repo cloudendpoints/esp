@@ -7,7 +7,7 @@ based on an [NGINX](http://nginx.org) HTTP reverse proxy server.
 ESP provides:
 
 * **Features**: authentication (auth0, gitkit), API key validation, JSON to gRPC
-  transcoding, as well as  API-level monitoring, tracing and logging. More
+  transcoding, as well as API-level monitoring, tracing and logging. More
   features coming in the near future: quota, billing, ACL, etc.
 
 * **Easy Adoption**: the API service can be implemented in any coding language
