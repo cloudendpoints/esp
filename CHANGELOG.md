@@ -1,3 +1,7 @@
+# Release 1.15.0 0-03-2018
+
+- Added client IP address extraction for GAE Flex (#359)
+
 # Release 1.14.0 01-03-2018
 
 - add --worker-processes argument to scale nginx workers with number of cores

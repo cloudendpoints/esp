@@ -15,8 +15,6 @@
 #ifndef API_MANAGER_SERVICE_CONTROL_INFO_H_
 #define API_MANAGER_SERVICE_CONTROL_INFO_H_
 
-#include "google/protobuf/stubs/stringpiece.h"
-
 #include "google/api/quota.pb.h"
 
 #include <time.h>
@@ -42,20 +40,20 @@ struct OperationInfo {
   // Identity of the operation. It must be unique within the scope of the
   // service. If the service calls Check() and Report() on the same operation,
   // the two calls should carry the same operation id.
-  ::google::protobuf::StringPiece operation_id;
+  std::string operation_id;
 
   // Fully qualified name of the operation.
-  ::google::protobuf::StringPiece operation_name;
+  std::string operation_name;
 
   // The producer project id.
-  ::google::protobuf::StringPiece producer_project_id;
+  std::string producer_project_id;
 
   // The API key.
-  ::google::protobuf::StringPiece api_key;
+  std::string api_key;
 
   // Uses Referer header, if the Referer header doesn't present, use the
   // Origin header. If both of them not present, it's empty.
-  ::google::protobuf::StringPiece referer;
+  std::string referer;
 
   // The start time of the call. Used to set operation.start_time for both Check
   // and Report.
@@ -115,11 +113,11 @@ struct ReportRequestInfo : public OperationInfo {
   std::string url;
 
   // location of the service, such as us-central.
-  ::google::protobuf::StringPiece location;
+  std::string location;
   // API name and version.
-  ::google::protobuf::StringPiece api_name;
-  ::google::protobuf::StringPiece api_version;
-  ::google::protobuf::StringPiece api_method;
+  std::string api_name;
+  std::string api_version;
+  std::string api_method;
 
   // The request size in bytes. -1 if not available.
   int64_t request_size;

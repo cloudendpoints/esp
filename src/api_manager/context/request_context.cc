@@ -54,6 +54,9 @@ const char kDefaultApiKeyQueryName1[] = "key";
 const char kDefaultApiKeyQueryName2[] = "api_key";
 const char kDefaultApiKeyHeaderName[] = "x-api-key";
 
+// Delimiter of the IP addresses in the XFF header
+const char kClientIPHeaderDelimeter = ',';
+
 // Header for android package name, used for api key restriction check.
 const char kXAndroidPackage[] = "x-android-package";
 
@@ -71,6 +74,21 @@ std::string GenerateUUID() {
   uuid_generate(uuid);
   uuid_unparse(uuid, uuid_buf);
   return uuid_buf;
+}
+
+inline void split(const std::string &s, char delim,
+                  std::vector<std::string> *elems) {
+  std::stringstream ss(s);
+  std::string item;
+  while (std::getline(ss, item, delim)) {
+    elems->push_back(item);
+  }
+}
+
+inline const std::string trim(std::string &str) {
+  str.erase(0, str.find_first_not_of(' '));  // heading spaces
+  str.erase(str.find_last_not_of(' ') + 1);  // tailing spaces
+  return str;
 }
 
 }  // namespace
@@ -198,7 +216,7 @@ void RequestContext::FillOperationInfo(service_control::OperationInfo *info) {
   info->producer_project_id = service_context()->project_id();
   info->referer = http_referer_;
   info->request_start_time = start_time_;
-  info->client_ip = request_->GetClientIP();
+  info->client_ip = FindClientIPAddress();
   info->client_host = request_->GetClientHost();
 }
 
@@ -259,7 +277,6 @@ void RequestContext::FillAllocateQuotaRequestInfo(
     service_control::QuotaRequestInfo *info) {
   FillOperationInfo(info);
 
-  info->client_ip = request_->GetClientIP();
   info->method_name = this->method_call_.method_info->name();
   info->metric_cost_vector =
       &this->method_call_.method_info->metric_cost_vector();
@@ -324,6 +341,35 @@ void RequestContext::FillReportRequestInfo(
       response->GetLatencyInfo(&info->latency);
     }
   }
+}
+
+const std::string RequestContext::FindClientIPAddress() {
+  auto serverConfig = service_context_->config()->server_config();
+  std::string client_ip_header;
+
+  if (serverConfig->has_client_ip_extraction_config() &&
+      serverConfig->client_ip_extraction_config().client_ip_header().length() >
+          0 &&
+      request_->FindHeader(
+          serverConfig->client_ip_extraction_config().client_ip_header(),
+          &client_ip_header)) {
+    // split headers
+    std::vector<std::string> secments;
+    split(client_ip_header, kClientIPHeaderDelimeter, &secments);
+    int client_ip_header_position =
+        serverConfig->client_ip_extraction_config().client_ip_position();
+
+    if (client_ip_header_position < 0) {
+      client_ip_header_position = secments.size() + client_ip_header_position;
+    }
+
+    if (client_ip_header_position >= 0 &&
+        client_ip_header_position < (int)secments.size()) {
+      return trim(secments[client_ip_header_position]);
+    }
+  }
+
+  return request_->GetClientIP();
 }
 
 void RequestContext::StartBackendSpanAndSetTraceContext() {

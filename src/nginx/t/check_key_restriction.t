@@ -56,6 +56,10 @@ service_control_config {
     flush_interval_ms: 1000
   }
 }
+client_ip_extraction_config {
+  client_ip_header: "X-Forwarded-For"
+  client_ip_position: -2
+}
 EOF
 
 # Save service name in the service configuration protocol buffer file.
@@ -75,10 +79,7 @@ events {
 http {
   %%TEST_GLOBALS_HTTP%%
   server_tokens off;
-  set_real_ip_from  0.0.0.0/1;
-  set_real_ip_from  0::/1;
-  real_ip_header    X-Forwarded-For;
-  real_ip_recursive on;
+
   server {
     listen 127.0.0.1:${NginxPort};
     server_name localhost;
@@ -111,7 +112,7 @@ my $response = ApiManager::http($NginxPort,<<'EOF');
 GET /shelves?key=this-is-an-api-key HTTP/1.0
 Referer: http://google.com/bookstore/root
 Host: localhost
-X-Forwarded-For: 10.20.30.40
+X-Forwarded-For: 1.1.1.1, 2.2.2.2, 3.3.3.3
 X-Android-Package: com.goolge.cloud.esp
 X-Android-Cert: AIzaSyB4Gz8nyaSaWo63IPUcy5d_L8dpKtOTSD0
 X-Ios-Bundle-Identifier: 5b40ad6af9a806305a0a56d7cb91b82a27c26909
@@ -159,7 +160,7 @@ my $check_request = decode_json(ServiceControl::convert_proto(
   $r->{body}, 'check_request', 'json' ) );
 
 is( $check_request->{operation}->{labels}->
-  {'servicecontrol.googleapis.com/caller_ip'}, "10.20.30.40",
+  {'servicecontrol.googleapis.com/caller_ip'}, "2.2.2.2",
   "servicecontrol.googleapis.com/caller_ip was overrode by ".
   "X-Forwarded-For header" );
 is( $check_request->{operation}->{labels}->

@@ -56,3 +56,15 @@ cc_library(
         "//src/api_manager/utils",
     ],
 )
+
+cc_test(
+    name = "client_ip_extraction_test",
+    size = "small",
+    srcs = [
+        "client_ip_extraction_test.cc",
+    ],
+    deps = [
+        "//src/api_manager:api_manager",
+        "//external:googletest_main",
+    ],
+)
