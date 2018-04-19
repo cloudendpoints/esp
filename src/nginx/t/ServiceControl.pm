@@ -141,7 +141,7 @@ sub gen_report_labels {
   if (exists $in->{location}) {
     $labels->{'cloud.googleapis.com/location'} = $in->{location};
   } else {
-    $labels->{'cloud.googleapis.com/location'} = 'us-central1';
+    $labels->{'cloud.googleapis.com/location'} = 'global';
   }
 
   if (exists $in->{platform}) {

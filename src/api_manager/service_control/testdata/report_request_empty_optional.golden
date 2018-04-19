@@ -33,7 +33,7 @@ operations {
   }
   labels {
     key: "cloud.googleapis.com/location"
-    value: "us-central1"
+    value: "global"
   }
   labels {
     key: "servicecontrol.googleapis.com/platform"

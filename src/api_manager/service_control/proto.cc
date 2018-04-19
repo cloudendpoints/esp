@@ -56,7 +56,7 @@ const char kConsumerQuotaUsedCount[] =
 const char kQuotaName[] = "/quota_name";
 
 // Default location
-const char kDefaultLocation[] = "us-central1";
+const char kDefaultLocation[] = "global";
 
 struct SupportedMetric {
   const char* name;
