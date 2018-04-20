@@ -74,7 +74,7 @@ GIT_SHA = ''
 ESP_RUNTIME_VERSION = ''
 // Global Variables defined in Jenkins
 BUCKET = ''
-BAZEL_ARGS = ''
+BAZEL_ARGS = '--action_env=PERL5LIB=.'
 BAZEL_BUILD_ARGS = ''
 CLUSTER = ''
 PROJECT_ID = ''
