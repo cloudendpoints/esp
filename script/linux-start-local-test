@@ -102,6 +102,9 @@ fi
 cp -f "${NGINX_BAZEL_BIN}" "${NGINX}" \
   || error_exit 'Error copying nginx-esp, aborting.'
 
+echo 'Building required tools'
+retry -n 3 ${BAZEL} ${BAZEL_ARGS} build //src/tools:auth_token_gen
+
 echo 'Creating service.json'
 # Hard code Config_ID.
 SERVICE_NAME='echo-dot-esp-load-test.appspot.com'
