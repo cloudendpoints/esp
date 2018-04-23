@@ -57,7 +57,7 @@ function build_and_test() {
     && retry -n 2 ${BAZEL} ${BAZEL_ARGS} build \
       ${BAZEL_BUILD_ARGS} ${config_flag} \
       //src/... //tools/src/... //third_party:all \
-    && ${BAZEL} ${BAZEL_ARGS} test --test_output=errors ${config_flag} \
+    && ${BAZEL} ${BAZEL_ARGS} test --action_env=PERL5LIB=. --test_output=errors ${config_flag} \
       //src/... //tools/src/... //third_party:all \
     || { echo "${error}..."; return 1; }
 }
