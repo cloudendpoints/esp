@@ -229,7 +229,11 @@ def presubmit() {
       },
       'tsan': {
         BuildNode {
-          presubmitTests('tsan')
+          //Temporarily disable the tsan presubmit tests
+          //as a workaround before the Jenkins problem is resolved.
+          //To-do: enable the tsan presubmit tests after
+          //the Jenkins problem is resolved.
+          //presubmitTests('tsan')
         }
       },
   ]
