@@ -16,6 +16,8 @@
 //
 #include "src/api_manager/gce_metadata.h"
 
+#include <iostream>
+
 #include "google/protobuf/stubs/status.h"
 #include "src/api_manager/auth/lib/json_util.h"
 
@@ -35,6 +37,8 @@ inline std::string SafeAssign(const char *str) { return (str) ? str : ""; }
 }  // namespace
 
 Status GceMetadata::ParseFromJson(std::string *json_str) {
+  std::cout << __FILE__ << ":" << __LINE__ << " json_str=" << *json_str << std::endl;
+
   // TODO: use protobuf to parse Json.
   grpc_json *json = grpc_json_parse_string_with_len(
       const_cast<char *>(json_str->data()), json_str->length());
@@ -61,6 +65,8 @@ Status GceMetadata::ParseFromJson(std::string *json_str) {
 
   grpc_json_destroy(json);
 
+  std::cout << __FILE__ << ":" << __LINE__ << " zone_=" << zone_ << std::endl;
+
   // Only keep last portion of zone
   if (!zone_.empty()) {
     std::size_t last_slash = zone_.find_last_of("/");
@@ -68,6 +74,7 @@ Status GceMetadata::ParseFromJson(std::string *json_str) {
       zone_ = zone_.substr(last_slash + 1);
     }
   }
+  std::cout << __FILE__ << ":" << __LINE__ << " zone_=" << zone_ << std::endl;
 
   return Status::OK;
 }

@@ -21,6 +21,7 @@
 #include <time.h>
 #include <uuid/uuid.h>
 #include <chrono>
+#include <iostream>
 
 #include "google/api/metric.pb.h"
 #include "google/protobuf/timestamp.pb.h"
@@ -629,11 +630,16 @@ Status set_status_code(const SupportedLabel& l, const ReportRequestInfo& info,
 // cloud.googleapis.com/location
 Status set_location(const SupportedLabel& l, const ReportRequestInfo& info,
                     Map<std::string, std::string>* labels) {
+  std::cout << __FILE__ << ":" << __LINE__ << " info.location=[" << info.location << "]" << std::endl;
+
   if (!info.location.empty()) {
     (*labels)[l.name] = info.location;
   } else {
     (*labels)[l.name] = kDefaultLocation;
   }
+
+  std::cout << __FILE__ << ":" << __LINE__ << " (*labels)[l.name]=" << (*labels)[l.name] << std::endl;
+
   return Status::OK;
 }
 

@@ -16,6 +16,7 @@
 //
 #include "src/api_manager/service_control/aggregated.h"
 
+#include <iostream>
 #include <sstream>
 #include <typeinfo>
 #include "src/api_manager/service_control/logs_metrics_loader.h"
@@ -518,6 +519,8 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
       Status status, std::map<std::string, std::string>&&, std::string&& body) {
     TRACE(trace_span) << "HTTP response status: " << status.ToString();
     if (status.ok()) {
+      std::cout << __FILE__ << ":" << __LINE__ << " response->DebugString()=" << response->DebugString() << std::endl;
+
       // Handle 200 response
       if (!response->ParseFromString(body)) {
         status =
@@ -540,6 +543,9 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
     }
     on_done(status.ToProto());
   }));
+
+
+  std::cout << __FILE__ << ":" << __LINE__ << " request.DebugString()=" << request.DebugString() << std::endl;
 
   std::string request_body;
   request.SerializeToString(&request_body);
