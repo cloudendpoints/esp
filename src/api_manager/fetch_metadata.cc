@@ -16,6 +16,8 @@
 
 #include "src/api_manager/fetch_metadata.h"
 
+#include <iostream>
+
 #include "include/api_manager/http_request.h"
 #include "src/api_manager/auth/lib/auth_token.h"
 
@@ -53,6 +55,8 @@ void FetchMetadata(
     std::function<void(Status, std::map<std::string, std::string> &&,
                        std::string &&)>
         continuation) {
+  std::cout << __FILE__ << ":" << __LINE__ << " context->metadata_server() + path=" << (context->metadata_server() + path) << std::endl;
+
   std::unique_ptr<HTTPRequest> request(new HTTPRequest(continuation));
   request->set_method("GET")
       .set_url(context->metadata_server() + path)
@@ -65,33 +69,43 @@ void FetchMetadata(
 
 void GlobalFetchGceMetadata(std::shared_ptr<context::GlobalContext> context,
                             std::function<void(Status)> continuation) {
+  std::cout << __FILE__ << ":" << __LINE__ << " " << std::endl;
   if (context->metadata_server().empty()) {
+    std::cout << __FILE__ << ":" << __LINE__ << " " << std::endl;
     // No need to fetching metadata, metadata server address is not set.
     continuation(Status::OK);
     return;
   }
+  std::cout << __FILE__ << ":" << __LINE__ << " " << std::endl;
 
   auto env = context->env();
+  std::cout << __FILE__ << ":" << __LINE__ << " " << std::endl;
   switch (context->gce_metadata()->state()) {
     case GceMetadata::FETCHED:
+      std::cout << __FILE__ << ":" << __LINE__ << " " << std::endl;
       // Already have metadata.
       env->LogDebug("Metadata already available. Fetch skipped.");
       continuation(Status::OK);
       return;
     case GceMetadata::FAILED:
+      std::cout << __FILE__ << ":" << __LINE__ << " " << std::endl;
       // Metadata fetch already failed. Permanent failure.
       env->LogDebug("Metadata fetch previously failed. Skipping with error.");
       continuation(Status(Code::INTERNAL, kFailedMetadataFetch));
       return;
     case GceMetadata::NONE:
     default:
+      std::cout << __FILE__ << ":" << __LINE__ << " " << std::endl;
       env->LogDebug("Fetching metadata.");
   }
+  std::cout << __FILE__ << ":" << __LINE__ << " " << std::endl;
 
   FetchMetadata(
       context.get(), kComputeMetadata,
       [context, continuation](Status status, std::map<std::string, std::string>,
                               std::string &&body) {
+    std::cout << __FILE__ << ":" << __LINE__ << " status.ToString()=" << status.ToString() << std::endl;
+
         // translate status to external status
         if (status.ok()) {
           status = context->gce_metadata()->ParseFromJson(&body);
@@ -105,6 +119,7 @@ void GlobalFetchGceMetadata(std::shared_ptr<context::GlobalContext> context,
 
         continuation(status);
       });
+  std::cout << __FILE__ << ":" << __LINE__ << " " << std::endl;
 }
 
 void GlobalFetchServiceAccountToken(
