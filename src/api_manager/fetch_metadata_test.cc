@@ -131,9 +131,7 @@ TEST_F(FetchMetadataTest, FetchGceMetadataWithStatusINTERNAL) {
                         std::move(body));
       }));
 
-  FetchGceMetadata(context_, [](Status status) {
-    ASSERT_TRUE(status.ok());
-  });
+  FetchGceMetadata(context_, [](Status status) { ASSERT_TRUE(status.ok()); });
 }
 
 }  // namespace
