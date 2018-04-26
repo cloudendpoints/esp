@@ -35,7 +35,7 @@ const char kMetadataServiceAccountToken[] =
 // Initial metadata fetch timeout (1s)
 const int kMetadataFetchTimeout = 1000;
 // Maximum number of retries to fetch metadata
-const int kMetadataFetchRetries = 5;
+const int kMetadataFetchRetries = 1;
 // External status message for failure to fetch metadata
 const char kFailedMetadataFetch[] = "Failed to fetch metadata";
 // External status message for failure to fetch service account token
@@ -96,7 +96,7 @@ void GlobalFetchGceMetadata(std::shared_ptr<context::GlobalContext> context,
         if (status.ok()) {
           status = context->gce_metadata()->ParseFromJson(&body);
         } else {
-          status = Status(Code::INTERNAL, kFailedMetadataFetch);
+          status = Status::OK;
         }
 
         // update fetching state
