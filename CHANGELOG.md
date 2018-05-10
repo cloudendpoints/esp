@@ -1,3 +1,11 @@
+# Release 1.18.0 10-05-2018
+
+- Separated location related changes
+- Added condition to check non_gcp and service_account_key
+- Fixed metadata configuration for GCP
+- Fix typo in the default CORS headers.
+- Returns Status::OK when metadata service is not available (#386)
+
 # Release 1.15.0 0-03-2018
 
 - Added client IP address extraction for GAE Flex (#359)
