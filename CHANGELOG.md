@@ -1,3 +1,7 @@
+# Release 1.19.0 17-05-2018
+
+- Added --disable_trace_sampling flag
+
 # Release 1.18.0 10-05-2018
 
 - Separated location related changes
