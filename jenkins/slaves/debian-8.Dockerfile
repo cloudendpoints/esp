@@ -2,7 +2,7 @@
 FROM debian:jessie-backports
 
 # Docker version needs to match GKE (Docker Host)
-ENV DOCKER_VERSION 1.11.2
+ENV DOCKER_VERSION 1.13.1
 # Bucket used to store already built binaries
 ARG TOOLS_BUCKET
 
