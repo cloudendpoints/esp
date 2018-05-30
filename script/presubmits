@@ -51,6 +51,15 @@ function build_and_test() {
     message="${message} with config ${config}"
     error="${message} with config ${config}"
   fi
+
+  if [[ "${config}" == "tsan" ]]; then
+    export CC='gcc-5'
+    export CXX='g++-5'
+  else
+    export CC='gcc-4.8'
+    export CXX='g++-4.8'
+  fi
+
   echo "${message}..."
   retry -n 3 ${BAZEL} ${BAZEL_ARGS} fetch \
     //src/... //tools/src/... //third_party:all \
