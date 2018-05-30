@@ -64,7 +64,7 @@ if [[ "${PLATFORM}" == "flex" ]]; then
       -e "s|EXPOSE 8080|\nADD ${DIMG} ${DIMG}\nRUN apt-get update --fix-missing -qq \&\& \\\ \n    apt-get install -qqy python \&\& \\\ \n    dpkg -i /${DIMG}\n&|" \
       "$FLEX_DIR/nginx_proxy/Dockerfile"
   DOCKERFILE_PATH="$FLEX_DIR/nginx_proxy"
-  cat "$FLEX_DIR/nginx_proxy/Dockerfile"
+  cat "$FLEX_DIR/nginx_proxy/Dockerfile" | sed 's/ARG BASE_IMAGE_TAG=latest//' | sed 's/${BASE_IMAGE_TAG}/latest/'
 fi
 
 rm -f "${DOCKERFILE_PATH}/endpoints-runtime.deb"
