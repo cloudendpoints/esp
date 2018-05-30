@@ -61,10 +61,12 @@ if [[ "${PLATFORM}" == "flex" ]]; then
   # Update the Dockerfile to use local deb image
   DIMG="endpoints-runtime.deb"
   sed -i -e "s|endpoints-runtime||" \
+      -e 's|ARG BASE_IMAGE_TAG=latest||' \
+      -e 's|${BASE_IMAGE_TAG}|latest|' \
       -e "s|EXPOSE 8080|\nADD ${DIMG} ${DIMG}\nRUN apt-get update --fix-missing -qq \&\& \\\ \n    apt-get install -qqy python \&\& \\\ \n    dpkg -i /${DIMG}\n&|" \
       "$FLEX_DIR/nginx_proxy/Dockerfile"
   DOCKERFILE_PATH="$FLEX_DIR/nginx_proxy"
-  cat "$FLEX_DIR/nginx_proxy/Dockerfile" | sed 's/ARG BASE_IMAGE_TAG=latest//' | sed 's/${BASE_IMAGE_TAG}/latest/'
+  cat "$FLEX_DIR/nginx_proxy/Dockerfile"
 fi
 
 rm -f "${DOCKERFILE_PATH}/endpoints-runtime.deb"
