@@ -51,13 +51,19 @@ function build_and_test() {
     message="${message} with config ${config}"
     error="${message} with config ${config}"
   fi
+
+  locl environments=''  
+  if [[ "${config}" == "tsan" ]]; then
+    environments='CC=gcc-5 CXX=g++-5'
+  fi
+
   echo "${message}..."
-  retry -n 3 ${BAZEL} ${BAZEL_ARGS} fetch \
+  retry -n 3 ${environments} ${BAZEL} ${BAZEL_ARGS} fetch \
     //src/... //tools/src/... //third_party:all \
-    && retry -n 2 ${BAZEL} ${BAZEL_ARGS} build \
+    && retry -n 2 ${environments} ${BAZEL} ${BAZEL_ARGS} build \
       ${BAZEL_BUILD_ARGS} ${config_flag} \
       //src/... //tools/src/... //third_party:all \
-    && ${BAZEL} ${BAZEL_ARGS} test --test_output=errors ${config_flag} \
+    && ${BAZEL} ${BAZEL_ARGS} ${environments} test --test_output=errors ${config_flag} \
       //src/... //tools/src/... //third_party:all \
     || { echo "${error}..."; return 1; }
 }
