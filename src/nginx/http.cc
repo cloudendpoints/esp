@@ -1002,6 +1002,8 @@ Status initialize_upstream_request(ngx_log_t *log, HTTPRequest *request,
         http_cctx->main_conf[ngx_esp_module.ctx_index]);
     http_connection->upstream_conf.ssl = mc->ssl;
     http_connection->upstream_conf.ssl_session_reuse = 1;
+    // For SNI (Server Name Indication) support
+    http_connection->upstream_conf.ssl_server_name = 1;
     if (mc->cert_path.len > 0) {
       http_connection->upstream_conf.ssl_verify = 1;
     }
