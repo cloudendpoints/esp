@@ -1,8 +1,6 @@
 # Release 1.20.0 14-06-2018
 
-- Add cors_with_regex preset
-- Simplify CORS logic by defining variable
-- Add --cors_allow_origin_regex option
+- Add cors_with_regex preset with --cors_allow_origin_regex flag
 - Add --cors_allow_credentials option
 - Add SNI support to ESP for https clients (#399)
 
