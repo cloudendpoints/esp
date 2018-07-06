@@ -46,6 +46,10 @@ char *WriteUserInfoToJson(const UserInfo &user_info) {
   FillChild(&json_consumer_id, &json_email, &json_top, "consumer_id",
             user_info.consumer_id.c_str(), GRPC_JSON_STRING);
 
+  grpc_json json_all_claims;
+  FillChild(&json_all_claims, &json_consumer_id, &json_top, "claims",
+            user_info.claims.c_str(), GRPC_JSON_STRING);
+
   return grpc_json_dump_to_string(&json_top, 0);
 }
 
