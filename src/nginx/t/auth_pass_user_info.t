@@ -34,6 +34,8 @@ use src::nginx::t::HttpServer;
 use src::nginx::t::Auth;
 use Test::Nginx;  # Imports Nginx's test module
 use Test::More;   # And the test framework
+use JSON;
+use MIME::Base64;
 
 ################################################################################
 
@@ -43,7 +45,7 @@ my $ServiceControlPort = ApiManager::pick_port();
 my $BackendPort = ApiManager::pick_port();
 my $PubkeyPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(11);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(15);
 
 my $config = ApiManager::get_bookstore_service_config;
 $config .= <<"EOF";
@@ -134,6 +136,17 @@ isnt($r->{headers}->{'x-endpoint-api-userinfo'}, undef, 'X-Endpoint-API-UserInfo
 
 # Check X-Endpoint-API-UserInfo header.
 my $user_info = $r->{headers}->{'x-endpoint-api-userinfo'};
+my $user_info_json =  decode_json(decode_base64($user_info));
+# Check the claims
+isnt($user_info_json->{'claims'}, undef, 'claims were received');
+my $claims =  decode_json($user_info_json->{'claims'});
+is($claims->{iss}, '628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com', 'iss field in the claims was as expected');
+is($claims->{sub}, '628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com', 'sub field in the claims was as expected');
+is($claims->{aud}, 'endpoints-test.cloudendpointsapis.com', 'aud field in the claims was as expected');
+# Remove the ever-changing iat and exp claims before comparing with the expected values.
+delete $user_info_json->{'claims'};
+$user_info = encode_base64(encode_json($user_info_json));
+
 my $expected_user_info = {
    'issuer' => '628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com',
    'id' => '628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com',
