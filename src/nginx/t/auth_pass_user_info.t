@@ -34,7 +34,7 @@ use src::nginx::t::HttpServer;
 use src::nginx::t::Auth;
 use Test::Nginx;  # Imports Nginx's test module
 use Test::More;   # And the test framework
-use JSON;
+use JSON::PP;
 use MIME::Base64;
 
 ################################################################################
