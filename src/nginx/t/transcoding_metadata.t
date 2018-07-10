@@ -35,6 +35,7 @@ use src::nginx::t::HttpServer;
 use src::nginx::t::ServiceControl;
 use Test::Nginx;  # Imports Nginx's test module
 use Test::More;   # And the test framework
+use MIME::Base64;
 use JSON::PP;
 
 ################################################################################
@@ -45,7 +46,7 @@ my $ServiceControlPort = ApiManager::pick_port();
 my $GrpcServerPort = ApiManager::pick_port();
 my $PubkeyPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(8);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(13);
 
 $t->write_file('service.pb.txt',
         ApiManager::get_grpc_test_service_config($GrpcServerPort) .
@@ -137,7 +138,19 @@ my $expected_userinfo = "ZXlKcGMzTjFaWElpT2lJMk1qZzJORFUzTkRFNE9ERXRibTloWW1sMU1
 
 is('dGV4dA==', $json_response->{receivedMetadata}->{'client-text'}, "Received client-text metadata");
 is('YmluYXJ5', $json_response->{receivedMetadata}->{'client-binary-bin'}, "Received client-binary metadata");
-is($expected_userinfo, $json_response->{receivedMetadata}->{'x-endpoint-api-userinfo'}, "Received x-endpoint-api-userinfo");
+
+# Check X-Endpoint-API-UserInfo header.
+my $user_info = $json_response->{receivedMetadata}->{'x-endpoint-api-userinfo'};
+my $user_info_json =  decode_json(decode_base64(decode_base64($user_info)));
+# Check the issuer and id
+is($user_info_json->{issuer}, '628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com', 'issuer field was as expected');
+is($user_info_json->{id}, '628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com', 'id field was as expected');
+# Check the claims
+isnt($user_info_json->{'claims'}, undef, 'claims were received');
+my $claims =  decode_json($user_info_json->{'claims'});
+is($claims->{iss}, '628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com', 'iss field in the claims was as expected');
+is($claims->{sub}, '628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com', 'sub field in the claims was as expected');
+is($claims->{aud}, 'ok_audience_1', 'aud field in the claims was as expected');
 
 like($headers, qr/initial-text: text/, "Server returns initial text metadata");
 like($headers, qr/initial-binary-bin: YmluYXJ5/, "Server returns initial binary metadata");

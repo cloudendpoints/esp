@@ -160,12 +160,11 @@ results {
   }
   additional_metadata {
     key: "x-endpoint-api-userinfo"
-    value: "eyJpc3N1ZXIiOiI2Mjg2NDU3NDE4ODEtbm9hYml1MjNmNWE4bThvdmQ4dWN2Njk4bGo3OHZ2MGxAZGV2ZWxvcGVyLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJpZCI6IjYyODY0NTc0MTg4MS1ub2FiaXUyM2Y1YThtOG92ZDh1Y3Y2OThsajc4dnYwbEBkZXZlbG9wZXIuZ3NlcnZpY2VhY2NvdW50LmNvbSJ9"
+    value: "eyJ(\S)+"
   }
 }
 EOF
-is($test_results, $test_results_expected, 'Client tests completed as expected.');
-
+like($test_results, qr/$test_results_expected/m, 'Client tests completed as expected.');
 ################################################################################
 
 sub service_control {

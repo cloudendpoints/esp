@@ -299,7 +299,10 @@ const char kEndpointApiUserInfo[] = "X-Endpoint-API-UserInfo";
 //    "id": "end-user-id"
 // }
 const char kUserInfo_kSub_kIss[] =
-    "eyJpc3N1ZXIiOiJodHRwczovL2lzc3VlcjEuY29tIiwiaWQiOiJlbmQtdXNlci1pZCJ9";
+    "eyJjbGFpbXMiOiJ7XCJpc3NcIjpcImh0dHBzOi8vaXNzdWVyMS5jb21cIixcInN1YlwiOlwiZW"
+    "5kLXVzZXItaWRcIixcImF1ZFwiOlwiZW5kcG9pbnRzLXRlc3QuY2xvdWRlbmRwb2ludHNhcGlz"
+    "LmNvbVwiLFwiaWF0XCI6MTQ2MTc3OTMyMSxcImV4cFwiOjI0NjE3ODI5MjF9IiwiaXNzdWVyIj"
+    "oiaHR0cHM6Ly9pc3N1ZXIxLmNvbSIsImlkIjoiZW5kLXVzZXItaWQifQ==";
 
 // Base64 encoded string of
 // {
@@ -307,8 +310,16 @@ const char kUserInfo_kSub_kIss[] =
 //    "id": "another-user-id"
 // }
 const char kUserInfo_kSub2_kIss[] =
-    "eyJpc3N1ZXIiOiJodHRwczovL2lzc3VlcjEuY29tIiwiaWQiOiJhbm90aGVyLXVzZXItaWQif"
-    "Q==";
+    "eyJjbGFpbXMiOiJ7XCJpc3NcIjpcImh0dHBzOi8vaXNzdWVyMS5jb21cIixcInN1YlwiOlwiZW"
+    "5kLXVzZXItaWRcIixcImF1ZFwiOlwiZW5kcG9pbnRzLXRlc3QuY2xvdWRlbmRwb2ludHNhcGlz"
+    "LmNvbVwiLFwiaWF0XCI6MTQ2MTc3OTMyMSxcImV4cFwiOjI0NjE3ODI5MjF9IiwiaXNzdWVyIj"
+    "oiaHR0cHM6Ly9pc3N1ZXIxLmNvbSIsImlkIjoiZW5kLXVzZXItaWQifQ==";
+
+const char kUserInfo_kSub2_kIss2[] =
+    "eyJjbGFpbXMiOiJ7XCJpc3NcIjpcImh0dHBzOi8vaXNzdWVyMS5jb21cIixcInN1YlwiOlwiYW"
+    "5vdGhlci11c2VyLWlkXCIsXCJhdWRcIjpcImVuZHBvaW50cy10ZXN0LmNsb3VkZW5kcG9pbnRz"
+    "YXBpcy5jb21cIixcImlhdFwiOjE0NjE3NzkzMjEsXCJleHBcIjoyNDYxNzgyOTIxfSIsImlzc3"
+    "VlciI6Imh0dHBzOi8vaXNzdWVyMS5jb20iLCJpZCI6ImFub3RoZXItdXNlci1pZCJ9";
 
 // Base64 encoded string of
 // {
@@ -316,7 +327,34 @@ const char kUserInfo_kSub2_kIss[] =
 //    "id": "end-user-id"
 // }
 const char kUserInfo_kSub_kIss2[] =
-    "eyJpc3N1ZXIiOiJodHRwczovL2lzc3VlcjIuY29tIiwiaWQiOiJlbmQtdXNlci1pZCJ9";
+    "eyJjbGFpbXMiOiJ7XCJpc3NcIjpcImh0dHBzOi8vaXNzdWVyMi5jb21cIixcInN1YlwiOlwiZW"
+    "5kLXVzZXItaWRcIixcImF1ZFwiOlwiZW5kcG9pbnRzLXRlc3QuY2xvdWRlbmRwb2ludHNhcGlz"
+    "LmNvbVwiLFwiaWF0XCI6MTQ2MTc3OTMyMSxcImV4cFwiOjI0NjE3ODI5MjF9IiwiaXNzdWVyIj"
+    "oiaHR0cHM6Ly9pc3N1ZXIyLmNvbSIsImlkIjoiZW5kLXVzZXItaWQifQ==";
+
+const char kUserInfo_kSub2_kIss3[] =
+    "eyJjbGFpbXMiOiJ7XCJpc3NcIjpcImh0dHBzOi8vaXNzdWVyMS5jb21cIixcInN1YlwiOlwiZW"
+    "5kLXVzZXItaWRcIixcImF1ZFwiOlwiaHR0cHM6Ly9lbmRwb2ludHMtdGVzdC5jbG91ZGVuZHBv"
+    "aW50c2FwaXMuY29tXCIsXCJpYXRcIjoxNDYxNzc5MzIxLFwiZXhwXCI6MjQ2MTc4MjkyMX0iLC"
+    "Jpc3N1ZXIiOiJodHRwczovL2lzc3VlcjEuY29tIiwiaWQiOiJlbmQtdXNlci1pZCJ9";
+
+const char kUserInfo_kSub2_kIss4[] =
+    "eyJjbGFpbXMiOiJ7XCJpc3NcIjpcImh0dHBzOi8vaXNzdWVyMS5jb21cIixcInN1YlwiOlwiZW"
+    "5kLXVzZXItaWRcIixcImF1ZFwiOlwiaHR0cHM6Ly9lbmRwb2ludHMtdGVzdC5jbG91ZGVuZHBv"
+    "aW50c2FwaXMuY29tL1wiLFwiaWF0XCI6MTQ2MTc3OTMyMSxcImV4cFwiOjI0NjE3ODI5MjF9Ii"
+    "wiaXNzdWVyIjoiaHR0cHM6Ly9pc3N1ZXIxLmNvbSIsImlkIjoiZW5kLXVzZXItaWQifQ==";
+
+const char kUserInfo_kSub2_kIss5[] =
+    "eyJjbGFpbXMiOiJ7XCJpc3NcIjpcImh0dHBzOi8vaXNzdWVyMS5jb21cIixcInN1YlwiOlwiZW"
+    "5kLXVzZXItaWRcIixcImF1ZFwiOlwiaHR0cHM6Ly9lbmRwb2ludHMtdGVzdC5jbG91ZGVuZHBv"
+    "aW50c2FwaXMuY29tXCIsXCJpYXRcIjoxNDYxNzc5MzIxLFwiZXhwXCI6MjQ2MTc4MjkyMX0iLC"
+    "Jpc3N1ZXIiOiJodHRwczovL2lzc3VlcjEuY29tIiwiaWQiOiJlbmQtdXNlci1pZCJ9";
+
+const char kUserInfo_kSub2_kIss6[] =
+    "eyJjbGFpbXMiOiJ7XCJpc3NcIjpcImh0dHBzOi8vaXNzdWVyMS5jb21cIixcInN1YlwiOlwiZW"
+    "5kLXVzZXItaWRcIixcImF1ZFwiOlwiaHR0cHM6Ly9lbmRwb2ludHMtdGVzdC5jbG91ZGVuZHBv"
+    "aW50c2FwaXMuY29tL1wiLFwiaWF0XCI6MTQ2MTc3OTMyMSxcImV4cFwiOjI0NjE3ODI5MjF9Ii"
+    "wiaXNzdWVyIjoiaHR0cHM6Ly9pc3N1ZXIxLmNvbSIsImlkIjoiZW5kLXVzZXItaWQifQ==";
 
 class CheckAuthTest : public ::testing::Test {
  public:
@@ -365,7 +403,8 @@ class CheckAuthTest : public ::testing::Test {
     EXPECT_TRUE(Mock::VerifyAndClearExpectations(raw_request_));
   }
 
-  void TestValidToken(const std::string &auth_token);
+  void TestValidToken(const std::string &auth_token,
+                      const std::string &user_info);
 
   MockApiManagerEnvironment *raw_env_;
   std::shared_ptr<context::ServiceContext> service_context_;
@@ -373,7 +412,8 @@ class CheckAuthTest : public ::testing::Test {
   std::shared_ptr<context::RequestContext> context_;
 };
 
-void CheckAuthTest::TestValidToken(const std::string &auth_token) {
+void CheckAuthTest::TestValidToken(const std::string &auth_token,
+                                   const std::string &user_info) {
   EXPECT_CALL(*raw_request_, FindHeader("x-goog-iap-jwt-assertion", _))
       .WillOnce(Invoke([](const std::string &, std::string *token) {
         *token = "";
@@ -400,7 +440,7 @@ void CheckAuthTest::TestValidToken(const std::string &auth_token) {
         req->OnComplete(Status::OK, std::move(empty), std::move(body));
       }));
   EXPECT_CALL(*raw_request_,
-              AddHeaderToBackend(kEndpointApiUserInfo, kUserInfo_kSub_kIss))
+              AddHeaderToBackend(kEndpointApiUserInfo, user_info))
       .WillOnce(Return(utils::Status::OK));
 
   CheckAuth(context_, [](Status status) { ASSERT_TRUE(status.ok()); });
@@ -414,7 +454,7 @@ void CheckAuthTest::TestValidToken(const std::string &auth_token) {
 //         token is not cached, but key is cached.
 TEST_F(CheckAuthTest, TestOKAuth) {
   // Step 1. Check auth requires open ID discovery and fetching public key.
-  TestValidToken(kToken);
+  TestValidToken(kToken, kUserInfo_kSub2_kIss);
 
   EXPECT_TRUE(Mock::VerifyAndClearExpectations(raw_request_));
   EXPECT_TRUE(Mock::VerifyAndClearExpectations(raw_env_));
@@ -456,7 +496,7 @@ TEST_F(CheckAuthTest, TestOKAuth) {
   EXPECT_CALL(*raw_request_, SetAuthToken(kToken2)).Times(1);
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_)).Times(0);
   EXPECT_CALL(*raw_request_,
-              AddHeaderToBackend(kEndpointApiUserInfo, kUserInfo_kSub2_kIss))
+              AddHeaderToBackend(kEndpointApiUserInfo, kUserInfo_kSub2_kIss2))
       .WillOnce(Return(utils::Status::OK));
 
   CheckAuth(context_, [](Status status) { ASSERT_TRUE(status.ok()); });
@@ -644,21 +684,25 @@ TEST_F(CheckAuthTest, TestBadAudience) {
 }
 
 // Positive test: audience is service name with https prefix.
-TEST_F(CheckAuthTest, TestHttpsAudience) { TestValidToken(kTokenHttpsAud); }
+TEST_F(CheckAuthTest, TestHttpsAudience) {
+  TestValidToken(kTokenHttpsAud, kUserInfo_kSub2_kIss3);
+}
 
 // Positive test: audience is service name with https prefix and a trailing
 // slash.
 TEST_F(CheckAuthTest, TestHttpsSlashAudience) {
-  TestValidToken(kTokenHttpsSlashAud);
+  TestValidToken(kTokenHttpsSlashAud, kUserInfo_kSub2_kIss4);
 }
 
 // Positive test: audience is service name with http prefix.
-TEST_F(CheckAuthTest, TestHttpAudience) { TestValidToken(kTokenHttpAud); }
+TEST_F(CheckAuthTest, TestHttpAudience) {
+  TestValidToken(kTokenHttpAud, kUserInfo_kSub2_kIss5);
+}
 
 // Positive test: audience is service name with http prefix and a trailing
 // slash.
 TEST_F(CheckAuthTest, TestHttpSlashAudience) {
-  TestValidToken(kTokenHttpSlashAud);
+  TestValidToken(kTokenHttpSlashAud, kUserInfo_kSub2_kIss6);
 }
 
 }  // namespace
