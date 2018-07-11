@@ -1,3 +1,10 @@
+# Release 1.21.0 11-07-2018
+
+- Add JWT claims to the X-Endpoint-API-UserInfo header (#409)
+- Add cloud_trace_url_override option
+- add service_control_url_override option
+- Add the parameter ssl_protocols to specify the SSL protocols
+
 # Release 1.20.0 14-06-2018
 
 - Add cors_with_regex preset with --cors_allow_origin_regex flag
