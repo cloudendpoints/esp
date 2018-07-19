@@ -26,7 +26,7 @@
 #
 # A Bazel (http://bazel.io) workspace for the Google Cloud Endpoints runtime.
 
-ESP_TOOL = "30fbd45c24a58caec5a1082f8073dcaeb313bd45"
+ESP_TOOL = "d889a4a11811763e7bfbeb748dfc9dd4c742c1d0"
 
 git_repository(
     name = "nginx",
