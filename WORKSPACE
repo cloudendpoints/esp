@@ -26,8 +26,6 @@
 #
 # A Bazel (http://bazel.io) workspace for the Google Cloud Endpoints runtime.
 
-ESP_TOOL = "30fbd45c24a58caec5a1082f8073dcaeb313bd45"
-
 git_repository(
     name = "nginx",
     commit = "18e870fcf52981cd0804eef269f2bb08182f0e3f",  # v1.13.4
@@ -115,12 +113,6 @@ git_repository(
 bind(
     name = "gflags",
     actual = "@gflags_git//:gflags",
-)
-
-git_repository(
-    name = "tools",
-    commit = ESP_TOOL,
-    remote = "https://github.com/cloudendpoints/endpoints-tools",
 )
 
 #
