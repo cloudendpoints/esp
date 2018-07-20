@@ -218,7 +218,6 @@ pkg_tar(
         # The first occurrence of the duplicate file will be picked. In other
         # words, /etc/nginx/nginx.conf from ":nginx-conf-override" will
         # override that from "@nginx_pkgoss//:debian_overlay".
-        ":start_esp_tar",
         "//start_esp:nginx-conf-template",
         "//start_esp:server-conf-template",
         "//start_esp:nginx-initd-override",
@@ -228,14 +227,6 @@ pkg_tar(
         ":esp-copyright",
         "//start_esp:trusted-ca-certificates",
     ],
-)
-
-pkg_tar(
-    name = "start_esp_tar",
-    files = ["//start_esp:start_esp"],
-    mode = "0755",
-    package_dir = "/usr/sbin",
-    strip_prefix = ".",
 )
 
 pkg_deb(
