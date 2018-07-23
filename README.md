@@ -56,6 +56,8 @@ To download the Extensible Service Proxy source code, clone the ESP repository:
 * [script](/script): Scripts used for build, test, and continuous integration.
 * [test](/test): Applications and client code used for end-to-end testing.
 * [tools](/tools): Assorted tooling.
+* [start_esp](/start_esp): A Python start-up script for the ESP proxy. The script includes a generic nginx configuration template and fetching logic to retrieve service configuration from Google Service Management service.
+
 
 
 ## ESP Tutorial ##
