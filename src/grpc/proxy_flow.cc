@@ -35,9 +35,9 @@ extern "C" {
 #include "src/core/lib/slice/b64.h"
 }
 
+using ::google::api_manager::utils::Status;
 using ::google::protobuf::util::error::UNAVAILABLE;
 using ::google::protobuf::util::error::UNKNOWN;
-using ::google::api_manager::utils::Status;
 using std::chrono::system_clock;
 
 namespace google {
@@ -131,6 +131,7 @@ namespace {
 
 const char kGrpcEncoding[] = "grpc-encoding";
 const char kGrpcAcceptEncoding[] = "grpc-accept-encoding";
+const char kGrpcHostHeader[] = "host";
 
 Status ProcessDownstreamHeaders(
     const std::multimap<std::string, std::string> &headers,
@@ -138,7 +139,10 @@ Status ProcessDownstreamHeaders(
   static grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   for (const auto &it : headers) {
-    if (it.first == kGrpcEncoding || it.first == kGrpcAcceptEncoding) {
+    // gRPC requests (HTTP2) with a host header will lead some gRPC servers to
+    // reject it, so the host header is skipped here.
+    if (it.first == kGrpcEncoding || it.first == kGrpcAcceptEncoding ||
+        it.first == kGrpcHostHeader) {
       // GRPC lib will add this header, so not adding it to client_context_
       continue;
     }
