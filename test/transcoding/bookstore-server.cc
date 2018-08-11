@@ -73,6 +73,20 @@ void PrintRequest(const MessageType& message) {
   std::cout.flush();
 }
 
+// Prints the client metadata to STDOUT
+void PrintClientMetadata(const ::grpc::ServerContext& cxt) {
+  static std::mutex mutex;
+  std::lock_guard<std::mutex> lock(mutex);
+
+  static const char delimiter[] = "\r\n\r\n";
+  for (auto it : cxt.client_metadata()) {
+    std::cout << "metadata_key:" << it.first << std::endl;
+    std::cout << "metadata_value:" << it.second << std::endl;
+  }
+  std::cout << delimiter;
+  std::cout.flush();
+}
+
 // Helper to generate names for books & shelves
 template <typename T>
 int IdGenerator() {
@@ -83,7 +97,8 @@ int IdGenerator() {
 // A memory based Bookstore Service
 class BookstoreServiceImpl : public Bookstore::Service {
  public:
-  BookstoreServiceImpl() {
+  BookstoreServiceImpl(bool printmetadata) {
+    printmetadata_ = printmetadata;
     // Create sample shelves
     shelves_.emplace_back(CreateShelfObject("Fiction"));
     shelves_.emplace_back(CreateShelfObject("Fantasy"));
@@ -99,11 +114,14 @@ class BookstoreServiceImpl : public Bookstore::Service {
 
   // Bookstore::Service implementation
 
-  ::grpc::Status ListShelves(::grpc::ServerContext*,
+  ::grpc::Status ListShelves(::grpc::ServerContext* ctx,
                              const ::google::protobuf::Empty* request,
                              ListShelvesResponse* reply) {
     std::cerr << "GRPC-BACKEND: ListShelves" << std::endl;
     PrintRequest(*request);
+    if (printmetadata_) {
+      PrintClientMetadata(*ctx);
+    }
 
     for (const auto& shelf : shelves_) {
       *reply->add_shelves() = shelf;
@@ -111,10 +129,13 @@ class BookstoreServiceImpl : public Bookstore::Service {
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status CreateShelf(::grpc::ServerContext*,
+  ::grpc::Status CreateShelf(::grpc::ServerContext* ctx,
                              const CreateShelfRequest* request, Shelf* reply) {
     std::cerr << "GRPC-BACKEND: CreateShelf" << std::endl;
     PrintRequest(*request);
+    if (printmetadata_) {
+      PrintClientMetadata(*ctx);
+    }
 
     auto shelf = request->shelf();
     if (0 == shelf.id()) {
@@ -145,10 +166,13 @@ class BookstoreServiceImpl : public Bookstore::Service {
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status GetShelf(::grpc::ServerContext*,
+  ::grpc::Status GetShelf(::grpc::ServerContext* ctx,
                           const GetShelfRequest* request, Shelf* reply) {
     std::cerr << "GRPC-BACKEND: GetShelf" << std::endl;
     PrintRequest(*request);
+    if (printmetadata_) {
+      PrintClientMetadata(*ctx);
+    }
 
     int id = request->shelf();
     for (const auto& shelf : shelves_) {
@@ -169,11 +193,14 @@ class BookstoreServiceImpl : public Bookstore::Service {
                           std::string(detail_status_bin));
   }
 
-  ::grpc::Status DeleteShelf(::grpc::ServerContext*,
+  ::grpc::Status DeleteShelf(::grpc::ServerContext* ctx,
                              const DeleteShelfRequest* request,
                              ::google::protobuf::Empty* reply) {
     std::cerr << "GRPC-BACKEND: DeleteShelf" << std::endl;
     PrintRequest(*request);
+    if (printmetadata_) {
+      PrintClientMetadata(*ctx);
+    }
 
     auto id = request->shelf();
     auto it =
@@ -189,11 +216,14 @@ class BookstoreServiceImpl : public Bookstore::Service {
     }
   }
 
-  ::grpc::Status ListBooks(::grpc::ServerContext*,
+  ::grpc::Status ListBooks(::grpc::ServerContext* ctx,
                            const ListBooksRequest* request,
                            ListBooksResponse* reply) {
     std::cerr << "GRPC-BACKEND: ListBooks" << std::endl;
     PrintRequest(*request);
+    if (printmetadata_) {
+      PrintClientMetadata(*ctx);
+    }
 
     auto shelf_id = request->shelf();
     if (!ShelfExists(shelf_id)) {
@@ -208,10 +238,13 @@ class BookstoreServiceImpl : public Bookstore::Service {
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status CreateBook(::grpc::ServerContext*,
+  ::grpc::Status CreateBook(::grpc::ServerContext* ctx,
                             const CreateBookRequest* request, Book* reply) {
     std::cerr << "GRPC-BACKEND: CreateBook" << std::endl;
     PrintRequest(*request);
+    if (printmetadata_) {
+      PrintClientMetadata(*ctx);
+    }
 
     auto shelf_id = request->shelf();
     if (!ShelfExists(shelf_id)) {
@@ -229,10 +262,13 @@ class BookstoreServiceImpl : public Bookstore::Service {
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status GetBook(::grpc::ServerContext*, const GetBookRequest* request,
-                         Book* reply) {
+  ::grpc::Status GetBook(::grpc::ServerContext* ctx,
+                         const GetBookRequest* request, Book* reply) {
     std::cerr << "GRPC-BACKEND: GetBook" << std::endl;
     PrintRequest(*request);
+    if (printmetadata_) {
+      PrintClientMetadata(*ctx);
+    }
 
     auto shelf_id = request->shelf();
     if (!ShelfExists(shelf_id)) {
@@ -250,11 +286,14 @@ class BookstoreServiceImpl : public Bookstore::Service {
     return ::grpc::Status(grpc::NOT_FOUND, "Book not found");
   }
 
-  ::grpc::Status DeleteBook(::grpc::ServerContext*,
+  ::grpc::Status DeleteBook(::grpc::ServerContext* ctx,
                             const DeleteBookRequest* request,
                             ::google::protobuf::Empty* reply) {
     std::cerr << "GRPC-BACKEND: DeleteBook" << std::endl;
     PrintRequest(*request);
+    if (printmetadata_) {
+      PrintClientMetadata(*ctx);
+    }
 
     auto shelf_id = request->shelf();
     if (!ShelfExists(shelf_id)) {
@@ -272,11 +311,14 @@ class BookstoreServiceImpl : public Bookstore::Service {
     return ::grpc::Status(grpc::NOT_FOUND, "Book not found");
   }
 
-  ::grpc::Status QueryShelves(::grpc::ServerContext*,
+  ::grpc::Status QueryShelves(::grpc::ServerContext* ctx,
                               const QueryShelvesRequest* request,
                               ListShelvesResponse* reply) {
     std::cerr << "GRPC-BACKEND: QueryShelves" << std::endl;
     PrintRequest(*request);
+    if (printmetadata_) {
+      PrintClientMetadata(*ctx);
+    }
 
     for (const auto& shelf : shelves_) {
       if (request->shelf().id() != 0 && shelf.id() != request->shelf().id()) {
@@ -291,11 +333,14 @@ class BookstoreServiceImpl : public Bookstore::Service {
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status QueryBooks(::grpc::ServerContext*,
+  ::grpc::Status QueryBooks(::grpc::ServerContext* ctx,
                             const QueryBooksRequest* request,
                             ListBooksResponse* reply) {
     std::cerr << "GRPC-BACKEND: QueryBooks" << std::endl;
     PrintRequest(*request);
+    if (printmetadata_) {
+      PrintClientMetadata(*ctx);
+    }
 
     auto begin = std::begin(books_);
     auto end = std::end(books_);
@@ -324,11 +369,14 @@ class BookstoreServiceImpl : public Bookstore::Service {
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status EchoStruct(::grpc::ServerContext*,
+  ::grpc::Status EchoStruct(::grpc::ServerContext* ctx,
                             const ::google::protobuf::Struct* request,
                             ::google::protobuf::Struct* reply) {
     std::cerr << "GRPC-BACKEND: EchoStruct" << std::endl;
     PrintRequest(*request);
+    if (printmetadata_) {
+      PrintClientMetadata(*ctx);
+    }
 
     *reply = *request;
 
@@ -360,6 +408,9 @@ class BookstoreServiceImpl : public Bookstore::Service {
                         }) != std::end(shelves_);
   }
 
+  // Whether print metadata
+  bool printmetadata_;
+
   // The database of shelves and books
   std::vector<Shelf> shelves_;
   std::multimap<int, Book> books_;
@@ -371,9 +422,11 @@ class BookstoreServiceImpl : public Bookstore::Service {
 
 int main(int argc, char** argv) {
   auto address = argc > 1 ? argv[1] : "localhost:8081";
+  bool printmetadata =
+      (argc > 2 && !std::string("--printmetadata").compare(argv[2]));
 
   // Bring up the server at the specified address.
-  ::endpoints::examples::bookstore::BookstoreServiceImpl service;
+  ::endpoints::examples::bookstore::BookstoreServiceImpl service(printmetadata);
   ::grpc::ServerBuilder builder;
   builder.AddListeningPort(address, ::grpc::InsecureServerCredentials());
   builder.RegisterService(&service);
