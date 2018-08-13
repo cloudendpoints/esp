@@ -45,7 +45,8 @@ namespace bookstore {
 
 // Prints the request message as JSON to STDOUT
 template <typename MessageType>
-void PrintRequest(const MessageType& message) {
+void PrintRequest(const MessageType& message, const ::grpc::ServerContext& cxt,
+                  const bool printmetadata) {
   static ::google::protobuf::util::TypeResolver* type_resolver =
       ::google::protobuf::util::NewTypeResolverForDescriptorPool(
           "type.googleapis.com", message.GetDescriptor()->file()->pool());
@@ -70,20 +71,15 @@ void PrintRequest(const MessageType& message) {
 
   static const char delimiter[] = "\r\n\r\n";
   std::cout << json << delimiter;
-  std::cout.flush();
-}
 
-// Prints the client metadata to STDOUT
-void PrintClientMetadata(const ::grpc::ServerContext& cxt) {
-  static std::mutex mutex;
-  std::lock_guard<std::mutex> lock(mutex);
-
-  static const char delimiter[] = "\r\n\r\n";
-  for (auto it : cxt.client_metadata()) {
-    std::cout << "metadata_key:" << it.first << std::endl;
-    std::cout << "metadata_value:" << it.second << std::endl;
+  if (printmetadata) {
+    for (auto it : cxt.client_metadata()) {
+      std::cout << "metadata_key:" << it.first << std::endl;
+      std::cout << "metadata_value:" << it.second << std::endl;
+    }
+    std::cout << delimiter;
   }
-  std::cout << delimiter;
+
   std::cout.flush();
 }
 
@@ -118,10 +114,7 @@ class BookstoreServiceImpl : public Bookstore::Service {
                              const ::google::protobuf::Empty* request,
                              ListShelvesResponse* reply) {
     std::cerr << "GRPC-BACKEND: ListShelves" << std::endl;
-    PrintRequest(*request);
-    if (printmetadata_) {
-      PrintClientMetadata(*ctx);
-    }
+    PrintRequest(*request, *ctx, printmetadata_);
 
     for (const auto& shelf : shelves_) {
       *reply->add_shelves() = shelf;
@@ -132,10 +125,7 @@ class BookstoreServiceImpl : public Bookstore::Service {
   ::grpc::Status CreateShelf(::grpc::ServerContext* ctx,
                              const CreateShelfRequest* request, Shelf* reply) {
     std::cerr << "GRPC-BACKEND: CreateShelf" << std::endl;
-    PrintRequest(*request);
-    if (printmetadata_) {
-      PrintClientMetadata(*ctx);
-    }
+    PrintRequest(*request, *ctx, printmetadata_);
 
     auto shelf = request->shelf();
     if (0 == shelf.id()) {
@@ -169,10 +159,7 @@ class BookstoreServiceImpl : public Bookstore::Service {
   ::grpc::Status GetShelf(::grpc::ServerContext* ctx,
                           const GetShelfRequest* request, Shelf* reply) {
     std::cerr << "GRPC-BACKEND: GetShelf" << std::endl;
-    PrintRequest(*request);
-    if (printmetadata_) {
-      PrintClientMetadata(*ctx);
-    }
+    PrintRequest(*request, *ctx, printmetadata_);
 
     int id = request->shelf();
     for (const auto& shelf : shelves_) {
@@ -197,10 +184,7 @@ class BookstoreServiceImpl : public Bookstore::Service {
                              const DeleteShelfRequest* request,
                              ::google::protobuf::Empty* reply) {
     std::cerr << "GRPC-BACKEND: DeleteShelf" << std::endl;
-    PrintRequest(*request);
-    if (printmetadata_) {
-      PrintClientMetadata(*ctx);
-    }
+    PrintRequest(*request, *ctx, printmetadata_);
 
     auto id = request->shelf();
     auto it =
@@ -220,10 +204,7 @@ class BookstoreServiceImpl : public Bookstore::Service {
                            const ListBooksRequest* request,
                            ListBooksResponse* reply) {
     std::cerr << "GRPC-BACKEND: ListBooks" << std::endl;
-    PrintRequest(*request);
-    if (printmetadata_) {
-      PrintClientMetadata(*ctx);
-    }
+    PrintRequest(*request, *ctx, printmetadata_);
 
     auto shelf_id = request->shelf();
     if (!ShelfExists(shelf_id)) {
@@ -241,10 +222,7 @@ class BookstoreServiceImpl : public Bookstore::Service {
   ::grpc::Status CreateBook(::grpc::ServerContext* ctx,
                             const CreateBookRequest* request, Book* reply) {
     std::cerr << "GRPC-BACKEND: CreateBook" << std::endl;
-    PrintRequest(*request);
-    if (printmetadata_) {
-      PrintClientMetadata(*ctx);
-    }
+    PrintRequest(*request, *ctx, printmetadata_);
 
     auto shelf_id = request->shelf();
     if (!ShelfExists(shelf_id)) {
@@ -265,10 +243,7 @@ class BookstoreServiceImpl : public Bookstore::Service {
   ::grpc::Status GetBook(::grpc::ServerContext* ctx,
                          const GetBookRequest* request, Book* reply) {
     std::cerr << "GRPC-BACKEND: GetBook" << std::endl;
-    PrintRequest(*request);
-    if (printmetadata_) {
-      PrintClientMetadata(*ctx);
-    }
+    PrintRequest(*request, *ctx, printmetadata_);
 
     auto shelf_id = request->shelf();
     if (!ShelfExists(shelf_id)) {
@@ -290,10 +265,7 @@ class BookstoreServiceImpl : public Bookstore::Service {
                             const DeleteBookRequest* request,
                             ::google::protobuf::Empty* reply) {
     std::cerr << "GRPC-BACKEND: DeleteBook" << std::endl;
-    PrintRequest(*request);
-    if (printmetadata_) {
-      PrintClientMetadata(*ctx);
-    }
+    PrintRequest(*request, *ctx, printmetadata_);
 
     auto shelf_id = request->shelf();
     if (!ShelfExists(shelf_id)) {
@@ -315,10 +287,7 @@ class BookstoreServiceImpl : public Bookstore::Service {
                               const QueryShelvesRequest* request,
                               ListShelvesResponse* reply) {
     std::cerr << "GRPC-BACKEND: QueryShelves" << std::endl;
-    PrintRequest(*request);
-    if (printmetadata_) {
-      PrintClientMetadata(*ctx);
-    }
+    PrintRequest(*request, *ctx, printmetadata_);
 
     for (const auto& shelf : shelves_) {
       if (request->shelf().id() != 0 && shelf.id() != request->shelf().id()) {
@@ -337,10 +306,7 @@ class BookstoreServiceImpl : public Bookstore::Service {
                             const QueryBooksRequest* request,
                             ListBooksResponse* reply) {
     std::cerr << "GRPC-BACKEND: QueryBooks" << std::endl;
-    PrintRequest(*request);
-    if (printmetadata_) {
-      PrintClientMetadata(*ctx);
-    }
+    PrintRequest(*request, *ctx, printmetadata_);
 
     auto begin = std::begin(books_);
     auto end = std::end(books_);
@@ -373,10 +339,7 @@ class BookstoreServiceImpl : public Bookstore::Service {
                             const ::google::protobuf::Struct* request,
                             ::google::protobuf::Struct* reply) {
     std::cerr << "GRPC-BACKEND: EchoStruct" << std::endl;
-    PrintRequest(*request);
-    if (printmetadata_) {
-      PrintClientMetadata(*ctx);
-    }
+    PrintRequest(*request, *ctx, printmetadata_);
 
     *reply = *request;
 
