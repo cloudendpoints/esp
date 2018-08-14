@@ -80,6 +80,7 @@ function clean_apt() {
   # if failures are related to esp, apt-get install will fail.
   apt-get update --fix-missing
 }
+
 # Install Debian 9 packages
 function install_pkg_debian9() {
   clean_apt
