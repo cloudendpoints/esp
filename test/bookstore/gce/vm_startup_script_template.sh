@@ -65,7 +65,7 @@ function run() {
 }
 
 # Check installed version and compare it to expected version
-function check_esp_version_debian_8() {
+function check_esp_version_debian_9() {
   local version=''
   version=$(dpkg -l | grep endpoints-runtime | awk '{print $3}')
   [[ "${version}" == "${ESP_VERSION}" ]] || \
@@ -80,8 +80,8 @@ function clean_apt() {
   # if failures are related to esp, apt-get install will fail.
   apt-get update --fix-missing
 }
-# Install Debian 8 packages
-function install_pkg_debian8() {
+# Install Debian 9 packages
+function install_pkg_debian9() {
   clean_apt
   # Install dependencies.
   # TODO: delete python dependencies once new package is released.
@@ -90,8 +90,8 @@ function install_pkg_debian8() {
   return 1
 }
 
-# Install ESP and Bookstore for Debian 8
-function install_debian_8() {
+# Install ESP and Bookstore for Debian 9
+function install_debian_9() {
   if [[ -z "${DIRECT_REPO}" && -n "${TESTING_REMOTE_DEB}" ]]; then
     # Installing the testing debian package with dpkg
     TESTING_LOCAL_DEB="enpoints-runtime.deb"
@@ -113,18 +113,18 @@ function install_debian_8() {
       | tee /etc/apt/sources.list.d/google-cloud-endpoints.list
     curl --silent https://packages.cloud.google.com/apt/doc/apt-key.gpg \
       | apt-key add -
-    run retry install_pkg_debian8 endpoints-runtime
+    run retry install_pkg_debian9 endpoints-runtime
   fi
   if [[ -n "${TESTING_REMOTE_DEB}" && -n "${DIRECT_REPO}" ]]; then
     # Cannot check version with official repo.
-    check_esp_version_debian_8
+    check_esp_version_debian_9
   fi
 }
 
 case "${VM_IMAGE}" in
-  "debian-8")
-    install_debian_8
-    run retry install_pkg_debian8 npm supervisor
+  "debian-9")
+    install_debian_9
+    run retry install_pkg_debian9 npm supervisor
     ;;
   *) echo "${VM_IMAGE} is not yet supported" && exit 1;;
 esac
