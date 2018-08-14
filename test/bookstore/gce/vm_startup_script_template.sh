@@ -92,11 +92,11 @@ function install_pkg_debian9() {
 }
 
 function install_npm_debian9() {
-  run retry install_pkg_debian9 curl
+  install_pkg_debian9 curl
 
   curl -sL https://deb.nodesource.com/setup_6.x | sudo bash -
 
-  run retry install_pkg_debian9 nodejs
+  install_pkg_debian9 nodejs
 }
 
 # Install ESP and Bookstore for Debian 9
@@ -134,7 +134,7 @@ case "${VM_IMAGE}" in
   "debian-9")
     install_debian_9
     run retry install_pkg_debian9 supervisor
-    install_npm_debian9
+    run retry install_npm_debian9
     ;;
   *) echo "${VM_IMAGE} is not yet supported" && exit 1;;
 esac
