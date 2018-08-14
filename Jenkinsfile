@@ -53,7 +53,7 @@ SUPPORTED_STAGES = [
 ]
 
 // Supported VM Images
-DEBIAN_JESSIE = 'debian-8'
+DEBIAN_STRETCH = 'debian-9'
 SLAVE_IMAGE = 'gcr.io/endpoints-jenkins/debian-8:0.7'
 
 // Release Qualification end to end tests.
@@ -269,12 +269,12 @@ def e2eTest() {
   def branches = [
       ['gce-debian-8', {
         DefaultNode {
-          e2eGCE(DEBIAN_JESSIE, 'fixed')
+          e2eGCE(DEBIAN_STRETCH, 'fixed')
         }
       }],
       ['gce-debian-8-managed', {
         DefaultNode {
-          e2eGCE(DEBIAN_JESSIE, 'managed')
+          e2eGCE(DEBIAN_STRETCH, 'managed')
         }
       }],
       ['gke-tight-http', {

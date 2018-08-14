@@ -430,6 +430,6 @@ function e2e_usage() {
   -s <skip cleanup>
   -t <test type: http, https, custom>
   -V <endpoints-runtime version>
-  -v <vm image to use. Supported are [debian-8]>"
+  -v <vm image to use. Supported are [debian-9]>"
   exit 1
 }
