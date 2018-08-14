@@ -267,16 +267,16 @@ def e2eTest() {
   // Please don't remove gke-custom-http test. It is important to test
   // custom nginx config.
   def branches = [
-      ['gce-debian-8', {
-        DefaultNode {
-          e2eGCE(DEBIAN_JESSIE, 'fixed')
-        }
-      }],
-      ['gce-debian-8-managed', {
-        DefaultNode {
-          e2eGCE(DEBIAN_JESSIE, 'managed')
-        }
-      }],
+      // ['gce-debian-8', {
+      //   DefaultNode {
+      //     e2eGCE(DEBIAN_JESSIE, 'fixed')
+      //   }
+      // }],
+      // ['gce-debian-8-managed', {
+      //   DefaultNode {
+      //     e2eGCE(DEBIAN_JESSIE, 'managed')
+      //   }
+      // }],
       ['gke-tight-http', {
         DefaultNode {
           e2eGKE('tight', 'http', 'fixed')
