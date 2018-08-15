@@ -53,7 +53,6 @@ SUPPORTED_STAGES = [
 ]
 
 // Supported VM Images
-DEBIAN_JESSIE = 'debian-8'
 SLAVE_IMAGE = 'gcr.io/endpoints-jenkins/debian-8:0.7'
 
 // Release Qualification end to end tests.
@@ -63,7 +62,6 @@ SLAVE_IMAGE = 'gcr.io/endpoints-jenkins/debian-8:0.7'
 // Please Update script/validate_release.py when adding or removing long-run-test.
 RELEASE_QUALIFICATION_BRANCHES = [
     'flex',
-    'gce-debian-8',
     'gke-tight-https',
     'gke-tight-http2-echo',
     'gke-tight-http2-interop',
@@ -267,16 +265,6 @@ def e2eTest() {
   // Please don't remove gke-custom-http test. It is important to test
   // custom nginx config.
   def branches = [
-      ['gce-debian-8', {
-        DefaultNode {
-          e2eGCE(DEBIAN_JESSIE, 'fixed')
-        }
-      }],
-      ['gce-debian-8-managed', {
-        DefaultNode {
-          e2eGCE(DEBIAN_JESSIE, 'managed')
-        }
-      }],
       ['gke-tight-http', {
         DefaultNode {
           e2eGKE('tight', 'http', 'fixed')
