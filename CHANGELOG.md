@@ -1,3 +1,8 @@
+# Release 1.22.0 16-08-2018
+
+- Add two options --generate_config_file_only and --server_config_generation_path
+- Skip the host header in the grpc metadata (#424)
+
 # Release 1.21.0 11-07-2018
 
 - Add JWT claims to the X-Endpoint-API-UserInfo header (#409)
