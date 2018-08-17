@@ -50,16 +50,14 @@ function start_debug() {
 
   ulimit -c unlimited
 
-  # Sending USR2 to Nginx to reload the binary
-  kill -USR2 "$(cat /var/run/nginx.pid)"
+  nginx -s reload
 }
 
 function stop_debug() {
   [[ -e /etc/nginx/nginx.conf.original ]] && cp /etc/nginx/nginx.conf.original /etc/nginx/nginx.conf
   [[ -e /usr/sbin/nginx.original ]] && cp /usr/sbin/nginx.original /usr/sbin/nginx
 
-  # Sending USR2 to Nginx to reload the binary
-  kill -USR2 "$(cat /var/run/nginx.pid)"
+  nginx -s reload
 }
 
 case $1 in
