@@ -103,7 +103,7 @@ if ! [[ -e "${TMP_DEBIAN_PACKAGE}" ]]; then
   ${BAZEL} ${BAZEL_ARGS} build ${BAZEL_BUILD_ARGS} \
     -c dbg //src/nginx/main:nginx-esp
   echo 'Copying debug nginx...'
-  cp -f "${NGINX}" "${ROOT}/src/nginx/main/nginx-debug"
+  cp -f "${NGINX}" "${ROOT}/start_esp/nginx-debug"
   echo 'Building Endpoints Runtime .deb package.'
   ${BAZEL} ${BAZEL_ARGS} build ${BAZEL_BUILD_ARGS} \
     --config=release //src/nginx/main:endpoints-server-proxy \
