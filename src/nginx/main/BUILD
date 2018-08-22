@@ -218,6 +218,7 @@ pkg_tar(
         # The first occurrence of the duplicate file will be picked. In other
         # words, /etc/nginx/nginx.conf from ":nginx-conf-override" will
         # override that from "@nginx_pkgoss//:debian_overlay".
+        ":start_esp_tar",
         "//start_esp:nginx-conf-template",
         "//start_esp:server-conf-template",
         "//start_esp:nginx-initd-override",
@@ -227,6 +228,82 @@ pkg_tar(
         ":esp-copyright",
         "//start_esp:trusted-ca-certificates",
     ],
+)
+
+genrule(
+    name = "import_nginx_conf_template",
+    srcs = ["//start_esp:nginx-auto.conf.template"],
+    outs = ["nginx-conf-template"],
+    cmd = "cat $(location //start_esp:nginx-auto.conf.template) > $@",
+)
+
+
+genrule(
+    name = "import_server_conf_template",
+    srcs = ["//start_esp:server-auto.conf.template"],
+    outs = ["server-conf-template"],
+    cmd = "cat $(location //start_esp:server-auto.conf.template) > $@",
+)
+
+py_binary(
+    name = "start_esp_binary",
+    srcs = [
+        "//start_esp:fetch_service_config.py",
+        "//start_esp:start_esp.py",
+    ],
+    main = "//start_esp:start_esp.py",
+)
+
+py_test(
+    name = "start_esp_test",
+    srcs = [
+        "start_esp_test.py",
+    ],
+    data = [
+        "testdata/expected_basic_nginx.conf",
+        "testdata/expected_backend_nginx.conf",
+        "testdata/expected_status_port_nginx.conf",
+        "testdata/expected_metadata_nginx.conf",
+        "testdata/expected_dns_nginx.conf",
+        "testdata/expected_access_log_nginx.conf",
+        "testdata/expected_healthz_nginx.conf",
+        "testdata/expected_underscores_in_headers_nginx.conf",
+        "testdata/expected_enable_websocket_nginx.conf",
+        "testdata/expected_client_max_body_size_nginx.conf",
+        "testdata/expected_allow_invalid_headers_nginx.conf",
+        "testdata/expected_client_body_buffer_size_nginx.conf",
+        "testdata/expected_worker_processes_nginx.conf",
+        "testdata/expected_ssl_protocols_nginx.conf",
+        "testdata/expected_ssl_port_nginx.conf",
+        "testdata/expected_cors_preset_basic_nginx.conf",
+        "testdata/expected_cors_allow_origin_nginx.conf",
+        "testdata/expected_cors_allow_methods_nginx.conf",
+        "testdata/expected_cors_allow_headers_nginx.conf",
+        "testdata/expected_cors_allow_credentials_nginx.conf",
+        "testdata/expected_cors_expose_headers_nginx.conf",
+        "testdata/expected_cors_allow_origin_regex_nginx.conf",
+        "testdata/test_service_config_1.json",
+        "testdata/expected_service_control_url_override_server.json",
+        "testdata/expected_rollout_strategy_server.json",
+        "testdata/expected_client_ip_header_server.json",
+        "testdata/expected_client_ip_position_server.json",
+        "testdata/expected_management_server.json",
+        "testdata/expected_transcoding_always_print_primitive_fields_server.json",
+        "testdata/expected_rewrite_server.json",
+        "testdata/expected_disable_cloud_trace_auto_sampling_server.json",
+        "testdata/expected_cloud_trace_url_override_server.json",
+        ":start_esp_binary",
+        ":nginx-conf-template",
+        ":server-conf-template",
+    ],
+)
+
+pkg_tar(
+    name = "start_esp_tar",
+    files = ["//start_esp:start_esp"],
+    mode = "0755",
+    package_dir = "/usr/sbin",
+    strip_prefix = ".",
 )
 
 pkg_deb(
