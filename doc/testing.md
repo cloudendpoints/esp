@@ -39,7 +39,7 @@ Run ESP unit and integration tests:
 Before starting ESP, start_esp executable generates the ESP configuration files based on its input arguments. To test that the
 generated ESP configuration files are as expected:
 
-    bazel test //src/nginx/main:start_esp_test
+    bazel test //start_esp/test:start_esp_test
 
 # Running ASAN and TSAN tests #
 
