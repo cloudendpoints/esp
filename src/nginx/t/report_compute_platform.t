@@ -55,7 +55,7 @@ control {
 EOF
 $t->write_file('service.pb.txt', $config);
 
-ApiManager::write_file_expand($t, 'nginx.conf', <<"EOF");
+$t->write_file_expand('nginx.conf', <<"EOF");
 %%TEST_GLOBALS%%
 daemon off;
 events {
@@ -73,7 +73,7 @@ http {
     location / {
       endpoints {
         api service.pb.txt;
-        %%TEST_CONFIG%%
+        server_config server_config.pb.txt;
         on;
       }
       proxy_pass http://127.0.0.1:${BackendPort};
@@ -92,10 +92,16 @@ sub run_test_case {
   my $servicecontrol_log = "servicecontrol-${name}.log";
   my $metadata_log = "metadata-${name}.log";
 
+  $t->write_file('server_config.pb.txt', <<"EOF");
+metadata_attributes {
+  zone: "us-west1-a"
+  $test_case->{metadata_key}: "$test_case->{metadata_value}"
+}
+EOF
+
   $t->run_daemon(\&bookstore, $t, $BackendPort, $bookstore_log, $test_case->{platform});
   $t->run_daemon(\&servicecontrol, $t, $ServiceControlPort, $servicecontrol_log, $report_done);
-  $t->run_daemon(\&metadata, $t, $MetadataPort, $test_case->{metadata_key},
-                 $test_case->{metadata_value}, $metadata_log);
+  $t->run_daemon(\&metadata, $t, $MetadataPort, $metadata_log);
 
   is($t->waitforsocket("127.0.0.1:${BackendPort}"), 1, "${name}: Bookstore socket ready.");
   is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, "${name}: Service control socket ready.");
@@ -144,7 +150,7 @@ my @test_cases = (
   },
   {
     name => 'gke',
-    metadata_key => 'kube-env',
+    metadata_key => 'kube_env',
     metadata_value => 'Kubernetes environment',
     platform => 'GKE',
   },
@@ -195,30 +201,10 @@ EOF
 ################################################################################
 
 sub metadata {
-  my ($t, $port, $metadata_key, $metadata_value, $file) = @_;
+  my ($t, $port, $file) = @_;
   my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
-
-  $server->on('GET', '/computeMetadata/v1/?recursive=true', <<EOF);
-HTTP/1.1 200 OK
-Metadata-Flavor: Google
-Content-Type: application/json
-
-{
-  "instance": {
-    "attributes": {
-      "${metadata_key}": "${metadata_value}"
-    },
-    "hostname": "gae-default-20150921t180445-inqp.c.esp-test-app.internal",
-    "zone": "projects/345623948572/zones/us-west1-a"
-  },
-  "project": {
-    "numericProjectId": 345623948572,
-    "projectId": "esp-test-app"
-  }
-}
-EOF
 
   $server->on('GET', '/computeMetadata/v1/instance/service-accounts/default/token', <<'EOF');
 HTTP/1.1 200 OK

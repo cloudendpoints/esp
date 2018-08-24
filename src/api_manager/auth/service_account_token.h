@@ -54,7 +54,7 @@ class ServiceAccountToken {
     access_token_.set_token(token, expiration);
   }
 
-  // The access token from metadata server response inn JSON format:
+  // The access token from metadata server response in JSON format:
   // {
   //   "access_token":" ... ",
   //   "expires_in":100,
