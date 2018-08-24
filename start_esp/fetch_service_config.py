@@ -59,8 +59,14 @@ def fetch_metadata(metadata, attr_path, required):
     url = metadata + _METADATA_PATH + attr_path
     headers = {"Metadata-Flavor": "Google"}
     client = urllib3.PoolManager(ca_certs=certifi.where())
+    if required:
+      timeout = 1.0
+      retries = True
+    else:
+      timeout = 0.1
+      retries = False
     try:
-      response = client.request("GET", url, headers=headers)
+      response = client.request("GET", url, headers=headers, timeout=timeout, retries=retries)
     except:
       if required:
         raise FetchError(1,
@@ -128,6 +134,9 @@ def fetch_metadata_attributes(metadata):
           value += "  }"
           out_str += "  {}: {}".format(key, value)
         else:
+          # Kube_env value is too big, esp only checks it is empty.
+          if key == "kube_env":
+            value = "KUBE_ENV"
           out_str += "  {}: \"{}\"".format(key, value) + "\n"
         logging.info("Attribute {}: {}".format(key, value))
     return out_str

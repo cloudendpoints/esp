@@ -765,21 +765,18 @@ if __name__ == '__main__':
     else:
         # Fetch service config and place it in the standard location
         ensure(args.config_dir)
-        # TODO: revert this change.
-#        if not args.generate_config_file_only:
-        fetch_service_config(args)
+        if not args.generate_config_file_only:
+            fetch_service_config(args)
 
     # Generate server_config
+    args.metadata_attributes = fetch.fetch_metadata_attributes(args.metadata)
     if args.generate_config_file_only:
         if args.server_config_generation_path is None:
             logging.error("when --generate_config_file_only, must specify --server_config_generation_path")
             sys.exit(3)
         else:
-            # TODO: remove following line before submit
-            args.metadata_attributes = fetch.fetch_metadata_attributes(args.metadata)
             write_server_config_template(args.server_config_generation_path, args)
     else:
-        args.metadata_attributes = fetch.fetch_metadata_attributes(args.metadata)
         write_server_config_template(SERVER_CONF, args)
 
     # Generate nginx config if not specified
