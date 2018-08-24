@@ -156,8 +156,8 @@ my @test_cases = (
   },
   {
     name => 'gce',
-    metadata_key => 'insignificant-key',
-    metadata_value => 'value',
+    metadata_key => 'project_id',
+    metadata_value => 'esp-load-test',
     platform => 'GCE',
   }
 );

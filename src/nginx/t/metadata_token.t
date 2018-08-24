@@ -42,9 +42,8 @@ use JSON::PP;
 my $NginxPort = ApiManager::pick_port();
 my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
-my $MetadataPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(16);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(9);
 
 my $config = ApiManager::get_bookstore_service_config . <<"EOF";
 control {
@@ -54,7 +53,15 @@ EOF
 
 $t->write_file('service.pb.txt', $config);
 
-$t->write_file('server_config.pb.txt', ApiManager::disable_service_control_cache);
+$t->write_file('server_config.pb.txt', <<'EOF');
+metadata_attributes {
+  access_token {
+    access_token: "ya29.7gFRTEGmovWacYDnQIpC9X9Qp8cH0sgQyWVrZaB1Eg1WoAhQMSG4L2rtaHk1"
+    token_type: "Bearer"
+    expires_in: 200
+  }
+}
+EOF
 
 $t->write_file_expand('nginx.conf', <<"EOF");
 %%TEST_GLOBALS%%
@@ -63,9 +70,6 @@ events { worker_connections 32; }
 http {
   %%TEST_GLOBALS_HTTP%%
   server_tokens off;
-  endpoints {
-    metadata_server http://127.0.0.1:${MetadataPort};
-  }
   server {
     listen 127.0.0.1:${NginxPort};
     server_name localhost;
@@ -86,46 +90,29 @@ my $report_done = 'report.done';
 
 $t->run_daemon(\&bookstore, $t, $BackendPort, 'bookstore.log');
 $t->run_daemon(\&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log', $report_done);
-$t->run_daemon(\&metadata, $t, $MetadataPort, 'metadata.log');
 
 is($t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'Bookstore socket ready.');
 is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control socket ready.');
-is($t->waitforsocket("127.0.0.1:${MetadataPort}"), 1, 'Metadata socket ready.');
 
 $t->run();
 
 ################################################################################
 
-my $shelves = ApiManager::http_get($NginxPort,'/shelves');
-my $books = ApiManager::http_get($NginxPort,'/shelves/Musicals/books');
+my $shelves = ApiManager::http_get($NginxPort,'/shelves?key=api-key');
 
 is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');
 
 $t->stop();
 $t->stop_daemons();
 
-like($shelves, qr/^HTTP\/1\.1 401 Unauthorized/, '/shelves returned HTTP 401.');
-like($books, qr/^HTTP\/1\.1 401/, '/books returned HTTP 401.');
-
-# Check metadata server log.
-my @metadata_requests = ApiManager::read_http_stream($t, 'metadata.log');
-# There will be 2 requests to fake metadata server.
-# the first one is time-out-ed since server puts a 2 second sleep.
-# the retry (2nd request) should be fine since there is not sleep.
-is(scalar @metadata_requests, 2, 'Metadata server received all requests.');
-
-# Metadata request 1
-my $r = shift @metadata_requests;
-is($r->{verb}, 'GET', 'Metadata request 1 was GET');
-is($r->{uri}, '/computeMetadata/v1/instance/service-accounts/default/token', 'Metadata request was recursive');
+like($shelves, qr/^HTTP\/1\.1 200 OK/, '/shelves returned 200 OK.');
 
 # Check service control requests...
 my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
-is(scalar @servicecontrol_requests, 2, 'Service control received 2 requests (report).');
+is(scalar @servicecontrol_requests, 2, 'Service control received 2 requests.');
 
 for my $r (@servicecontrol_requests) {
   is($r->{verb}, 'POST', ':report was POST');
-  is($r->{path}, '/v1/services/endpoints-test.cloudendpointsapis.com:report', ':report path');
   is($r->{headers}->{authorization},
     'Bearer ya29.7gFRTEGmovWacYDnQIpC9X9Qp8cH0sgQyWVrZaB1Eg1WoAhQMSG4L2rtaHk1',
     ':report was authenticated');
@@ -140,20 +127,12 @@ sub bookstore {
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
 
-  $server->on('GET', '/shelves', <<'EOF');
+  $server->on('GET', '/shelves?key=api-key', <<'EOF');
 HTTP/1.1 200 OK
 Content-Type: application/text
 Connection: close
 
 Musicals
-EOF
-
-  $server->on('GET', '/shelves/Musicals/books', <<'EOF');
-HTTP/1.1 200 OK
-Content-Type: application/text
-Connection: close
-
-Hamilton: The Revolution
 EOF
 
   $server->run();
@@ -166,7 +145,6 @@ sub servicecontrol {
   my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
-  my $request_count = 0;
 
   $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:check', sub {
     my ($headers, $body, $client) = @_;
@@ -186,42 +164,7 @@ Content-Type: application/json
 Connection: close
 
 EOF
-    $request_count++;
-    if ($request_count == 2) {
-      $t->write_file($done, ':report called');
-    }
-  });
-
-  $server->run();
-}
-
-sub metadata {
-  my ($t, $port, $file) = @_;
-  my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
-    or die "Can't create test server socket: $!\n";
-  local $SIG{PIPE} = 'IGNORE';
-  my $request_count = 0;
-
-  $server->on_sub('GET', '/computeMetadata/v1/instance/service-accounts/default/token', sub {
-    my ($headers, $body, $client) = @_;
-
-    $request_count++;
-    if ($request_count == 1) {
-        # Trigger a timeout for the first request.
-        sleep 2;
-    }
-
-    print $client <<'EOF';
-HTTP/1.1 200 OK
-Metadata-Flavor: Google
-Content-Type: application/json
-
-{
- "access_token":"ya29.7gFRTEGmovWacYDnQIpC9X9Qp8cH0sgQyWVrZaB1Eg1WoAhQMSG4L2rtaHk1",
- "expires_in":200,
- "token_type":"Bearer"
-}
-EOF
+    $t->write_file($done, ':report called');
   });
 
   $server->run();
