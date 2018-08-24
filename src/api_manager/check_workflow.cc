@@ -27,8 +27,6 @@ namespace google {
 namespace api_manager {
 
 void CheckWorkflow::RegisterAll() {
-  // Fetchs GCE metadata.
-  Register(FetchGceMetadata);
   // Fetchs service account token.
   Register(FetchServiceAccountToken);
   // Authentication checks.

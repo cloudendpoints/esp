@@ -175,7 +175,8 @@ def write_server_config_template(server_config, args):
              client_ip_position=args.client_ip_position,
              rewrite_rules=args.rewrite,
              disable_cloud_trace_auto_sampling=args.disable_cloud_trace_auto_sampling,
-             cloud_trace_url_override=args.cloud_trace_url_override)
+             cloud_trace_url_override=args.cloud_trace_url_override,
+             metadata_attributes=args.metadata_attributes)
 
     # Save nginx conf
     try:
@@ -764,8 +765,9 @@ if __name__ == '__main__':
     else:
         # Fetch service config and place it in the standard location
         ensure(args.config_dir)
-        if not args.generate_config_file_only:
-            fetch_service_config(args)
+        # TODO: revert this change.
+#        if not args.generate_config_file_only:
+        fetch_service_config(args)
 
     # Generate server_config
     if args.generate_config_file_only:
@@ -773,8 +775,11 @@ if __name__ == '__main__':
             logging.error("when --generate_config_file_only, must specify --server_config_generation_path")
             sys.exit(3)
         else:
+            # TODO: remove following line before submit
+            args.metadata_attributes = fetch.fetch_metadata_attributes(args.metadata)
             write_server_config_template(args.server_config_generation_path, args)
     else:
+        args.metadata_attributes = fetch.fetch_metadata_attributes(args.metadata)
         write_server_config_template(SERVER_CONF, args)
 
     # Generate nginx config if not specified

@@ -63,7 +63,6 @@ cc_library(
     hdrs = [
         "api_manager_impl.h",
         "config.h",
-        "gce_metadata.h",
         "method_impl.h",
         "request_handler.h",
     ],
@@ -89,7 +88,6 @@ cc_library(
         "config_manager.h",
         "fetch_metadata.cc",
         "fetch_metadata.h",
-        "gce_metadata.cc",
         "http_template.h",
         "method_impl.cc",
         "quota_control.cc",
@@ -177,19 +175,6 @@ cc_test(
     deps = [
         ":api_manager",
         ":mock_api_manager_environment",
-        "//external:googletest_main",
-    ],
-)
-
-cc_test(
-    name = "gce_metadata_test",
-    size = "small",
-    srcs = [
-        "gce_metadata_test.cc",
-    ],
-    linkstatic = 1,
-    deps = [
-        ":api_manager",
         "//external:googletest_main",
     ],
 )

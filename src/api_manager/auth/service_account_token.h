@@ -54,6 +54,14 @@ class ServiceAccountToken {
     access_token_.set_token(token, expiration);
   }
 
+  // The access token from metadata server response inn JSON format:
+  // {
+  //   "access_token":" ... ",
+  //   "expires_in":100,
+  //   "token_type":"Bearer"
+  // }
+  bool SetTokenJsonResponse(const std::string& token);
+
   // Returns true if access token is valid `duration` seconds from now.
   // Use 0 for `duration` to check if the token is valid now.
   bool is_access_token_valid(time_t duration) const {
