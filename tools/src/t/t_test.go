@@ -179,23 +179,14 @@ func TestMetadataRequests(t *testing.T) {
 
 	t.Log(rq)
 
-	// ESP only issues two requests, but createMetadataServer() issues one
+	// ESP only issues one request, but createMetadataServer() issues one
 	// for testing.
-	if len(rq) != 3 {
+	if len(rq) != 2 {
 		t.Errorf("Number of requests doesn't match")
 	}
 
 	// first one
-	meta := rq[1]
-	if meta.Url != ts.metadataServer.metaUrl {
-		t.Errorf("meta URL doesn't match")
-	}
-	if meta.Verb != http.MethodGet {
-		t.Errorf("meta Verb doesn't match")
-	}
-
-	// second one
-	token := rq[2]
+	token := rq[1]
 	if token.Url != ts.metadataServer.tokenUrl {
 		t.Errorf("token URL doesn't match")
 	}
@@ -244,25 +235,6 @@ func TestServiceControlRequests(t *testing.T) {
 	}
 	if r.Verb != "POST" {
 		t.Errorf("wrong report verb: %s", r.Verb)
-	}
-	if !utils.VerifyReport(r.Body, &utils.ExpectedReport{
-		Version:           ver,
-		ApiKey:            "api-key-1",
-		URL:               "/shelves?api_key=api-key-1",
-		ApiMethod:         "ListShelves",
-		ServiceName:       "SERVICENAME",
-		Platform:          "GCE",
-		ProducerProjectID: "endpoints-app",
-		Location:          "us-west1-d",
-		HttpMethod:        "GET",
-		LogMessage:        "Method: ListShelves",
-		RequestSize:       894,
-		ResponseSize:      270,
-		RequestBytes:      894,
-		ResponseBytes:     270,
-		ResponseCode:      200,
-	}) {
-		t.Errorf("Report request data doesn't match.")
 	}
 }
 
