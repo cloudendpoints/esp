@@ -501,6 +501,17 @@ void wakeup_event_handler(ngx_event_t *ev) {
   ngx_log_debug2(NGX_LOG_DEBUG_HTTP, ev->log, 0,
                  "esp: destroying pools c=%p, r=%p", cp, rp);
 
+  // If the connection is reset by peer, somehow rp or cp is 0.
+  // Not sure if any of pools have been freed. But trying to free
+  // a nullptr pool definitely will cause crash.
+  // Here, choose the least of evil, memory leak over crash.
+  if (rp == nullptr || cp == nullptr) {
+    ngx_log_debug2(NGX_LOG_WARN_HTTP, ev->log, 0,
+                   "esp memory pools may not be freed: pools c=%p, r=%p", cp,
+                   rp);
+    return;
+  }
+
   // Destroy the pools.
   ngx_destroy_pool(rp);
   ngx_destroy_pool(cp);
