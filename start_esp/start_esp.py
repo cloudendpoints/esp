@@ -332,10 +332,10 @@ def fetch_service_config(args):
                     rollout = fetch.fetch_latest_rollout(args.management,
                                                          service, token)
                     args.rollout_ids.append(rollout["rolloutId"])
+                    args.service_config_sets.append({})
                     for version, percentage in rollout["trafficPercentStrategy"]["percentages"].iteritems():
                         filename = generate_service_config_filename(version)
                         fetch_and_save_service_config(args.management, service, args.config_dir, token, version, filename)
-                        args.service_config_sets.append({})
                         args.service_config_sets[idx][args.config_dir + "/" + filename] = percentage;
             else:
                 # Set the file name to "service.json", if either service
