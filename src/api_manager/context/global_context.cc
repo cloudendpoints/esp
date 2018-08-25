@@ -48,7 +48,10 @@ GlobalContext::GlobalContext(std::unique_ptr<ApiManagerEnvInterface> env,
     : env_(std::move(env)),
       service_account_token_(env_.get()),
       is_auth_force_disabled_(false),
-      intermediate_report_interval_(kIntermediateReportInterval) {
+      disable_log_status_(false),
+      always_print_primitive_fields_(false),
+      intermediate_report_interval_(kIntermediateReportInterval),
+      platform_(compute_platform::UNKNOWN) {
   // Need to load server config first.
   server_config_ = Config::LoadServerConfig(env_.get(), server_config);
 
@@ -75,6 +78,33 @@ GlobalContext::GlobalContext(std::unique_ptr<ApiManagerEnvInterface> env,
             .intermediate_report_min_interval()) {
       intermediate_report_interval_ = server_config_->service_control_config()
                                           .intermediate_report_min_interval();
+    }
+
+    if (server_config_->has_metadata_attributes()) {
+      const auto& metadata = server_config_->metadata_attributes();
+      if (!metadata.gae_server_software().empty()) {
+        platform_ = compute_platform::GAE_FLEX;
+      } else if (!metadata.kube_env().empty()) {
+        platform_ = compute_platform::GKE;
+      } else {
+        platform_ = compute_platform::GCE;
+      }
+      location_ = metadata.zone();
+      project_id_ = metadata.project_id();
+
+      if (metadata.has_access_token()) {
+        const auto& token = metadata.access_token();
+        service_account_token_.set_state(auth::ServiceAccountToken::FETCHED);
+        service_account_token_.set_access_token(token.access_token(),
+                                                token.expires_in() - 50);
+      }
+    }
+
+    if (server_config_->has_experimental()) {
+      const auto& experimental = server_config_->experimental();
+      disable_log_status_ = experimental.disable_log_status();
+      always_print_primitive_fields_ =
+          experimental.always_print_primitive_fields();
     }
   }
 }
@@ -116,14 +146,6 @@ GlobalContext::CreateCloudTraceAggregator() {
   return std::unique_ptr<cloud_trace::Aggregator>(new cloud_trace::Aggregator(
       &service_account_token_, url, aggregate_time_millisec, cache_max_size,
       minimum_qps, env_.get()));
-}
-
-const std::string& GlobalContext::project_id() const {
-  if (gce_metadata_.has_valid_data() && !gce_metadata_.project_id().empty()) {
-    return gce_metadata_.project_id();
-  }
-  static std::string empty;
-  return empty;
 }
 
 }  // namespace context

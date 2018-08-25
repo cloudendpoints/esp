@@ -39,10 +39,12 @@ _GOOGLE_API_SCOPE = (
     "https://www.googleapis.com/auth/service.management.readonly")
 
 # Metadata service path
-_METADATA_PATH = "/computeMetadata/v1/instance"
+_METADATA_PATH = "/computeMetadata/v1/"
+_INSTANCE_ATTRIBUTES = "instance/attributes/"
 _METADATA_SERVICE_NAME = "endpoints-service-name"
 _METADATA_SERVICE_CONFIG_ID = "endpoints-service-config-id"
 _METADATA_ROLLOUT_STRATEGY = "endpoints-rollout-strategy"
+
 
 class FetchError(Exception):
     """Error class for fetching and validation errors."""
@@ -52,76 +54,92 @@ class FetchError(Exception):
     def __str__(self):
         return self.message
 
-def fetch_service_config_rollout_strategy(metadata):
-    """Fetch service config rollout strategy from metadata URL."""
-    url = metadata + _METADATA_PATH + "/attributes/" + \
-        _METADATA_ROLLOUT_STRATEGY
+def fetch_metadata(metadata, attr_path, required):
+    """Fetch an attribute from metadata URL."""
+    url = metadata + _METADATA_PATH + attr_path
     headers = {"Metadata-Flavor": "Google"}
     client = urllib3.PoolManager(ca_certs=certifi.where())
+    if required:
+      timeout = 1.0
+      retries = True
+    else:
+      timeout = 0.1
+      retries = False
     try:
-        response = client.request("GET", url, headers=headers)
+      response = client.request("GET", url, headers=headers, timeout=timeout, retries=retries)
     except:
-        logging.info("Failed to fetch service config rollout strategy " + \
-            "from the metadata server: " + url);
+      if required:
+        raise FetchError(1,
+            "Failed fetching metadata attribute: " + url)
+      else:
         return None
     status_code = response.status
-
     if status_code != 200:
-        # Fetching rollout strategy is optional. No need to leave log
+      if required:
+        message_template = "Failed fetching metadata attribute: {}, status code {}"
+        raise FetchError(1, message_template.format(url, status_code))
+      else:
         return None
+    return response.data
 
-    rollout_strategy = response.data
-    logging.info("Service config rollout strategy: " + rollout_strategy)
-    return rollout_strategy
+def fetch_service_config_rollout_strategy(metadata):
+    """Fetch service config rollout strategy from metadata URL."""
+    strategy = fetch_metadata(
+        metadata, _INSTANCE_ATTRIBUTES + _METADATA_ROLLOUT_STRATEGY, False)
+    if strategy:
+      logging.info("Service config rollout strategy: " + strategy)
+    return strategy
 
 def fetch_service_name(metadata):
     """Fetch service name from metadata URL."""
-    url = metadata + _METADATA_PATH + "/attributes/" + _METADATA_SERVICE_NAME
-    headers = {"Metadata-Flavor": "Google"}
-    client = urllib3.PoolManager(ca_certs=certifi.where())
-    try:
-        response = client.request("GET", url, headers=headers)
-    except:
-        raise FetchError(1,
-            "Failed to fetch service name from the metadata server: " + url)
-    status_code = response.status
-
-    if status_code != 200:
-        message_template = "Fetching service name failed (url {}, status code {})"
-        raise FetchError(1, message_template.format(url, status_code))
-
-    name = response.data
+    name = fetch_metadata(
+        metadata, _INSTANCE_ATTRIBUTES + _METADATA_SERVICE_NAME, True)
     logging.info("Service name: " + name)
     return name
 
-# config_id from metadata is optional. Returns None instead of raising error
 def fetch_service_config_id(metadata):
     """Fetch service config ID from metadata URL."""
-    url = metadata + _METADATA_PATH + "/attributes/" + _METADATA_SERVICE_CONFIG_ID
-    headers = {"Metadata-Flavor": "Google"}
-    client = urllib3.PoolManager(ca_certs=certifi.where())
-    try:
-        response = client.request("GET", url, headers=headers)
-        if response.status != 200:
-            # Fetching service config id is optional. No need to leave log
-            raise None
-    except:
-        url = metadata + _METADATA_PATH + "/attributes/endpoints-service-version"
-        try:
-            response = client.request("GET", url, headers=headers)
-        except:
-            logging.info("Failed to fetch service config ID from the metadata server: " + url)
-            return None
-
-        if response.status != 200:
-            message_template = "Fetching service config ID failed (url {}, status code {})"
-            logging.info(message_template.format(url, response.status))
-            return None
-
-    version = response.data
-    logging.info("Service config ID:" + version)
+    version = fetch_metadata(
+        metadata, _INSTANCE_ATTRIBUTES + _METADATA_SERVICE_CONFIG_ID, False)
+    if version:
+      logging.info("Service config ID:" + version)
     return version
 
+def fetch_metadata_attributes(metadata):
+    """Fetch metadata attributes from metadata URL."""
+    attrs = [
+        ("zone", "instance/zone"),
+        ("project_id", "project/project-id"),
+        ("gae_server_software", "instance/attributes/gae_server_software"),
+        ("kube_env", "instance/attributes/kube-env"),
+        ("access_token", "instance/service-accounts/default/token"),
+    ]
+    out_str = ""
+    for key, attr in attrs:
+      value = fetch_metadata(metadata, attr, False)
+      if key == "zone":
+        # If no zone, just bail out
+        if not value:
+          return None
+        else:
+          # Get the last section
+          value = value.split("/")[-1]
+      if value:
+        if key == "access_token":
+          json_token = json.loads(value)
+          value = "{\n"
+          value += "    access_token: \"{}\"\n".format(json_token["access_token"])
+          value += "    token_type: \"{}\"\n".format(json_token["token_type"])
+          value += "    expires_in: {}\n".format(json_token["expires_in"])
+          value += "  }"
+          out_str += "  {}: {}".format(key, value)
+        else:
+          # Kube_env value is too big, esp only checks it is empty.
+          if key == "kube_env":
+            value = "KUBE_ENV"
+          out_str += "  {}: \"{}\"".format(key, value) + "\n"
+        logging.info("Attribute {}: {}".format(key, value))
+    return out_str
 
 def make_access_token(secret_token_json):
     """Construct an access token from service account token."""
@@ -133,24 +151,11 @@ def make_access_token(secret_token_json):
     token = credentials.get_access_token().access_token
     return token
 
-
 def fetch_access_token(metadata):
     """Fetch access token from metadata URL."""
-    access_token_url = metadata + _METADATA_PATH + "/service-accounts/default/token"
-    headers = {"Metadata-Flavor": "Google"}
-    client = urllib3.PoolManager(ca_certs=certifi.where())
-    try:
-        response = client.request("GET", access_token_url, headers=headers)
-    except:
-        raise FetchError(1,
-            "Failed to fetch access token from the metadata server: " + access_token_url)
-    status_code = response.status
-
-    if status_code != 200:
-        message_template = "Fetching access token failed (url {}, status code {})"
-        raise FetchError(1, message_template.format(access_token_url, status_code))
-
-    token = json.loads(response.data)["access_token"]
+    json_token = fetch_metadata(
+        metadata, "instance/service-accounts/default/token", True)
+    token = json.loads(json_token)["access_token"]
     return token
 
 def fetch_latest_rollout(management_service, service_name, access_token):

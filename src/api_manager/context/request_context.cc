@@ -221,30 +221,12 @@ void RequestContext::FillOperationInfo(service_control::OperationInfo *info) {
 }
 
 void RequestContext::FillLocation(service_control::ReportRequestInfo *info) {
-  if (service_context()->gce_metadata()->has_valid_data() &&
-      !service_context()->gce_metadata()->zone().empty()) {
-    info->location = service_context()->gce_metadata()->zone();
-  }
+  info->location = service_context()->global_context()->location();
 }
 
 void RequestContext::FillComputePlatform(
     service_control::ReportRequestInfo *info) {
-  compute_platform::ComputePlatform cp;
-
-  GceMetadata *metadata = service_context()->gce_metadata();
-  if (metadata == nullptr || !metadata->has_valid_data()) {
-    cp = compute_platform::UNKNOWN;
-  } else {
-    if (!metadata->gae_server_software().empty()) {
-      cp = compute_platform::GAE_FLEX;
-    } else if (!metadata->kube_env().empty()) {
-      cp = compute_platform::GKE;
-    } else {
-      cp = compute_platform::GCE;
-    }
-  }
-
-  info->compute_platform = cp;
+  info->compute_platform = service_context()->global_context()->platform();
 }
 
 void RequestContext::FillLogMessage(service_control::ReportRequestInfo *info) {

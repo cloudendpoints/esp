@@ -44,7 +44,7 @@ my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $MetadataPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(30);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(26);
 
 my $config = ApiManager::get_bookstore_service_config . <<"EOF";
 control {
@@ -53,7 +53,14 @@ control {
 EOF
 
 $t->write_file('service.pb.txt', $config);
-ApiManager::write_file_expand($t, 'nginx.conf', <<"EOF");
+
+$t->write_file('server_config.pb.txt', <<"EOF");
+metadata_attributes {
+  zone: "us-west1-d"
+}
+EOF
+
+$t->write_file_expand('nginx.conf', <<"EOF");
 %%TEST_GLOBALS%%
 daemon off;
 events { worker_connections 32; }
@@ -69,7 +76,7 @@ http {
     location / {
       endpoints {
         api service.pb.txt;
-        %%TEST_CONFIG%%
+        server_config server_config.pb.txt;
         on;
       }
       proxy_pass http://127.0.0.1:${BackendPort};
@@ -111,17 +118,10 @@ is($books_body, "Never Let Me Go\n1Q84\n", '/books returned correct response bod
 # Check metadata server log.
 
 my @metadata_requests = ApiManager::read_http_stream($t, 'metadata.log');
-is(scalar @metadata_requests, 2, 'Metadata server received 2 requests.');
+is(scalar @metadata_requests, 1, 'Metadata server received 1 request.');
 
 # Request 1
 my $r = shift @metadata_requests;
-is($r->{verb}, 'GET', 'Metadata request 1 was GET');
-is($r->{uri}, '/computeMetadata/v1/?recursive=true', 'Metadata request was recursive');
-is($r->{headers}->{'metadata-flavor'}, 'Google', 'Metadata-Flavor header was set on request 1.');
-is($r->{headers}->{host}, "127.0.0.1:${MetadataPort}", 'Host header was set on request 1.');
-
-# Request 2
-$r = shift @metadata_requests;
 is($r->{verb}, 'GET', 'Metadata request 2 was GET');
 is($r->{uri}, '/computeMetadata/v1/instance/service-accounts/default/token',
    'Metadata received get service account token');
@@ -229,17 +229,6 @@ sub metadata {
   my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
-
-  my $response_header = <<'EOF';
-HTTP/1.1 200 OK
-Metadata-Flavor: Google
-Content-Type: application/json
-
-EOF
-
-  my $response_fill = "                                                 \n" x 100;
-  $server->on('GET', '/computeMetadata/v1/?recursive=true',
-    $response_header . $response_fill . ApiManager::get_metadata_response_body . $response_fill);
 
   $server->on('GET', '/computeMetadata/v1/instance/service-accounts/default/token', <<'EOF');
 HTTP/1.1 200 OK
