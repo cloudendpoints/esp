@@ -76,3 +76,8 @@ api_service_config {
 }
 % endif
 rollout_strategy: "${rollout_strategy}"
+% if metadata_attributes:
+metadata_attributes {
+${metadata_attributes}
+}
+% endif

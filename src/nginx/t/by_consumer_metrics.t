@@ -336,12 +336,6 @@ sub metadata {
     or die "Can't create metadata server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
   
-  $server->on('GET', '/computeMetadata/v1/?recursive=true', <<'EOF' . ApiManager::get_metadata_response_body);
-HTTP/1.1 200 OK
-Metadata-Flavor: Google
-Content-Type: application/json
-
-EOF
   $server->on('GET', '/computeMetadata/v1/instance/service-accounts/default/token', <<'EOF');
 HTTP/1.1 200 OK
 Metadata-Flavor: Google

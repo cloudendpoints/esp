@@ -46,7 +46,7 @@ my $ServiceControlPort = ApiManager::pick_port();
 my $PubkeyPort = ApiManager::pick_port();
 my $MetadataPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(24);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(22);
 
 # Save service name in the service configuration protocol buffer file.
 $t->write_file('service.pb.txt',
@@ -128,15 +128,10 @@ like($response_headers, qr/HTTP\/1\.1 200 OK/, 'API call returned 200.');
 
 # Verify metadata server was called.
 my @metadata_requests = ApiManager::read_http_stream($t, 'metadata.log');
-is(scalar @metadata_requests, 2, 'Metadata received two requests.');
-
-# get metadata
-my $r = shift @metadata_requests;
-is($r->{verb}, 'GET', 'get metadata was GET');
-is($r->{uri}, '/computeMetadata/v1/?recursive=true', 'metadata query was recursive');
+is(scalar @metadata_requests, 1, 'Metadata received one requests.');
 
 # get auth token
-$r = shift @metadata_requests;
+my $r = shift @metadata_requests;
 is($r->{verb}, 'GET', 'get auth token was GET');
 is($r->{uri}, '/computeMetadata/v1/instance/service-accounts/default/token',
    'service account token was retrieved');
@@ -256,13 +251,6 @@ sub metadata {
   my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
     or die "Can't create metadata server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
-
-  $server->on('GET', '/computeMetadata/v1/?recursive=true', <<'EOF' . ApiManager::get_metadata_response_body);
-HTTP/1.1 200 OK
-Metadata-Flavor: Google
-Content-Type: application/json
-
-EOF
 
   $server->on('GET', '/computeMetadata/v1/instance/service-accounts/default/token', <<'EOF');
 HTTP/1.1 200 OK
