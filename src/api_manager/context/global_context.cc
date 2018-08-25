@@ -95,7 +95,8 @@ GlobalContext::GlobalContext(std::unique_ptr<ApiManagerEnvInterface> env,
       if (metadata.has_access_token()) {
         const auto& token = metadata.access_token();
         service_account_token_.set_state(auth::ServiceAccountToken::FETCHED);
-        service_account_token_.set_access_token(token.access_token(), token.expires_in() - 50);
+        service_account_token_.set_access_token(token.access_token(),
+                                                token.expires_in() - 50);
       }
     }
 
