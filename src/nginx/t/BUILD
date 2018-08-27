@@ -218,6 +218,7 @@ nginx_suite(
         "metadata.t",
         "metadata_fail.t",
         "metadata_timeout.t",
+        "metadata_token.t",
         "multiple_apis.t",
         "no_backend.t",
         "no_service_control.t",

@@ -107,6 +107,27 @@ Status ServiceAccountToken::JwtTokenInfo::GenerateJwtToken(
   return Status::OK;
 }
 
+bool ServiceAccountToken::SetTokenJsonResponse(const std::string& token) {
+  char* auth_token = nullptr;
+  int expires = 0;
+  if (!esp_get_service_account_auth_token(const_cast<char*>(token.data()),
+                                          token.length(), &auth_token,
+                                          &expires) ||
+      auth_token == nullptr) {
+    set_state(auth::ServiceAccountToken::FAILED);
+    return false;
+  }
+
+  set_state(auth::ServiceAccountToken::FETCHED);
+  // Set expiration time a little bit earlier to avoid rejection
+  // of the actual service control requests.
+  // Even there is a prefetch window of 60 seconds, but prefetch
+  // window may not kick in if not on-going requests.
+  set_access_token(auth_token, expires - 50);
+  free(auth_token);
+  return true;
+}
+
 }  // namespace auth
 }  // namespace api_manager
 }  // namespace google

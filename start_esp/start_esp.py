@@ -50,6 +50,8 @@ NGINX_CONF_TEMPLATE = "/etc/nginx/nginx-auto.conf.template"
 SERVER_CONF_TEMPLATE = "/etc/nginx/server-auto.conf.template"
 # Custom nginx config used by customers are hardcoded to this path
 SERVER_CONF = "/etc/nginx/server_config.pb.txt"
+# Default service config output directory when multiple services are proxied
+SERVER_CONF_DIR = "/etc/nginx/"
 
 # Location of generated config files
 CONFIG_DIR = "/etc/nginx/endpoints"
@@ -156,7 +158,7 @@ def write_template(ingress, nginx_conf, args):
         logging.error("Failed to save NGINX config." + err.strerror)
         sys.exit(3)
 
-def write_server_config_template(server_config, args):
+def write_server_config_template(server_config_path, args):
     # Load template
     try:
         template = Template(filename=args.server_config_template)
@@ -164,28 +166,33 @@ def write_server_config_template(server_config, args):
         logging.error("Failed to load server config template. " + err.strerror)
         sys.exit(3)
 
-    conf = template.render(
-             service_configs=args.service_configs,
-             management=args.management,
-             service_control_url_override=args.service_control_url_override,
-             rollout_id=args.rollout_id,
-             rollout_strategy=args.rollout_strategy,
-             always_print_primitive_fields=args.transcoding_always_print_primitive_fields,
-             client_ip_header=args.client_ip_header,
-             client_ip_position=args.client_ip_position,
-             rewrite_rules=args.rewrite,
-             disable_cloud_trace_auto_sampling=args.disable_cloud_trace_auto_sampling,
-             cloud_trace_url_override=args.cloud_trace_url_override)
+    for idx, service_configs in enumerate(args.service_config_sets):
+        conf = template.render(
+                service_configs=service_configs,
+                management=args.management,
+                service_control_url_override=args.service_control_url_override,
+                rollout_id=args.rollout_ids[idx],
+                rollout_strategy=args.rollout_strategy,
+                always_print_primitive_fields=args.transcoding_always_print_primitive_fields,
+                client_ip_header=args.client_ip_header,
+                client_ip_position=args.client_ip_position,
+                rewrite_rules=args.rewrite,
+                disable_cloud_trace_auto_sampling=args.disable_cloud_trace_auto_sampling,
+                cloud_trace_url_override=args.cloud_trace_url_override,
+                metadata_attributes=args.metadata_attributes)
 
-    # Save nginx conf
-    try:
-        f = open(server_config, 'w+')
-        f.write(conf)
-        f.close()
-    except IOError as err:
-        logging.error("Failed to save server config." + err.strerror)
-        sys.exit(3)
+        server_config_file = server_config_path
+        if server_config_file.endswith('/'):
+            server_config_file = os.path.join(server_config_path, args.services[idx] + '_server_config.txt')
 
+        # Save server conf
+        try:
+            f = open(server_config_file, 'w+')
+            f.write(conf)
+            f.close()
+        except IOError as err:
+            logging.error("Failed to save server config." + err.strerror)
+            sys.exit(3)
 
 def ensure(config_dir):
     if not os.path.exists(config_dir):
@@ -211,13 +218,13 @@ def start_nginx(nginx, nginx_conf):
         logging.error(err.strerror)
         sys.exit(3)
 
-def fetch_and_save_service_config_url(args, token, service_mgmt_url, filename):
+def fetch_and_save_service_config_url(config_dir, token, service_mgmt_url, filename):
     try:
         # download service config
         config = fetch.fetch_service_json(service_mgmt_url, token)
 
         # Save service json for ESP
-        service_config = args.config_dir + "/" + filename
+        service_config = config_dir + "/" + filename
 
         try:
             f = open(service_config, 'w+')
@@ -232,16 +239,16 @@ def fetch_and_save_service_config_url(args, token, service_mgmt_url, filename):
         logging.error(err.message)
         sys.exit(err.code)
 
-def fetch_and_save_service_config(args, token, version, filename):
+def fetch_and_save_service_config(management, service, config_dir, token, version, filename):
     try:
         # build request url
-        service_mgmt_url = SERVICE_MGMT_URL_TEMPLATE.format(args.management,
-                                                            args.service,
+        service_mgmt_url = SERVICE_MGMT_URL_TEMPLATE.format(management,
+                                                            service,
                                                             version)
         # Validate service config if we have service name and version
         logging.info("Fetching the service configuration "\
                      "from the service management service")
-        fetch_and_save_service_config_url(args, token, service_mgmt_url, filename)
+        fetch_and_save_service_config_url(config_dir, token, service_mgmt_url, filename)
 
     except fetch.FetchError as err:
         logging.error(err.message)
@@ -261,8 +268,8 @@ def handle_xff_trusted_proxies(args):
                 args.xff_trusted_proxies.append(proxy)
 
 def fetch_service_config(args):
-    args.service_configs = {};
-    args.rollout_id = ""
+    args.service_config_sets = []
+    args.rollout_ids = []
 
     try:
         # Check service_account_key and non_gcp
@@ -281,8 +288,9 @@ def fetch_service_config(args):
             # Set the file name to "service.json", if either service
             # config url or version is specified for backward compatibility
             filename = "service.json"
-            fetch_and_save_service_config_url(args, token, args.service_config_url, filename)
-            args.service_configs[args.config_dir + "/" + filename] = 100;
+            fetch_and_save_service_config_url(args.config_dir, token, args.service_config_url, filename)
+            args.service_config_sets.append({})
+            args.service_config_sets[0][args.config_dir + "/" + filename] = 100;
         else:
             # fetch service name, if not specified
             if (args.service is None or not args.service.strip()) and args.check_metadata:
@@ -316,21 +324,29 @@ def fetch_service_config(args):
 
             # Fetch api version from latest successful rollouts
             if args.version is None or not args.version.strip():
-                logging.info(
-                    "Fetching the service config ID from the rollouts service")
-                rollout = fetch.fetch_latest_rollout(args.management,
-                                                     args.service, token)
-                args.rollout_id = rollout["rolloutId"]
-                for version, percentage in rollout["trafficPercentStrategy"]["percentages"].iteritems():
-                    filename = generate_service_config_filename(version)
-                    fetch_and_save_service_config(args, token, version, filename)
-                    args.service_configs[args.config_dir + "/" + filename] = percentage;
+                services = args.service.split('|')
+                args.services = services
+                for idx, service in enumerate(services):
+                    logging.info(
+                        "Fetching the service config ID from the rollouts service")
+                    rollout = fetch.fetch_latest_rollout(args.management,
+                                                         service, token)
+                    args.rollout_ids.append(rollout["rolloutId"])
+                    args.service_config_sets.append({})
+                    for version, percentage in rollout["trafficPercentStrategy"]["percentages"].iteritems():
+                        filename = generate_service_config_filename(version)
+                        fetch_and_save_service_config(args.management, service, args.config_dir, token, version, filename)
+                        args.service_config_sets[idx][args.config_dir + "/" + filename] = percentage;
             else:
                 # Set the file name to "service.json", if either service
                 # config url or version is specified for backward compatibility
                 filename = "service.json"
-                fetch_and_save_service_config(args, token, args.version, filename)
-                args.service_configs[args.config_dir + "/" + filename] = 100;
+                fetch_and_save_service_config(args.management, args.service, args.config_dir, token, args.version, filename)
+                args.service_config_sets.append({})
+                args.service_config_sets[0][args.config_dir + "/" + filename] = 100;
+
+        if not args.rollout_ids:
+            args.rollout_ids.append("")
 
     except fetch.FetchError as err:
         logging.error(err.message)
@@ -431,7 +447,10 @@ config file.'''.format(
 
     parser.add_argument('-s', '--service', help=''' Set the name of the
     Endpoints service.  If omitted and -c not specified, ESP contacts the
-    metadata service to fetch the service name.  ''')
+    metadata service to fetch the service name. To specify multiple services,
+    separate them by the pipe character (|) and enclose the argument
+    value in quotes, e.g.,
+    --service="svc1.example.com|svc2.example.com" ''')
 
     parser.add_argument('-v', '--version', help=''' Set the service config ID of
     the Endpoints service.  If omitted and -c not specified, ESP contacts the
@@ -721,8 +740,10 @@ config file.'''.format(
         ''')
     parser.add_argument('--server_config_generation_path',
         default=None, help='''
-        Define where to write the server configuration file. This option only works when
-        --generate_config_file_only is used. When --generate_config_file_only is used but
+        Define where to write the server configuration file(s). For a single server
+        configuration file, this must be a file name. To write multiple server
+        configuration files, this must be a directory path that ends with a '/'. 
+        When --generate_config_file_only is used but
         --server_config_generation_path is absent, the server configuration file generation
         is skipped.
         ''')
@@ -745,6 +766,14 @@ if __name__ == '__main__':
             logging.error("--nginx_config is not allowed when --generate_config_file_only")
             sys.exit(3)
 
+    if args.service and '|' in args.service:
+        if args.version:
+            logging.error("--version is not allowed when --service specifies multiple services")
+            sys.exit(3)
+        if args.server_config_generation_path and not args.server_config_generation_path.endswith('/'):
+            logging.error("--server_config_generation_path must end with / when --service specifies multiple services")
+            sys.exit(3)
+
     # Set credentials file from the environment variable
     if args.service_account_key is None:
         if GOOGLE_CREDS_KEY in os.environ:
@@ -758,9 +787,9 @@ if __name__ == '__main__':
 
     # Get service config
     if args.service_json_path:
-        args.rollout_id = ''
+        args.rollout_ids = ['']
         assert_file_exists(args.service_json_path)
-        args.service_configs = {args.service_json_path: 100}
+        args.service_config_sets = [{args.service_json_path: 100}]
     else:
         # Fetch service config and place it in the standard location
         ensure(args.config_dir)
@@ -768,6 +797,7 @@ if __name__ == '__main__':
             fetch_service_config(args)
 
     # Generate server_config
+    args.metadata_attributes = fetch.fetch_metadata_attributes(args.metadata)
     if args.generate_config_file_only:
         if args.server_config_generation_path is None:
             logging.error("when --generate_config_file_only, must specify --server_config_generation_path")
@@ -775,7 +805,12 @@ if __name__ == '__main__':
         else:
             write_server_config_template(args.server_config_generation_path, args)
     else:
-        write_server_config_template(SERVER_CONF, args)
+        server_config_path = SERVER_CONF
+        if args.service and '|' in args.service:
+            server_config_path = SERVER_CONF_DIR
+        if args.server_config_generation_path:
+            server_config_path = args.server_config_generation_path
+        write_server_config_template(server_config_path, args)
 
     # Generate nginx config if not specified
     nginx_conf = args.nginx_config

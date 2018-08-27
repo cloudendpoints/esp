@@ -314,26 +314,6 @@ sub metadata {
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
 
-  $server->on('GET', '/computeMetadata/v1/?recursive=true', <<'EOF');
-HTTP/1.1 200 OK
-Metadata-Flavor: Google
-Content-Type: application/json
-
-{
-  "instance": {
-    "attributes": {
-      "gae_backend_name": "default",
-      "gae_backend_version": "20150921t180445"
-    },
-    "hostname": "gae-default-20150921t180445-inqp.c.esp-test-app.internal",
-    "zone": "projects/345623948572/zones/us-west1-d"
-  },
-  "project": {
-    "projectId": "esp-test-app"
-  }
-}
-EOF
-
   $server->on('GET', '/computeMetadata/v1/instance/service-accounts/default/token', <<'EOF');
 HTTP/1.1 200 OK
 Metadata-Flavor: Google

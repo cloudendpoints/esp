@@ -15,12 +15,12 @@
 #ifndef API_MANAGER_CONTEXT_GLOBAL_CONTEXT_H_
 #define API_MANAGER_CONTEXT_GLOBAL_CONTEXT_H_
 
+#include "include/api_manager/compute_platform.h"
 #include "src/api_manager/auth/authz_cache.h"
 #include "src/api_manager/auth/certs.h"
 #include "src/api_manager/auth/jwt_cache.h"
 #include "src/api_manager/auth/service_account_token.h"
 #include "src/api_manager/cloud_trace/cloud_trace.h"
-#include "src/api_manager/gce_metadata.h"
 #include "src/api_manager/proto/server_config.pb.h"
 
 namespace google {
@@ -50,9 +50,6 @@ class GlobalContext {
 
   const std::string &metadata_server() const { return metadata_server_; }
 
-  // fetched metadata.
-  GceMetadata *gce_metadata() { return &gce_metadata_; }
-
   // cloud_trace
   cloud_trace::Aggregator *cloud_trace_aggregator() const {
     return cloud_trace_aggregator_.get();
@@ -62,20 +59,9 @@ class GlobalContext {
     return server_config_;
   }
 
-  bool DisableLogStatus() {
-    if (server_config() && server_config()->has_experimental()) {
-      const auto &experimental = server_config()->experimental();
-      return experimental.disable_log_status();
-    }
-    return false;
-  }
-
-  bool AlwaysPrintPrimitiveFields() {
-    if (server_config() && server_config()->has_experimental()) {
-      const auto &experimental = server_config()->experimental();
-      return experimental.always_print_primitive_fields();
-    }
-    return false;
+  bool DisableLogStatus() const { return disable_log_status_; }
+  bool AlwaysPrintPrimitiveFields() const {
+    return always_print_primitive_fields_;
   }
 
   // report interval can be override by server_config.
@@ -87,7 +73,7 @@ class GlobalContext {
   bool is_auth_force_disabled() const { return is_auth_force_disabled_; }
 
   // get producer project id from fetched metadata
-  const std::string &project_id() const;
+  const std::string &project_id() const { return project_id_; }
 
   const std::string &service_name() const { return service_name_; }
   void set_service_name(const std::string &name) { service_name_ = name; }
@@ -96,6 +82,8 @@ class GlobalContext {
   void rollout_strategy(const std::string &rollout_strategy) {
     rollout_strategy_ = rollout_strategy;
   }
+  compute_platform::ComputePlatform platform() const { return platform_; }
+  const std::string &location() const { return location_; }
 
  private:
   // create cloud trace.
@@ -119,14 +107,22 @@ class GlobalContext {
 
   // meta data server.
   std::string metadata_server_;
-  // GCE metadata
-  GceMetadata gce_metadata_;
 
   // Is auth force-disabled
   bool is_auth_force_disabled_;
+  // is status log disabled
+  bool disable_log_status_;
+  // For gRPC transcoding
+  bool always_print_primitive_fields_;
 
   // The time interval for grpc intermediate report.
   int64_t intermediate_report_interval_;
+  // The computer platform
+  compute_platform::ComputePlatform platform_;
+  // The project_id from metadata zone.
+  std::string project_id_;
+  // The location from metadata zone.
+  std::string location_;
 };
 
 }  // namespace context

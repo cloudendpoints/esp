@@ -57,6 +57,9 @@ message ServerConfig {
 
   // Experimental flags
   Experimental experimental = 999;
+
+  // The attributes from the metadata server
+  MetadataAttributes metadata_attributes = 15;
 }
 
 // Server config for service control
@@ -246,4 +249,26 @@ message Experimental {
   bool disable_log_status = 1;
   // Configure response to JSON translator option for JsonPrintOptions:
   bool always_print_primitive_fields = 2;
+}
+
+message AccessToken {
+  // The actual token string
+  string access_token = 1;
+  // The time in second to expire
+  int32 expires_in = 2;
+  // The token type
+  string token_type = 3;
+}
+
+message MetadataAttributes {
+  // The value from "project/project-id"
+  string project_id = 1;
+  // The value from "instance/zone"
+  string zone = 2;
+  // The value from "instance/attributes/gae_server_software"
+  string gae_server_software = 3;
+  // The value from "instance/attributes/kube-env"
+  string kube_env = 4;
+  // The access token from default service account
+  AccessToken access_token = 5;
 }
