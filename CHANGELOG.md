@@ -1,3 +1,13 @@
+# Release 1.23.0 27-08-2018
+
+- Proxy multiple Endpoints services (#434)
+
+- Move GceMetadata fetching to start_esp. (#435)
+
+- Harden code, not to free nullptr pool (#436)
+
+- Add the start_esp_test to the BUILD file (#433)
+
 # Release 1.22.0 16-08-2018
 
 - Add two options --generate_config_file_only and --server_config_generation_path
