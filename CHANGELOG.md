@@ -1,3 +1,7 @@
+# Release 1.24.0 29-08-2018
+
+- Add --experimental_enable_multiple_api_configs flag (#439)
+
 # Release 1.23.0 27-08-2018
 
 - Proxy multiple Endpoints services (#434)
