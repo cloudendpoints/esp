@@ -84,6 +84,11 @@ class TestStartEsp(unittest.TestCase):
         expected_config_file = "./start_esp/test/testdata/expected_basic_nginx.conf"
         self.run_test_with_expectation(expected_config_file, self.generated_nginx_config_file, self.basic_config_generator)
 
+    def test_experimental_enable_multiple_api_configs_disabled_output_is_as_expected(self):
+        expected_config_file = "./start_esp/test/testdata/expected_experimental_enable_multiple_api_configs_disabled_nginx.conf"
+        config_generator = self.basic_config_generator + ' --service "service1|service2"'
+        self.run_test_with_expectation(expected_config_file, self.generated_nginx_config_file, config_generator)
+
     def test_backend_arg_output_is_as_expected(self):
         expected_config_file = "./start_esp/test/testdata/expected_backend_nginx.conf"
         config_generator = self.basic_config_generator + " --backend https://1.2.3.4:12345"
