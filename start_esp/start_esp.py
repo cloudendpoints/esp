@@ -447,7 +447,7 @@ config file.'''.format(
 
     parser.add_argument('-s', '--service', help=''' Set the name of the
     Endpoints service.  If omitted and -c not specified, ESP contacts the
-    metadata service to fetch the service name. When --enable_experimental_multiple_api_config
+    metadata service to fetch the service name. When --experimental_enable_multiple_api_configs
     is enabled, to specify multiple services,
     separate them by the pipe character (|) and enclose the argument
     value in quotes, e.g.,
@@ -743,16 +743,15 @@ config file.'''.format(
         default=None, help='''
         Define where to write the server configuration file(s). For a single server
         configuration file, this must be a file name. 
-        When --enable_experimental_multiple_api_config is enabled, to write multiple server
+        When --experimental_enable_multiple_api_configs is enabled, to write multiple server
         configuration files, this must be a directory path that ends with a '/'. 
         When --generate_config_file_only is used but
         --server_config_generation_path is absent, the server configuration file generation
         is skipped.
         ''')
-    parser.add_argument('--enable_experimental_multiple_api_config', action='store_true',
+    parser.add_argument('--experimental_enable_multiple_api_configs', action='store_true',
                         help='''
         Enable an experimental feature that proxies multiple Endpoints services. 
-        This is only an experimental feature and has not reached GA (General Availability) yet.
         By default, this feature is disabled.
         ''')
 
@@ -775,8 +774,8 @@ if __name__ == '__main__':
             sys.exit(3)
 
     if args.service and '|' in args.service:
-        if args.enable_experimental_multiple_api_config == False:
-            logging.error("The flag --enable_experimental_multiple_api_config must be enabled when --service specifies multiple services")
+        if args.experimental_enable_multiple_api_configs == False:
+            logging.error("The flag --experimental_enable_multiple_api_configs must be enabled when --service specifies multiple services")
             sys.exit(3)
         if args.version:
             logging.error("--version is not allowed when --service specifies multiple services")
