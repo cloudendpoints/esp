@@ -4,8 +4,7 @@ For simplicity, we recommend that an ESP instance proxies only one API,
 defined as an Endpoints service.
 
 However, it is possible to enable an experimental feature that proxies
-multiple Endpoints services as of version 1.24.0. This is only an experimental
-feature and has not reached GA (General Availability) yet.
+multiple Endpoints services as of version 1.24.0.
 
 To do so, enable the --enable_experimental_multiple_api_config and provide
 the service names in a pipe-separated string to the
