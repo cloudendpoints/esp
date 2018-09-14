@@ -3,10 +3,11 @@
 For simplicity, we recommend that an ESP instance proxies only one API,
 defined as an Endpoints service.
 
-However, it is possible to proxy multiple Endpoints services as of version
-1.23.0.
+However, it is possible to enable an experimental feature that proxies
+multiple Endpoints services as of version 1.24.0.
 
-To do so, provide the service names in a pipe-separated string to the
+To do so, enable the --experimental_enable_multiple_api_configs and provide
+the service names in a pipe-separated string to the
 `--service` command line argument of `start_esp`. You will also have to
 supply your own `nginx.conf` template file using the `--template` argument,
 since the default template assumes a single `server_config` file at the
@@ -17,7 +18,7 @@ For example, if you have two services you want to proxy,
 in the file `/etc/nginx/my-nginx.conf.template`, you can run ESP with this
 command:
 
-    /usr/sbin/start_esp --template=/etc/nginx/my-nginx.conf.template \
+    /usr/sbin/start_esp --experimental_enable_multiple_api_configs --template=/etc/nginx/my-nginx.conf.template \
         --service="svc1.example.com|svc2.example.com" \
         --rollout_strategy=managed
 
