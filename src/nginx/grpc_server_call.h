@@ -108,6 +108,8 @@ class NgxEspGrpcServerCall : public grpc::ServerCall {
 
   ngx_http_cleanup_t cln_;
 
+  static grpc_byte_buffer *ConvertByteBuffer(const ::grpc::ByteBuffer &msg);
+
  private:
   static void OnDownstreamPreread(ngx_http_request_t* r);
   static void OnDownstreamReadable(ngx_http_request_t* r);

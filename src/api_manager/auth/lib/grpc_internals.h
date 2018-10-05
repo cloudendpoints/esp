@@ -23,14 +23,11 @@
 // or work with gRPC team to support this functionality as a public API
 // surface.
 
-extern "C" {
-
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_common.h"
 #include "src/core/lib/security/credentials/jwt/json_token.h"
 #include "src/core/lib/security/credentials/jwt/jwt_verifier.h"
 #include "src/core/lib/slice/b64.h"
-#include "src/core/lib/support/string.h"
-}
 
 #endif  // API_MANAGER_AUTH_LIB_GRPC_INTERNALS_H_

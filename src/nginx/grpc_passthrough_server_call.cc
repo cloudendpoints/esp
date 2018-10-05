@@ -118,20 +118,11 @@ bool NgxEspGrpcPassThroughServerCall::ConvertRequestBody(
 
 bool NgxEspGrpcPassThroughServerCall::ConvertResponseMessage(
     const ::grpc::ByteBuffer &msg, ngx_chain_t *out) {
-  grpc_byte_buffer *grpc_msg = nullptr;
-  bool own_buffer;
-
-  if (!::grpc::SerializationTraits<::grpc::ByteBuffer>::Serialize(
-           msg, &grpc_msg, &own_buffer)
-           .ok() ||
-      !grpc_msg) {
+  grpc_byte_buffer *grpc_msg = ConvertByteBuffer(msg);
+  if (!grpc_msg) {
     return false;
   }
-
-  auto msg_deleter = std::unique_ptr<grpc_byte_buffer, GrpcDeleter>();
-  if (own_buffer) {
-    msg_deleter.reset(grpc_msg);
-  }
+  std::unique_ptr<grpc_byte_buffer, GrpcDeleter> msg_deleter(grpc_msg);
 
   // Since there's no good way to reuse the underlying grpc_slice for
   // the nginx buffer, we need to allocate an nginx buffer and copy
