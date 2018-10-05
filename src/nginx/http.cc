@@ -506,7 +506,7 @@ void wakeup_event_handler(ngx_event_t *ev) {
   // a nullptr pool definitely will cause crash.
   // Here, choose the least of evil, memory leak over crash.
   if (rp == nullptr || cp == nullptr) {
-    ngx_log_debug2(NGX_LOG_WARN_HTTP, ev->log, 0,
+    ngx_log_debug2(NGX_LOG_DEBUG_HTTP, ev->log, 0,
                    "esp memory pools may not be freed: pools c=%p, r=%p", cp,
                    rp);
     return;
@@ -671,6 +671,47 @@ ngx_int_t ngx_esp_upstream_input_filter(void *data, ssize_t bytes) {
   http_connection->response_body.write(
       reinterpret_cast<char *>(r->upstream->buffer.last), bytes);
 
+  return NGX_OK;
+}
+
+// An upstream pipe input filter handler.
+//
+// After initialization, NGINX calls this filter handler whenever new data
+// is read from the upstream connection pipe.
+// We accumulate the data by writing it into a string stream.
+static ngx_int_t ngx_esp_upstream_pipe_input_filter(ngx_event_pipe_t *p,
+                                                    ngx_buf_t *buf) {
+  ngx_chain_t *cl;
+  ngx_http_request_t *r = (ngx_http_request_t *)p->input_ctx;
+  if (r == NULL) {
+    return NGX_ERROR;
+  }
+
+  ngx_esp_http_connection *http_connection = get_esp_connection(r);
+  if (http_connection == NULL) {
+    return NGX_ERROR;
+  }
+
+  if (buf->pos == buf->last) {
+    return NGX_OK;
+  }
+
+  cl = ngx_chain_get_free_buf(p->pool, &p->free);
+  if (cl == NULL) {
+    return NGX_ERROR;
+  }
+
+  ssize_t bytes = buf->last - buf->pos;
+  if (bytes < 0) {
+    return NGX_ERROR;
+  }
+  ngx_log_debug3(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                 "esp: ngx_esp_upstream_input_filter called (r=%p, bytes=%d, "
+                 "http_connection=%p)",
+                 r, bytes, http_connection);
+
+  http_connection->response_body.write(reinterpret_cast<char *>(buf->pos),
+                                       bytes);
   return NGX_OK;
 }
 
@@ -1038,6 +1079,17 @@ Status initialize_upstream_request(ngx_log_t *log, HTTPRequest *request,
   upstream->process_header = ngx_esp_upstream_process_status_line;
   upstream->abort_request = ngx_esp_upstream_abort_request;
   upstream->finalize_request = ngx_esp_upstream_finalize_request;
+
+  // Fix for 1.15.0 compatibility issue
+  upstream->pipe =
+      (ngx_event_pipe_t *)ngx_pcalloc(request_pool, sizeof(ngx_event_pipe_t));
+  if (upstream->pipe == NULL) {
+    return Status(NGX_ERROR, "Out of memory");
+  }
+
+  upstream->pipe->input_filter = ngx_esp_upstream_pipe_input_filter;
+  upstream->pipe->input_ctx = r;
+  upstream->accel = 1;
 
   return Status::OK;
 }
