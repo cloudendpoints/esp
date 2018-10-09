@@ -171,7 +171,7 @@ http {
     }
 
     if ($cors = "true") {
-        add_header 'Access-Control-Allow-Origin' "$allow_origin";
+        add_header 'Access-Control-Allow-Origin' "$allow_origin" always;
         add_header 'Access-Control-Allow-Methods' '${cors_allow_methods}' always;
         add_header 'Access-Control-Allow-Headers' '${cors_allow_headers}' always;
         add_header 'Access-Control-Expose-Headers' '${cors_expose_headers}' always;
