@@ -291,7 +291,7 @@ ngx_int_t ngx_esp_upstream_create_request(ngx_http_request_t *r) {
   append(buf, http_request->method());
   append(buf, " ");
   append(buf, http_connection->url_path);
-  append(buf, " HTTP/1.0" CRLF);
+  append(buf, " HTTP/1.1" CRLF);
 
   // Append the Host and Connection headers.
   append(buf, "Host: ");
