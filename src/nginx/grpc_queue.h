@@ -80,13 +80,10 @@ class NgxEspGrpcQueue : public AsyncGrpcQueue {
   static std::weak_ptr<NgxEspGrpcQueue> instance;
 
   // The base class for the tags queued to the completion queue by the
-  // ESP components.  Note that for completion queues accessed via the
-  // C++ interfaces, all tags must subclass
-  // ::grpc::CompletionQueueTag, since the framework will invoke the
-  // virtual FinalizeResult method on the tag before returning it.
-  class Tag : public ::grpc::CompletionQueueTag {
+  // ESP components.
+  class Tag {
    public:
-    virtual bool FinalizeResult(void **tag, bool *status) { return true; }
+    virtual ~Tag() {}
     virtual void operator()(bool ok) = 0;
   };
 

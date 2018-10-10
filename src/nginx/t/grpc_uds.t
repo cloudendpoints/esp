@@ -134,8 +134,8 @@ my $expected_report_body = ServiceControl::gen_report_body({
   'http_method' => 'POST',
   'log_message' => 'Method: test.grpc.Test.Echo',
   'response_code' => '200',
-  'request_size' => ($^O eq 'darwin' ? 287 : 289),
-  'request_bytes' => ($^O eq 'darwin' ? 287 : 289),
+  'request_size' => ($^O eq 'darwin' ? 315 : 317),
+  'request_bytes' => ($^O eq 'darwin' ? 315 : 317),
   'streaming_request_message_counts' => 1,
   'streaming_response_message_counts' => 1,
   });
