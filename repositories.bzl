@@ -418,43 +418,6 @@ genrule(
         actual = "@nanopb_git//:nanopb",
     )
 
-def grpc_repositories(bind = True):
-    zlib_repositories(bind)
-    nanopb_repositories(bind)
-    cares_repositories(bind)
-
-    native.git_repository(
-        name = "grpc_git",
-        commit = "d2c7d4dea492b9a86a53555aabdbfa90c2b01730",  # v1.15.0
-        remote = "https://github.com/grpc/grpc.git",
-    )
-
-    if bind:
-        native.bind(
-            name = "gpr",
-            actual = "@grpc_git//:gpr",
-        )
-
-        native.bind(
-            name = "grpc",
-            actual = "@grpc_git//:grpc",
-        )
-
-        native.bind(
-            name = "grpc_cpp_plugin",
-            actual = "@grpc_git//:grpc_cpp_plugin",
-        )
-
-        native.bind(
-            name = "grpc++",
-            actual = "@grpc_git//:grpc++",
-        )
-
-        native.bind(
-            name = "grpc_lib",
-            actual = "@grpc_git//:grpc++_codegen_proto",
-        )
-
 def googleapis_repositories(protobuf_repo = "@protobuf_git//", bind = True):
     BUILD = """
 # Copyright (C) Extensible Service Proxy Authors. All Rights Reserved.

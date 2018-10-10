@@ -149,8 +149,8 @@ Status ProcessDownstreamHeaders(
         continue;
       }
       ::grpc::Slice value_slice(
-          grpc_base64_decode_with_len(it.second.c_str(),
-                                      it.second.length(), false),
+          grpc_base64_decode_with_len(it.second.c_str(), it.second.length(),
+                                      false),
           ::grpc::Slice::STEAL_REF);
       std::string binary_value(
           reinterpret_cast<const char *>(value_slice.begin()),

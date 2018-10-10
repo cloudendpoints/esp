@@ -122,8 +122,8 @@ void NgxEspTranscodedGrpcServerCall::Finish(
       ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
       if (ctx) {
         ::grpc::Slice value_slice(
-            grpc_base64_decode_with_len(it->second.c_str(),
-                                        it->second.length(), false),
+            grpc_base64_decode_with_len(it->second.c_str(), it->second.length(),
+                                        false),
             ::grpc::Slice::STEAL_REF);
         std::string binary_value(
             reinterpret_cast<const char *>(value_slice.begin()),

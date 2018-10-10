@@ -125,7 +125,8 @@ ngx_int_t ngx_esp_write_output(ngx_http_request_t *r, ngx_chain_t *out,
 
 u_char kGrpcEncoding[] = "grpc-encoding";
 
-grpc_message_compression_algorithm GetCompressionAlgorithm(ngx_http_request_t *r) {
+grpc_message_compression_algorithm GetCompressionAlgorithm(
+    ngx_http_request_t *r) {
   auto header =
       ngx_esp_find_headers_in(r, kGrpcEncoding, sizeof(kGrpcEncoding) - 1);
 
@@ -611,8 +612,8 @@ bool NgxEspGrpcServerCall::TryReadDownstreamMessage() {
     grpc_slice_buffer output;
     grpc_slice_buffer_init(&output);
 
-    if (grpc_msg_decompress(GetCompressionAlgorithm(r_), &input,
-                            &output) != 1) {
+    if (grpc_msg_decompress(GetCompressionAlgorithm(r_), &input, &output) !=
+        1) {
       grpc_slice_buffer_destroy(&input);
       grpc_slice_buffer_destroy(&output);
       CompletePendingRead(false,
@@ -738,14 +739,15 @@ void NgxEspGrpcServerCall::Cleanup(void *server_call_ptr) {
   server_call->cln_.data = nullptr;
 }
 
-grpc_byte_buffer *NgxEspGrpcServerCall::ConvertByteBuffer(const ::grpc::ByteBuffer &msg) {
+grpc_byte_buffer *NgxEspGrpcServerCall::ConvertByteBuffer(
+    const ::grpc::ByteBuffer &msg) {
   std::vector<::grpc::Slice> slices;
   if (!msg.Dump(&slices).ok()) {
     return nullptr;
   }
   std::vector<grpc_slice> grpc_slices;
   grpc_slices.reserve(slices.size());
-  for (const auto& s : slices) {
+  for (const auto &s : slices) {
     grpc_slices.push_back(s.c_slice());
   }
   return grpc_raw_byte_buffer_create(grpc_slices.data(), grpc_slices.size());

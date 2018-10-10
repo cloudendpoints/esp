@@ -81,9 +81,9 @@ direct_addr: "127.0.0.1:${GrpcBackendPort}"
 plans {
   probe_downstream_message_limit {
     request {
-      text: "Hello, world!  Plus some extra text to add a little length."
+      space_payload_size: 16386
     }
-    timeout_ms: 1000
+    timeout_ms: 1
   }
 }
 EOF

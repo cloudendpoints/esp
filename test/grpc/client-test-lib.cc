@@ -48,9 +48,9 @@ using ::grpc::Alarm;
 using ::grpc::Channel;
 using ::grpc::ChannelArguments;
 using ::grpc::ChannelCredentials;
+using ::grpc::ClientAsyncReaderWriter;
+using ::grpc::ClientAsyncResponseReader;
 using ::grpc::ClientContext;
-using ::grpc::ClientAsyncReaderWriterInterface;
-using ::grpc::ClientAsyncResponseReaderInterface;
 using ::grpc::ClientReaderWriter;
 using ::grpc::CompletionQueue;
 using ::grpc::CreateCustomChannel;
@@ -155,6 +155,15 @@ std::string RandomString(int max_size) {
   return std::string(reinterpret_cast<const char *>(buf), size);
 }
 
+void CreateEchoRequestText(EchoRequest *request) {
+  if (request->random_payload_max_size() > 0) {
+    request->set_text(RandomString(request->random_payload_max_size()));
+  }
+  if (request->space_payload_size() > 0) {
+    request->set_text(std::string(request->space_payload_size(), ' '));
+  }
+}
+
 std::string GetStatusAggregationKey(const CallStatus &status) {
   std::string details = status.details();
   ::test::grpc::GrpcErrorDetail grpc_error;
@@ -221,14 +230,7 @@ class Echo {
   Echo(const EchoTest &desc, std::function<void(bool, const TestResult &)> done)
       : desc_(desc), done_(done) {
     SetCallConfig(desc_.call_config(), &ctx_);
-    if (desc_.request().random_payload_max_size() > 0) {
-      desc_.mutable_request()->set_text(
-          RandomString(desc_.request().random_payload_max_size()));
-    }
-    if (desc_.request().space_payload_size() > 0) {
-      desc_.mutable_request()->set_text(
-          std::string(desc_.request().space_payload_size(), ' '));
-    }
+    CreateEchoRequestText(desc_.mutable_request());
   }
 
   EchoTest desc_;
@@ -236,7 +238,7 @@ class Echo {
   ClientContext ctx_;
   EchoResponse response_;
   Status status_;
-  std::unique_ptr<ClientAsyncResponseReaderInterface<EchoResponse>> rpc_;
+  std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> rpc_;
 };
 
 class EchoReport {
@@ -278,7 +280,7 @@ class EchoReport {
   ClientContext ctx_;
   ReportRequest response_;
   Status status_;
-  std::unique_ptr<ClientAsyncResponseReaderInterface<ReportRequest>> rpc_;
+  std::unique_ptr<ClientAsyncResponseReader<ReportRequest>> rpc_;
 };
 
 class EchoStream {
@@ -311,9 +313,7 @@ class EchoStream {
         start_time_(time(NULL)) {
     SetCallConfig(desc_.call_config(), &ctx_);
     for (auto request : *desc_.mutable_request()) {
-      if (request.random_payload_max_size() > 0) {
-        request.set_text(RandomString(request.random_payload_max_size()));
-      }
+      CreateEchoRequestText(&request);
     }
   }
 
@@ -420,8 +420,7 @@ class EchoStream {
   int max_in_flight_ = 0;
   Status status_;
   Status status_expected_;
-  std::unique_ptr<ClientAsyncReaderWriterInterface<EchoRequest, EchoResponse>>
-      rpc_;
+  std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>> rpc_;
   int start_time_;  // stream start time
 };
 
@@ -475,7 +474,7 @@ class Parallel {
       auto subtest_start_time = std::chrono::steady_clock::now();
 
       auto subtest_done = [p, subtest_type_index, subtest_start_time](
-          bool ok, const TestResult &result) {
+                              bool ok, const TestResult &result) {
         auto subtest_end_time = std::chrono::steady_clock::now();
 
         std::lock_guard<std::mutex> lock(p->mu_);
@@ -666,7 +665,9 @@ class ProbeCallLimit {
   ProbeCallLimit(const ProbeCallLimitTest &desc, Test::Stub *server_stub,
                  CompletionQueue *cq,
                  std::function<void(bool, const TestResult &)> done)
-      : desc_(desc), server_stub_(server_stub), cq_(cq), done_(done) {}
+      : desc_(desc), server_stub_(server_stub), cq_(cq), done_(done) {
+    CreateEchoRequestText(desc_.mutable_request());
+  }
 
   static void StartReadCorkState(std::shared_ptr<ProbeCallLimit> pc) {
     pc->cork_rpc_->Read(&pc->cork_state_, new Tag([pc](bool ok) {
@@ -694,9 +695,10 @@ class ProbeCallLimit {
   static void StartProbe(std::shared_ptr<ProbeCallLimit> pc) {
     // First, set an alarm.  If this alarm goes off, we're at the call limit.
     pc->alarm_.reset(new Alarm(
-        pc->cq_, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                              gpr_time_from_millis(pc->desc_.timeout_ms(),
-                                                   GPR_TIMESPAN)),
+        pc->cq_,
+        gpr_time_add(
+            gpr_now(GPR_CLOCK_MONOTONIC),
+            gpr_time_from_millis(pc->desc_.timeout_ms(), GPR_TIMESPAN)),
         new Tag([pc](bool ok) {
           if (ok) {
             // The alarm expired (it wasn't cancelled).  So assume
@@ -715,7 +717,7 @@ class ProbeCallLimit {
     EchoResponse *response = new EchoResponse();
     Status *status = new Status();
     ClientContext *ctx = new ClientContext();
-    ClientAsyncResponseReaderInterface<EchoResponse> *rpc =
+    ClientAsyncResponseReader<EchoResponse> *rpc =
         pc->server_stub_->AsyncEcho(ctx, pc->desc_.request(), pc->cq_)
             .release();
 
@@ -756,8 +758,7 @@ class ProbeCallLimit {
   ClientContext cork_ctx_;
   // The latest received state from the Cork() streaming RPC.
   CorkState cork_state_;
-  std::unique_ptr<ClientAsyncReaderWriterInterface<CorkRequest, CorkState>>
-      cork_rpc_;
+  std::unique_ptr<ClientAsyncReaderWriter<CorkRequest, CorkState>> cork_rpc_;
   std::unique_ptr<Alarm> alarm_;
 };
 
@@ -801,7 +802,9 @@ class ProbeDownstreamMessageLimit {
   ProbeDownstreamMessageLimit(
       const ProbeDownstreamMessageLimitTest &desc, Test::Stub *server_stub,
       CompletionQueue *cq, std::function<void(bool, const TestResult &)> done)
-      : desc_(desc), server_stub_(server_stub), cq_(cq), done_(done) {}
+      : desc_(desc), server_stub_(server_stub), cq_(cq), done_(done) {
+    CreateEchoRequestText(desc_.mutable_request());
+  }
 
   static void StartReadCorkState(
       std::shared_ptr<ProbeDownstreamMessageLimit> pc) {
@@ -832,9 +835,10 @@ class ProbeDownstreamMessageLimit {
     // alarm always remains valid until the callback completes.
     std::shared_ptr<Alarm> *alarmp = new std::shared_ptr<Alarm>();
     *alarmp = std::make_shared<Alarm>(
-        pc->cq_, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                              gpr_time_from_millis(pc->desc_.timeout_ms(),
-                                                   GPR_TIMESPAN)),
+        pc->cq_,
+        gpr_time_add(
+            gpr_now(GPR_CLOCK_MONOTONIC),
+            gpr_time_from_millis(pc->desc_.timeout_ms(), GPR_TIMESPAN)),
         new Tag([pc, alarmp](bool ok) {
           if (ok) {
             // The alarm expired (it wasn't cancelled).  So assume
@@ -914,9 +918,8 @@ class ProbeDownstreamMessageLimit {
   ClientContext stream_ctx_;
   CorkState cork_state_;
   EchoResponse stream_response_;
-  std::unique_ptr<ClientAsyncReaderWriterInterface<CorkRequest, CorkState>>
-      cork_rpc_;
-  std::unique_ptr<ClientAsyncReaderWriterInterface<EchoRequest, EchoResponse>>
+  std::unique_ptr<ClientAsyncReaderWriter<CorkRequest, CorkState>> cork_rpc_;
+  std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>>
       stream_rpc_;
   int downstream_message_limit_ = 0;
   bool saw_timeout_ = false;
@@ -962,7 +965,9 @@ class ProbeUpstreamMessageLimit {
   ProbeUpstreamMessageLimit(const ProbeUpstreamMessageLimitTest &desc,
                             Test::Stub *server_stub, CompletionQueue *cq,
                             std::function<void(bool, const TestResult &)> done)
-      : desc_(desc), server_stub_(server_stub), cq_(cq), done_(done) {}
+      : desc_(desc), server_stub_(server_stub), cq_(cq), done_(done) {
+    CreateEchoRequestText(desc_.mutable_request());
+  }
 
   // Note: We only start StartReadStreamMessages here when the timeout
   // expires, i.e. when we detect backpressure.
@@ -985,9 +990,10 @@ class ProbeUpstreamMessageLimit {
     // alarm always remains valid until the callback completes.
     std::shared_ptr<Alarm> *alarmp = new std::shared_ptr<Alarm>();
     *alarmp = std::make_shared<Alarm>(
-        pc->cq_, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                              gpr_time_from_millis(pc->desc_.timeout_ms(),
-                                                   GPR_TIMESPAN)),
+        pc->cq_,
+        gpr_time_add(
+            gpr_now(GPR_CLOCK_MONOTONIC),
+            gpr_time_from_millis(pc->desc_.timeout_ms(), GPR_TIMESPAN)),
         new Tag([pc, alarmp](bool ok) {
           if (ok) {
             // The alarm expired (it wasn't cancelled).  So assume
@@ -1049,7 +1055,7 @@ class ProbeUpstreamMessageLimit {
   std::function<void(bool, const TestResult &)> done_;
   ClientContext stream_ctx_;
   EchoResponse stream_response_;
-  std::unique_ptr<ClientAsyncReaderWriterInterface<EchoRequest, EchoResponse>>
+  std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>>
       stream_rpc_;
   int upstream_message_limit_ = 0;
   bool saw_timeout_ = false;

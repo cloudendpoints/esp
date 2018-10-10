@@ -69,9 +69,9 @@ extern "C" {
 
 #include "src/api_manager/auth/lib/json_util.h"
 
-using std::string;
-using std::chrono::system_clock;
 using ::google::protobuf::util::error::Code;
+using std::chrono::system_clock;
+using std::string;
 
 namespace google {
 namespace api_manager {
@@ -167,8 +167,8 @@ const EVP_MD *EvpMdFromAlg(const char *alg);
 size_t HashSizeFromAlg(const char *alg);
 
 // Parses str into grpc_json object. Does not own buffer.
-grpc_json *DecodeBase64AndParseJson(const char *str,
-                                    size_t len, grpc_slice *buffer);
+grpc_json *DecodeBase64AndParseJson(const char *str, size_t len,
+                                    grpc_slice *buffer);
 
 // Gets BIGNUM from b64 string, used for extracting pkey from jwk.
 // Result owned by rsa_.
@@ -320,8 +320,7 @@ grpc_jwt_verifier_status JwtValidatorImpl::ParseImpl() {
   if (dot == nullptr) {
     return GRPC_JWT_VERIFIER_BAD_FORMAT;
   }
-  header_json_ =
-      DecodeBase64AndParseJson(cur, dot - cur, &header_buffer_);
+  header_json_ = DecodeBase64AndParseJson(cur, dot - cur, &header_buffer_);
   CreateJoseHeader();
   if (header_ == nullptr) {
     return GRPC_JWT_VERIFIER_BAD_FORMAT;
@@ -383,8 +382,8 @@ grpc_jwt_verifier_status JwtValidatorImpl::ParseImpl() {
     return GRPC_JWT_VERIFIER_BAD_FORMAT;
   }
   cur = dot + 1;
-  sig_buffer_ = grpc_base64_decode_with_len(cur,
-                                            jwt_len - signed_jwt_len - 1, 1);
+  sig_buffer_ =
+      grpc_base64_decode_with_len(cur, jwt_len - signed_jwt_len - 1, 1);
   if (GRPC_SLICE_IS_EMPTY(sig_buffer_)) {
     return GRPC_JWT_VERIFIER_BAD_FORMAT;
   }
@@ -630,11 +629,9 @@ bool JwtValidatorImpl::ExtractPubkeyFromJwkRSA(const grpc_json *jkey) {
   }
 
   const char *rsa_n = GetStringValue(jkey, "n");
-  rsa_->n =
-      rsa_n == nullptr ? nullptr : BigNumFromBase64String(rsa_n);
+  rsa_->n = rsa_n == nullptr ? nullptr : BigNumFromBase64String(rsa_n);
   const char *rsa_e = GetStringValue(jkey, "e");
-  rsa_->e =
-      rsa_e == nullptr ? nullptr : BigNumFromBase64String(rsa_e);
+  rsa_->e = rsa_e == nullptr ? nullptr : BigNumFromBase64String(rsa_e);
 
   if (rsa_->e == nullptr || rsa_->n == nullptr) {
     gpr_log(GPR_ERROR, "Missing RSA public key field.");
@@ -867,8 +864,8 @@ size_t HashSizeFromAlg(const char *alg) {
   }
 }
 
-grpc_json *DecodeBase64AndParseJson(const char *str,
-                                    size_t len, grpc_slice *buffer) {
+grpc_json *DecodeBase64AndParseJson(const char *str, size_t len,
+                                    grpc_slice *buffer) {
   grpc_json *json;
 
   *buffer = grpc_base64_decode_with_len(str, len, 1);
