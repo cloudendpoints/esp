@@ -745,10 +745,11 @@ grpc_byte_buffer *NgxEspGrpcServerCall::ConvertByteBuffer(
   if (!msg.Dump(&slices).ok()) {
     return nullptr;
   }
-  std::vector<grpc_slice> grpc_slices;
-  grpc_slices.reserve(slices.size());
-  for (const auto &s : slices) {
-    grpc_slices.push_back(s.c_slice());
+  std::vector<grpc_slice> grpc_slices(slices.size());
+  for (unsigned int i = 0; i < slices.size(); ++i) {
+    grpc_slices[i] = slices[i].c_slice();
+    // s.c_slice() add_ref, need to un_ref it.
+    grpc_slice_unref(grpc_slices[i]);
   }
   return grpc_raw_byte_buffer_create(grpc_slices.data(), grpc_slices.size());
 }
