@@ -1,7 +1,5 @@
 # Release 1.25.0 17-10-2018
 
-- Fix memory leak in grpc ConvertByteBuffer (#457)
-
 - Change side-way http to use 1.1 (#453)
 
 - Upgrade gRPC from 1.4.2 to 1.15.0 (#450)
