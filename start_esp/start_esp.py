@@ -147,7 +147,7 @@ def write_template(ingress, nginx_conf, args):
             cors_allow_credentials=args.cors_allow_credentials,
             cors_expose_headers=args.cors_expose_headers,
             ssl_protocols=args.ssl_protocols,
-            proxy_backend_host_header=args.proxy_backend_host_header,
+            experimental_enable_security_config_from_cipherli_st=args.experimental_enable_security_config_from_cipherli_st,
             google_cloud_platform=(args.non_gcp==False))
 
     # Save nginx conf
@@ -758,6 +758,15 @@ config file.'''.format(
                         help='''
         Enable an experimental feature that proxies multiple Endpoints services. 
         By default, this feature is disabled.
+        ''')
+    parser.add_argument('--experimental_enable_security_config_from_cipherli_st', action='store_true',
+                        help='''
+        Enable the Nginx security configuration recommended on https://cipherli.st/.
+        This is an experimental feature. Enabling this feature will set the parameters
+        such as ssl_protocols, ssl_dhparam, ssl_ciphers, ssl_session_timeout, and etc.
+        Please read the detailed Nginx security configuration on https://cipherli.st/,
+        understand its impacts to Nginx parameters (e.g., ssl_protocols and etc), and follow
+        the related instructions before enabling this feature. By default, this feature is disabled.
         ''')
 
     # Customize cloudtrace service url prefix.

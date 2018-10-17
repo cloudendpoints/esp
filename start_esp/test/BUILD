@@ -77,6 +77,7 @@ py_test(
         "testdata/expected_dns_nginx.conf",
         "testdata/expected_enable_websocket_nginx.conf",
         "testdata/expected_experimental_enable_multiple_api_configs_disabled_nginx.conf",
+        "testdata/expected_experimental_enable_security_config_from_cipherli_st_enabled_nginx.conf",
         "testdata/expected_healthz_nginx.conf",
         "testdata/expected_management_server.json",
         "testdata/expected_metadata_nginx.conf",

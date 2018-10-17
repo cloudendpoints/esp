@@ -197,6 +197,10 @@ class TestStartEsp(unittest.TestCase):
     def test_backend_host_header_expected(self):
         expected_config_file = "./start_esp/test/testdata/expected_backend_host_header_nginx.conf"
         config_generator = self.basic_config_generator + " --proxy_backend_host_header your.backend.host"
+
+    def test_enable_security_config_from_cipherli_st_enabled_is_as_expected(self):
+        expected_config_file = "./start_esp/test/testdata/expected_experimental_enable_security_config_from_cipherli_st_enabled_nginx.conf"
+        config_generator = self.basic_config_generator + " --experimental_enable_security_config_from_cipherli_st"
         self.run_test_with_expectation(expected_config_file, self.generated_nginx_config_file, config_generator)
 
     ########## The tests for generating the server configuration file start from here ##########
