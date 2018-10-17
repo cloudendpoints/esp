@@ -79,6 +79,9 @@ done
 
   # Tests
 
+  bazel test --test_output=errors //start_esp/test/... \
+    || error_exit "Bazel test failed for //start_esp/test/..."
+
   bazel test --test_output=errors //src/... \
     || error_exit "Bazel test failed for //src/..."
 
