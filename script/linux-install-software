@@ -100,6 +100,7 @@ ${SUDO} apt-get clean
 retry install_packages || error_exit 'Cannot install required packages.'
 retry ${SUDO} pip install --upgrade python-gflags || error_exit 'Cannot install gflags.'
 retry ${SUDO} pip install --upgrade certifi || error_exit 'Cannot install certifi.'
+retry ${SUDO} pip install --upgrade oauth2client || error_exit 'Cannot install oauth2client.'
 
 # Installing tools
 echo "Installing tools if necessary"
