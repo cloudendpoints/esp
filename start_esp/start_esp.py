@@ -809,6 +809,10 @@ if __name__ == '__main__':
     # Generate server_config
     args.metadata_attributes = fetch.fetch_metadata_attributes(args.metadata)
     if args.generate_config_file_only:
+        # When generate_config_file_only, metadata_attributes is set as empty
+        # to have consistent test results on local bazel test and jenkins test
+        # environments.
+        args.metadata_attributes = None
         if args.server_config_generation_path is None:
             logging.error("when --generate_config_file_only, must specify --server_config_generation_path")
             sys.exit(3)
