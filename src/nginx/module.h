@@ -172,6 +172,24 @@ typedef struct {
   // configured backend address for the API method in the API service
   // configuration.
   ngx_str_t grpc_backend_address_fallback;
+
+  // The GRPC TLS authority roots to use when authenticating the cert
+  // presented by a TLS-enabled GRPC backend. Should point to a file
+  // containing PEM certificate files to consider valid authorities.
+  // The special value `default` may be specified to use the gRPC
+  // library defaults.
+  ngx_str_t grpc_backend_tls_roots;
+
+  // The GRPC TLS client-side key to use when authenticating as the
+  // client-side of a mutual-TLS-enabled GRPC backend. Should point to
+  // a file containing a valid private key encoded in PEM.
+  ngx_str_t grpc_backend_tls_client_key;
+
+  // The GRPC TLS client-side certificate to use when authenticating
+  // as the client-side of a mutual-TLS-enabled GRPC backend. Should
+  // point to a file containing a valid certificate issued to the
+  // private key configured via `grpc_client_key`.
+  ngx_str_t grpc_backend_tls_client_cert;
 } ngx_esp_loc_conf_t;
 
 // **************************************************

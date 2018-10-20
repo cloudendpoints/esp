@@ -32,6 +32,7 @@
 #include "src/nginx/grpc_passthrough_server_call.h"
 #include "src/nginx/grpc_web_server_call.h"
 #include "src/nginx/module.h"
+#include "src/nginx/config.h"
 #include "src/nginx/transcoded_grpc_server_call.h"
 #include "src/nginx/util.h"
 
@@ -46,6 +47,8 @@ namespace {
 const ngx_str_t kContentTypeApplicationGrpc = ngx_string("application/grpc");
 const ngx_str_t kContentTypeApplicationGrpcProto =
     ngx_string("application/grpc+proto");
+
+const ngx_str_t kGrpcTlsPrefix = ngx_string("grpcs://");
 
 std::pair<Status, std::string> GrpcGetBackendAddress(
     ngx_log_t *log, ngx_esp_loc_conf_t *espcf, ngx_esp_request_ctx_t *ctx) {
@@ -94,20 +97,85 @@ std::pair<Status, std::shared_ptr<::grpc::GenericStub>> GrpcGetStub(
     return std::make_pair(Status::OK, it->second);
   }
 
+  ngx_str_t ngx_addr = ngx_std_to_str_unsafe(address);
+
   ::grpc::ChannelArguments channel_arguments;
 
   channel_arguments.SetMaxReceiveMessageSize(INT_MAX);
   channel_arguments.SetMaxSendMessageSize(INT_MAX);
 
-  auto result =
-      std::make_shared<::grpc::GenericStub>(::grpc::CreateCustomChannel(
-          address, ::grpc::InsecureChannelCredentials(), channel_arguments));
+  if (ngx_string_startswith(ngx_addr, kGrpcTlsPrefix)) {
+      ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
+                    "GrpcGetStub: using TLS, backend protocol is grpcs");
 
-  if (result) {
-    espcf->grpc_stubs.emplace(address, result);
-    return std::make_pair(Status::OK, result);
+    // we are in 'default' mode
+    auto ssl = ::grpc::SslCredentialsOptions();
+
+    // user is requesting TLS. check for authorities.
+    if (espcf->grpc_backend_tls_roots.data &&
+        espcf->grpc_backend_tls_roots.len > 0) {
+
+      // we have custom roots
+      if (!ngx_string_equal(espcf->grpc_backend_tls_roots, ngx_string("default"))) {
+        ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
+                      "GrpcGetStub: found custom grpc roots");
+
+        std::string pem_roots = ngx_str_to_std(espcf->grpc_backend_tls_roots);
+        ssl.pem_root_certs = pem_roots;
+      }
+    }
+
+    // load key and cert if the user has specified them
+    if (espcf->grpc_backend_tls_client_key.data &&
+        espcf->grpc_backend_tls_client_key.len > 0) {
+      ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
+                    "GrpcGetStub: found TLS client key data");
+
+      if (espcf->grpc_backend_tls_client_cert.data &&
+          espcf->grpc_backend_tls_client_cert.len > 0) {
+        ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
+                      "GrpcGetStub: found TLS client cert data");
+
+        // we have a client cert and client key
+        std::string client_key = ngx_str_to_std(espcf->grpc_backend_tls_client_key);
+        std::string client_cert = ngx_str_to_std(espcf->grpc_backend_tls_client_cert);
+        ssl.pem_private_key = client_key;
+        ssl.pem_cert_chain = client_cert;
+      } else {
+        // failed to load cert
+        return std::make_pair(Status(NGX_HTTP_INTERNAL_SERVER_ERROR,
+                              "Unable to load client cert for key"),
+                              std::shared_ptr<::grpc::GenericStub>());
+      }
+    }
+
+    std::string trimmed_address = address.substr(kGrpcTlsPrefix.len, std::string::npos);
+
+    ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
+                  "GrpcGetStub: trimmed address=\"%V\"",
+                  ngx_std_to_str_unsafe(trimmed_address));
+
+    auto result =
+        std::make_shared<::grpc::GenericStub>(::grpc::CreateCustomChannel(
+            trimmed_address, ::grpc::SslCredentials(ssl), channel_arguments));
+
+    if (result) {
+      espcf->grpc_stubs.emplace(address, result);
+      return std::make_pair(Status::OK, result);
+    }
+    ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
+                  "GrpcGetStub: unable to connect to gRPC backend over TLS");
+  } else {
+    // fallback to an insecure channel
+    auto result =
+        std::make_shared<::grpc::GenericStub>(::grpc::CreateCustomChannel(
+            address, ::grpc::InsecureChannelCredentials(), channel_arguments));
+
+    if (result) {
+      espcf->grpc_stubs.emplace(address, result);
+      return std::make_pair(Status::OK, result);
+    }
   }
-
   return std::make_pair(Status(NGX_HTTP_INTERNAL_SERVER_ERROR,
                                "Unable to create channel to GRPC backend"),
                         std::shared_ptr<::grpc::GenericStub>());
@@ -261,6 +329,117 @@ bool IsGrpcRequest(ngx_http_request_t *r) {
             !ngx_strncmp(ct->value.data, kContentTypeApplicationGrpcProto.data,
                          ct->value.len))));
 }
+
+char *ConfigureGrpcAuthorities(ngx_conf_t *cf, ngx_command_t *cmd,
+                               void *conf) {
+  //
+  ngx_esp_loc_conf_t *espcf = reinterpret_cast<ngx_esp_loc_conf_t *>(conf);
+  if (espcf->grpc_backend_tls_roots.data) {
+    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "duplicate grpc_roots directive");
+    return reinterpret_cast<char *>(NGX_CONF_ERROR);
+  }
+
+  if (cf->args->nelts == 1) {
+    ngx_str_t *argv = reinterpret_cast<ngx_str_t *>(cf->args->elts);
+
+    ngx_str_t file_name_or_flag = argv[1];
+
+    if (ngx_string_equal(file_name_or_flag, ngx_string("default"))) {
+      // it's the special 'default' flag. pass it on.
+      espcf->grpc_backend_tls_roots = file_name_or_flag;
+    } else {
+      // it should be a file name. load it.
+      ngx_str_t file_contents = ngx_null_string;
+      if (ngx_conf_full_name(cf->cycle, &file_name_or_flag, 1) == NGX_OK &&
+          ngx_esp_read_file(reinterpret_cast<char *>(file_name_or_flag.data),
+                            cf->pool, &file_contents) == NGX_OK) {
+        espcf->grpc_backend_tls_roots = file_contents;
+        ngx_log_debug1(NGX_LOG_DEBUG, cf->log, 0,
+                       "ConfigureGrpcAuthorities: roots file %V",
+                       espcf->grpc_backend_tls_roots);
+
+        return NGX_CONF_OK;
+      }
+      ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "Failed to open gRPC authorities file: %V",
+                         &file_name_or_flag);
+      return reinterpret_cast<char *>(NGX_CONF_ERROR);
+    }
+  } else {
+    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                       "Got no arguments for grpc_roots");
+    return reinterpret_cast<char *>(NGX_CONF_ERROR);
+  }
+  return NGX_CONF_OK;
+}
+
+char *ConfigureGrpcClientKey(ngx_conf_t *cf, ngx_command_t *cmd,
+                             void *conf) {
+  //
+  ngx_esp_loc_conf_t *espcf = reinterpret_cast<ngx_esp_loc_conf_t *>(conf);
+  if (espcf->grpc_backend_tls_client_key.data) {
+    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "duplicate grpc_client_key directive");
+    return reinterpret_cast<char *>(NGX_CONF_ERROR);
+  }
+
+  if (cf->args->nelts == 1) {
+    ngx_str_t *argv = reinterpret_cast<ngx_str_t *>(cf->args->elts);
+    ngx_str_t file_name = argv[1];
+    ngx_str_t file_contents = ngx_null_string;
+    if (ngx_conf_full_name(cf->cycle, &file_name, 1) == NGX_OK &&
+        ngx_esp_read_file(reinterpret_cast<char *>(file_name.data),
+                          cf->pool, &file_contents) == NGX_OK) {
+      espcf->grpc_backend_tls_client_key = file_contents;
+      ngx_log_debug1(NGX_LOG_DEBUG, cf->log, 0,
+                     "ConfigureGrpcClientKey: client key file %V",
+                     espcf->grpc_backend_tls_client_key);
+
+      return NGX_CONF_OK;
+    }
+    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "Failed to open gRPC client key: %V",
+                       &file_name);
+    return reinterpret_cast<char *>(NGX_CONF_ERROR);
+  } else {
+    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                       "Invalid number of arguments for grpc_client_key");
+    return reinterpret_cast<char *>(NGX_CONF_ERROR);
+  }
+  return NGX_CONF_OK;
+}
+
+char *ConfigureGrpcClientCertificate(ngx_conf_t *cf, ngx_command_t *cmd,
+                                     void *conf) {
+  //
+  ngx_esp_loc_conf_t *espcf = reinterpret_cast<ngx_esp_loc_conf_t *>(conf);
+  if (espcf->grpc_backend_tls_client_cert.data) {
+    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "duplicate grpc_client_certificate directive");
+    return reinterpret_cast<char *>(NGX_CONF_ERROR);
+  }
+
+  if (cf->args->nelts == 1) {
+    ngx_str_t *argv = reinterpret_cast<ngx_str_t *>(cf->args->elts);
+    ngx_str_t file_name = argv[1];
+    ngx_str_t file_contents = ngx_null_string;
+    if (ngx_conf_full_name(cf->cycle, &file_name, 1) == NGX_OK &&
+        ngx_esp_read_file(reinterpret_cast<char *>(file_name.data),
+                          cf->pool, &file_contents) == NGX_OK) {
+      espcf->grpc_backend_tls_client_cert = file_contents;
+      ngx_log_debug1(NGX_LOG_DEBUG, cf->log, 0,
+                     "ConfigureGrpcClientCertificate: client cert file %V",
+                     espcf->grpc_backend_tls_client_cert);
+
+      return NGX_CONF_OK;
+    }
+    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "Failed to open gRPC client certificate: %V",
+                       &file_name);
+    return reinterpret_cast<char *>(NGX_CONF_ERROR);
+  } else {
+    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                       "Invalid number of arguments for grpc_client_certificate");
+    return reinterpret_cast<char *>(NGX_CONF_ERROR);
+  }
+  return NGX_CONF_OK;
+}
+
 
 char *ConfigureGrpcBackendHandler(ngx_conf_t *cf, ngx_command_t *cmd,
                                   void *conf) {

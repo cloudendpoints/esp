@@ -234,12 +234,60 @@ ngx_command_t ngx_esp_commands[] = {
         //
         // Usage:
         //   location / {
+        //     [grpc_roots /path/to/roots.pem;]
+        //     [grpc_client_key /path/to/client/key.pem;]
+        //     [grpc_client_certificate /path/to/client/cert.pem;]
         //     grpc_pass [<backend_address> [override]];
         //   }
         //
         ngx_string("grpc_pass"),
         NGX_HTTP_LOC_CONF | NGX_CONF_NOARGS | NGX_CONF_TAKE12,
         ConfigureGrpcBackendHandler, NGX_HTTP_LOC_CONF_OFFSET, 0, nullptr,
+    },
+    {
+        // grpc_roots sets up TLS certification authorities, to validate
+        // the certificate sent back by a gRPC backend. If left unspecified,
+        // the default set of nginx roots are used. The special value
+        // "default" can be specified to install the default authorities from
+        // gRPC core (this is the default behavior if no directive is
+        // specified).
+        //
+        // Usage:
+        //   location / {
+        //     grpc_roots [/path/to/roots.pem|"default"];
+        //   }
+        //
+        ngx_string("grpc_roots"),
+        NGX_HTTP_LOC_CONF | NGX_CONF_TAKE1,
+        ConfigureGrpcAuthorities, NGX_HTTP_LOC_CONF_OFFSET, 0, nullptr,
+    },
+    {
+        // grpc_client_key sets up a TLS client key to be used when
+        // communicating with a gRPC backend. it is expected that the user
+        // also specify `grpc_client_certificate`.
+        //
+        // Usage:
+        //   location / {
+        //     grpc_client_key /path/to/key.pem;
+        //   }
+        //
+        ngx_string("grpc_client_key"),
+        NGX_HTTP_LOC_CONF | NGX_CONF_TAKE1,
+        ConfigureGrpcClientKey, NGX_HTTP_LOC_CONF_OFFSET, 0, nullptr,
+    },
+    {
+        // grpc_client_certificate sets up a TLS client key to be used
+        // when communicating with a gRPC backend. it is expected that the
+        // user also specify `grpc_client_key`.
+        //
+        // Usage:
+        //   location / {
+        //     grpc_client_certificate /path/to/cert.pem;
+        //   }
+        //
+        ngx_string("grpc_client_certificate"),
+        NGX_HTTP_LOC_CONF | NGX_CONF_TAKE1,
+        ConfigureGrpcClientCertificate, NGX_HTTP_LOC_CONF_OFFSET, 0, nullptr,
     },
     {
         ngx_string("endpoints_status"), NGX_HTTP_LOC_CONF | NGX_CONF_NOARGS,
@@ -378,6 +426,9 @@ void *ngx_esp_create_loc_conf(ngx_conf_t *cf) {
 
   ngx_str_null(&lc->grpc_backend_address_override);
   ngx_str_null(&lc->grpc_backend_address_fallback);
+  ngx_str_null(&lc->grpc_backend_tls_roots);
+  ngx_str_null(&lc->grpc_backend_tls_client_key);
+  ngx_str_null(&lc->grpc_backend_tls_client_cert);
   ngx_str_null(&lc->metadata_server_url);
   ngx_str_null(&lc->service_controller_url);
   ngx_str_null(&lc->cloud_trace_api_url);

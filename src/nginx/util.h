@@ -65,6 +65,11 @@ inline bool ngx_string_equal(const ngx_str_t &str1, const ngx_str_t &str2) {
   return str1.len == str2.len && !ngx_strncmp(str1.data, str2.data, str1.len);
 }
 
+// Check an ngx_str_t against a prefix ngx_str_t
+inline bool ngx_string_startswith(const ngx_str_t &subject, const ngx_str_t &prefix) {
+  return subject.len > prefix.len && ngx_strstr(subject.data, prefix.data) == 0;
+}
+
 // Log a message with a specific log level.
 void ngx_esp_log(ngx_log_t *log, ngx_uint_t level, ngx_str_t msg);
 

@@ -38,6 +38,18 @@ namespace google {
 namespace api_manager {
 namespace nginx {
 
+// Configures a set of TLS root authorities.
+char *ConfigureGrpcAuthorities(ngx_conf_t *ct, ngx_command_t *cmd,
+                               void *conf);
+
+// Configures a client-side TLS key for gRPC.
+char *ConfigureGrpcClientKey(ngx_conf_t *ct, ngx_command_t *cmd,
+                             void *conf);
+
+// Configures a client-side TLS cert for gRPC.
+char *ConfigureGrpcClientCertificate(ngx_conf_t *ct, ngx_command_t *cmd,
+                                     void *conf);
+
 // Configures a location to use the GRPC-aware proxy backend handler.
 char *ConfigureGrpcBackendHandler(ngx_conf_t *ct, ngx_command_t *cmd,
                                   void *conf);
