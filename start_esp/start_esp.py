@@ -147,6 +147,7 @@ def write_template(ingress, nginx_conf, args):
             cors_allow_credentials=args.cors_allow_credentials,
             cors_expose_headers=args.cors_expose_headers,
             ssl_protocols=args.ssl_protocols,
+            proxy_backend_host_header=args.proxy_backend_host_header,
             google_cloud_platform=(args.non_gcp==False))
 
     # Save nginx conf
@@ -516,6 +517,10 @@ config file.'''.format(
         help='''Comma separated list of trusted proxy for X-Forwarded-For
         header, Default value: {xff_trusted_proxy_list}'''.
         format(xff_trusted_proxy_list=DEFAULT_XFF_TRUSTED_PROXY_LIST))
+
+    parser.add_argument('--proxy_backend_host_header', default=None,
+        help='''Define the Host header value that overrides the incoming Host
+        header for upstream request.''')
 
     parser.add_argument('--check_metadata', action='store_true',
         help='''Enable fetching access token, service name, service config ID

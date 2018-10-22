@@ -59,6 +59,7 @@ py_test(
         "testdata/expected_access_log_nginx.conf",
         "testdata/expected_allow_invalid_headers_nginx.conf",
         "testdata/expected_backend_nginx.conf",
+        "testdata/expected_backend_host_header_nginx.conf",
         "testdata/expected_basic_nginx.conf",
         "testdata/expected_client_body_buffer_size_nginx.conf",
         "testdata/expected_client_ip_header_server.json",
