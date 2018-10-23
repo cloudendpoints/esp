@@ -162,23 +162,79 @@ git_repository(
 #
 # Go rules
 #
-git_repository(
-    name = "io_bazel_rules_go",
-    commit = "2d9f328a9723baf2d037ba9db28d9d0e30683938",  # Apr 6, 2017 (buildifier fix)
-    remote = "https://github.com/bazelbuild/rules_go.git",
-)
-
-load("@io_bazel_rules_go//go:def.bzl", "go_repositories", "go_repository", "new_go_repository")
-
-go_repositories()
 
 new_git_repository(
     name = "github_com_golang_protobuf",
     build_file = "third_party/BUILD.golang_protobuf",
-    commit = "8616e8ee5e20a1704615e6c8d7afcdac06087a67",
+    commit = "aa810b61a9c79d51363740d207bb46cf8e620ed5",
     remote = "https://github.com/golang/protobuf.git",
 )
 
-load("//test/grpc:repositories.bzl", "grpc_go_repositories")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-grpc_go_repositories()
+http_archive(
+    name = "io_bazel_rules_go",
+    urls = ["https://github.com/bazelbuild/rules_go/releases/download/0.16.0/rules_go-0.16.0.tar.gz"],
+    sha256 = "ee5fe78fe417c685ecb77a0a725dc9f6040ae5beb44a0ba4ddb55453aad23a8a",
+)
+
+http_archive(
+    name = "bazel_gazelle",
+    urls = ["https://github.com/bazelbuild/bazel-gazelle/releases/download/0.15.0/bazel-gazelle-0.15.0.tar.gz"],
+    sha256 = "6e875ab4b6bf64a38c352887760f21203ab054676d9c1b274963907e0768740d",
+)
+
+load("@io_bazel_rules_go//go:def.bzl", "go_rules_dependencies", "go_register_toolchains")
+go_rules_dependencies()
+go_register_toolchains()
+
+load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies", "go_repository")
+gazelle_dependencies()
+
+go_repository(
+    name = "org_golang_google_grpc",
+    commit = "9bf8ea0a8282ebecd1aa474c926e3028f5c22a4c",
+    importpath = "google.golang.org/grpc",
+)
+
+go_repository(
+    name = "com_github_golang_protobuf",
+    commit = "fec3b39b059c0f88fa6b20f5ed012b1aa203a8b4",
+    importpath = "github.com/golang/protobuf",
+)
+
+go_repository(
+    name = "org_golang_google_genproto",
+    commit = "bb3573be0c484136831138976d444b8754777aff",
+    importpath = "google.golang.org/genproto",
+)
+
+go_repository(
+    name = "org_golang_x_net",
+    commit = "513929065c19401a1c7b76ecd942f9f86a0c061b",
+    importpath = "golang.org/x/net",
+)
+
+go_repository(
+    name = "org_golang_x_oauth2",
+    commit = "f047394b6d14284165300fd82dad67edb3a4d7f6",
+    importpath = "golang.org/x/oauth2",
+)
+
+go_repository(
+    name = "com_google_cloud_go",
+    commit = "0625e1e4bfc1aa7a07d6285541fa9020feab1013",
+    importpath = "cloud.google.com/go",
+)
+
+go_repository(
+    name = "com_github_googleapis_gax_go",
+    commit = "9af46dd5a1713e8b5cd71106287eba3cefdde50b",
+    importpath = "github.com/googleapis/gax-go",
+)
+
+go_repository(
+    name = "org_golang_x_text",
+    commit = "19e51611da83d6be54ddafce4a4af510cb3e9ea4",
+    importpath = "golang.org/x/text",
+)

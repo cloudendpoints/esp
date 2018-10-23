@@ -14,28 +14,25 @@
 #
 ################################################################################
 #
-package(default_visibility = ["//src/api_manager:__subpackages__"])
 
-cc_library(
-    name = "firebase_rules",
-    srcs = [
-        "firebase_request.cc",
-    ],
-    hdrs = [
-        "firebase_request.h",
-    ],
-    linkopts = select({
-        "//:darwin": [],
-        "//conditions:default": [
-            "-lm",
-            "-luuid",
-        ],
-    }),
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+
+proto_library(
+    name = "status_proto_file",
+    srcs = ["status.proto"],
+    visibility = ["//visibility:public"],
     deps = [
-        "//external:cc_wkt_protos",
-        "//external:googletest_prod",
-        "//src/api_manager/proto:security_rules_proto",
-        "//src/api_manager/context",
-        "//src/api_manager/utils",
+        "@com_google_protobuf//:timestamp_proto",
+        "//src/api_manager/proto:api_manager_status_proto_file",
     ],
 )
+
+cc_proto_library(
+    name = "status_proto",
+    deps = [
+        ":status_proto_file",
+    ],
+    visibility = ["//visibility:public"],
+)
+

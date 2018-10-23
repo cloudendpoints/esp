@@ -47,7 +47,7 @@ cc_library(
         "//src/api_manager:http_template",
         "//src/api_manager:impl_headers",
         "//src/api_manager:path_matcher",
-        "//src/api_manager:server_config_proto",
+        "//src/api_manager/proto:server_config_proto",
         "//src/api_manager/auth",
         "//src/api_manager/auth:authz",
         "//src/api_manager/auth:service_account_token",

@@ -49,7 +49,7 @@ cc_library(
         "//external:servicecontrol_client",
         "//include:headers_only",
         "//src/api_manager:impl_headers",
-        "//src/api_manager:server_config_proto",
+        "//src/api_manager/proto:server_config_proto",
         "//src/api_manager/cloud_trace",
         "//src/api_manager/utils",
     ],

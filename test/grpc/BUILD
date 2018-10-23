@@ -24,6 +24,9 @@
 #
 ################################################################################
 #
+load("@bazel_gazelle//:def.bzl", "gazelle")
+# gazelle:prefix github.com/example/project
+gazelle(name = "gazelle")
 
 package(default_visibility = [
     "//src/nginx/t:__pkg__",
@@ -128,20 +131,15 @@ cc_binary(
     ],
 )
 
-load(
-    "@io_bazel_rules_go//go:def.bzl",
-    "go_prefix",
-    "go_binary",
-)
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 
-go_prefix("github.com/cloudendpoints/esp/test/grpc")
-
-go_binary(
-    name = "interop-client",
+go_library(
+    name = "interop_client_lib",
     srcs = [
         "interop-client.go",
     ],
-    go_prefix = ":go_prefix",
+    importpath = "github.com/bazelbuild/bazel-gazelle/cmd/gazelle",
+    visibility = ["//visibility:private"],
     deps = [
         "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_grpc//credentials:go_default_library",
@@ -151,6 +149,16 @@ go_binary(
         "@org_golang_google_grpc//interop/grpc_testing:go_default_library",
         "@org_golang_x_net//context:go_default_library",
     ],
+)
+
+go_binary(
+    name = "interop-client",
+    embed = [":interop_client_lib"],
+    msan = "off",
+    pure = "off",
+    race = "off",
+    static = "off",
+    visibility = ["//visibility:public"],
 )
 
 # Export service.json such that the tests can use it

@@ -32,7 +32,7 @@ package(default_visibility = ["//visibility:public"])
 
 pkg_tar(
     name = "esp-bin",
-    files = [
+    srcs = [
         ":debug_nginx.sh",
         ":fetch_service_config.sh",
         ":nginx-debug",
@@ -62,7 +62,7 @@ pex_binary(
 
 pkg_tar(
     name = "nginx-conf-template",
-    files = [
+    srcs = [
         ":nginx-auto.conf.template",
     ],
     mode = "0644",
@@ -72,7 +72,7 @@ pkg_tar(
 
 pkg_tar(
     name = "server-conf-template",
-    files = [
+    srcs = [
         ":server-auto.conf.template",
         ":server_config.pb.txt",
     ],
@@ -83,7 +83,7 @@ pkg_tar(
 
 pkg_tar(
     name = "trusted-ca-certificates",
-    files = [
+    srcs = [
         ":trusted-ca-certificates.crt",
     ],
     mode = "0644",
@@ -93,7 +93,7 @@ pkg_tar(
 
 pkg_tar(
     name = "nginx-initd-override",
-    files = [
+    srcs = [
         ":nginx-init.d/nginx",
     ],
     mode = "0755",

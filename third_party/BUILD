@@ -25,7 +25,7 @@
 ################################################################################
 #
 load("@io_bazel_rules_perl//perl:perl.bzl", "perl_library")
-load("/nginx", "nginx_suite")
+load("//:nginx.bzl", "nginx_suite")
 
 perl_library(
     name = "nginx_test",

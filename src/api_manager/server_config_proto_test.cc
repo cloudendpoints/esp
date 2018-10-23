@@ -126,7 +126,7 @@ TEST(ServerConfigProto, ServerConfigFromString) {
 
 TEST(ServerConfigProto, ValidateSampleServerConfig) {
   const char kSampleServerConfigPath[] =
-      "src/api_manager/proto/sample_server_config.pb.txt";
+      "src/api_manager/testdata/sample_server_config.pb.txt";
 
   std::ifstream ifs(kSampleServerConfigPath);
   ASSERT_TRUE(ifs) << "Failed to open the sample server config file."

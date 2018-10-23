@@ -18,39 +18,6 @@ package(default_visibility = [":__subpackages__"])
 
 load("@protobuf_git//:protobuf.bzl", "cc_proto_library")
 
-cc_proto_library(
-    name = "server_config_proto",
-    srcs = [
-        "proto/server_config.proto",
-    ],
-    default_runtime = "//external:protobuf",
-    protoc = "//external:protoc",
-    visibility = ["//visibility:public"],
-)
-
-cc_proto_library(
-    name = "status_proto",
-    srcs = [
-        "proto/api_manager_status.proto",
-    ],
-    default_runtime = "//external:protobuf",
-    protoc = "//external:protoc",
-    visibility = ["//visibility:public"],
-)
-
-cc_proto_library(
-    name = "security_rules_proto",
-    srcs = [
-        "proto/security_rules.proto",
-    ],
-    default_runtime = "//external:protobuf",
-    protoc = "//external:protoc",
-    visibility = ["//visibility:public"],
-    deps = [
-        "//external:cc_wkt_protos",
-    ],
-)
-
 cc_library(
     name = "auth_headers",
     hdrs = [
@@ -115,8 +82,8 @@ cc_library(
         ":http_template",
         ":impl_headers",
         ":path_matcher",
-        ":security_rules_proto",
-        ":server_config_proto",
+        "//src/api_manager/proto:security_rules_proto",
+        "//src/api_manager/proto:server_config_proto",
         "//external:cc_wkt_protos",
         "//external:cloud_trace",
         "//external:googletest_prod",
@@ -297,11 +264,11 @@ cc_test(
         "server_config_proto_test.cc",
     ],
     data = [
-        "proto/sample_server_config.pb.txt",
+        "testdata/sample_server_config.pb.txt",
     ],
     deps = [
-        ":server_config_proto",
         "//external:googletest_main",
+        "//src/api_manager/proto:server_config_proto",
     ],
 )
 
@@ -372,7 +339,7 @@ cc_test(
     deps = [
         ":api_manager",
         ":mock_api_manager_environment",
-        ":security_rules_proto",
+        "//src/api_manager/proto:security_rules_proto",
         "//external:cc_wkt_protos",
         "//external:googletest_main",
     ],

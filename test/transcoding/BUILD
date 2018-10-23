@@ -1,3 +1,6 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+
 # Copyright (C) Extensible Service Proxy Authors
 # All rights reserved.
 #
@@ -67,3 +70,25 @@ cc_binary(
 
 # Export service.pb.txt such that the tests can use it
 exports_files(["service.pb.txt"])
+
+proto_library(
+    name = "endpoints_examples_bookstore_proto",
+    srcs = ["bookstore.proto"],
+    deps = [
+        "@com_google_protobuf//:empty_proto",
+        "@com_google_protobuf//:struct_proto",
+    ],
+)
+
+go_proto_library(
+    name = "endpoints_examples_bookstore_go_proto",
+    compilers = ["@io_bazel_rules_go//proto:go_grpc"],
+    importpath = "test/transcoding",
+    proto = ":endpoints_examples_bookstore_proto",
+)
+
+go_library(
+    name = "go_default_library",
+    embed = [":endpoints_examples_bookstore_go_proto"],
+    importpath = "test/transcoding",
+)

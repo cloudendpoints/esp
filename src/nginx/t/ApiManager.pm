@@ -328,7 +328,7 @@ sub grpc_test_server {
 
 sub grpc_interop_server {
   my ($t, $port) = @_;
-  my $server = './external/org_golang_google_grpc/interop/server/server';
+  my $server = './external/org_golang_google_grpc/interop/server/linux_amd64_stripped/server';
   exec $server, "--port", $port;
 }
 
@@ -373,7 +373,7 @@ sub run_grpc_test {
 sub run_grpc_interop_test {
   my ($t, $port, $test_case, @args) = @_;
   my $testdir = $t->testdir();
-  my $client = './test/grpc/interop-client';
+  my $client = './test/grpc/linux_amd64_stripped/interop-client';
   return system "$client --server_port $port --test_case $test_case " . join(' ', @args)
 }
 

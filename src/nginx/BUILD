@@ -50,19 +50,6 @@ cc_library(
     visibility = [":__subpackages__"],
 )
 
-cc_proto_library(
-    name = "status_proto",
-    srcs = [
-        "proto/status.proto",
-    ],
-    default_runtime = "//external:protobuf",
-    protoc = "//external:protoc",
-    deps = [
-        "//external:api_manager_status_proto",
-        "//external:cc_wkt_protos",
-    ],
-)
-
 cc_library(
     name = "ngx_esp",
     srcs = [
@@ -109,7 +96,6 @@ cc_library(
     ],
     visibility = [":__subpackages__"],
     deps = [
-        ":status_proto",
         ":version_header",
         "//external:api_manager",
         "//external:grpc",
@@ -117,6 +103,7 @@ cc_library(
         "//external:grpc_transcoding",
         "//external:protobuf",
         "//external:servicecontrol",
+        "//src/nginx/proto:status_proto",
         "//src/grpc",
         "//src/grpc:zero_copy_stream",
         "@nginx//:core",

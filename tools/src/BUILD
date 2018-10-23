@@ -24,13 +24,7 @@
 #
 ################################################################################
 #
-load(
-    "@io_bazel_rules_go//go:def.bzl",
-    "go_prefix",
-    "go_library",
-    "go_binary",
-    "go_test",
-)
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_prefix", "go_test")
 
 # Define an import prefix
 go_prefix("github.com/cloudendpoints/esp")
@@ -148,22 +142,9 @@ go_library(
     ],
 )
 
-go_binary(
-    name = "fakes_server",
-    srcs = [
-        "fakes/server/main.go",
-    ],
-    go_prefix = "//tools/src:go_prefix",
-    deps = [
-        ":vendor/fakes",
-    ],
-)
-
 go_library(
     name = "vendor/deploy/deploy-local",
-    srcs = [
-        "deploy/deploy-local/deploy-local.go",
-    ],
+    srcs = ["deploy/deploy-local/deploy-local.go"],
     go_prefix = "//tools/src:go_prefix",
 )
 
