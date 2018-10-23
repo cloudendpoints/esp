@@ -5,7 +5,7 @@
     "title": "Bookstore",
     "version": "1.0.0"
   },
-  "host": "${ENDPOINT_SERVICE}",
+  "host": "gke-tight-http-bookstore.qiwzhang-authz.appspot.com",
   "basePath": "/",
   "consumes": [
     "application/json"
