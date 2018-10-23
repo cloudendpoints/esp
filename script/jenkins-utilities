@@ -145,7 +145,7 @@ function create_service() {
   local version=''
 
   echo 'Deploying service'
-  retry -n 3 run ${GCLOUD} service-management deploy "${swagger_json}"
+  retry -n 3 run ${GCLOUD} endpoints services deploy "${swagger_json}"
 
   retry -n 5 set_esp_service_version "${esp_service}" \
     || error_exit 'Could not fetch the service version.'
