@@ -89,9 +89,9 @@ function sed_i() {
 function delete_service() {
   local esp_service="${1}"
   if ! [[ "${esp_service}" =~ "${DEFAULT_ESP_SERVICE}" ]]; then
-    ${GCLOUD} service-management disable \
+    ${GCLOUD} services disable \
       "${esp_service}" --project="${PROJECT_ID}"
-    ${GCLOUD} service-management delete "${esp_service}" -q
+    ${GCLOUD} endpoints services delete "${esp_service}" --quiet
   fi
 }
 
@@ -151,7 +151,7 @@ function create_service() {
     || error_exit 'Could not fetch the service version.'
 
   echo 'Activating service'
-  retry -n 3 run ${GCLOUD} service-management enable \
+  retry -n 3 run ${GCLOUD} services enable \
     "${esp_service}" --project="${PROJECT_ID}" \
     || error_exit 'Could not activate the service.'
 
