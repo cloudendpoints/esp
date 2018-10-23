@@ -163,7 +163,7 @@ With your bookstore.json configuration file updated, deploy the configuration
 to Google Cloud Endpoints:
 
     gcloud components update
-    gcloud service-management deploy \
+    gcloud endpoints services deploy \
         --project=MY_PROJECT_ID \
         "${ESP}/src/nginx/conf/bookstore.json"
 
