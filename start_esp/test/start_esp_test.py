@@ -129,6 +129,11 @@ class TestStartEsp(unittest.TestCase):
         config_generator = self.basic_config_generator + " --enable_websocket"
         self.run_test_with_expectation(expected_config_file, self.generated_nginx_config_file, config_generator)
 
+    def test_enable_debug_arg_output_is_as_expected(self):
+        expected_config_file = "./start_esp/test/testdata/expected_enable_debug_nginx.conf"
+        config_generator = self.basic_config_generator + " --enable_debug"
+        self.run_test_with_expectation(expected_config_file, self.generated_nginx_config_file, config_generator)
+
     def test_client_max_body_size_arg_output_is_as_expected(self):
         expected_config_file = "./start_esp/test/testdata/expected_client_max_body_size_nginx.conf"
         config_generator = self.basic_config_generator + " --client_max_body_size 10m"
