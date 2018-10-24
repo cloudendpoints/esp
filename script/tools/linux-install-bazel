@@ -36,7 +36,7 @@ fi
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . ${DIR}/all-utilities || { echo "Cannot load Bash utilities" ; exit 1 ; }
 
-BAZEL_VERSION='0.5.4'
+BAZEL_VERSION='0.18.0'
 BAZEL_BASE_URL='https://github.com/bazelbuild/bazel/releases/download'
 BAZEL_SH="bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh"
 BAZEL_URL="${BAZEL_BASE_URL}/${BAZEL_VERSION}/${BAZEL_SH}"
