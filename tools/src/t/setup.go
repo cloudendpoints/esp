@@ -42,7 +42,7 @@ func GetFakeServer() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	path := test_bin_root + "/tools/src/fakes_server"
+	path := test_bin_root + "/tools/src/fakes/server/linux_amd64_stripped/fakes_server"
 	fmt.Println("Fake server path", path)
 	return path, nil
 }
