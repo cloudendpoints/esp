@@ -204,6 +204,11 @@ class TestStartEsp(unittest.TestCase):
         config_generator = self.basic_config_generator + " --proxy_backend_host_header your.backend.host"
         self.run_test_with_expectation(expected_config_file, self.generated_nginx_config_file, config_generator)
 
+    def test_enable_strict_transport_security_is_as_expected(self):
+        expected_config_file = "./start_esp/test/testdata/expected_enable_strict_transport_security_nginx.conf"
+        config_generator = self.basic_config_generator + " --enable_strict_transport_security"
+        self.run_test_with_expectation(expected_config_file, self.generated_nginx_config_file, config_generator)
+
     ########## The tests for generating the server configuration file start from here ##########
 
     def test_service_control_url_override_arg_output_is_as_expected(self):
