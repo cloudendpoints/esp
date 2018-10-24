@@ -54,10 +54,10 @@ function build_and_test() {
   echo "${message}..."
   retry -n 3 ${BAZEL} ${BAZEL_ARGS} fetch \
     //src/... //tools/src/... //third_party:all //start_esp/test/... \
-    && retry -n 2 ${BAZEL} ${BAZEL_ARGS} build \
+    && retry -n 2 ${BAZEL} ${BAZEL_ARGS} build --action_env=PERL5LIB=. \
       ${BAZEL_BUILD_ARGS} ${config_flag} \
       //src/... //tools/src/... //third_party:all //start_esp/test/... \
-    && ${BAZEL} ${BAZEL_ARGS} test --test_output=errors ${config_flag} \
+    && ${BAZEL} ${BAZEL_ARGS} test --test_output=errors ${config_flag} --action_env=PERL5LIB=. \
       //src/... //tools/src/... //third_party:all //start_esp/test/... \
     || { echo "${error}..."; return 1; }
 }
