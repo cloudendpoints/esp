@@ -1,6 +1,3 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
-load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
-
 # Copyright (C) Extensible Service Proxy Authors
 # All rights reserved.
 #
@@ -27,6 +24,9 @@ load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
 #
 ################################################################################
 #
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+
 package(default_visibility = [
     "//src/nginx/t:__pkg__",
 ])

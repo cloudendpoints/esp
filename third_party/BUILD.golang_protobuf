@@ -1,8 +1,8 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_prefix")
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
-load("@io_bazel_rules_go//go:def.bzl", "go_binary")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_binary")
+# load("@io_bazel_rules_go//go:def.bzl", "go_library")
+# load("@io_bazel_rules_go//go:def.bzl", "go_binary")
 
-go_prefix("github.com/golang/protobuf")
+# go_prefix("github.com/golang/protobuf")
 
 go_library(
     name = "proto",

@@ -33,10 +33,11 @@ import (
 	"math"
 	"sort"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/struct"
 	"google/api/servicecontrol/v1"
 	"google/logging/type"
+
+	"github.com/golang/protobuf/proto"
+	structpb "github.com/golang/protobuf/ptypes/struct"
 )
 
 type ExpectedCheck struct {
@@ -83,14 +84,14 @@ var (
 	timeDistOptions = distOptions{29, 2.0, 1e-6}
 	sizeDistOptions = distOptions{8, 10.0, 1}
 	randomMatrics   = map[string]bool{
-		"serviceruntime.googleapis.com/api/consumer/total_latencies":                        true,
-		"serviceruntime.googleapis.com/api/producer/total_latencies":                        true,
-		"serviceruntime.googleapis.com/api/consumer/backend_latencies":                      true,
-		"serviceruntime.googleapis.com/api/producer/backend_latencies":                      true,
-		"serviceruntime.googleapis.com/api/consumer/request_overhead_latencies":             true,
-		"serviceruntime.googleapis.com/api/producer/request_overhead_latencies":             true,
-		"serviceruntime.googleapis.com/api/consumer/streaming_durations":                    true,
-		"serviceruntime.googleapis.com/api/producer/streaming_durations":                    true,
+		"serviceruntime.googleapis.com/api/consumer/total_latencies":            true,
+		"serviceruntime.googleapis.com/api/producer/total_latencies":            true,
+		"serviceruntime.googleapis.com/api/consumer/backend_latencies":          true,
+		"serviceruntime.googleapis.com/api/producer/backend_latencies":          true,
+		"serviceruntime.googleapis.com/api/consumer/request_overhead_latencies": true,
+		"serviceruntime.googleapis.com/api/producer/request_overhead_latencies": true,
+		"serviceruntime.googleapis.com/api/consumer/streaming_durations":        true,
+		"serviceruntime.googleapis.com/api/producer/streaming_durations":        true,
 	}
 	randomLogEntries = []string{
 		"timestamp",
@@ -162,11 +163,11 @@ func createReportLabels(er *ExpectedReport) map[string]string {
 }
 
 func makeStringValue(v string) *structpb.Value {
-	return &structpb.Value{&structpb.Value_StringValue{v}}
+	return &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: v}}
 }
 
 func makeNumberValue(v int64) *structpb.Value {
-	return &structpb.Value{&structpb.Value_NumberValue{float64(v)}}
+	return &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: float64(v)}}
 }
 
 func createLogEntry(er *ExpectedReport) *servicecontrol.LogEntry {

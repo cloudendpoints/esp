@@ -141,7 +141,7 @@ bind(
 #
 git_repository(
     name = "io_bazel_rules_pex",
-    commit = "6af30588d4f11cafcb744c50935cc37f029e6e7f",
+    commit = "0c5773db01ab8aeb3ae749b2fc570749b93af41f",
     remote = "https://github.com/benley/bazel_rules_pex.git",
 )
 
@@ -155,41 +155,41 @@ pex_repositories()
 
 git_repository(
     name = "io_bazel_rules_perl",
-    commit = "5510c0ee04152aed9c5d1aba3ddb01daab336ad5",
+    commit = "48c7edfa7e130e35f894eb7249eb885428a213e1",
     remote = "https://github.com/bazelbuild/rules_perl.git",
 )
 
 #
 # Go rules
 #
-
-new_git_repository(
-    name = "github_com_golang_protobuf",
-    build_file = "third_party/BUILD.golang_protobuf",
-    commit = "aa810b61a9c79d51363740d207bb46cf8e620ed5",
-    remote = "https://github.com/golang/protobuf.git",
-)
-
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
+# download go bazel tools
 http_archive(
     name = "io_bazel_rules_go",
     urls = ["https://github.com/bazelbuild/rules_go/releases/download/0.16.0/rules_go-0.16.0.tar.gz"],
     sha256 = "ee5fe78fe417c685ecb77a0a725dc9f6040ae5beb44a0ba4ddb55453aad23a8a",
 )
 
+# download the gazelle tool
 http_archive(
     name = "bazel_gazelle",
     urls = ["https://github.com/bazelbuild/bazel-gazelle/releases/download/0.15.0/bazel-gazelle-0.15.0.tar.gz"],
     sha256 = "6e875ab4b6bf64a38c352887760f21203ab054676d9c1b274963907e0768740d",
 )
 
+# load go rules
 load("@io_bazel_rules_go//go:def.bzl", "go_rules_dependencies", "go_register_toolchains")
 go_rules_dependencies()
 go_register_toolchains()
 
+# load gazelle
 load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies", "go_repository")
 gazelle_dependencies()
+
+#
+# Go repositories
+#
 
 go_repository(
     name = "org_golang_google_grpc",
@@ -199,8 +199,10 @@ go_repository(
 
 go_repository(
     name = "com_github_golang_protobuf",
-    commit = "fec3b39b059c0f88fa6b20f5ed012b1aa203a8b4",
+    commit = "d7fc20193620986259ffb1f9b9da752114ee14a4",
+#    commit = "3a3da3a4e26776cc22a79ef46d5d58477532dede",  # master, as of 2018-05-22
     importpath = "github.com/golang/protobuf",
+    build_file_proto_mode = "disable",
 )
 
 go_repository(
