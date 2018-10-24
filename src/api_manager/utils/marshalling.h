@@ -36,6 +36,9 @@ enum JsonOptions {
   OUTPUT_DEFAULTS = 2,
 };
 
+// Returns the singleton type resolver, creating it on first call.
+TypeResolver* GetTypeResolver();
+
 // Returns the type URL for a protobuf Message. This is useful when embedding
 // a message inside an Any, for example.
 std::string GetTypeUrl(const ::google::protobuf::Message& message);

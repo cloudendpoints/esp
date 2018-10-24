@@ -134,7 +134,19 @@ TranscoderFactory::TranscoderFactory(
     const ::google::api::Service& service,
     const ::google::protobuf::util::JsonPrintOptions& json_print_options)
     : type_helper_(service.types(), service.enums()),
-      json_print_options_(json_print_options) {}
+      json_print_options_(json_print_options) {
+  // Add DebugInfo and Status types from default pool to factory resolver.
+  auto resolver = utils::GetTypeResolver();
+  for (const auto& type_url : [
+           "type.googleapis.com/google.rpc.DebugInfo",
+           "type.googleapis.com/google.rpc.Status"]) {
+    google::protobuf::Type msg_type;
+    const auto status = resovler->ResolveMessageType(type_url, &msg_type);
+    if (status.ok()) {
+      type_helper_.AddType(msg_type);
+    }
+  }
+}
 
 pbutil::Status TranscoderFactory::Create(
     const MethodCallInfo& call_info, pbio::ZeroCopyInputStream* request_input,

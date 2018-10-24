@@ -38,12 +38,12 @@ TypeResolver* CreateTypeResolver() {
       kTypeUrlPrefix, ::google::protobuf::DescriptorPool::generated_pool());
 }
 
-// Returns the singleton type resolver, creating it on first call.
+}  // namespace
+
 TypeResolver* GetTypeResolver() {
   static TypeResolver* resolver = CreateTypeResolver();
   return resolver;
 }
-}  // namespace
 
 std::string GetTypeUrl(const Message& message) {
   return std::string(kTypeUrlPrefix) + "/" +
