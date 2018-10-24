@@ -81,8 +81,8 @@ ZONE = ''
 
 DefaultNode {
   BUCKET = failIfNullOrEmpty(env.BUCKET, 'BUCKET must be set.')
-  BAZEL_ARGS = getWithDefault(env.BAZEL_ARGS)
-  BAZEL_BUILD_ARGS = getWithDefault(env.BAZEL_BUILD_ARGS)
+  BAZEL_ARGS = getWithDefault(env.BAZEL_ARGS, BAZEL_ARGS)
+  BAZEL_BUILD_ARGS = getWithDefault(env.BAZEL_BUILD_ARGS, BAZEL_BUILD_ARGS)
   CLUSTER = failIfNullOrEmpty(env.GKE_CLUSTER, 'GKE_CLUSTER must be set')
   PROJECT_ID = failIfNullOrEmpty(env.PROJECT_ID, 'PROJECT_ID must be set')
   TOOLS_BUCKET = failIfNullOrEmpty(env.TOOLS_BUCKET, 'TOOLS_BUCKET must be set')
