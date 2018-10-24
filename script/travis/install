@@ -36,7 +36,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 ##################################################
 
 # Download (update the URL when upgrading Bazel)
-BAZEL_INSTALLER_URL='https://github.com/bazelbuild/bazel/releases/download/0.5.4/bazel-0.5.4-installer-linux-x86_64.sh'
+BAZEL_INSTALLER_URL='https://github.com/bazelbuild/bazel/releases/download/0.18.0/bazel-0.18.0-installer-linux-x86_64.sh'
 curl -L "${BAZEL_INSTALLER_URL}" -o ./bazel-installer.sh || \
   error_exit "Failed to get the bazel installer from ${BAZEL_INSTALLER_URL}"
 chmod +x ./bazel-installer.sh

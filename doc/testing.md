@@ -1,7 +1,7 @@
 # Testing ESP with Bazel #
 
 ESP is built using [Bazel](http://bazel.io) build tool. Install
-[Bazel](http://bazel.io) version 0.5.4, following the [Bazel
+[Bazel](http://bazel.io) version 0.18.0, following the [Bazel
 documentation](http://bazel.io/docs/install.html).
 
 # Building ESP #
