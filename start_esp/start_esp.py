@@ -150,6 +150,7 @@ def write_template(ingress, nginx_conf, args):
             cors_expose_headers=args.cors_expose_headers,
             ssl_protocols=args.ssl_protocols,
             proxy_backend_host_header=args.proxy_backend_host_header,
+            enable_strict_transport_security=args.enable_strict_transport_security,
             google_cloud_platform=(args.non_gcp==False))
 
     # Save nginx conf
@@ -541,6 +542,10 @@ config file.'''.format(
 
     parser.add_argument('--enable_websocket', action='store_true',
         help='''Enable nginx WebSocket support.
+        ''')
+
+    parser.add_argument('--enable_strict_transport_security', action='store_true',
+        help='''Enable HSTS (HTTP Strict Transport Security).
         ''')
 
     parser.add_argument('--enable_debug', action='store_true',
