@@ -208,8 +208,8 @@ http {
       % endif
   % endif
       proxy_redirect off;
-  % if proxy_backend_host_header:
-      proxy_set_header Host ${proxy_backend_host_header};
+  % if experimental_proxy_backend_host_header:
+      proxy_set_header Host ${experimental_proxy_backend_host_header};
   % else:
       proxy_set_header Host $host;
   % endif

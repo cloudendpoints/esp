@@ -201,7 +201,7 @@ class TestStartEsp(unittest.TestCase):
 
     def test_backend_host_header_expected(self):
         expected_config_file = "./start_esp/test/testdata/expected_backend_host_header_nginx.conf"
-        config_generator = self.basic_config_generator + " --proxy_backend_host_header your.backend.host"
+        config_generator = self.basic_config_generator + " --experimental_proxy_backend_host_header your.backend.host"
         self.run_test_with_expectation(expected_config_file, self.generated_nginx_config_file, config_generator)
 
     def test_enable_strict_transport_security_is_as_expected(self):
