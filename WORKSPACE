@@ -28,7 +28,7 @@
 
 git_repository(
     name = "nginx",
-    commit = "ddc06518da2fd47baa7aa6cf5bd22122b7b4e70d",  # v1.15.0
+    commit = "2939d5c5fadb3f28a8f8ac85c039bfd007239d3c",  # v1.15.5 Wed Oct 24 19:47:16 2018 -0700
     remote = "https://nginx.googlesource.com/nginx",
 )
 
@@ -83,7 +83,7 @@ bind(
 load(
     "//:repositories.bzl",
     "googletest_repositories",
-    "grpc_repositories",
+    #"grpc_repositories",
     "protobuf_repositories",
     "servicecontrol_client_repositories",
     "transcoding_repositories",
