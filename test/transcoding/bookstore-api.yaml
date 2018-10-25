@@ -30,8 +30,6 @@ apis:
 - name: endpoints.examples.bookstore.Bookstore
 types:
 - name: endpoints.examples.bookstore.ShelfNotFoundDetail
-- name: google.rpc.Status
-- name: google.rpc.DebugInfo
 http:
   rules:
   - selector: "endpoints.examples.bookstore.Bookstore.ListShelves"

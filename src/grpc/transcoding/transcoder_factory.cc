@@ -30,6 +30,7 @@
 #include "grpc_transcoding/response_to_json_translator.h"
 #include "grpc_transcoding/type_helper.h"
 #include "include/api_manager/method_call_info.h"
+#include "src/api_manager/utils/marshalling.h"
 
 namespace google {
 namespace api_manager {
@@ -128,25 +129,46 @@ pbutil::Status MethodCallInfoToRequestInfo(TypeHelper* type_helper,
   return pbutil::Status::OK;
 }
 
+// This class combines two resolvers: if the first one could not find it,
+// try the second.
+class TwoTypeResolvers : public pbutil::TypeResolver {
+ public:
+  TwoTypeResolvers(pbutil::TypeResolver* resolver1,
+                   pbutil::TypeResolver* resolver2)
+      : resolver1_(resolver1), resolver2_(resolver2) {}
+
+  pbutil::Status ResolveMessageType(const std::string& type_url,
+                                    google::protobuf::Type* type) override {
+    auto status = resolver1_->ResolveMessageType(type_url, type);
+    if (!status.ok()) {
+      return resolver2_->ResolveMessageType(type_url, type);
+    }
+    return status;
+  }
+
+  pbutil::Status ResolveEnumType(const std::string& type_url,
+                                 google::protobuf::Enum* enum_type) override {
+    auto status = resolver1_->ResolveEnumType(type_url, enum_type);
+    if (!status.ok()) {
+      return resolver2_->ResolveEnumType(type_url, enum_type);
+    }
+    return status;
+  }
+
+ private:
+  pbutil::TypeResolver* resolver1_;
+  pbutil::TypeResolver* resolver2_;
+};
+
 }  // namespace
 
 TranscoderFactory::TranscoderFactory(
     const ::google::api::Service& service,
     const ::google::protobuf::util::JsonPrintOptions& json_print_options)
     : type_helper_(service.types(), service.enums()),
-      json_print_options_(json_print_options) {
-  // Add DebugInfo and Status types from default pool to factory resolver.
-  auto resolver = utils::GetTypeResolver();
-  for (const auto& type_url : [
-           "type.googleapis.com/google.rpc.DebugInfo",
-           "type.googleapis.com/google.rpc.Status"]) {
-    google::protobuf::Type msg_type;
-    const auto status = resovler->ResolveMessageType(type_url, &msg_type);
-    if (status.ok()) {
-      type_helper_.AddType(msg_type);
-    }
-  }
-}
+      json_print_options_(json_print_options),
+      status_resolver_(new TwoTypeResolvers(type_helper_.Resolver(),
+                                            utils::GetTypeResolver())) {}
 
 pbutil::Status TranscoderFactory::Create(
     const MethodCallInfo& call_info, pbio::ZeroCopyInputStream* request_input,
@@ -184,12 +206,12 @@ pbutil::Status TranscoderFactory::Create(
 }
 
 ::google::protobuf::util::Status TranscoderFactory::BinaryToJsonString(
-       const std::string& type_url, const std::string& binary_input,
-       std::string* json_output) {
+    const std::string& type_url, const std::string& binary_input,
+    std::string* json_output) {
   return ::google::protobuf::util::BinaryToJsonString(
-      type_helper_.Resolver(), type_url, binary_input, json_output, json_print_options_);
+      status_resolver_.get(), type_url, binary_input, json_output,
+      json_print_options_);
 }
-
 
 }  // namespace transcoding
 }  // namespace api_manager

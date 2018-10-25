@@ -18,6 +18,7 @@
 #include <string>
 
 #include "google/protobuf/message.h"
+#include "google/protobuf/util/type_resolver.h"
 #include "include/api_manager/utils/status.h"
 
 namespace google {
@@ -37,7 +38,7 @@ enum JsonOptions {
 };
 
 // Returns the singleton type resolver, creating it on first call.
-TypeResolver* GetTypeResolver();
+::google::protobuf::util::TypeResolver* GetTypeResolver();
 
 // Returns the type URL for a protobuf Message. This is useful when embedding
 // a message inside an Any, for example.
