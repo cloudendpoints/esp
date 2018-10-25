@@ -840,7 +840,7 @@ def initialize() {
 def DefaultNode(Closure body) {
   podTemplate(label: 'debian-8-pod', cloud: 'kubernetes', containers: [
       containerTemplate(
-          name: 'debian-8',
+          name: 'debian-8:0.9',
           image: SLAVE_IMAGE,
           args: 'cat',
           ttyEnabled: true,
@@ -865,7 +865,7 @@ def DefaultNode(Closure body) {
 def BuildNode(Closure body) {
   podTemplate(label: 'debian-8-pod', cloud: 'kubernetes', containers: [
       containerTemplate(
-          name: 'debian-8',
+          name: 'debian-8:0.9',
           image: SLAVE_IMAGE,
           args: 'cat',
           ttyEnabled: true,
