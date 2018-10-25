@@ -205,17 +205,10 @@ ngx_int_t ngx_esp_error_body_filter(ngx_http_request_t *r, ngx_chain_t *in) {
       if (!IsGrpcRequest(r)) {
         // Serialize error as JSON
         std::string status_in_json;
-        if (ctx->transcoder_factory) {
-          std::string status_in_binary;
-          // If there is grpc-status-detail-bin response header, use it
-          if (!ctx->grpc_status_details.empty()) {
-            status_in_binary = ctx->grpc_status_details;
-          } else {
-            status_in_binary =
-                ctx->status.ToCanonicalProto().SerializeAsString();
-          }
+        if (ctx->transcoder_factory && !ctx->grpc_status_details.empty()) {
           status_in_json = utils::BinStatusToJson(
-              ctx->transcoder_factory->GetStatusResolver(), status_in_binary);
+              ctx->transcoder_factory->GetStatusResolver(),
+              ctx->grpc_status_details);
         } else {
           status_in_json = ctx->status.ToJson();
         }
