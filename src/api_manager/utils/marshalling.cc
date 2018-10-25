@@ -30,6 +30,7 @@ namespace utils {
 
 namespace {
 const char kTypeUrlPrefix[] = "type.googleapis.com";
+const char kRpcStatusTypeUrl[] = "type.googleapis.com/google.rpc.Status";
 
 // Creation function used by static lazy init.
 TypeResolver* CreateTypeResolver() {
@@ -123,6 +124,20 @@ Status JsonToProto(::google::protobuf::io::ZeroCopyInputStream* json,
   return Status(
       Code::INTERNAL,
       "Unable to parse bytes generated from JsonToBinaryString as proto.");
+}
+
+std::string BinStatusToJson(TypeResolver* resolver,
+                            const std::string& bin_status) {
+  ::google::protobuf::util::JsonPrintOptions json_options;
+  json_options.add_whitespace = true;
+  json_options.always_print_primitive_fields = true;
+  std::string result;
+  auto status = ::google::protobuf::util::BinaryToJsonString(
+      resolver, kRpcStatusTypeUrl, bin_status, &result, json_options);
+  if (!status.ok()) {
+    return Status::FromProto(status).ToJson();
+  }
+  return result;
 }
 
 }  // namespace utils

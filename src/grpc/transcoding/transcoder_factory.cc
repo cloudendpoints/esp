@@ -205,14 +205,6 @@ pbutil::Status TranscoderFactory::Create(
   return pbutil::Status::OK;
 }
 
-::google::protobuf::util::Status TranscoderFactory::BinaryToJsonString(
-    const std::string& type_url, const std::string& binary_input,
-    std::string* json_output) {
-  return ::google::protobuf::util::BinaryToJsonString(
-      status_resolver_.get(), type_url, binary_input, json_output,
-      json_print_options_);
-}
-
 }  // namespace transcoding
 }  // namespace api_manager
 }  // namespace google

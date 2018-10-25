@@ -125,9 +125,9 @@ void NgxEspTranscodedGrpcServerCall::Finish(
             grpc_base64_decode_with_len(it->second.c_str(), it->second.length(),
                                         false),
             ::grpc::Slice::STEAL_REF);
-        ctx->grpc_status_details = std::string(
-            reinterpret_cast<const char *>(value_slice.begin()),
-            value_slice.size());
+        ctx->grpc_status_details =
+            std::string(reinterpret_cast<const char *>(value_slice.begin()),
+                        value_slice.size());
       }
     }
     HandleError(status);

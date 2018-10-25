@@ -178,7 +178,8 @@ class BookstoreServiceImpl : public Bookstore::Service {
     custom_pb.set_why("Custom detail: shell not found");
     rpc_status.add_details()->PackFrom(custom_pb);
 
-    return ::grpc::Status(grpc::NOT_FOUND, "Grpc status message: shelf not found",
+    return ::grpc::Status(grpc::NOT_FOUND,
+                          "Grpc status message: shelf not found",
                           rpc_status.SerializeAsString());
   }
 

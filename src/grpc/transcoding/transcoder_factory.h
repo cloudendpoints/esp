@@ -79,11 +79,10 @@ class TranscoderFactory {
       ::google::grpc::transcoding::TranscoderInputStream* response_input,
       std::unique_ptr<::google::grpc::transcoding::Transcoder>* transcoder);
 
-  // Converts a protobuf binary to JSON by using status_resolver_ from
-  // service_config and json_print_options.
-  ::google::protobuf::util::Status BinaryToJsonString(
-      const std::string& type_url, const std::string& binary_input,
-      std::string* json_output);
+  // The resolver to convert status proto to JSON
+  ::google::protobuf::util::TypeResolver* GetStatusResolver() {
+    return status_resolver_.get();
+  }
 
  private:
   ::google::grpc::transcoding::TypeHelper type_helper_;

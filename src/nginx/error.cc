@@ -57,8 +57,6 @@ const char *kInvalidAuthToken =
 const char *kExpiredAuthToken =
     "JWT validation failed: TIME_CONSTRAINT_FAILURE";
 
-const char *kRpcStatusTypeUrl = "type.googleapis.com/google.rpc.Status";
-
 ngx_http_output_header_filter_pt ngx_http_next_header_filter;
 ngx_http_output_body_filter_pt ngx_http_next_body_filter;
 
@@ -216,11 +214,8 @@ ngx_int_t ngx_esp_error_body_filter(ngx_http_request_t *r, ngx_chain_t *in) {
             status_in_binary =
                 ctx->status.ToCanonicalProto().SerializeAsString();
           }
-          auto status = ctx->transcoder_factory->BinaryToJsonString(
-              kRpcStatusTypeUrl, status_in_binary, &status_in_json);
-          if (!status.ok()) {
-            status_in_json = utils::Status::FromProto(status).ToJson();
-          }
+          status_in_json = utils::BinStatusToJson(
+              ctx->transcoder_factory->GetStatusResolver(), status_in_binary);
         } else {
           status_in_json = ctx->status.ToJson();
         }

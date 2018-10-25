@@ -24,8 +24,9 @@
 #
 type: google.api.Service
 config_version: 3
-name: bookstore-grpc4.endpoints.qiwzhang-authz.cloud.goog
+name: <YOUR_PROJECT_ID>.appspot.com
 title: Bookstore API
+producer_project_id: <YOUR_PROJECT_ID>
 apis:
 - name: endpoints.examples.bookstore.Bookstore
 types:
@@ -70,3 +71,5 @@ system_parameters:
         url_query_parameter: "key"
       - name: "api_key"
         url_query_parameter: "api_key"
+control:
+    environment:  servicecontrol.googleapis.com
