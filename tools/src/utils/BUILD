@@ -48,16 +48,3 @@ go_library(
     ],
 )
 
-go_test(
-    name = "go_default_test",
-    srcs = [
-        "auth_token_gen_test.go",
-        "nginx_config_test.go",
-        "service_config_test.go",
-        "service_control_test.go",
-    ],
-    embed = [":go_default_library"],
-    deps = [
-        "@com_github_golang_protobuf//proto:go_default_library",
-    ],
-)
