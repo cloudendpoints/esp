@@ -18,6 +18,7 @@
 #include <string>
 
 #include "google/protobuf/message.h"
+#include "google/protobuf/util/type_resolver.h"
 #include "include/api_manager/utils/status.h"
 
 namespace google {
@@ -35,6 +36,13 @@ enum JsonOptions {
   // Prints default values for primitive fields.
   OUTPUT_DEFAULTS = 2,
 };
+
+// Returns the singleton type resolver, creating it on first call.
+::google::protobuf::util::TypeResolver* GetTypeResolver();
+
+// Converts rpc.Status in binary to JSON.
+std::string BinStatusToJson(::google::protobuf::util::TypeResolver* resolver,
+                            const std::string& bin_status);
 
 // Returns the type URL for a protobuf Message. This is useful when embedding
 // a message inside an Any, for example.

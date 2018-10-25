@@ -29,6 +29,7 @@ cc_library(
         "//external:service_config",
         "//external:transcoding",
         "//include:headers_only",
+        "//src/api_manager/utils",
     ],
 )
 

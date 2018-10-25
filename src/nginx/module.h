@@ -249,8 +249,8 @@ struct ngx_esp_request_ctx_s {
   // Nginx variable $backend_url. set from service config.
   ngx_str_t backend_url;
 
-  // Stores proto message of gRPC response header "grpc-status-details-bin".
-  std::unique_ptr<::google::rpc::Status> grpc_status_details;
+  // Stores base64 decoded response header "grpc-status-details-bin".
+  std::string grpc_status_details;
 };
 
 static_assert(std::is_standard_layout<ngx_esp_request_ctx_t>::value,

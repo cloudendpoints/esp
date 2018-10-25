@@ -79,9 +79,15 @@ class TranscoderFactory {
       ::google::grpc::transcoding::TranscoderInputStream* response_input,
       std::unique_ptr<::google::grpc::transcoding::Transcoder>* transcoder);
 
+  // The resolver to convert status proto to JSON
+  ::google::protobuf::util::TypeResolver* GetStatusResolver() {
+    return status_resolver_.get();
+  }
+
  private:
   ::google::grpc::transcoding::TypeHelper type_helper_;
   ::google::protobuf::util::JsonPrintOptions json_print_options_;
+  std::unique_ptr<::google::protobuf::util::TypeResolver> status_resolver_;
 };
 
 }  // namespace transcoding
