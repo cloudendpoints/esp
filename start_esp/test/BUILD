@@ -58,6 +58,7 @@ py_test(
     data = [
         "testdata/expected_access_log_nginx.conf",
         "testdata/expected_allow_invalid_headers_nginx.conf",
+        "testdata/expected_backend_host_header_nginx.conf",
         "testdata/expected_backend_nginx.conf",
         "testdata/expected_basic_nginx.conf",
         "testdata/expected_client_body_buffer_size_nginx.conf",
@@ -74,6 +75,8 @@ py_test(
         "testdata/expected_cors_preset_basic_nginx.conf",
         "testdata/expected_disable_cloud_trace_auto_sampling_server.json",
         "testdata/expected_dns_nginx.conf",
+        "testdata/expected_enable_debug_nginx.conf",
+        "testdata/expected_enable_strict_transport_security_nginx.conf",
         "testdata/expected_enable_websocket_nginx.conf",
         "testdata/expected_experimental_enable_multiple_api_configs_disabled_nginx.conf",
         "testdata/expected_healthz_nginx.conf",

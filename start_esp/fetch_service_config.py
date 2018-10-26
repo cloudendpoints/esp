@@ -138,7 +138,7 @@ def fetch_metadata_attributes(metadata):
           if key == "kube_env":
             value = "KUBE_ENV"
           out_str += "  {}: \"{}\"".format(key, value) + "\n"
-        logging.info("Attribute {}: {}".format(key, value))
+          logging.info("Attribute {}: {}".format(key, value))
     return out_str
 
 def make_access_token(secret_token_json):

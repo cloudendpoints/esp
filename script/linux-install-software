@@ -68,6 +68,7 @@ function install_packages() {
     libio-socket-ssl-perl \
     libjson-perl \
     libtool \
+    libyaml-dev \
     make \
     openjdk-8-jdk-headless \
     python-pip \
@@ -99,6 +100,9 @@ ${SUDO} apt-get clean
 # Installing dependencies
 retry install_packages || error_exit 'Cannot install required packages.'
 retry ${SUDO} pip install --upgrade python-gflags || error_exit 'Cannot install gflags.'
+retry ${SUDO} pip install --upgrade certifi || error_exit 'Cannot install certifi.'
+retry ${SUDO} pip install --upgrade oauth2client || error_exit 'Cannot install oauth2client.'
+retry ${SUDO} pip install --upgrade prettytable Mako pyaml dateutils || error_exit 'Cannot install prettytable Mako pyaml dateutils.'
 
 # Installing tools
 echo "Installing tools if necessary"

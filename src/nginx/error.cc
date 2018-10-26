@@ -203,35 +203,30 @@ ngx_int_t ngx_esp_error_body_filter(ngx_http_request_t *r, ngx_chain_t *in) {
 
     if (!r->header_only) {
       if (!IsGrpcRequest(r)) {
-        // TODO: consider sending constant payload
-
         // Serialize error as JSON
-        ngx_buf_t *body = nullptr;
-        ngx_str_t json_error;
-
-        // if there is grpc-status-detail-bin response header, generate error
-        // json body with that header.
-        if (ctx->grpc_status_details != nullptr) {
-          std::string status_details_in_json;
-          utils::Status::StatusProtoToJson(
-              *ctx->grpc_status_details, &status_details_in_json,
-              utils::JsonOptions::PRETTY_PRINT |
-                  utils::JsonOptions::OUTPUT_DEFAULTS);
-          if (ngx_str_copy_from_std(r->pool, status_details_in_json,
-                                    &json_error) != NGX_OK) {
-            return NGX_ERROR;
-          }
-        } else if (ngx_str_copy_from_std(r->pool, ctx->status.ToJson(),
-                                         &json_error) != NGX_OK) {
-          return NGX_ERROR;
+        std::string status_in_json;
+        if (ctx->transcoder_factory && !ctx->grpc_status_details.empty()) {
+          status_in_json = utils::BinStatusToJson(
+              ctx->transcoder_factory->GetStatusResolver(),
+              ctx->grpc_status_details);
+        } else {
+          status_in_json = ctx->status.ToJson();
         }
 
+        ngx_buf_t *body = nullptr;
+        ngx_str_t json_error;
+        if (ngx_str_copy_from_std(r->pool, status_in_json, &json_error) !=
+            NGX_OK) {
+          return NGX_ERROR;
+        }
         // Create temporary buffer to hold data, discard "in"
         body = reinterpret_cast<ngx_buf_t *>(ngx_calloc_buf(r->pool));
         if (body == nullptr) {
           return NGX_ERROR;
         }
 
+        ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                       "send error response: %v", &json_error);
         body->temporary = 1;
         body->pos = json_error.data;
         body->last = json_error.data + json_error.len;

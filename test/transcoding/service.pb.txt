@@ -1838,6 +1838,27 @@ types {
   }
   syntax: SYNTAX_PROTO3
 }
+types {
+  name: "endpoints.examples.bookstore.ShelfNotFoundDetail"
+  fields {
+    cardinality: CARDINALITY_OPTIONAL
+    name: "for_shelf_id"
+    json_name: "forShelfI"
+    kind: TYPE_INT64
+    number: 1
+  }
+  fields {
+    cardinality: CARDINALITY_OPTIONAL
+    kind: TYPE_STRING
+    name: "why"
+    json_name: "why"
+    number: 2
+  }
+  source_context {
+    file_name: "bookstore.proto"
+  }
+  syntax: SYNTAX_PROTO3
+}
 enums {
   name: "google.protobuf.NullValue"
   enumvalue {

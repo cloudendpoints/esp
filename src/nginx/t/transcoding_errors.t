@@ -138,7 +138,7 @@ $response = ApiManager::http_get($NginxPort,'/shelves/100?key=api-key-3');
 like($response, qr/HTTP\/1\.1 404 Not Found/, 'Got a 404.');
 like($response, qr/Content-Type: application\/json/i, 'Content-type is application/json');
 # This error message is from grpc-status-details-bin header from gRPC backend.
-like($response, qr/Cannot find shelf 100/i, "the message from the backend was propogated.");
+like($response, qr/ShelfNotFoundDetail/i, "the message from the backend was propogated.");
 
 # 4. Calling a method that does not exist
 $response = ApiManager::http_get($NginxPort,'/non-existing-method?key=api-key-4');

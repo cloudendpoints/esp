@@ -43,7 +43,7 @@ To deploy the sample application:
 
 1. Invoke the following command:
 
-        gcloud service-management deploy swagger.yaml
+        gcloud endpoints services deploy swagger.yaml
 
    The command returns several lines of information, including a line similar to the following:
 
