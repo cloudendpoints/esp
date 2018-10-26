@@ -53,7 +53,6 @@ SUPPORTED_STAGES = [
 ]
 
 // Supported VM Images
-DEBIAN_JESSIE = 'debian-8'
 SLAVE_IMAGE = 'gcr.io/endpoints-jenkins/debian-8:0.7'
 
 // Release Qualification end to end tests.
@@ -63,7 +62,6 @@ SLAVE_IMAGE = 'gcr.io/endpoints-jenkins/debian-8:0.7'
 // Please Update script/validate_release.py when adding or removing long-run-test.
 RELEASE_QUALIFICATION_BRANCHES = [
     'flex',
-    'gce-debian-8',
     'gke-tight-https',
     'gke-tight-http2-echo',
     'gke-tight-http2-interop',
@@ -74,7 +72,7 @@ GIT_SHA = ''
 ESP_RUNTIME_VERSION = ''
 // Global Variables defined in Jenkins
 BUCKET = ''
-BAZEL_ARGS = ''
+BAZEL_ARGS = '--action_env=PERL5LIB=.'
 BAZEL_BUILD_ARGS = ''
 CLUSTER = ''
 PROJECT_ID = ''
@@ -213,11 +211,7 @@ def presubmit() {
   def branches = [
       'asan': {
         BuildNode {
-          //Temporarily disable the asan presubmit tests
-          //as a workaround before the Jenkins problem is resolved.
-          //To-do: enable the asan presubmit tests after 
-          //the Jenkins problem is resolved.
-          //presubmitTests('asan')
+          presubmitTests('asan')           
         }
       },
       'build-and-test': {
@@ -271,16 +265,6 @@ def e2eTest() {
   // Please don't remove gke-custom-http test. It is important to test
   // custom nginx config.
   def branches = [
-      ['gce-debian-8', {
-        DefaultNode {
-          e2eGCE(DEBIAN_JESSIE, 'fixed')
-        }
-      }],
-      ['gce-debian-8-managed', {
-        DefaultNode {
-          e2eGCE(DEBIAN_JESSIE, 'managed')
-        }
-      }],
       ['gke-tight-http', {
         DefaultNode {
           e2eGKE('tight', 'http', 'fixed')
@@ -863,10 +847,10 @@ def DefaultNode(Closure body) {
           privileged: true,
           alwaysPullImage: false,
           workingDir: '/home/jenkins',
-          resourceRequestCpu: '500m',
-          resourceLimitCpu: '2000m',
-          resourceRequestMemory: '512Mi',
-          resourceLimitMemory: '8Gi',
+          resourceRequestCpu: '2000m',
+          resourceLimitCpu: '8000m',
+          resourceRequestMemory: '4Gi',
+          resourceLimitMemory: '64Gi',
           envVars: [
               envVar(key: 'PLATFORM', value: 'debian-8')
           ])]) {
@@ -890,8 +874,8 @@ def BuildNode(Closure body) {
           workingDir: '/home/jenkins',
           resourceRequestCpu: '2000m',
           resourceLimitCpu: '8000m',
-          resourceRequestMemory: '4Gi',
-          resourceLimitMemory: '32Gi',
+          resourceRequestMemory: '8Gi',
+          resourceLimitMemory: '64Gi',
           envVars: [
               envVar(key: 'PLATFORM', value: 'debian-8')
           ])]) {

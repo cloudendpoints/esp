@@ -155,8 +155,8 @@ genrule(
         "//:LICENSE",
         "@nginx//:LICENSE",
         "@boringssl//:LICENSE",
-        "@grpc_git//:LICENSE",
-        "@grpc_git//third_party/nanopb:LICENSE.txt",
+        "@com_github_grpc_grpc//:LICENSE",
+        "@com_github_grpc_grpc//third_party/nanopb:LICENSE.txt",
         "@nginx_pcre//:LICENCE",
         "@nginx_zlib//:README",
         "@protobuf_git//:LICENSE",
@@ -173,9 +173,9 @@ genrule(
           "echo \"\n\nBoringSSL license:\n==================\n\" >> $(@);" +
           "cat $(location @boringssl//:LICENSE) >> $(@);" +
           "echo \"\n\ngRPC license:\n=============\n\" >> $(@);" +
-          "cat $(location @grpc_git//:LICENSE) >> $(@);" +
+          "cat $(location @com_github_grpc_grpc//:LICENSE) >> $(@);" +
           "echo \"\n\nNanopb license:\n===============\n\" >> $(@);" +
-          "cat $(location @grpc_git//third_party/nanopb:LICENSE.txt) >> $(@);" +
+          "cat $(location @com_github_grpc_grpc//third_party/nanopb:LICENSE.txt) >> $(@);" +
           "echo \"\n\nNGINX license:\n==============\n\" >> $(@);" +
           "cat $(location @nginx//:LICENSE) >> $(@);" +
           "echo \"\n\nPCRE license:\n=============\n\" >> $(@);" +
@@ -218,57 +218,15 @@ pkg_tar(
         # The first occurrence of the duplicate file will be picked. In other
         # words, /etc/nginx/nginx.conf from ":nginx-conf-override" will
         # override that from "@nginx_pkgoss//:debian_overlay".
-        ":start_esp_tar",
-        "@tools//start_esp:nginx-conf-template",
-        "@tools//start_esp:server-conf-template",
-        "@tools//start_esp:nginx-initd-override",
+        "//start_esp:nginx-conf-template",
+        "//start_esp:server-conf-template",
+        "//start_esp:nginx-initd-override",
         "@nginx_pkgoss//:debian_overlay",
-        "@tools//start_esp:esp-bin",
+        "//start_esp:esp-bin",
         ":nginx-bin",
         ":esp-copyright",
-        "@tools//start_esp:trusted-ca-certificates",
+        "//start_esp:trusted-ca-certificates",
     ],
-)
-
-# Due to an issue with external repository and PEX rules, we need to move these files here
-
-genrule(
-    name = "import_start_esp",
-    srcs = ["@tools//start_esp:start_esp.py"],
-    outs = ["start_esp.py"],
-    cmd = "cat $(location @tools//start_esp:start_esp.py) > $@",
-)
-
-genrule(
-    name = "import_fetch_service_config",
-    srcs = ["@tools//start_esp:fetch_service_config.py"],
-    outs = ["fetch_service_config.py"],
-    cmd = "cat $(location @tools//start_esp:fetch_service_config.py) > $@",
-)
-
-pex_binary(
-    name = "start_esp",
-    srcs = [
-        ":fetch_service_config.py",
-        ":start_esp.py",
-    ],
-    main = ":start_esp.py",
-    reqs = [
-        "certifi",
-        "mako>=1.0.4",
-        "oauth2client>=3.0.0",
-        "pyasn1>=0.1.9",
-        "pyasn1-modules>=0.0.8",
-        "urllib3>=1.16",
-    ],
-)
-
-pkg_tar(
-    name = "start_esp_tar",
-    files = [":start_esp"],
-    mode = "0755",
-    package_dir = "/usr/sbin",
-    strip_prefix = ".",
 )
 
 pkg_deb(

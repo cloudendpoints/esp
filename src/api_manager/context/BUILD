@@ -64,7 +64,20 @@ cc_test(
         "client_ip_extraction_test.cc",
     ],
     deps = [
-        "//src/api_manager:api_manager",
         "//external:googletest_main",
+        "//src/api_manager",
+    ],
+)
+
+cc_test(
+    name = "global_context_test",
+    size = "small",
+    srcs = [
+        "global_context_test.cc",
+    ],
+    deps = [
+        "//external:googletest_main",
+        "//src/api_manager",
+        "//src/api_manager:mock_api_manager_environment",
     ],
 )

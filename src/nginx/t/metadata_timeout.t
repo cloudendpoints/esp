@@ -109,16 +109,15 @@ like($books, qr/^HTTP\/1\.1 401/, '/books returned HTTP 401.');
 
 # Check metadata server log.
 my @metadata_requests = ApiManager::read_http_stream($t, 'metadata.log');
-# There will be 3 requests to fake metadata server.
+# There will be 2 requests to fake metadata server.
 # the first one is time-out-ed since server puts a 2 second sleep.
 # the retry (2nd request) should be fine since there is not sleep.
-# the 3rd request is token fetching.
-is(scalar @metadata_requests, 3, 'Metadata server received all requests.');
+is(scalar @metadata_requests, 2, 'Metadata server received all requests.');
 
 # Metadata request 1
 my $r = shift @metadata_requests;
 is($r->{verb}, 'GET', 'Metadata request 1 was GET');
-is($r->{uri}, '/computeMetadata/v1/?recursive=true', 'Metadata request was recursive');
+is($r->{uri}, '/computeMetadata/v1/instance/service-accounts/default/token', 'Metadata request was recursive');
 
 # Check service control requests...
 my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
@@ -203,7 +202,7 @@ sub metadata {
   local $SIG{PIPE} = 'IGNORE';
   my $request_count = 0;
 
-  $server->on_sub('GET', '/computeMetadata/v1/?recursive=true', sub {
+  $server->on_sub('GET', '/computeMetadata/v1/instance/service-accounts/default/token', sub {
     my ($headers, $body, $client) = @_;
 
     $request_count++;
@@ -212,15 +211,7 @@ sub metadata {
         sleep 2;
     }
 
-    print $client <<'EOF' . ApiManager::get_metadata_response_body();
-HTTP/1.1 200 OK
-Metadata-Flavor: Google
-Content-Type: application/json
-
-EOF
-  });
-
-  $server->on('GET', '/computeMetadata/v1/instance/service-accounts/default/token', <<'EOF');
+    print $client <<'EOF';
 HTTP/1.1 200 OK
 Metadata-Flavor: Google
 Content-Type: application/json
@@ -231,6 +222,7 @@ Content-Type: application/json
  "token_type":"Bearer"
 }
 EOF
+  });
 
   $server->run();
 }

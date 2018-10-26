@@ -31,14 +31,13 @@
 #include <vector>
 
 #include "grpc++/support/byte_buffer.h"
+#include "src/core/lib/slice/b64.h"
 #include "src/nginx/error.h"
 #include "src/nginx/grpc.h"
 #include "src/nginx/module.h"
 #include "src/nginx/util.h"
 
 extern "C" {
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/slice/b64.h"
 #include "src/http/v2/ngx_http_v2_module.h"
 }
 
@@ -122,22 +121,13 @@ void NgxEspTranscodedGrpcServerCall::Finish(
     if (it != response_trailers.end() && !it->second.empty()) {
       ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
       if (ctx) {
-        static grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
         ::grpc::Slice value_slice(
-            grpc_base64_decode_with_len(&exec_ctx, it->second.c_str(),
-                                        it->second.length(), false),
+            grpc_base64_decode_with_len(it->second.c_str(), it->second.length(),
+                                        false),
             ::grpc::Slice::STEAL_REF);
-        std::string binary_value(
-            reinterpret_cast<const char *>(value_slice.begin()),
-            value_slice.size());
-
-        ctx->grpc_status_details.reset(new ::google::rpc::Status);
-        if (!ctx->grpc_status_details->ParseFromString(binary_value)) {
-          ngx_log_error(
-              NGX_LOG_DEBUG, r_->connection->log, 0,
-              "Failed to parse grpc-status-details-bin header into proto.");
-          ctx->grpc_status_details.reset();
-        }
+        ctx->grpc_status_details =
+            std::string(reinterpret_cast<const char *>(value_slice.begin()),
+                        value_slice.size());
       }
     }
     HandleError(status);
@@ -203,14 +193,9 @@ bool NgxEspTranscodedGrpcServerCall::ConvertRequestBody(
 
 bool NgxEspTranscodedGrpcServerCall::ConvertResponseMessage(
     const ::grpc::ByteBuffer &msg, ngx_chain_t *out) {
-  grpc_byte_buffer *grpc_msg = nullptr;
-  bool own_buffer;
-
   // Serialize ::grpc::ByteBuffer into grpc_byte_buffer
-  if (!::grpc::SerializationTraits<::grpc::ByteBuffer>::Serialize(
-           msg, &grpc_msg, &own_buffer)
-           .ok() ||
-      !grpc_msg) {
+  grpc_byte_buffer *grpc_msg = ConvertByteBuffer(msg);
+  if (!grpc_msg) {
     HandleError(utils::Status(
         NGX_HTTP_INTERNAL_SERVER_ERROR,
         "Internal error occurred while converting response message."));
@@ -219,7 +204,7 @@ bool NgxEspTranscodedGrpcServerCall::ConvertResponseMessage(
 
   // Add the response gRPC message to the Transcoder input response stream and
   // read the translated response from the transcoder.
-  grpc_response_stream_->AddMessage(grpc_msg, own_buffer);
+  grpc_response_stream_->AddMessage(grpc_msg, true);
   return ReadTranslatedResponse(out);
 }
 

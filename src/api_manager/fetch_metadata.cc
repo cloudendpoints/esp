@@ -27,17 +27,13 @@ namespace api_manager {
 
 namespace {
 
-// URL path for fetching compute metadata.
-const char kComputeMetadata[] = "/computeMetadata/v1/?recursive=true";
 // URL path for fetching service-account
 const char kMetadataServiceAccountToken[] =
     "/computeMetadata/v1/instance/service-accounts/default/token";
 // Initial metadata fetch timeout (1s)
 const int kMetadataFetchTimeout = 1000;
-// Maximum number of retries to fetch metadata
-const int kMetadataFetchRetries = 5;
-// External status message for failure to fetch metadata
-const char kFailedMetadataFetch[] = "Failed to fetch metadata";
+// Maximum number of retries to fetch token from metadata
+const int kMetadataTokenFetchRetries = 5;
 // External status message for failure to fetch service account token
 const char kFailedTokenFetch[] = "Failed to fetch service account token";
 // External status message for token fetch in progress
@@ -49,7 +45,7 @@ const char kTokenRefetchWindow = 60;
 
 // Issues a HTTP request to fetch the metadata.
 void FetchMetadata(
-    context::GlobalContext *context, const char *path,
+    context::GlobalContext *context, const char *path, const int retry,
     std::function<void(Status, std::map<std::string, std::string> &&,
                        std::string &&)>
         continuation) {
@@ -58,59 +54,10 @@ void FetchMetadata(
       .set_url(context->metadata_server() + path)
       .set_header("Metadata-Flavor", "Google")
       .set_timeout_ms(kMetadataFetchTimeout)
-      .set_max_retries(kMetadataFetchRetries);
+      .set_max_retries(retry);
   context->env()->RunHTTPRequest(std::move(request));
 }
 }  // namespace
-
-void GlobalFetchGceMetadata(std::shared_ptr<context::GlobalContext> context,
-                            std::function<void(Status)> continuation) {
-  if (context->metadata_server().empty()) {
-    // No need to fetching metadata, metadata server address is not set.
-    continuation(Status::OK);
-    return;
-  }
-
-  auto env = context->env();
-  switch (context->gce_metadata()->state()) {
-    case GceMetadata::FETCHED:
-      // Already have metadata.
-      env->LogDebug("Metadata already available. Fetch skipped.");
-      continuation(Status::OK);
-      return;
-    case GceMetadata::FAILED:
-      // Metadata fetch already failed. Permanent failure.
-      env->LogDebug("Metadata fetch previously failed. Skipping with error.");
-      continuation(Status(Code::INTERNAL, kFailedMetadataFetch));
-      return;
-    case GceMetadata::FETCHING:
-      env->LogDebug("Another request fetching metadata. Duplicate fetch.");
-      continuation(Status(Code::UNAVAILABLE, kFailedMetadataFetch));
-      return;
-    case GceMetadata::NONE:
-    default:
-      env->LogDebug("Fetching metadata.");
-  }
-
-  context->gce_metadata()->set_state(GceMetadata::FETCHING);
-  FetchMetadata(
-      context.get(), kComputeMetadata,
-      [context, continuation](Status status, std::map<std::string, std::string>,
-                              std::string &&body) {
-        // translate status to external status
-        if (status.ok()) {
-          status = context->gce_metadata()->ParseFromJson(&body);
-        } else {
-          status = Status(Code::INTERNAL, kFailedMetadataFetch);
-        }
-
-        // update fetching state
-        context->gce_metadata()->set_state(status.ok() ? GceMetadata::FETCHED
-                                                       : GceMetadata::FAILED);
-
-        continuation(status);
-      });
-}
 
 void GlobalFetchServiceAccountToken(
     std::shared_ptr<context::GlobalContext> context,
@@ -146,10 +93,9 @@ void GlobalFetchServiceAccountToken(
       // If token is still valid, continue
       if (token->is_access_token_valid(0)) {
         continuation(Status::OK);
-      } else {
-        continuation(Status(Code::UNAVAILABLE, kFetchingToken));
+        return;
       }
-      return;
+      break;
     case auth::ServiceAccountToken::FAILED:
       // permanent failure
       continuation(Status(Code::INTERNAL, kFailedTokenFetch));
@@ -161,6 +107,7 @@ void GlobalFetchServiceAccountToken(
 
   token->set_state(auth::ServiceAccountToken::FETCHING);
   FetchMetadata(context.get(), kMetadataServiceAccountToken,
+                kMetadataTokenFetchRetries,
                 [env, token, continuation](
                     Status status, std::map<std::string, std::string> &&,
                     std::string &&body) {
@@ -172,36 +119,13 @@ void GlobalFetchServiceAccountToken(
                     return;
                   }
 
-                  // process token from the body
-                  char *auth_token = nullptr;
-                  int expires = 0;
-                  if (!auth::esp_get_service_account_auth_token(
-                          const_cast<char *>(body.data()), body.length(),
-                          &auth_token, &expires) ||
-                      token == nullptr) {
+                  if (!token->SetTokenJsonResponse(body)) {
                     env->LogDebug("Failed to parse token response body");
-                    token->set_state(auth::ServiceAccountToken::FAILED);
                     continuation(Status(Code::INTERNAL, kFailedTokenParse));
                     return;
                   }
-
-                  token->set_state(auth::ServiceAccountToken::FETCHED);
-                  // Set expiration time a little bit earlier to avoid rejection
-                  // of the actual service control requests.
-                  // Even there is a prefetch window of 60 seconds, but prefetch
-                  // window may not kick in if not on-going requests.
-                  token->set_access_token(auth_token, expires - 50);
-                  free(auth_token);
-
                   continuation(Status::OK);
                 });
-}
-
-// Fetchs GCE metadata from metadata server.
-void FetchGceMetadata(std::shared_ptr<context::RequestContext> request_context,
-                      std::function<void(utils::Status)> on_done) {
-  GlobalFetchGceMetadata(request_context->service_context()->global_context(),
-                         on_done);
 }
 
 // Fetchs service account token from metadata server.

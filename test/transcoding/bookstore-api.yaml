@@ -29,6 +29,8 @@ title: Bookstore API
 producer_project_id: <YOUR_PROJECT_ID>
 apis:
 - name: endpoints.examples.bookstore.Bookstore
+types:
+- name: endpoints.examples.bookstore.ShelfNotFoundDetail
 http:
   rules:
   - selector: "endpoints.examples.bookstore.Bookstore.ListShelves"

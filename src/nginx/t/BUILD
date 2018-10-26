@@ -54,8 +54,8 @@ nginx_suite(
         "auth_ok_check_fail.t",
         "auth_pass_user_info.t",
         "auth_pkey_cache.t",
-        "auth_remove_user_info.t",
         "auth_redirect.t",
+        "auth_remove_user_info.t",
         "auth_unreachable_pkey.t",
         "new_http.t",
         "service_control_disabled.t",
@@ -108,7 +108,6 @@ nginx_suite(
         "grpc_cloud_trace.t",
         "grpc_compression.t",
         "grpc_config_addr.t",
-        "grpc_downstream_flow_control.t",
         "grpc_errors.t",
         "grpc_grpc_fallback.t",
         "grpc_grpc_override.t",
@@ -123,7 +122,6 @@ nginx_suite(
         "grpc_ssl_downstream.t",
         "grpc_streaming.t",
         "grpc_uds.t",
-        "grpc_upstream_flow_control.t",
     ],
     deps = [
         ":perl_library",
@@ -218,6 +216,7 @@ nginx_suite(
         "metadata.t",
         "metadata_fail.t",
         "metadata_timeout.t",
+        "metadata_token.t",
         "multiple_apis.t",
         "no_backend.t",
         "no_service_control.t",
@@ -321,12 +320,13 @@ nginx_suite(
         "transcoding_h2.t",
         "transcoding_head.t",
         "transcoding_ignore_unknown_fields.t",
+        "grpc_skip_host_header_in_metadata.t",
         "transcoding_large.t",
         "transcoding_metadata.t",
         "transcoding_query_params.t",
         #Temporarily disable the transcoding_shared_port_ssl.t test,
         #which occasionally fails in the Jenkins presubmit tests.
-        #To-do: enable the transcoding_shared_port_ssl.t test after 
+        #To-do: enable the transcoding_shared_port_ssl.t test after
         #the Jenkins problem is resolved.
         #"transcoding_shared_port_ssl.t",
         "transcoding_status.t",

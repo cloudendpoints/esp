@@ -22,17 +22,9 @@
 namespace google {
 namespace api_manager {
 
-// Fetchs GCE metadata from metadata server.
-void GlobalFetchGceMetadata(std::shared_ptr<context::GlobalContext>,
-                            std::function<void(utils::Status)>);
-
 // Fetchs service account token from metadata server.
 void GlobalFetchServiceAccountToken(std::shared_ptr<context::GlobalContext>,
                                     std::function<void(utils::Status)>);
-
-// Fetchs GCE metadata from metadata server.
-void FetchGceMetadata(std::shared_ptr<context::RequestContext>,
-                      std::function<void(utils::Status)>);
 
 // Fetchs service account token from metadata server.
 void FetchServiceAccountToken(std::shared_ptr<context::RequestContext>,

@@ -1,3 +1,55 @@
+# Release 1.25.0 17-10-2018
+
+- Change side-way http to use 1.1 (#453)
+
+- Upgrade gRPC from 1.4.2 to 1.15.0 (#450)
+
+- CORS always adds the Access-Control-Allow-Origin header (#449)
+
+# Release 1.24.0 29-08-2018
+
+- Add --experimental_enable_multiple_api_configs flag (#439)
+
+# Release 1.23.0 27-08-2018
+
+- Proxy multiple Endpoints services (#434)
+
+- Move GceMetadata fetching to start_esp. (#435)
+
+- Harden code, not to free nullptr pool (#436)
+
+- Add the start_esp_test to the BUILD file (#433)
+
+# Release 1.22.0 16-08-2018
+
+- Add two options --generate_config_file_only and --server_config_generation_path
+- Skip the host header in the grpc metadata (#424)
+
+# Release 1.21.0 11-07-2018
+
+- Add JWT claims to the X-Endpoint-API-UserInfo header (#409)
+- Add cloud_trace_url_override option
+- add service_control_url_override option
+- Add the parameter ssl_protocols to specify the SSL protocols
+
+# Release 1.20.0 14-06-2018
+
+- Add cors_with_regex preset with --cors_allow_origin_regex flag
+- Add --cors_allow_credentials option
+- Add SNI support to ESP for https clients (#399)
+
+# Release 1.19.0 17-05-2018
+
+- Added --disable_trace_sampling flag
+
+# Release 1.18.0 10-05-2018
+
+- Separated location related changes
+- Added condition to check non_gcp and service_account_key
+- Fixed metadata configuration for GCP
+- Fix typo in the default CORS headers.
+- Returns Status::OK when metadata service is not available (#386)
+
 # Release 1.15.0 0-03-2018
 
 - Added client IP address extraction for GAE Flex (#359)

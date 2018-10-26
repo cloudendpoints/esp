@@ -33,14 +33,13 @@
 #include "grpc++/support/byte_buffer.h"
 #include "grpc/compression.h"
 #include "include/api_manager/utils/status.h"
+#include "src/core/lib/compression/message_compress.h"
 #include "src/nginx/error.h"
 #include "src/nginx/grpc_finish.h"
 #include "src/nginx/module.h"
 #include "src/nginx/util.h"
 
 extern "C" {
-#include "src/core/lib/compression/message_compress.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/http/v2/ngx_http_v2_module.h"
 }
 
@@ -97,6 +96,18 @@ ngx_int_t ngx_esp_write_output(ngx_http_request_t *r, ngx_chain_t *out,
     return rc;
   }
 
+  // If data is bufferred by the SSL, call ngx_http_output_filter() again
+  // to flush it out.
+  if (r->connection->buffered & NGX_SSL_BUFFERED) {
+    rc = ngx_http_output_filter(r, nullptr);
+    if (rc == NGX_OK) {
+      return NGX_OK;
+    }
+    if (rc != NGX_AGAIN) {
+      return rc;
+    }
+  }
+
   ngx_http_core_loc_conf_t *clcf = reinterpret_cast<ngx_http_core_loc_conf_t *>(
       ngx_http_get_module_loc_conf(r, ngx_http_core_module));
 
@@ -114,7 +125,8 @@ ngx_int_t ngx_esp_write_output(ngx_http_request_t *r, ngx_chain_t *out,
 
 u_char kGrpcEncoding[] = "grpc-encoding";
 
-grpc_compression_algorithm GetCompressionAlgorithm(ngx_http_request_t *r) {
+grpc_message_compression_algorithm GetCompressionAlgorithm(
+    ngx_http_request_t *r) {
   auto header =
       ngx_esp_find_headers_in(r, kGrpcEncoding, sizeof(kGrpcEncoding) - 1);
 
@@ -122,15 +134,15 @@ grpc_compression_algorithm GetCompressionAlgorithm(ngx_http_request_t *r) {
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "GetCompressionAlgorithm: algorithm not in header");
 
-    return grpc_compression_algorithm::GRPC_COMPRESS_NONE;
+    return grpc_message_compression_algorithm::GRPC_MESSAGE_COMPRESS_NONE;
   }
 
   ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                  "GetCompressionAlgorithm: algorithm=%V", &header->value);
 
-  grpc_compression_algorithm algorithm =
-      grpc_compression_algorithm::GRPC_COMPRESS_NONE;
-  grpc_compression_algorithm_parse(
+  grpc_message_compression_algorithm algorithm =
+      grpc_message_compression_algorithm::GRPC_MESSAGE_COMPRESS_NONE;
+  grpc_message_compression_algorithm_parse(
       grpc_slice_from_static_buffer(header->value.data, header->value.len),
       &algorithm);
 
@@ -517,7 +529,6 @@ void NgxEspGrpcServerCall::RunPendingRead() {
 }
 
 bool NgxEspGrpcServerCall::TryReadDownstreamMessage() {
-  static grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   // From http://www.grpc.io/docs/guides/wire.html, a GRPC message is:
   // * A one-byte compressed-flag
   // * A four-byte message length
@@ -601,8 +612,8 @@ bool NgxEspGrpcServerCall::TryReadDownstreamMessage() {
     grpc_slice_buffer output;
     grpc_slice_buffer_init(&output);
 
-    if (grpc_msg_decompress(&exec_ctx, GetCompressionAlgorithm(r_), &input,
-                            &output) != 1) {
+    if (grpc_msg_decompress(GetCompressionAlgorithm(r_), &input, &output) !=
+        1) {
       grpc_slice_buffer_destroy(&input);
       grpc_slice_buffer_destroy(&output);
       CompletePendingRead(false,
@@ -726,6 +737,21 @@ void NgxEspGrpcServerCall::Cleanup(void *server_call_ptr) {
     server_call->CompletePendingRead(false, utils::Status::OK);
   }
   server_call->cln_.data = nullptr;
+}
+
+grpc_byte_buffer *NgxEspGrpcServerCall::ConvertByteBuffer(
+    const ::grpc::ByteBuffer &msg) {
+  std::vector<::grpc::Slice> slices;
+  if (!msg.Dump(&slices).ok()) {
+    return nullptr;
+  }
+  std::vector<grpc_slice> grpc_slices(slices.size());
+  for (unsigned int i = 0; i < slices.size(); ++i) {
+    grpc_slices[i] = slices[i].c_slice();
+    // s.c_slice() add_ref, need to un_ref it.
+    grpc_slice_unref(grpc_slices[i]);
+  }
+  return grpc_raw_byte_buffer_create(grpc_slices.data(), grpc_slices.size());
 }
 
 }  // namespace nginx

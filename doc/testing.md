@@ -34,6 +34,13 @@ Run ESP unit and integration tests:
 
     bazel test //src/... //third_party:all
 
+# Running tests to check that the ESP configuration files are as expected #
+
+Before starting ESP, start_esp executable generates the ESP configuration files based on its input arguments. To test that the
+generated ESP configuration files are as expected:
+
+    bazel test //start_esp/test:start_esp_test
+
 # Running ASAN and TSAN tests #
 
 ASAN works on both Linux and Mac, but TSAN only works on Linux.

@@ -21,10 +21,10 @@
 #include "src/api_manager/mock_api_manager_environment.h"
 #include "src/api_manager/mock_request.h"
 
-using ::testing::_;
 using ::testing::Invoke;
 using ::testing::Mock;
 using ::testing::Return;
+using ::testing::_;
 
 using ::google::api_manager::utils::Status;
 using ::google::protobuf::util::error::Code;
@@ -50,14 +50,11 @@ const char kServerConfig[] = R"(
    }
 })";
 
-const char kMetaData[] = R"(
+const char kToken[] = R"(
 {
-    "instance": {
-        "attributes": {
-            "endpoints-service-config-id": "2017-05-01r0",
-            "endpoints-service-name": "service_name_from_meta_data"
-        }
-    }
+  "access_token":"TOKEN",
+  "expires_in":100,
+  "token_type":"Bearer"
 }
 )";
 
@@ -94,34 +91,26 @@ class FetchMetadataTest : public ::testing::Test {
   std::shared_ptr<context::RequestContext> context_;
 };
 
-TEST_F(FetchMetadataTest, FetchGceMetadataWithStatusOK) {
+TEST_F(FetchMetadataTest, FetchTokenWithStatusOK) {
   // FetchGceMetadata responses with headers and status OK.
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
       .WillOnce(Invoke([](HTTPRequest *req) {
         std::map<std::string, std::string> empty;
-        std::string body(kMetaData);
+        std::string body(kToken);
         req->OnComplete(Status::OK, std::move(empty), std::move(body));
       }));
 
-  FetchGceMetadata(context_, [this](Status status) {
+  FetchServiceAccountToken(context_, [this](Status status) {
     ASSERT_TRUE(status.ok());
     ASSERT_EQ(context_->service_context()
                   ->global_context()
-                  ->gce_metadata()
-                  ->endpoints_service_name(),
-              "service_name_from_meta_data");
-
-    ASSERT_EQ(context_->service_context()
-                  ->global_context()
-                  ->gce_metadata()
-                  ->endpoints_service_config_id(),
-              "2017-05-01r0");
-
-    ASSERT_TRUE(status.ok());
+                  ->service_account_token()
+                  ->state(),
+              auth::ServiceAccountToken::FETCHED);
   });
 }
 
-TEST_F(FetchMetadataTest, FetchGceMetadataWithStatusINTERNAL) {
+TEST_F(FetchMetadataTest, FetchTokenWithStatusINTERNAL) {
   // FetchGceMetadata responses with headers and status UNAVAILABLE.
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
       .WillOnce(Invoke([](HTTPRequest *req) {
@@ -131,8 +120,13 @@ TEST_F(FetchMetadataTest, FetchGceMetadataWithStatusINTERNAL) {
                         std::move(body));
       }));
 
-  FetchGceMetadata(context_, [](Status status) {
-    ASSERT_EQ(Code::INTERNAL, status.code());
+  FetchServiceAccountToken(context_, [this](Status status) {
+    ASSERT_FALSE(status.ok());
+    ASSERT_EQ(context_->service_context()
+                  ->global_context()
+                  ->service_account_token()
+                  ->state(),
+              auth::ServiceAccountToken::FAILED);
   });
 }
 

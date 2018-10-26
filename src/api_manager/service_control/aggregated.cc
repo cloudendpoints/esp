@@ -267,7 +267,7 @@ Status Aggregated::Report(const ReportRequestInfo& info) {
           if (service_control_proto_.service_config_id() !=
               response->service_config_id()) {
             if (mismatched_report_config_id_ != response->service_config_id()) {
-              env_->LogWarning(
+              env_->LogDebug(
                   "Received non-matching report response service config ID: '" +
                   response->service_config_id() + "', requested: '" +
                   service_control_proto_.service_config_id() + "'");

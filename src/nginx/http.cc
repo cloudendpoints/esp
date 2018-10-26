@@ -291,6 +291,8 @@ ngx_int_t ngx_esp_upstream_create_request(ngx_http_request_t *r) {
   append(buf, http_request->method());
   append(buf, " ");
   append(buf, http_connection->url_path);
+  // Must be HTTP/1.0 since this module doesn't support HTTP/1.1 features;
+  // such as trunked encoding.
   append(buf, " HTTP/1.0" CRLF);
 
   // Append the Host and Connection headers.
@@ -500,6 +502,17 @@ void wakeup_event_handler(ngx_event_t *ev) {
 
   ngx_log_debug2(NGX_LOG_DEBUG_HTTP, ev->log, 0,
                  "esp: destroying pools c=%p, r=%p", cp, rp);
+
+  // If the connection is reset by peer, somehow rp or cp is 0.
+  // Not sure if any of pools have been freed. But trying to free
+  // a nullptr pool definitely will cause crash.
+  // Here, choose the least of evil, memory leak over crash.
+  if (rp == nullptr || cp == nullptr) {
+    ngx_log_debug2(NGX_LOG_DEBUG_HTTP, ev->log, 0,
+                   "esp memory pools may not be freed: pools c=%p, r=%p", cp,
+                   rp);
+    return;
+  }
 
   // Destroy the pools.
   ngx_destroy_pool(rp);
@@ -1002,6 +1015,8 @@ Status initialize_upstream_request(ngx_log_t *log, HTTPRequest *request,
         http_cctx->main_conf[ngx_esp_module.ctx_index]);
     http_connection->upstream_conf.ssl = mc->ssl;
     http_connection->upstream_conf.ssl_session_reuse = 1;
+    // For SNI (Server Name Indication) support
+    http_connection->upstream_conf.ssl_server_name = 1;
     if (mc->cert_path.len > 0) {
       http_connection->upstream_conf.ssl_verify = 1;
     }

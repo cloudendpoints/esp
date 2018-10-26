@@ -42,7 +42,6 @@ using ::google::api::servicecontrol::v1::Operation;
 using ::google::api::servicecontrol::v1::ReportRequest;
 using ::google::api_manager::utils::Status;
 using ::google::protobuf::Map;
-using ::google::protobuf::StringPiece;
 using ::google::protobuf::Timestamp;
 using ::google::protobuf::util::error::Code;
 using ::google::service_control_client::DistributionHelper;
@@ -55,6 +54,9 @@ const char kConsumerQuotaUsedCount[] =
     "serviceruntime.googleapis.com/api/consumer/quota_used_count";
 
 const char kQuotaName[] = "/quota_name";
+
+// Default location
+const char kDefaultLocation[] = "global";
 
 struct SupportedMetric {
   const char* name;
@@ -510,7 +512,7 @@ Status set_credential_id(const SupportedLabel& l, const ReportRequestInfo& info,
   //    jwtAuth:issuer=base64(issuer)&audience=base64(audience)
   if (!info.api_key.empty()) {
     std::string credential_id("apikey:");
-    credential_id += info.api_key.ToString();
+    credential_id += info.api_key;
     (*labels)[l.name] = credential_id;
   } else if (!info.auth_issuer.empty()) {
     // If auth is used, auth_issuer should NOT be empty since it is required.
@@ -629,6 +631,8 @@ Status set_location(const SupportedLabel& l, const ReportRequestInfo& info,
                     Map<std::string, std::string>* labels) {
   if (!info.location.empty()) {
     (*labels)[l.name] = info.location;
+  } else {
+    (*labels)[l.name] = kDefaultLocation;
   }
   return Status::OK;
 }

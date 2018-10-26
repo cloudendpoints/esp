@@ -84,7 +84,6 @@ class ServiceContext {
   const std::string &metadata_server() const {
     return global_context_->metadata_server();
   }
-  GceMetadata *gce_metadata() { return global_context_->gce_metadata(); }
   const std::string &project_id() const;
   cloud_trace::Aggregator *cloud_trace_aggregator() const {
     return global_context_->cloud_trace_aggregator();

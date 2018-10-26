@@ -163,7 +163,7 @@ TEST_F(AggregatedTestWithMockedClient, FailedReportTest) {
 TEST_F(AggregatedTestWithMockedClient, FailedCheckRequiredFieldTest) {
   CheckRequestInfo info;
   FillOperationInfo(&info);
-  info.operation_name = nullptr;  // Missing operation_name
+  info.operation_name = "";  // Missing operation_name
   sc_lib_->Check(info, nullptr,
                  [](Status status, const CheckResponseInfo& info) {
                    ASSERT_EQ(Code::INVALID_ARGUMENT, status.code());

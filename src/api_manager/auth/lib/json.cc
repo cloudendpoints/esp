@@ -30,8 +30,12 @@ char *WriteUserInfoToJson(const UserInfo &user_info) {
   memset(&json_top, 0, sizeof(json_top));
   json_top.type = GRPC_JSON_OBJECT;
 
+  grpc_json json_all_claims;
+  FillChild(&json_all_claims, nullptr, &json_top, "claims",
+            user_info.claims.c_str(), GRPC_JSON_STRING);
+
   grpc_json json_issuer;
-  FillChild(&json_issuer, nullptr, &json_top, "issuer",
+  FillChild(&json_issuer, &json_all_claims, &json_top, "issuer",
             user_info.issuer.c_str(), GRPC_JSON_STRING);
 
   grpc_json json_id;

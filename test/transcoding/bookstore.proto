@@ -170,3 +170,11 @@ message QueryBooksRequest {
   // The book to match
   Book book = 2;
 }
+
+// The custom error message returned in status "details"
+message ShelfNotFoundDetail {
+  // the sheld ID that trying to find.
+  int64 for_shelf_id = 1;
+  // the why message.
+  string why = 2;
+}

@@ -64,13 +64,6 @@ class Status final {
   // Constructs a Status object from a protobuf Status.
   static Status FromProto(const ::google::protobuf::util::Status& proto_status);
 
-  // Converts a |proto_status| of ::google::rpc::Status into a JSON string,
-  // and returns the JSON string in |result|. The options field is a OR'd set
-  // of the available JsonOptions. If the conversion failed, generates an error
-  // status and returns the error status in a JSON string.
-  static void StatusProtoToJson(const ::google::rpc::Status& proto_status,
-                                std::string* result, int options);
-
   // Pre-defined OK status.
   static const Status& OK;
 

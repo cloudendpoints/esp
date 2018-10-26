@@ -217,7 +217,8 @@ my $expected_report_body = {
     'servicecontrol.googleapis.com/platform' => 'unknown',
     'servicecontrol.googleapis.com/user_agent' => 'ESP',
     'serviceruntime.googleapis.com/api_method' => 'test.Bookstore.ListShelves',
-    'serviceruntime.googleapis.com/api_version' => 'v1'
+    'serviceruntime.googleapis.com/api_version' => 'v1',
+    'cloud.googleapis.com/location' => 'global'
    },
    'logEntries' => [
     {
