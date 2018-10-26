@@ -78,10 +78,11 @@ TEST_F(GrpcZeroCopyInputStreamTest, SimpleRead) {
   EXPECT_EQ(0, size);
 
   // Create and add a messages
-  std::string slice11 = "This is\n";
-  std::string slice12 = "the first message\n";
-  std::string slice21 = "This is\n";
-  std::string slice22 = "the second message\n";
+  // The message has to be larger than grpc_slice inline size (20 bytes)
+  std::string slice11 = "000000000000000000000This is\n";
+  std::string slice12 = "000000000000000000000the first message\n";
+  std::string slice21 = "000000000000000000000This is\n";
+  std::string slice22 = "000000000000000000000the second message\n";
 
   stream.AddMessage(CreateByteBuffer(SliceData{slice11, slice12}), true);
   stream.AddMessage(CreateByteBuffer(SliceData{slice21, slice22}), true);
@@ -105,7 +106,7 @@ TEST_F(GrpcZeroCopyInputStreamTest, SimpleRead) {
 
   // Test the slices
   ASSERT_TRUE(stream.Next(&data, &size));
-  ASSERT_EQ(slice11.size(), size);
+  //  ASSERT_EQ(slice11.size(), size);
   EXPECT_EQ(slice11, std::string(reinterpret_cast<const char *>(data), size));
 
   // Test BytesAvailable()
@@ -224,8 +225,8 @@ TEST_F(GrpcZeroCopyInputStreamTest, Backups) {
 
 TEST_F(GrpcZeroCopyInputStreamTest, NotOwnedMessages) {
   // Create and add a messages
-  std::string slice1 = "Message 1";
-  std::string slice2 = "Message 2";
+  std::string slice1 = "000000000000000000000Message 1";
+  std::string slice2 = "000000000000000000000Message 2";
   auto message1 = CreateByteBuffer(SliceData{1, slice1});
   auto message2 = CreateByteBuffer(SliceData{1, slice2});
 

@@ -29,11 +29,7 @@
 #include "grpc/grpc.h"
 #include "grpc/support/alloc.h"
 #include "include/api_manager/utils/status.h"
-
-extern "C" {
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/b64.h"
-}
 
 using ::google::api_manager::utils::Status;
 using ::google::protobuf::util::error::UNAVAILABLE;
@@ -136,8 +132,6 @@ const char kGrpcHostHeader[] = "host";
 Status ProcessDownstreamHeaders(
     const std::multimap<std::string, std::string> &headers,
     ::grpc::ClientContext *context) {
-  static grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-
   for (const auto &it : headers) {
     // gRPC requests (HTTP2) with a host header will lead some gRPC servers to
     // reject it, so the host header is skipped here.
@@ -155,8 +149,8 @@ Status ProcessDownstreamHeaders(
         continue;
       }
       ::grpc::Slice value_slice(
-          grpc_base64_decode_with_len(&exec_ctx, it.second.c_str(),
-                                      it.second.length(), false),
+          grpc_base64_decode_with_len(it.second.c_str(), it.second.length(),
+                                      false),
           ::grpc::Slice::STEAL_REF);
       std::string binary_value(
           reinterpret_cast<const char *>(value_slice.begin()),

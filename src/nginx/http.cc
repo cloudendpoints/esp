@@ -291,6 +291,8 @@ ngx_int_t ngx_esp_upstream_create_request(ngx_http_request_t *r) {
   append(buf, http_request->method());
   append(buf, " ");
   append(buf, http_connection->url_path);
+  // Must be HTTP/1.0 since this module doesn't support HTTP/1.1 features;
+  // such as trunked encoding.
   append(buf, " HTTP/1.0" CRLF);
 
   // Append the Host and Connection headers.
@@ -506,7 +508,7 @@ void wakeup_event_handler(ngx_event_t *ev) {
   // a nullptr pool definitely will cause crash.
   // Here, choose the least of evil, memory leak over crash.
   if (rp == nullptr || cp == nullptr) {
-    ngx_log_debug2(NGX_LOG_WARN_HTTP, ev->log, 0,
+    ngx_log_debug2(NGX_LOG_DEBUG_HTTP, ev->log, 0,
                    "esp memory pools may not be freed: pools c=%p, r=%p", cp,
                    rp);
     return;

@@ -46,7 +46,7 @@ function cleanup {
   if [[ "${SKIP_CLEANUP}" == 'false' ]]; then
     run kubectl delete namespace "${NAMESPACE}"
     # Uncomment this line when the limit on #services is lifted or increased to > 20
-    # run gcloud service-management delete ${ESP_SERVICE} --quiet
+    # run gcloud endpoints services delete ${ESP_SERVICE} --quiet
   fi
 }
 

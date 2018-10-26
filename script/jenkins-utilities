@@ -89,9 +89,9 @@ function sed_i() {
 function delete_service() {
   local esp_service="${1}"
   if ! [[ "${esp_service}" =~ "${DEFAULT_ESP_SERVICE}" ]]; then
-    ${GCLOUD} service-management disable \
+    ${GCLOUD} services disable \
       "${esp_service}" --project="${PROJECT_ID}"
-    ${GCLOUD} service-management delete "${esp_service}" -q
+    ${GCLOUD} endpoints services delete "${esp_service}" --quiet
   fi
 }
 
@@ -119,7 +119,7 @@ function set_esp_service_version() {
   local esp_service="${1}"
   local json_path="$(mktemp /tmp/XXXXX.json)"
   local version=''
-  ${GCLOUD} service-management describe \
+  ${GCLOUD} endpoints services describe \
     ${esp_service} --format=json > "${json_path}" || return 1
   version="$(python - << __EOF__ "${json_path}"
 import json
@@ -145,13 +145,13 @@ function create_service() {
   local version=''
 
   echo 'Deploying service'
-  retry -n 3 run ${GCLOUD} service-management deploy "${swagger_json}"
+  retry -n 3 run ${GCLOUD} endpoints services deploy "${swagger_json}"
 
   retry -n 5 set_esp_service_version "${esp_service}" \
     || error_exit 'Could not fetch the service version.'
 
   echo 'Activating service'
-  retry -n 3 run ${GCLOUD} service-management enable \
+  retry -n 3 run ${GCLOUD} services enable \
     "${esp_service}" --project="${PROJECT_ID}" \
     || error_exit 'Could not activate the service.'
 

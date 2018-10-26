@@ -14,7 +14,7 @@
 #
 ################################################################################
 #
-def cares_repositories(bind=True):
+def cares_repositories(bind = True):
     BUILD = """
 cc_library(
     name = "ares",
@@ -124,7 +124,7 @@ genrule(
     native.new_git_repository(
         name = "cares_git",
         remote = "https://github.com/c-ares/c-ares.git",
-        commit = "7691f773af79bf75a62d1863fd0f13ebf9dc51b1", # v1.12.0
+        commit = "7691f773af79bf75a62d1863fd0f13ebf9dc51b1",  # v1.12.0
         build_file_content = BUILD,
     )
 
@@ -134,11 +134,10 @@ genrule(
             actual = "@cares_git//:ares",
         )
 
-
-def protobuf_repositories(bind=True):
+def protobuf_repositories(bind = True):
     native.git_repository(
         name = "protobuf_git",
-        commit = "a6189acd18b00611c1dc7042299ad75486f08a1a",  # istio branch
+        commit = "48cb18e5c419ddd23d9badcfe4e9df7bde1979b2",  # same as grpc
         remote = "https://github.com/google/protobuf.git",
     )
 
@@ -173,8 +172,7 @@ def protobuf_repositories(bind=True):
             actual = "@protobuf_git//:protoc_lib",
         )
 
-
-def googletest_repositories(bind=True):
+def googletest_repositories(bind = True):
     BUILD = """
 # Copyright (C) Extensible Service Proxy Authors. All Rights Reserved.
 #
@@ -259,7 +257,7 @@ cc_library(
             actual = "@googletest_git//:googletest_prod",
         )
 
-def transcoding_repositories(bind=True):
+def transcoding_repositories(bind = True):
     native.git_repository(
         name = "httpjson_transcoding",
         commit = "6c54b75dbd294e1e264e3f9476ffb52be8763cd3",
@@ -277,7 +275,7 @@ def transcoding_repositories(bind=True):
             actual = "@httpjson_transcoding//src:path_matcher",
         )
 
-def zlib_repositories(bind=True):
+def zlib_repositories(bind = True):
     BUILD = """
 # Copyright (C) Extensible Service Proxy Authors. All Rights Reserved.
 #
@@ -347,10 +345,10 @@ cc_library(
 
     native.bind(
         name = "zlib",
-        actual = "@zlib_git//:zlib"
+        actual = "@zlib_git//:zlib",
     )
 
-def nanopb_repositories(bind=True):
+def nanopb_repositories(bind = True):
     BUILD = """
 # Copyright (C) Extensible Service Proxy Authors. All Rights Reserved.
 #
@@ -420,44 +418,7 @@ genrule(
         actual = "@nanopb_git//:nanopb",
     )
 
-def grpc_repositories(bind=True):
-    zlib_repositories(bind)
-    nanopb_repositories(bind)
-    cares_repositories(bind)
-
-    native.git_repository(
-        name = "grpc_git",
-        commit = "5cb6a1f86129fc2833de9a27cfe174260934342b", # v1.4.2
-        remote = "https://github.com/grpc/grpc.git",
-    )
-
-    if bind:
-        native.bind(
-            name = "gpr",
-            actual = "@grpc_git//:gpr",
-        )
-
-        native.bind(
-            name = "grpc",
-            actual = "@grpc_git//:grpc",
-        )
-
-        native.bind(
-            name = "grpc_cpp_plugin",
-            actual = "@grpc_git//:grpc_cpp_plugin",
-        )
-
-        native.bind(
-            name = "grpc++",
-            actual = "@grpc_git//:grpc++",
-        )
-
-        native.bind(
-            name = "grpc_lib",
-            actual = "@grpc_git//:grpc++_codegen_proto",
-        )
-
-def googleapis_repositories(protobuf_repo="@protobuf_git//", bind=True):
+def googleapis_repositories(protobuf_repo = "@protobuf_git//", bind = True):
     BUILD = """
 # Copyright (C) Extensible Service Proxy Authors. All Rights Reserved.
 #
@@ -610,8 +571,8 @@ cc_proto_library(
             actual = "@googleapis_git//:http_api_protos",
         )
 
-def servicecontrol_client_repositories(bind=True):
-    googleapis_repositories(bind=bind)
+def servicecontrol_client_repositories(bind = True):
+    googleapis_repositories(bind = bind)
 
     native.git_repository(
         name = "servicecontrol_client_git",

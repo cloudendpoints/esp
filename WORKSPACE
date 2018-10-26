@@ -49,10 +49,34 @@ git_repository(
 load("@iap_jwt_verify_nginx//:iap_jwt_verify_nginx.bzl", "iap_jwt_verify_nginx_repositories")
 iap_jwt_verify_nginx_repositories(True)
 
-# Required by gRPC.
+git_repository(
+    name = "com_github_grpc_grpc",
+    commit = "d2c7d4dea492b9a86a53555aabdbfa90c2b01730",  # v1.15.0
+    remote = "https://github.com/grpc/grpc.git",
+)
+load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps", "grpc_test_only_deps")
+grpc_deps()
+grpc_test_only_deps()
+
 bind(
-    name = "libssl",
-    actual = "@boringssl//:ssl",
+    name = "gpr",
+    actual = "@com_github_grpc_grpc//:gpr",
+)
+bind(
+    name = "grpc",
+    actual = "@com_github_grpc_grpc//:grpc",
+)
+bind(
+    name = "grpc_cpp_plugin",
+    actual = "@com_github_grpc_grpc//:grpc_cpp_plugin",
+)
+bind(
+    name = "grpc++",
+    actual = "@com_github_grpc_grpc//:grpc++",
+)
+bind(
+    name = "grpc_lib",
+    actual = "@com_github_grpc_grpc//:grpc++_codegen_proto",
 )
 
 load(
@@ -60,7 +84,6 @@ load(
     "servicecontrol_client_repositories",
     "protobuf_repositories",
     "googletest_repositories",
-    "grpc_repositories",
     "transcoding_repositories",
 )
 
@@ -99,8 +122,6 @@ servicecontrol_client_repositories()
 protobuf_repositories()
 
 googletest_repositories()
-
-grpc_repositories()
 
 transcoding_repositories()
 

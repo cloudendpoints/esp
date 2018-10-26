@@ -1,3 +1,11 @@
+# Release 1.25.0 17-10-2018
+
+- Change side-way http to use 1.1 (#453)
+
+- Upgrade gRPC from 1.4.2 to 1.15.0 (#450)
+
+- CORS always adds the Access-Control-Allow-Origin header (#449)
+
 # Release 1.24.0 29-08-2018
 
 - Add --experimental_enable_multiple_api_configs flag (#439)
