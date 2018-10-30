@@ -2,7 +2,7 @@
 
 - Correctly convert gRPC custom Status to JSON in transcoding. (#479)
 
-- Add experimental prefix for flag proxy_backend_host_header (#476)
+- Add start_esp flag: experiental_proxy_backend_host_header. (#476)
 
 - Add an option to enable HSTS (HTTP Strict Transport Security) (#474)
 
@@ -11,8 +11,6 @@
 - Not to log access token (#470)
 
 - Fix e2e test errors (#468)
-
-- Added the proxy_backend_host_header argument start_esp (#466)
 
 - Fix errors of start_esp tests and enable start_esp tests in presubmit tests (#462)
 
