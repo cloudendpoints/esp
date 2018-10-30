@@ -1,3 +1,31 @@
+# Release 1.26.0 29-10-2018
+
+- Correctly convert gRPC custom Status to JSON in transcoding. (#479)
+
+- Add experimental prefix for flag proxy_backend_host_header (#476)
+
+- Add an option to enable HSTS (HTTP Strict Transport Security) (#474)
+
+- Add enable_debug flag (#471)
+
+- Not to log access token (#470)
+
+- Fix e2e test errors (#468)
+
+- Added the proxy_backend_host_header argument start_esp (#466)
+
+- Fix errors of start_esp tests and enable start_esp tests in presubmit tests (#462)
+
+- Remove grpc flow_control tests. (#463)
+
+- Update version number to 1.26.0. (#458)
+
+- Fix memory leak in grpc ConvertByteBuffer (#457)
+
+- Upgrade gRPC from 1.4.2 to 1.15.0 (#450)
+
+- CORS always adds the Access-Control-Allow-Origin header (#449)
+
 # Release 1.25.0 17-10-2018
 
 - Change side-way http to use 1.1 (#453)
