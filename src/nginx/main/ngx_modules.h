@@ -23,12 +23,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#ifndef _NGX_MODULES_H_INCLUDED_
-#define _NGX_MODULES_H_INCLUDED_
-
+#ifndef NGINX_NGX_ESP_MODULE_H_
+#define NGINX_NGX_ESP_MODULE_H_
 
 void ngx_show_configure_options(void);
 
-
-#endif /* _NGX_MODULES_H_INCLUDED_ */
+#endif /* NGINX_NGX_ESP_MODULE_H */
