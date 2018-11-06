@@ -54,6 +54,9 @@ nginx_suite(
             # ssl_sni_reneg.t is excluded from the test suite because boring ssl
             # does not support renegotiation feature required by the test.
             "nginx-tests/ssl_sni_reneg.t",
+            # ssl_sni_reneg.t is excluded from the test suite because boring ssl
+            # does not support ssl_stapling feature required by the test.
+            "nginx-tests/ssl_stapling.t",
         ],
     ),
     deps = [
