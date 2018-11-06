@@ -191,7 +191,7 @@ http {
 
 % if enable_strict_transport_security:
       # Enable HSTS (HTTP Strict Transport Security), 31536000 is 1 year.
-      add_header Strict-Transport-Security "max-age=31536000; includeSubdomains;";
+      add_header Strict-Transport-Security "max-age=31536000; includeSubdomains;" always;
 % endif
 
 % if location.proto == 'grpc':
