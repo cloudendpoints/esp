@@ -28,7 +28,7 @@
 
 git_repository(
     name = "nginx",
-    commit = "2939d5c5fadb3f28a8f8ac85c039bfd007239d3c",  # v1.15.5
+    commit = "f5bf2d17902d1b504faac1a266883dab29dbff75",  # nginx-1.15.6
     remote = "https://nginx.googlesource.com/nginx",
 )
 
