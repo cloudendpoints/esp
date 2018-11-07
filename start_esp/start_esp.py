@@ -44,6 +44,7 @@ from mako.template import Template
 
 # Location of NGINX binary
 NGINX = "/usr/sbin/nginx"
+NGINX_DEBUG = "/usr/sbin/nginx-debug"
 
 # Location of NGINX template
 NGINX_CONF_TEMPLATE = "/etc/nginx/nginx-auto.conf.template"
@@ -136,6 +137,7 @@ def write_template(ingress, nginx_conf, args):
             underscores_in_headers=args.underscores_in_headers,
             allow_invalid_headers=args.allow_invalid_headers,
             enable_websocket=args.enable_websocket,
+            enable_debug=args.enable_debug,
             client_max_body_size=args.client_max_body_size,
             client_body_buffer_size=args.client_body_buffer_size,
             worker_processes=args.worker_processes,
@@ -147,6 +149,8 @@ def write_template(ingress, nginx_conf, args):
             cors_allow_credentials=args.cors_allow_credentials,
             cors_expose_headers=args.cors_expose_headers,
             ssl_protocols=args.ssl_protocols,
+            experimental_proxy_backend_host_header=args.experimental_proxy_backend_host_header,
+            enable_strict_transport_security=args.enable_strict_transport_security,
             google_cloud_platform=(args.non_gcp==False))
 
     # Save nginx conf
@@ -517,6 +521,10 @@ config file.'''.format(
         header, Default value: {xff_trusted_proxy_list}'''.
         format(xff_trusted_proxy_list=DEFAULT_XFF_TRUSTED_PROXY_LIST))
 
+    parser.add_argument('--experimental_proxy_backend_host_header', default=None,
+        help='''Define the Host header value that overrides the incoming Host
+        header for upstream request.''')
+
     parser.add_argument('--check_metadata', action='store_true',
         help='''Enable fetching access token, service name, service config ID
         and rollout strategy from the metadata service''')
@@ -534,6 +542,14 @@ config file.'''.format(
 
     parser.add_argument('--enable_websocket', action='store_true',
         help='''Enable nginx WebSocket support.
+        ''')
+
+    parser.add_argument('--enable_strict_transport_security', action='store_true',
+        help='''Enable HSTS (HTTP Strict Transport Security).
+        ''')
+
+    parser.add_argument('--enable_debug', action='store_true',
+        help='''Run debug Nginx binary with debug trace.
         ''')
 
     parser.add_argument('--generate_self_signed_cert', action='store_true',
@@ -618,10 +634,14 @@ config file.'''.format(
         default=SERVER_CONF_TEMPLATE,
         help=argparse.SUPPRESS)
 
-
     # nginx binary location
     parser.add_argument('--nginx',
         default=NGINX,
+        help=argparse.SUPPRESS)
+
+    # nginx_debug binary location
+    parser.add_argument('--nginx_debug',
+        default=NGINX_DEBUG,
         help=argparse.SUPPRESS)
 
     # Address of the DNS resolver used by nginx http.cc
@@ -809,6 +829,10 @@ if __name__ == '__main__':
     # Generate server_config
     args.metadata_attributes = fetch.fetch_metadata_attributes(args.metadata)
     if args.generate_config_file_only:
+        # When generate_config_file_only, metadata_attributes is set as empty
+        # to have consistent test results on local bazel test and jenkins test
+        # environments.
+        args.metadata_attributes = None
         if args.server_config_generation_path is None:
             logging.error("when --generate_config_file_only, must specify --server_config_generation_path")
             sys.exit(3)
@@ -844,4 +868,7 @@ if __name__ == '__main__':
                    ' -days 3650 -subj "/CN=localhost"'))
 
     # Start NGINX
-    start_nginx(args.nginx, nginx_conf)
+    nginx_bin = args.nginx
+    if args.enable_debug:
+      nginx_bin = args.nginx_debug
+    start_nginx(nginx_bin, nginx_conf)

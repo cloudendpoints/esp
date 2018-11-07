@@ -27,7 +27,7 @@ The `service.json` service config file is generated from
 
    protoc test/grpc/grpc-test.proto -Itest/grpc -I$(bazel info output_base)/external/googleapis_git/ --include_imports --descriptor_set_out=out.pb
 
-   gcloud service-management deploy out.pb test/grpc/grpc-test.yaml
+   gcloud endpoints services deploy out.pb test/grpc/grpc-test.yaml
 
  - Download the service.json to this local folder. You might need [oauth2l](https://github.com/google/oauth2l) and a service account secret file.
 

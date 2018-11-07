@@ -18,7 +18,6 @@
 
 #include "google/protobuf/io/zero_copy_stream_impl_lite.h"
 #include "google/protobuf/util/json_util.h"
-#include "google/protobuf/util/type_resolver.h"
 #include "google/protobuf/util/type_resolver_util.h"
 
 using ::google::protobuf::Message;
@@ -31,6 +30,7 @@ namespace utils {
 
 namespace {
 const char kTypeUrlPrefix[] = "type.googleapis.com";
+const char kRpcStatusTypeUrl[] = "type.googleapis.com/google.rpc.Status";
 
 // Creation function used by static lazy init.
 TypeResolver* CreateTypeResolver() {
@@ -38,12 +38,12 @@ TypeResolver* CreateTypeResolver() {
       kTypeUrlPrefix, ::google::protobuf::DescriptorPool::generated_pool());
 }
 
-// Returns the singleton type resolver, creating it on first call.
+}  // namespace
+
 TypeResolver* GetTypeResolver() {
   static TypeResolver* resolver = CreateTypeResolver();
   return resolver;
 }
-}  // namespace
 
 std::string GetTypeUrl(const Message& message) {
   return std::string(kTypeUrlPrefix) + "/" +
@@ -124,6 +124,20 @@ Status JsonToProto(::google::protobuf::io::ZeroCopyInputStream* json,
   return Status(
       Code::INTERNAL,
       "Unable to parse bytes generated from JsonToBinaryString as proto.");
+}
+
+std::string BinStatusToJson(TypeResolver* resolver,
+                            const std::string& bin_status) {
+  ::google::protobuf::util::JsonPrintOptions json_options;
+  json_options.add_whitespace = true;
+  json_options.always_print_primitive_fields = true;
+  std::string result;
+  auto status = ::google::protobuf::util::BinaryToJsonString(
+      resolver, kRpcStatusTypeUrl, bin_status, &result, json_options);
+  if (!status.ok()) {
+    return Status::FromProto(status).ToJson();
+  }
+  return result;
 }
 
 }  // namespace utils

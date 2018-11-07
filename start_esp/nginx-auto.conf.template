@@ -35,6 +35,13 @@ worker_processes ${worker_processes};
 worker_rlimit_nofile 10240;
 events { worker_connections 10240; }
 
+% if enable_debug:
+error_log /var/log/nginx/error.log debug;
+# enable core dump
+worker_rlimit_core 512m;
+working_directory /tmp;
+% endif
+
 # Logging to stderr enables better integration with Docker and GKE/Kubernetes.
 error_log stderr warn;
 
@@ -74,6 +81,11 @@ http {
 
   server {
     server_name ${ingress.host};
+
+% if enable_strict_transport_security:
+    # Enable HSTS (HTTP Strict Transport Security), 31536000 is 1 year.
+    add_header Strict-Transport-Security "max-age=31536000; includeSubdomains;";
+% endif
 
 % if ssl_protocols:
   <%
@@ -196,7 +208,11 @@ http {
       % endif
   % endif
       proxy_redirect off;
+  % if experimental_proxy_backend_host_header:
+      proxy_set_header Host ${experimental_proxy_backend_host_header};
+  % else:
       proxy_set_header Host $host;
+  % endif
       proxy_set_header X-Real-IP $remote_addr;
       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
       proxy_set_header X-Forwarded-Host $server_name;

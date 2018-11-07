@@ -110,7 +110,7 @@ echo 'Creating service.json'
 SERVICE_NAME='echo-dot-esp-load-test.appspot.com'
 CONFIG_ID='2017-07-12r0'
 activate_service_account "esp-load-test"
-${GCLOUD} service-management configs describe --service ${SERVICE_NAME} ${CONFIG_ID} \
+${GCLOUD} endpoints configs describe --service ${SERVICE_NAME} ${CONFIG_ID} \
   --project=esp-load-test --format=json > "${ROOT}/test/echo/gce-vm/service.json"
 
 cat ${ROOT}/test/echo/gce-vm/service.json

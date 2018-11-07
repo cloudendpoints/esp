@@ -169,15 +169,18 @@ class BookstoreServiceImpl : public Bookstore::Service {
       }
     }
 
-    ::google::rpc::Status detail_status;
-    detail_status.set_code(grpc::NOT_FOUND);
-    std::string error_details =
-        "Cannot find shelf " + std::to_string(request->shelf());
-    detail_status.set_message(error_details);
-    std::string detail_status_bin = detail_status.SerializeAsString();
+    ::google::rpc::Status rpc_status;
+    rpc_status.set_code(grpc::NOT_FOUND);
+    rpc_status.set_message("Status message: shell not found");
 
-    return ::grpc::Status(grpc::NOT_FOUND, "Shelf not found",
-                          std::string(detail_status_bin));
+    ShelfNotFoundDetail custom_pb;
+    custom_pb.set_for_shelf_id(id);
+    custom_pb.set_why("Custom detail: shell not found");
+    rpc_status.add_details()->PackFrom(custom_pb);
+
+    return ::grpc::Status(grpc::NOT_FOUND,
+                          "Grpc status message: shelf not found",
+                          rpc_status.SerializeAsString());
   }
 
   ::grpc::Status DeleteShelf(::grpc::ServerContext* ctx,

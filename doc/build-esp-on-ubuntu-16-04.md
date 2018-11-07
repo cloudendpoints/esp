@@ -27,7 +27,7 @@ the binary installer is bazel-0.5.4-installer-linux-x86_64.sh.
 *Note:* Bazel is under active development and from time to time, ESP continuous
 integration systems are upgraded to a new version of Bazel. 
 The version of Bazel used by ESP continuous integration systems can be found in
-the [linux-install-software](/script/linux-install-software)
+the [linux-install-software](/script/tools/linux-install-bazel)
 script variable `BAZEL_VERSION=<SHA>`.
 
 # Build ESP #

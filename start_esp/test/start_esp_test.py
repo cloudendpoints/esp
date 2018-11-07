@@ -129,6 +129,11 @@ class TestStartEsp(unittest.TestCase):
         config_generator = self.basic_config_generator + " --enable_websocket"
         self.run_test_with_expectation(expected_config_file, self.generated_nginx_config_file, config_generator)
 
+    def test_enable_debug_arg_output_is_as_expected(self):
+        expected_config_file = "./start_esp/test/testdata/expected_enable_debug_nginx.conf"
+        config_generator = self.basic_config_generator + " --enable_debug"
+        self.run_test_with_expectation(expected_config_file, self.generated_nginx_config_file, config_generator)
+
     def test_client_max_body_size_arg_output_is_as_expected(self):
         expected_config_file = "./start_esp/test/testdata/expected_client_max_body_size_nginx.conf"
         config_generator = self.basic_config_generator + " --client_max_body_size 10m"
@@ -192,6 +197,16 @@ class TestStartEsp(unittest.TestCase):
     def test_cors_allow_origin_regex_arg_output_is_as_expected(self):
         expected_config_file = "./start_esp/test/testdata/expected_cors_allow_origin_regex_nginx.conf"
         config_generator = self.basic_config_generator + " --cors_preset cors_with_regex --cors_allow_origin_regex test_cors_regex"
+        self.run_test_with_expectation(expected_config_file, self.generated_nginx_config_file, config_generator)
+
+    def test_backend_host_header_expected(self):
+        expected_config_file = "./start_esp/test/testdata/expected_backend_host_header_nginx.conf"
+        config_generator = self.basic_config_generator + " --experimental_proxy_backend_host_header your.backend.host"
+        self.run_test_with_expectation(expected_config_file, self.generated_nginx_config_file, config_generator)
+
+    def test_enable_strict_transport_security_is_as_expected(self):
+        expected_config_file = "./start_esp/test/testdata/expected_enable_strict_transport_security_nginx.conf"
+        config_generator = self.basic_config_generator + " --enable_strict_transport_security"
         self.run_test_with_expectation(expected_config_file, self.generated_nginx_config_file, config_generator)
 
     ########## The tests for generating the server configuration file start from here ##########

@@ -239,23 +239,6 @@ bool Status::operator==(const Status& x) const {
                 proto_status.error_message().ToString());
 }
 
-void Status::StatusProtoToJson(const ::google::rpc::Status& proto_status,
-                               std::string* result, int options) {
-  Status status = ProtoToJson(proto_status, result, options);
-  if (!status.ok()) {
-    // If translation failed, try outputting the json translation failure itself
-    // as a JSON error. This should only happen if one of the error details had
-    // an unresolvable type url.
-    ::google::rpc::Status proto = status.ToCanonicalProto();
-    status = ProtoToJson(proto, result, options);
-    if (!status.ok()) {
-      // This should never happen but just in case we do a non-json response.
-      *result = "Unable to generate error response: ";
-      result->append(status.message());
-    }
-  }
-}
-
 ::google::protobuf::util::Status Status::ToProto() const {
   ::google::protobuf::util::Status result(CanonicalCode(), message_);
   return result;
@@ -426,7 +409,19 @@ std::string Status::ToJson() const {
   ::google::rpc::Status proto = ToCanonicalProto();
   std::string result;
   int options = JsonOptions::PRETTY_PRINT | JsonOptions::OUTPUT_DEFAULTS;
-  Status::StatusProtoToJson(proto, &result, options);
+  Status status = ProtoToJson(proto, &result, options);
+  if (!status.ok()) {
+    // If translation failed, try outputting the json translation failure itself
+    // as a JSON error. This should only happen if one of the error details had
+    // an unresolvable type url.
+    proto = status.ToCanonicalProto();
+    status = ProtoToJson(proto, &result, options);
+    if (!status.ok()) {
+      // This should never happen but just in case we do a non-json response.
+      result = "Unable to generate error response: ";
+      result.append(status.message());
+    }
+  }
   return result;
 }
 
