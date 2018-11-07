@@ -149,6 +149,7 @@ http {
 % endif
 
 % if cors_preset:
+    set $cors "unset";
     # Begin CORS settings
   % if cors_preset == 'basic':
     set $cors "true";
@@ -174,6 +175,19 @@ http {
       % endif
         add_header 'Content-Type' 'text/plain; charset=utf-8';
         add_header 'Content-Length' 0;
+
+      % if enable_strict_transport_security:
+        # According to http://nginx.org/en/docs/http/ngx_http_headers_module.html:
+        # "There could be several add_header directives. These directives are inherited from the previous
+        # level if and only if there are no add_header directives defined on the current level."
+        # According to https://github.com/cloudendpoints/esp/issues/473: "nginx considers the if as an indentation level
+        # and, once finds an add_header directive inside, ignores all add_header directives in inferior levels."
+        # If you add new add_header directives, these new directives must be added to other levels with add_header
+        # directives to avoid the new directives being ignored.
+        # Enable HSTS (HTTP Strict Transport Security), 31536000 is 1 year.
+        add_header Strict-Transport-Security "max-age=31536000; includeSubdomains;" always;
+      % endif
+
         return 204;
     }
 
@@ -185,14 +199,23 @@ http {
       % if cors_allow_credentials:
         add_header 'Access-Control-Allow-Credentials' 'true' always;
       % endif
+
+      % if enable_strict_transport_security:
+        add_header Strict-Transport-Security "max-age=31536000; includeSubdomains;" always;
+      % endif
+    }
+    if ($cors = "unset") {
+      % if enable_strict_transport_security:
+        add_header Strict-Transport-Security "max-age=31536000; includeSubdomains;" always;
+      % endif
     }
     # End CORS settings
+% else:
+  % if enable_strict_transport_security:
+      add_header Strict-Transport-Security "max-age=31536000; includeSubdomains;" always;
+  % endif
 % endif
 
-% if enable_strict_transport_security:
-      # Enable HSTS (HTTP Strict Transport Security), 31536000 is 1 year.
-      add_header Strict-Transport-Security "max-age=31536000; includeSubdomains;" always;
-% endif
 
 % if location.proto == 'grpc':
       # WARNING: only first backend is used
