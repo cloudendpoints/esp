@@ -31,6 +31,7 @@ cc_binary(
     name = "nginx-google",
     srcs = [
         "ngx_modules.c",
+        "ngx_modules.h",
     ],
     linkstatic = 1,
     deps = [

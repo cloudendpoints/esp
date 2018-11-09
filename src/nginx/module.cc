@@ -1004,6 +1004,16 @@ ngx_int_t ngx_esp_init_module(ngx_cycle_t *cycle) {
   conf.module_type = NGX_HTTP_MODULE;
   conf.cmd_type = NGX_HTTP_MAIN_CONF;
 
+  // Fixed crash with v1.15.0
+  conf.conf_file =
+      (ngx_conf_file_t *)ngx_pcalloc(cycle->pool, sizeof(ngx_conf_file_t));
+  if (conf.conf_file == NULL) {
+    ngx_log_error(NGX_LOG_EMERG, conf.log, 0,
+                  "Failed to allocate memory for conf_file object.");
+    return NGX_ERROR;
+  }
+  conf.conf_file->file.name = cycle->conf_file;
+
   // Create a temporary pool (destroyed below).
   conf.temp_pool = ngx_create_pool(NGX_CYCLE_POOL_SIZE, conf.log);
   if (conf.temp_pool == nullptr) {

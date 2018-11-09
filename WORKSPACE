@@ -28,7 +28,7 @@
 
 git_repository(
     name = "nginx",
-    commit = "18e870fcf52981cd0804eef269f2bb08182f0e3f",  # v1.13.4
+    commit = "f5bf2d17902d1b504faac1a266883dab29dbff75",  # nginx-1.15.6
     remote = "https://nginx.googlesource.com/nginx",
 )
 
@@ -47,6 +47,7 @@ git_repository(
 )
 
 load("@iap_jwt_verify_nginx//:iap_jwt_verify_nginx.bzl", "iap_jwt_verify_nginx_repositories")
+
 iap_jwt_verify_nginx_repositories(True)
 
 git_repository(
@@ -81,9 +82,10 @@ bind(
 
 load(
     "//:repositories.bzl",
-    "servicecontrol_client_repositories",
-    "protobuf_repositories",
     "googletest_repositories",
+    #"grpc_repositories",
+    "protobuf_repositories",
+    "servicecontrol_client_repositories",
     "transcoding_repositories",
 )
 

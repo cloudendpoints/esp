@@ -291,7 +291,9 @@ ngx_int_t ngx_esp_upstream_create_request(ngx_http_request_t *r) {
   append(buf, http_request->method());
   append(buf, " ");
   append(buf, http_connection->url_path);
-  append(buf, " HTTP/1.1" CRLF);
+  // Must be HTTP/1.0 since this module doesn't support HTTP/1.1 features;
+  // such as trunked encoding.
+  append(buf, " HTTP/1.0" CRLF);
 
   // Append the Host and Connection headers.
   append(buf, "Host: ");
@@ -674,6 +676,47 @@ ngx_int_t ngx_esp_upstream_input_filter(void *data, ssize_t bytes) {
   return NGX_OK;
 }
 
+// An upstream pipe input filter handler.
+//
+// After initialization, NGINX calls this filter handler whenever new data
+// is read from the upstream connection pipe.
+// We accumulate the data by writing it into a string stream.
+static ngx_int_t ngx_esp_upstream_pipe_input_filter(ngx_event_pipe_t *p,
+                                                    ngx_buf_t *buf) {
+  ngx_chain_t *cl;
+  ngx_http_request_t *r = (ngx_http_request_t *)p->input_ctx;
+  if (r == NULL) {
+    return NGX_ERROR;
+  }
+
+  ngx_esp_http_connection *http_connection = get_esp_connection(r);
+  if (http_connection == NULL) {
+    return NGX_ERROR;
+  }
+
+  if (buf->pos == buf->last) {
+    return NGX_OK;
+  }
+
+  cl = ngx_chain_get_free_buf(p->pool, &p->free);
+  if (cl == NULL) {
+    return NGX_ERROR;
+  }
+
+  ssize_t bytes = buf->last - buf->pos;
+  if (bytes < 0) {
+    return NGX_ERROR;
+  }
+  ngx_log_debug3(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                 "esp: ngx_esp_upstream_input_filter called (r=%p, bytes=%d, "
+                 "http_connection=%p)",
+                 r, bytes, http_connection);
+
+  http_connection->response_body.write(reinterpret_cast<char *>(buf->pos),
+                                       bytes);
+  return NGX_OK;
+}
+
 // NGINX calls connections send_chain handler when it wants to send data to the
 // connection's client.
 // In our case, we don't have any client so we simply discard any data NGINX
@@ -1038,6 +1081,17 @@ Status initialize_upstream_request(ngx_log_t *log, HTTPRequest *request,
   upstream->process_header = ngx_esp_upstream_process_status_line;
   upstream->abort_request = ngx_esp_upstream_abort_request;
   upstream->finalize_request = ngx_esp_upstream_finalize_request;
+
+  // Fix for 1.15.0 compatibility issue
+  upstream->pipe =
+      (ngx_event_pipe_t *)ngx_pcalloc(request_pool, sizeof(ngx_event_pipe_t));
+  if (upstream->pipe == NULL) {
+    return Status(NGX_ERROR, "Out of memory");
+  }
+
+  upstream->pipe->input_filter = ngx_esp_upstream_pipe_input_filter;
+  upstream->pipe->input_ctx = r;
+  upstream->accel = 1;
 
   return Status::OK;
 }

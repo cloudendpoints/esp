@@ -44,16 +44,12 @@ nginx_suite(
     tests = glob(
         ["nginx-tests/*.t"],
         exclude = [
-            # limit_req.t is excluded from the test suite because we use 429
-            # instead of 503 as response status code
-            "nginx-tests/limit_req.t",
-            # ssl2.t is excluded from the test suite because boring ssl
-            # does not support SSL_get0_raw_cipherlist used by $ssl_ciphers
-            # variable required by the test.
-            "nginx-tests/ssl2.t",
-            # ssl_sni_reneg.t is excluded from the test suite because boring ssl
-            # does not support renegotiation feature required by the test.
-            "nginx-tests/ssl_sni_reneg.t",
+            # ssl.t, ssl_certificates.t, ssl_stapling are excluded from the
+            # test suite because boring ssl does not support renegotiation
+            # feature required by the test.
+            "nginx-tests/ssl.t",
+            "nginx-tests/ssl_certificates.t",
+            "nginx-tests/ssl_stapling.t",
         ],
     ),
     deps = [

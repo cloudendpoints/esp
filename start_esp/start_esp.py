@@ -149,7 +149,8 @@ def write_template(ingress, nginx_conf, args):
             cors_allow_credentials=args.cors_allow_credentials,
             cors_expose_headers=args.cors_expose_headers,
             ssl_protocols=args.ssl_protocols,
-            proxy_backend_host_header=args.proxy_backend_host_header,
+            experimental_proxy_backend_host_header=args.experimental_proxy_backend_host_header,
+            enable_strict_transport_security=args.enable_strict_transport_security,
             google_cloud_platform=(args.non_gcp==False))
 
     # Save nginx conf
@@ -520,7 +521,7 @@ config file.'''.format(
         header, Default value: {xff_trusted_proxy_list}'''.
         format(xff_trusted_proxy_list=DEFAULT_XFF_TRUSTED_PROXY_LIST))
 
-    parser.add_argument('--proxy_backend_host_header', default=None,
+    parser.add_argument('--experimental_proxy_backend_host_header', default=None,
         help='''Define the Host header value that overrides the incoming Host
         header for upstream request.''')
 
@@ -541,6 +542,10 @@ config file.'''.format(
 
     parser.add_argument('--enable_websocket', action='store_true',
         help='''Enable nginx WebSocket support.
+        ''')
+
+    parser.add_argument('--enable_strict_transport_security', action='store_true',
+        help='''Enable HSTS (HTTP Strict Transport Security).
         ''')
 
     parser.add_argument('--enable_debug', action='store_true',

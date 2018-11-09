@@ -147,6 +147,9 @@ extern ngx_module_t  ngx_http_uwsgi_module;
 #if (NGX_HTTP_SCGI)
 extern ngx_module_t  ngx_http_scgi_module;
 #endif
+#if (NGX_HTTP_GRPC)
+extern ngx_module_t  ngx_http_grpc_module;
+#endif
 #if 0
 extern ngx_module_t  ngx_http_perl_module;
 #endif
@@ -179,6 +182,9 @@ extern ngx_module_t  ngx_http_upstream_ip_hash_module;
 #endif
 #if (NGX_HTTP_UPSTREAM_LEAST_CONN)
 extern ngx_module_t  ngx_http_upstream_least_conn_module;
+#endif
+#if (NGX_HTTP_UPSTREAM_RANDOM)
+extern ngx_module_t  ngx_http_upstream_random_module;
 #endif
 #if (NGX_HTTP_UPSTREAM_KEEPALIVE)
 extern ngx_module_t  ngx_http_upstream_keepalive_module;
@@ -309,6 +315,9 @@ extern ngx_module_t  ngx_stream_upstream_hash_module;
 #if (NGX_STREAM_UPSTREAM_LEAST_CONN)
 extern ngx_module_t  ngx_stream_upstream_least_conn_module;
 #endif
+#if (NGX_STREAM_UPSTREAM_RANDOM)
+extern ngx_module_t  ngx_stream_upstream_random_module;
+#endif
 #if (NGX_STREAM_UPSTREAM_ZONE)
 extern ngx_module_t  ngx_stream_upstream_zone_module;
 #endif
@@ -436,6 +445,9 @@ ngx_module_t *ngx_modules[] = {
 #if (NGX_HTTP_SCGI)
     &ngx_http_scgi_module,
 #endif
+#if (NGX_HTTP_GRPC)
+    &ngx_http_grpc_module,
+#endif
 #if 0
     &ngx_http_perl_module,
 #endif
@@ -468,6 +480,9 @@ ngx_module_t *ngx_modules[] = {
 #endif
 #if (NGX_HTTP_UPSTREAM_LEAST_CONN)
     &ngx_http_upstream_least_conn_module,
+#endif
+#if (NGX_HTTP_UPSTREAM_RANDOM)
+    &ngx_http_upstream_random_module,
 #endif
 #if (NGX_HTTP_UPSTREAM_KEEPALIVE)
     &ngx_http_upstream_keepalive_module,
@@ -601,6 +616,9 @@ ngx_module_t *ngx_modules[] = {
 #if (NGX_STREAM_UPSTREAM_LEAST_CONN)
     &ngx_stream_upstream_least_conn_module,
 #endif
+#if (NGX_STREAM_UPSTREAM_RANDOM)
+    &ngx_stream_upstream_random_module,
+#endif
 #if (NGX_STREAM_UPSTREAM_ZONE)
     &ngx_stream_upstream_zone_module,
 #endif
@@ -730,6 +748,9 @@ char *ngx_module_names[] = {
 #if (NGX_HTTP_SCGI)
     "ngx_http_scgi_module",
 #endif
+#if (NGX_HTTP_GRPC)
+    "ngx_http_grpc_module",
+#endif
 #if 0
     "ngx_http_perl_module",
 #endif
@@ -762,6 +783,9 @@ char *ngx_module_names[] = {
 #endif
 #if (NGX_HTTP_UPSTREAM_LEAST_CONN)
     "ngx_http_upstream_least_conn_module",
+#endif
+#if (NGX_HTTP_UPSTREAM_RANDOM)
+    "ngx_http_upstream_random_module",
 #endif
 #if (NGX_HTTP_UPSTREAM_KEEPALIVE)
     "ngx_http_upstream_keepalive_module",
@@ -891,6 +915,9 @@ char *ngx_module_names[] = {
 #endif
 #if (NGX_STREAM_UPSTREAM_LEAST_CONN)
     "ngx_stream_upstream_least_conn_module",
+#endif
+#if (NGX_STREAM_UPSTREAM_RANDOM)
+    "ngx_stream_upstream_random_module",
 #endif
 #if (NGX_STREAM_UPSTREAM_ZONE)
     "ngx_stream_upstream_zone_module",
@@ -1069,6 +1096,9 @@ ngx_show_configure_options(void)
 #if !(NGX_HTTP_GEO)
     ngx_write_stderr(" --without-http_geo_module");
 #endif
+#if !(NGX_HTTP_GRPC)
+    ngx_write_stderr(" --without-http_grpc_module");
+#endif
 #if !(NGX_HTTP_GZIP_FILTER)
     ngx_write_stderr(" --without-http_gzip_module");
 #endif
@@ -1116,6 +1146,9 @@ ngx_show_configure_options(void)
 #endif
 #if !(NGX_HTTP_UPSTREAM_LEAST_CONN)
     ngx_write_stderr(" --without-http_upstream_least_conn_module");
+#endif
+#if !(NGX_HTTP_UPSTREAM_RANDOM)
+    ngx_write_stderr(" --without-http_upstream_random_module");
 #endif
 #if !(NGX_HTTP_UPSTREAM_ZONE)
     ngx_write_stderr(" --without-http_upstream_zone_module");
@@ -1180,6 +1213,9 @@ ngx_show_configure_options(void)
 #endif
 #if !(NGX_STREAM_UPSTREAM_LEAST_CONN)
     ngx_write_stderr(" --without-stream_upstream_least_conn_module");
+#endif
+#if !(NGX_STREAM_UPSTREAM_RANDOM)
+    ngx_write_stderr(" --without-stream_upstream_random_module");
 #endif
 #if !(NGX_STREAM_UPSTREAM_ZONE)
     ngx_write_stderr(" --without-stream_upstream_zone_module");
