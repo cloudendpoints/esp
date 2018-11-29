@@ -1031,7 +1031,9 @@ Status initialize_upstream_request(ngx_log_t *log, HTTPRequest *request,
   http_connection->upstream_conf.send_timeout = timeout;
   http_connection->upstream_conf.buffer_size = ngx_pagesize;
   http_connection->upstream_conf.busy_buffers_size = 2 * ngx_pagesize;
-  http_connection->upstream_conf.bufs.num = 8;
+  // This is the max response size: set it to 1MB
+  // It means the largest service config ESP can download is 1MB.
+  http_connection->upstream_conf.bufs.num = 256;
   http_connection->upstream_conf.bufs.size = ngx_pagesize;
   http_connection->upstream_conf.max_temp_file_size = 0;
   http_connection->upstream_conf.temp_file_write_size = 0;
