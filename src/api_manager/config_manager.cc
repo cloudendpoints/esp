@@ -25,6 +25,10 @@ const int kCheckNewRolloutInterval = 60000;
 
 const char kRolloutStrategyManaged[] = "managed";
 
+// This is for the precision of time based counter;
+// the higher the value is, the more precise.
+const int kWindowCounterSize = 10;
+
 // static configs for error handling
 static std::vector<std::pair<std::string, int>> kEmptyConfigs;
 }  // namespace anonymous
@@ -59,6 +63,12 @@ ConfigManager::~ConfigManager() {
 void ConfigManager::Init() {
   if (global_context_->rollout_strategy() == kRolloutStrategyManaged &&
       refresh_interval_ms_ > 0) {
+    // Counter window is 5 time of refresh_interval. It means
+    // only there is not any reqeuests in the last 5 intervals,
+    // stop checking rollout.
+    window_request_counter_.reset(new utils::TimeBasedCounter(
+        kWindowCounterSize, std::chrono::milliseconds(refresh_interval_ms_ * 5),
+        std::chrono::system_clock::now()));
     rollouts_refresh_timer_ = global_context_->env()->StartPeriodicTimer(
         std::chrono::milliseconds(refresh_interval_ms_),
         [this]() { OnRolloutsRefreshTimer(); });
@@ -66,6 +76,11 @@ void ConfigManager::Init() {
 }
 
 void ConfigManager::OnRolloutsRefreshTimer() {
+  // If there is not any requests in the last window, not to call.
+  if (window_request_counter_ &&
+      window_request_counter_->Count(std::chrono::system_clock::now()) == 0) {
+    return;
+  }
   GlobalFetchServiceAccountToken(global_context_, [this](utils::Status status) {
     if (!status.ok()) {
       global_context_->env()->LogError("Unexpected status: " +

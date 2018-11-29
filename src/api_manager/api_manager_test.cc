@@ -17,6 +17,7 @@
 #include "gtest/gtest.h"
 #include "src/api_manager/api_manager_impl.h"
 #include "src/api_manager/mock_api_manager_environment.h"
+#include "src/api_manager/mock_request.h"
 
 using ::testing::_;
 using ::testing::Invoke;
@@ -205,12 +206,12 @@ class MockPeriodicTimer : public PeriodicTimer {
  public:
   MockPeriodicTimer() {}
   MockPeriodicTimer(std::function<void()> continuation)
-      : continuation_(continuation) {
-    continuation_();
-  }
+      : continuation_(continuation) {}
 
   virtual ~MockPeriodicTimer() {}
   void Stop(){};
+
+  void Run() { continuation_(); }
 
  private:
   std::function<void()> continuation_;
@@ -223,7 +224,8 @@ class MockTimerApiManagerEnvironment : public MockApiManagerEnvironment {
 
   virtual std::unique_ptr<PeriodicTimer> StartPeriodicTimer(
       std::chrono::milliseconds interval, std::function<void()> continuation) {
-    return std::unique_ptr<PeriodicTimer>(new MockPeriodicTimer(continuation));
+    mock_periodic_timer_ = new MockPeriodicTimer(continuation);
+    return std::unique_ptr<PeriodicTimer>(mock_periodic_timer_);
   }
 
   MOCK_METHOD1(DoRunHTTPRequest, void(HTTPRequest *));
@@ -235,8 +237,11 @@ class MockTimerApiManagerEnvironment : public MockApiManagerEnvironment {
     DoRunGRPCRequest(req.get());
   }
 
+  void RunTimer() { mock_periodic_timer_->Run(); }
+
  private:
   std::unique_ptr<PeriodicTimer> periodic_timer_;
+  MockPeriodicTimer *mock_periodic_timer_;
 };
 
 class ApiManagerTest : public ::testing::Test {
@@ -375,6 +380,7 @@ TEST_F(ApiManagerTest, InitializedByConfigManager) {
 TEST_F(ApiManagerTest, ManagedRolloutStrategy) {
   std::unique_ptr<MockTimerApiManagerEnvironment> env(
       new ::testing::NiceMock<MockTimerApiManagerEnvironment>());
+  MockTimerApiManagerEnvironment *raw_env = env.get();
 
   EXPECT_CALL(*env.get(), DoRunHTTPRequest(_))
       .WillOnce(Invoke([this](HTTPRequest *req) {
@@ -407,6 +413,11 @@ TEST_F(ApiManagerTest, ManagedRolloutStrategy) {
   EXPECT_TRUE(api_manager->Enabled());
   EXPECT_EQ("2017-05-01r0", api_manager->service("2017-05-01r0").id());
 
+  // Send a request, otherwise, rollout is not checked.
+  std::unique_ptr<Request> mock_request(new ::testing::NiceMock<MockRequest>);
+  auto handler = api_manager->CreateRequestHandler(std::move(mock_request));
+
+  raw_env->RunTimer();
   auto service = api_manager->SelectService();
 
   EXPECT_TRUE(service);

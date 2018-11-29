@@ -23,12 +23,14 @@ cc_library(
     srcs = [
         "marshalling.cc",
         "status.cc",
+        "time_based_counter.cc",
         "url_util.cc",
         "version.cc",
     ],
     hdrs = [
         "marshalling.h",
         "stl_util.h",
+        "time_based_counter.h",
         "url_util.h",
     ],
     linkopts = select({
@@ -77,6 +79,19 @@ cc_test(
     size = "small",
     srcs = [
         "url_util_test.cc",
+    ],
+    linkstatic = 1,
+    deps = [
+        ":utils",
+        "//external:googletest_main",
+    ],
+)
+
+cc_test(
+    name = "time_based_counter_test",
+    size = "small",
+    srcs = [
+        "time_based_counter_test.cc",
     ],
     linkstatic = 1,
     deps = [
