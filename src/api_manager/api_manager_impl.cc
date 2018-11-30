@@ -309,6 +309,9 @@ bool ApiManagerImpl::ReWriteURL(const char *uri, const size_t uri_len,
 
 std::unique_ptr<RequestHandlerInterface> ApiManagerImpl::CreateRequestHandler(
     std::unique_ptr<Request> request_data) {
+  if (config_manager_) {
+    config_manager_->CountRequests(1);
+  }
   return std::unique_ptr<RequestHandlerInterface>(new RequestHandler(
       check_workflow_, SelectService(), std::move(request_data)));
 }

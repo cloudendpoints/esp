@@ -17,6 +17,7 @@
 
 #include "src/api_manager/context/global_context.h"
 #include "src/api_manager/service_management_fetch.h"
+#include "src/api_manager/utils/time_based_counter.h"
 
 namespace google {
 namespace api_manager {
@@ -81,6 +82,14 @@ class ConfigManager {
     current_rollout_id_ = rollout_id;
   }
 
+  // Count the requests to dynamically disable calling service_management
+  // if there is not any active requests within the last window.
+  void CountRequests(int n) {
+    if (window_request_counter_) {
+      window_request_counter_->Inc(n, std::chrono::system_clock::now());
+    }
+  }
+
  private:
   // Fetch the latest rollouts
   void FetchRollouts();
@@ -104,6 +113,8 @@ class ConfigManager {
   std::unique_ptr<PeriodicTimer> rollouts_refresh_timer_;
   // Previous rollouts id
   std::string current_rollout_id_;
+  // Time based window request counter
+  std::unique_ptr<utils::TimeBasedCounter> window_request_counter_;
 };
 
 }  // namespace api_manager

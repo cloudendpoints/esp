@@ -184,6 +184,7 @@ cc_test(
     size = "small",
     srcs = [
         "api_manager_test.cc",
+        "mock_request.h",
     ],
     data = glob(["testdata/*.json"]),
     linkstatic = 1,

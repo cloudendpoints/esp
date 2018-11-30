@@ -244,6 +244,7 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutSingleServiceConfig) {
 
   config_manager->Init();
   ASSERT_EQ(0, sequence);
+  config_manager->CountRequests(1);
   raw_env_->RunTimer();
   ASSERT_EQ(1, sequence);
 }
@@ -276,6 +277,7 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
 
   config_manager->Init();
   ASSERT_EQ(0, sequence);
+  config_manager->CountRequests(1);
   raw_env_->RunTimer();
   // callback should not be called
   ASSERT_EQ(0, sequence);
@@ -327,6 +329,7 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutMultipleServiceConfig) {
 
   config_manager->Init();
   ASSERT_EQ(0, sequence);
+  config_manager->CountRequests(1);
   raw_env_->RunTimer();
   ASSERT_EQ(1, sequence);
 }
@@ -395,6 +398,7 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
 
   config_manager->Init();
   ASSERT_EQ(0, sequence);
+  config_manager->CountRequests(1);
   raw_env_->RunTimer();
   // One of ServiceConfig download was failed. The callback should not be
   // invoked
@@ -456,6 +460,7 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutSingleServiceConfigUpdate) {
   config_manager->Init();
   // run first periodic timer
   ASSERT_EQ(0, sequence);
+  config_manager->CountRequests(1);
   raw_env_->RunTimer();
   // run second periodic timer
   ASSERT_EQ(1, sequence);
@@ -504,6 +509,7 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
   config_manager->Init();
   // run first periodic timer
   ASSERT_EQ(0, sequence);
+  config_manager->CountRequests(1);
   raw_env_->RunTimer();
   // run second periodic timer
   ASSERT_EQ(1, sequence);
