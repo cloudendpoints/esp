@@ -730,6 +730,7 @@ grpc_jwt_verifier_status JwtValidatorImpl::VerifyPubkeyEC() {
   BN_bin2bn(GRPC_SLICE_START_PTR(sig_buffer_) + 32, 32, ecdsa_sig_->s);
   if (ECDSA_do_verify(digest, SHA256_DIGEST_LENGTH, ecdsa_sig_, eck_) == 0) {
     gpr_log(GPR_ERROR, "JWT signature verification failed.");
+    ERR_clear_error();
     return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
   }
   return GRPC_JWT_VERIFIER_OK;
@@ -763,6 +764,7 @@ grpc_jwt_verifier_status JwtValidatorImpl::VerifyPubkeyRSA() {
   if (EVP_DigestVerifyFinal(md_ctx_, GRPC_SLICE_START_PTR(sig_buffer_),
                             GRPC_SLICE_LENGTH(sig_buffer_)) != 1) {
     gpr_log(GPR_ERROR, "JWT signature verification failed.");
+    ERR_clear_error();
     return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
   }
   return GRPC_JWT_VERIFIER_OK;
