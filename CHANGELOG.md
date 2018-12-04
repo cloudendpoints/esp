@@ -1,3 +1,17 @@
+# Release 1.27.0 04-12-2018
+
+- Fix grpc_web crash at sending trailers (#496)
+
+- Clear SSL errors if JWT signature validation fails (#494)
+
+- Not call service management rollouts if not traffic (#492)
+
+- Support downloading large service config (#491)
+
+- Move strict_tls_security header from server level to location level (#487)
+
+- Upgraded nginx to 1.15.0 (#447)
+
 # Release 1.26.0 29-10-2018
 
 - Correctly convert gRPC custom Status to JSON in transcoding. (#479)
