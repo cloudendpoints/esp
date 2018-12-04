@@ -97,6 +97,7 @@ POST /grpc.testing.TestService/UnaryCall HTTP/1.0
 Host: 127.0.0.1:${NginxPort}
 Content-Type: application/grpc-web
 x-api-key: api-key
+x-grpc-test-echo-trailing-bin: abcdef
 Content-Length: 8
 
 \x00\x00\x00\x00\x02\x10\x0a});
@@ -104,7 +105,8 @@ Content-Length: 8
 is(ApiManager::http_response_body($response),
 "\x00\x00\x00\x00\x10".
 "\x0a\x0e\x08\x00".
-"\x12\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x00\x00\x00\x10grpc-status: 0\x0d\x0a",
+"\x12\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x00\x00\x007grpc-status: 0\x0d\x0a".
+"x-grpc-test-echo-trailing-bin: abcdeQ\x0d\x0a",
 'UnaryCall returns OK.');
 
 $t->stop_daemons();

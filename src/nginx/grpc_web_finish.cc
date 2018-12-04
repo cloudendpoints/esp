@@ -241,7 +241,6 @@ ngx_int_t GrpcWebFinish(
     grpc_message = EncodesGrpcMessage(r, status.message(), &length);
     RETURN_IF_NULL(r, grpc_message, NGX_DONE,
                    "Failed to encode gRPC-Web message.");
-    grpc_status->next = grpc_message;
   }
 
   // Encodes GRPC trailers.
@@ -252,11 +251,12 @@ ngx_int_t GrpcWebFinish(
     RETURN_IF_NULL(
         r, trailers, NGX_DONE,
         "Failed to allocate ngx_chain_t for gRPC-Web custom trailers.");
+    trailers->buf = nullptr;
+    trailers->next = nullptr;
     trailers_last =
         EncodesGrpcCustomTrailers(r, response_trailers, trailers, &length);
     RETURN_IF_NULL(r, trailers_last, NGX_DONE,
                    "Failed to encode gRPC-Web custom trailers.");
-    grpc_message->next = trailers;
   }
 
   // Encodes GRPC trailer frame.
