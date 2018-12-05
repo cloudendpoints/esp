@@ -177,7 +177,7 @@ sub verify_report {
   }
 }
 
-# 1st call: Check is NOT called since api-key is not requird even it is provided
+# 1st call: Check is NOT called since api-key is not required even though it is provided
 # 2nd call: Check is NOT called since api-key is not required nor provided
 # 3rd call: Check is called since api-key is provided
 # 4th call: Check is NOT called since api-key is NOT provided
