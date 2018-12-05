@@ -88,7 +88,7 @@ control {
 usage {
   rules {
     selector: "ListShelves"
-    allow_unregistered_calls: true
+    allow_unregistered_calls: false
   }
 }
 `
