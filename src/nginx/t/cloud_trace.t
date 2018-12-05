@@ -46,7 +46,7 @@ my $CloudTracePort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(29);
 
-my $config = ApiManager::get_bookstore_service_config_allow_unregistered .
+my $config = ApiManager::get_bookstore_service_config_allow_some_unregistered .
     ApiManager::read_test_file('testdata/logs_metrics.pb.txt') . <<"EOF";
 producer_project_id: "api-manager-project"
 control {
