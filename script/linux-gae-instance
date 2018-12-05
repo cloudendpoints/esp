@@ -150,7 +150,7 @@ function download_nginx_error_logs() {
   gcloud config set project "${PROJECT}"
   gcloud logging read "resource.labels.project_id=${PROJECT} AND \
     resource.labels.version_id=${VERSION} AND \
-    logName=projects/${PROJECT}/logs/appengine.googleapis.com%2Fnginx.error" 2>&1 \
+    logName=projects/${PROJECT}/logs/appengine.googleapis.com%2Fnginx.error" --limit=1000 2>&1 \
     | tee "${NGINX_ERROR_LOG_FILE}"
 }
 
