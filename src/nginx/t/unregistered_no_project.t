@@ -43,7 +43,7 @@ my $NginxPort = ApiManager::pick_port();
 my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(34);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(31);
 
 $t->write_file('server_config.pb.txt', ApiManager::disable_service_control_cache);
 
@@ -177,26 +177,21 @@ sub verify_report {
   }
 }
 
-# 1st call: Check is called since api-key is provided
-# 2nd call: Check is NOT called since api-key is not provided
+# 1st call: Check is NOT called since api-key is not required even though it is provided
+# 2nd call: Check is NOT called since api-key is not required nor provided
 # 3rd call: Check is called since api-key is provided
 # 4th call: Check is NOT called since api-key is NOT provided
 # Report are called for all of them.
 my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
-is(scalar @servicecontrol_requests, 6, 'Service control was called 6 times.');
+is(scalar @servicecontrol_requests, 5, 'Service control was called 5 times.');
 
-my ($check1, $report1, $report2, $check3, $report3, $report4) = @servicecontrol_requests;
+my ($report1, $report2, $check3, $report3, $report4) = @servicecontrol_requests;
 
 # /shelves?key=this-is-an-api-key-1
-verify_check($check1,
-            '/shelves?key=this-is-an-api-key',
-            'ListShelves',
-            'api_key:this-is-an-api-key-1');
-
 verify_report($report1,
             '/shelves?key=this-is-an-api-key',
             'ListShelves',
-            'api_key:this-is-an-api-key-1');
+            undef);
 
 like($response1, qr/HTTP\/1\.1 200 OK/, 'Allow unregistered, provide API key - 200 OK');
 like($response1, qr/List of shelves\.$/, 'Allow unregistered, provide API key - body');

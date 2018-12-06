@@ -45,7 +45,7 @@ my $ServiceControlPort = ApiManager::pick_port();
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(18);
 
 # Save service name in the service configuration protocol buffer file.
-my $config = ApiManager::get_bookstore_service_config_allow_unregistered .
+my $config = ApiManager::get_bookstore_service_config_allow_some_unregistered .
              ApiManager::read_test_file('testdata/logs_metrics.pb.txt') . <<"EOF";
 control {
   environment: "http://127.0.0.1:${ServiceControlPort}"

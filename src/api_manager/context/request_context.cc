@@ -122,7 +122,8 @@ RequestContext::RequestContext(std::shared_ptr<ServiceContext> service_context,
   method_call_ =
       service_context_->GetMethodCallInfo(method, path, query_params);
 
-  if (method_call_.method_info) {
+  if (method_call_.method_info &&
+      !method_call_.method_info->allow_unregistered_calls()) {
     ExtractApiKey();
   }
   request_->FindHeader("referer", &http_referer_);

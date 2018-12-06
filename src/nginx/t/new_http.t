@@ -50,7 +50,7 @@ my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(22);
 
 # Save service name in the service configuration protocol buffer file.
 $t->write_file('service.pb.txt',
-               ApiManager::get_bookstore_service_config_allow_unregistered . <<"EOF");
+               ApiManager::get_bookstore_service_config_allow_some_unregistered . <<"EOF");
 control {
   environment: "http://127.0.0.1:${ServiceControlPort}"
 }
