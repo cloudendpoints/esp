@@ -442,7 +442,7 @@ Status Aggregated::GetStatistics(Statistics* esp_stat) const {
 }
 
 template <class RequestType>
-const std::string& Aggregated::GetApiReqeustUrl() {
+const std::string& Aggregated::GetApiRequestUrl() {
   if (typeid(RequestType) == typeid(CheckRequest)) {
     return url_.check_url();
   } else if (typeid(RequestType) == typeid(AllocateQuotaRequest)) {
@@ -509,7 +509,7 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
   std::shared_ptr<cloud_trace::CloudTraceSpan> trace_span(
       CreateChildSpan(parent_span, "Call ServiceControl server"));
 
-  const std::string& url = GetApiReqeustUrl<RequestType>();
+  const std::string& url = GetApiRequestUrl<RequestType>();
   TRACE(trace_span) << "Http request URL: " << url;
 
   std::unique_ptr<HTTPRequest> http_request(new HTTPRequest([url, response,

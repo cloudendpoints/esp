@@ -19,7 +19,7 @@ namespace api_manager {
 
 namespace {
 // The default HTTP request timeout in ms.
-const int kHttpReqestTimeout = 1000;
+const int kHttpRequestTimeout = 1000;
 // Maximum number of HTTP request retries
 const int kHttpRequestRetries = 5;
 
@@ -97,7 +97,7 @@ void ServiceManagementFetch::Call(const std::string& url,
   http_request->set_url(url)
       .set_method("GET")
       .set_auth_token(GetAuthToken())
-      .set_timeout_ms(kHttpReqestTimeout)
+      .set_timeout_ms(kHttpRequestTimeout)
       .set_max_retries(kHttpRequestRetries);
 
   global_context_->env()->RunHTTPRequest(std::move(http_request));

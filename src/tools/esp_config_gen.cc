@@ -65,7 +65,7 @@ void usage(const char *program) {
          "  --src <source file>\n"
          "    File with a serialized service config, text format or binary.\n"
          "  --dst <destination file>\n"
-         "    Ouptut file into which to save the processed service config.\n"
+         "    Output file into which to save the processed service config.\n"
          "  --service_name <service name>\n"
          "    Set a specific service name in the output config.\n"
          "  --service_control <service control address>\n"

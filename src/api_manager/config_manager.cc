@@ -64,7 +64,7 @@ void ConfigManager::Init() {
   if (global_context_->rollout_strategy() == kRolloutStrategyManaged &&
       refresh_interval_ms_ > 0) {
     // Counter window is 5 time of refresh_interval. It means
-    // only there is not any reqeuests in the last 5 intervals,
+    // only there is not any requests in the last 5 intervals,
     // stop checking rollout.
     window_request_counter_.reset(new utils::TimeBasedCounter(
         kWindowCounterSize, std::chrono::milliseconds(refresh_interval_ms_ * 5),

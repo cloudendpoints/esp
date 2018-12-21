@@ -119,7 +119,7 @@ is($response_body, <<'EOF', 'Shelves returned in the response body.');
 }
 EOF
 
-# Make sure that service-conrol check still works even though auth is disabled.
+# Make sure that service-control check still works even though auth is disabled.
 my $response = ApiManager::http_get($NginxPort,'/shelves');
 like($response,
   qr/HTTP\/1\.1 401 Unauthorized/, 'Returned HTTP 401, unregistered caller.');
