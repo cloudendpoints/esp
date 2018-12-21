@@ -48,7 +48,7 @@ my $ServiceManagementPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(42);
 
-# Save servce configuration that disables the report cache.
+# Save service configuration that disables the report cache.
 # Report request will be sent for each client request
 $t->write_file_expand('server.pb.txt', <<"EOF");
 service_control_config {
@@ -144,7 +144,7 @@ is( $t->waitforsocket("127.0.0.1:${ServiceManagementPort}"), 1,
 $t->run();
 
 ################################################################################
-# send the first reqeust 
+# send the first request
 my $response = ApiManager::http_get($NginxPort, '/shelves?key=this-is-an-api-key' );
 
 # verify the response

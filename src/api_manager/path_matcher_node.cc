@@ -70,7 +70,7 @@ typename Collection::value_type::second_type& LookupOrInsertNew(
   return ret.first->second;
 }
 
-// A convinent function to lookup a STL colllection with two keys.
+// A convinent function to lookup a STL collection with two keys.
 // Lookup key1 first, if not found, lookup key2, or return nullptr.
 template <class Collection>
 const typename Collection::value_type::second_type* Find2KeysOrNull(
