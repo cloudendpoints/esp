@@ -112,7 +112,7 @@ is($response_body, <<'EOF', 'Shelves returned in the response body.');
 EOF
 
 my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
-# Check was not called since no api_key and allow_unregisterd_call.
+# Check was not called since no api_key and allow_unregistered_calls.
 is(scalar @servicecontrol_requests, 1, 'Service control was called once');
 
 # :report

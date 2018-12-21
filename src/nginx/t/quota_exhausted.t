@@ -49,7 +49,7 @@ my $ServiceControlPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(22);
 
-# Save servce configuration that disables the report cache.
+# Save service configuration that disables the report cache.
 # Report request will be sent for each client request
 $t->write_file('server.pb.txt', <<"EOF");
 service_control_config {
@@ -176,7 +176,7 @@ is( scalar @requests, 1, 'Backend received empty request' );
 @requests = ApiManager::read_http_stream( $t, 'servicecontrol.log' );
 is( scalar @requests, 3, 'Service control received four requests' );
 
-# :check triggered by the first request and cached, the second requst read from
+# :check triggered by the first request and cached, the second request read from
 # cache
 my $r = shift @requests;
 is( $r->{verb}, 'POST', ':check verb was post' );
@@ -188,7 +188,7 @@ is( $r->{headers}->{'content-type'}, 'application/x-protobuf',
   ':check Content-Type was protocol buffer');
 
 # :allocateQuota request triggered by cache refresh module, then cached.
-# the second requst read from the cache
+# the second request read from the cache
 $r = shift @requests;
 is( $r->{verb}, 'POST', ':allocateQuota verb was post' );
 is( $r->{uri},

@@ -118,7 +118,7 @@ class Aggregated : public Interface {
 
   // Returns API request url based on RequestType
   template <class RequestType>
-  const std::string& GetApiReqeustUrl();
+  const std::string& GetApiRequestUrl();
 
   // Returns API request timeout in ms based on RequestType
   template <class RequestType>

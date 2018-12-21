@@ -91,7 +91,7 @@ http {
 }
 EOF
 
-# From maching-client-secret-symmetric.json
+# From matching-client-secret-symmetric.json
 my $key = "abcedfgabcdefg";
 
 $t->run_daemon(\&bookstore, $t, $BackendPort, 'bookstore.log');

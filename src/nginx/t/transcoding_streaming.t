@@ -112,24 +112,24 @@ $t->stop_daemons();
 
 # Check the requests that the backend has received
 my $initial_shelves_request_expected = {};
-my $bulk_shelves_reqeust1_expected = { 'shelf' => {'theme' => 'Classics'}};
-my $bulk_shelves_reqeust2_expected = { 'shelf' => {'theme' => 'Satire'}};
-my $bulk_shelves_reqeust3_expected = { 'shelf' => {'theme' => 'Russian'}};
-my $bulk_shelves_reqeust4_expected = { 'shelf' => {'theme' => 'Children'}};
-my $bulk_shelves_reqeust5_expected = { 'shelf' => {'theme' => 'Documentary'}};
-my $bulk_shelves_reqeust6_expected = { 'shelf' => {'theme' => 'Mystery'}};
+my $bulk_shelves_request1_expected = { 'shelf' => {'theme' => 'Classics'}};
+my $bulk_shelves_request2_expected = { 'shelf' => {'theme' => 'Satire'}};
+my $bulk_shelves_request3_expected = { 'shelf' => {'theme' => 'Russian'}};
+my $bulk_shelves_request4_expected = { 'shelf' => {'theme' => 'Children'}};
+my $bulk_shelves_request5_expected = { 'shelf' => {'theme' => 'Documentary'}};
+my $bulk_shelves_request6_expected = { 'shelf' => {'theme' => 'Mystery'}};
 my $final_shelves_request_expected = {};
 
 my $server_output = $t->read_file('server.log');
 my @server_requests = split /\r\n\r\n/, $server_output;
 
 ok(ApiManager::compare_json($server_requests[0], $initial_shelves_request_expected));
-ok(ApiManager::compare_json($server_requests[1], $bulk_shelves_reqeust1_expected));
-ok(ApiManager::compare_json($server_requests[2], $bulk_shelves_reqeust2_expected));
-ok(ApiManager::compare_json($server_requests[3], $bulk_shelves_reqeust3_expected));
-ok(ApiManager::compare_json($server_requests[4], $bulk_shelves_reqeust4_expected));
-ok(ApiManager::compare_json($server_requests[5], $bulk_shelves_reqeust5_expected));
-ok(ApiManager::compare_json($server_requests[6], $bulk_shelves_reqeust6_expected));
+ok(ApiManager::compare_json($server_requests[1], $bulk_shelves_request1_expected));
+ok(ApiManager::compare_json($server_requests[2], $bulk_shelves_request2_expected));
+ok(ApiManager::compare_json($server_requests[3], $bulk_shelves_request3_expected));
+ok(ApiManager::compare_json($server_requests[4], $bulk_shelves_request4_expected));
+ok(ApiManager::compare_json($server_requests[5], $bulk_shelves_request5_expected));
+ok(ApiManager::compare_json($server_requests[6], $bulk_shelves_request6_expected));
 ok(ApiManager::compare_json($server_requests[7], $final_shelves_request_expected));
 
 # Check responses
@@ -164,7 +164,7 @@ my $final_shelves_response_expected = {
 ok(ApiManager::verify_http_json_response($initial_shelves_response, $initial_shelves_response_expected),
                                          "Initial shelves response is good");
 ok(ApiManager::verify_http_json_response($bulk_shelves_response, $bulk_shelves_response_expected),
-                                         "Bulke create shelves response is good");
+                                         "Bulk create shelves response is good");
 ok(ApiManager::verify_http_json_response($final_shelves_response, $final_shelves_response_expected),
                                          "Final shelves response is good");
 

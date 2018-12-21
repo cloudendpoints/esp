@@ -46,7 +46,7 @@ my $ServiceControlPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(20);
 
-# Save servce configuration that disables the report cache.
+# Save service configuration that disables the report cache.
 # Report request will be sent for each client request
 $t->write_file_expand('server.pb.txt', <<"EOF");
 service_control_config {

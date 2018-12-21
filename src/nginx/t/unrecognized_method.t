@@ -39,7 +39,7 @@ use JSON::PP;
 
 ################################################################################
 
-# Port assigments
+# Port assignments
 my $NginxPort = ApiManager::pick_port();
 my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
