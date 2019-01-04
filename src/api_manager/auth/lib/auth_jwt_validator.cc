@@ -126,9 +126,9 @@ class JwtValidatorImpl : public JwtValidator {
   // it.
   grpc_jwt_verifier_status ExtractAndVerifyX509Keys();
   // Verifies signature with public key.
-  grpc_jwt_verifier_status VerifyPubkey();
-  grpc_jwt_verifier_status VerifyPubkeyRSA();
-  grpc_jwt_verifier_status VerifyPubkeyEC();
+  grpc_jwt_verifier_status VerifyPubkey(bool log_error);
+  grpc_jwt_verifier_status VerifyPubkeyRSA(bool log_error);
+  grpc_jwt_verifier_status VerifyPubkeyEC(bool log_error);
   // Verifies asymmetric signature, including RS256/384/512 and ES256.
   grpc_jwt_verifier_status VerifyAsymSignature(const char *pkey,
                                                size_t pkey_len);
@@ -489,7 +489,7 @@ grpc_jwt_verifier_status JwtValidatorImpl::ExtractAndVerifyX509Keys() {
               header_->kid);
       return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
     }
-    return VerifyPubkey();
+    return VerifyPubkey(true);
   }
   // If kid is not specified in the header, try all keys. If the JWT can be
   // validated with any of the keys, the request is successful.
@@ -504,7 +504,7 @@ grpc_jwt_verifier_status JwtValidatorImpl::ExtractAndVerifyX509Keys() {
       // Failed to extract public key from current X509 key, try next one.
       continue;
     }
-    if (VerifyPubkey() == GRPC_JWT_VERIFIER_OK) {
+    if (VerifyPubkey(false) == GRPC_JWT_VERIFIER_OK) {
       return GRPC_JWT_VERIFIER_OK;
     }
   }
@@ -586,11 +586,11 @@ grpc_jwt_verifier_status JwtValidatorImpl::ExtractAndVerifyJwkKeys(
     }
 
     if (header_->kid != nullptr) {
-      return VerifyPubkey();
+      return VerifyPubkey(true);
     }
     // If kid is not specified in the header, try all keys. If the JWT can be
     // validated with any of the keys, the request is successful.
-    if (VerifyPubkey() == GRPC_JWT_VERIFIER_OK) {
+    if (VerifyPubkey(false) == GRPC_JWT_VERIFIER_OK) {
       return GRPC_JWT_VERIFIER_OK;
     }
   }
@@ -696,17 +696,17 @@ grpc_jwt_verifier_status JwtValidatorImpl::VerifyAsymSignature(
   return FindAndVerifySignature();
 }
 
-grpc_jwt_verifier_status JwtValidatorImpl::VerifyPubkey() {
+grpc_jwt_verifier_status JwtValidatorImpl::VerifyPubkey(bool log_error) {
   if (strncmp(header_->alg, "RS", 2) == 0) {
-    return VerifyPubkeyRSA();
+    return VerifyPubkeyRSA(log_error);
   } else if (strncmp(header_->alg, "ES256", 5) == 0) {
-    return VerifyPubkeyEC();
+    return VerifyPubkeyEC(log_error);
   } else {
     return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
   }
 }
 
-grpc_jwt_verifier_status JwtValidatorImpl::VerifyPubkeyEC() {
+grpc_jwt_verifier_status JwtValidatorImpl::VerifyPubkeyEC(bool log_error) {
   if (eck_ == nullptr) {
     gpr_log(GPR_ERROR, "Cannot find eck.");
     return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
@@ -729,14 +729,16 @@ grpc_jwt_verifier_status JwtValidatorImpl::VerifyPubkeyEC() {
   BN_bin2bn(GRPC_SLICE_START_PTR(sig_buffer_), 32, ecdsa_sig_->r);
   BN_bin2bn(GRPC_SLICE_START_PTR(sig_buffer_) + 32, 32, ecdsa_sig_->s);
   if (ECDSA_do_verify(digest, SHA256_DIGEST_LENGTH, ecdsa_sig_, eck_) == 0) {
-    gpr_log(GPR_ERROR, "JWT signature verification failed.");
+    if (log_error) {
+      gpr_log(GPR_ERROR, "JWT signature verification failed.");
+    }
     ERR_clear_error();
     return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
   }
   return GRPC_JWT_VERIFIER_OK;
 }
 
-grpc_jwt_verifier_status JwtValidatorImpl::VerifyPubkeyRSA() {
+grpc_jwt_verifier_status JwtValidatorImpl::VerifyPubkeyRSA(bool log_error) {
   if (pkey_ == nullptr) {
     gpr_log(GPR_ERROR, "Cannot find public key.");
     return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
@@ -763,7 +765,9 @@ grpc_jwt_verifier_status JwtValidatorImpl::VerifyPubkeyRSA() {
   }
   if (EVP_DigestVerifyFinal(md_ctx_, GRPC_SLICE_START_PTR(sig_buffer_),
                             GRPC_SLICE_LENGTH(sig_buffer_)) != 1) {
-    gpr_log(GPR_ERROR, "JWT signature verification failed.");
+    if (log_error) {
+      gpr_log(GPR_ERROR, "JWT signature verification failed.");
+    }
     ERR_clear_error();
     return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
   }
