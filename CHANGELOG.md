@@ -1,3 +1,12 @@
+# Release 1.28.0 08-01-2019
+
+===============================================
+
+- Not log JWT error when trying multiple public keys (#511)
+
+- Not to extract api-key and use it if not required (#500)
+
+===============================================
 # Release 1.27.0 04-12-2018
 
 - Fix grpc_web crash at sending trailers (#496)
