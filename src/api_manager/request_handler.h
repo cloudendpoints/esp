@@ -43,6 +43,10 @@ class RequestHandler : public RequestHandlerInterface {
 
   virtual std::string GetBackendAddress() const;
 
+  virtual std::string GetBackendPath() const {
+    return context_->GetBackendPath();
+  };
+
   virtual std::string GetRpcMethodFullName() const;
 
   // Get the method info.

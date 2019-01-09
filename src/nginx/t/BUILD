@@ -190,6 +190,7 @@ nginx_suite(
         "auth_disabled.t",
         "auth_no_auth.t",
         "auth_no_pkey.t",
+        "backend_routing.t",
         "backend_url.t",
         "by_consumer_metrics.t",
         "check.t",

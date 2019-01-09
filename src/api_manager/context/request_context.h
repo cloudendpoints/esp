@@ -132,6 +132,9 @@ class RequestContext {
   // Return the authorization url.
   std::string GetAuthorizationUrl() const;
 
+  // Geth the backend path based on BackendRule from service config.
+  std::string GetBackendPath() const;
+
   // Set auth token to RuqestContext.
   void SetAuthToken(const std::string &token) { auth_token_ = token; }
 

@@ -383,6 +383,11 @@ std::string RequestContext::GetAuthorizationUrl() const {
   }
 }
 
+std::string RequestContext::GetBackendPath() const {
+  // TODO: implement this method, based on BackendRule.
+  return "";
+}
+
 }  // namespace context
 }  // namespace api_manager
 }  // namespace google
