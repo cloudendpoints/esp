@@ -113,6 +113,7 @@ void MethodInfoImpl::process_backend_rule(
   backend_address_ = rule.address();
   backend_path_translation_ = rule.path_translation();
   backend_jwt_audience_ = rule.jwt_audience();
+
   if (backend_path_translation_ ==
       ::google::api::BackendRule_PathTranslation_CONSTANT_ADDRESS) {
     // for CONSTANT ADDRESS case, needs to split the rule.address into
@@ -122,11 +123,13 @@ void MethodInfoImpl::process_backend_rule(
     // which is guaranteed by Inception during service deployment.
     string::size_type i = backend_address_.find("/");
     int j;
-    for (j = 0; j < 2 && i != string::npos; ++j) {
+    for (j = 0; j < 2; ++j) {
       i = backend_address_.find("/", i + 1);
     }
-    backend_path_ = backend_address_.substr(i);
-    backend_address_ = backend_address_.substr(0, i);
+    if (i != string::npos) {
+      backend_path_ = backend_address_.substr(i);
+      backend_address_ = backend_address_.substr(0, i);
+    }
   }
 }
 
