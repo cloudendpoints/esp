@@ -393,7 +393,7 @@ bool Config::LoadBackends(ApiManagerEnvInterface *env) {
         env->LogError(error.c_str());
         continue;
       }
-      (*method)->set_backend_address(rule.address());
+      (*method)->process_backend_rule(rule);
     } else {
       std::string error =
           "No method matching backend selector: " + rule.selector();

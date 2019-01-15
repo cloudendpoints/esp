@@ -49,7 +49,8 @@ $t->write_file('service.pb.txt', ApiManager::get_bookstore_service_config . <<"E
 backend {
   rules {
     selector: "ListShelves"
-    address: "127.0.0.1:$BackendPort"
+    address: "http://127.0.0.1:$BackendPort"
+    path_translation: APPEND_PATH_TO_ADDRESS
   }
 }
 control {
@@ -74,7 +75,7 @@ http {
         api service.pb.txt;
         on;
       }
-      proxy_pass http://\$backend_url;
+      proxy_pass \$backend_url;
     }
   }
 }
@@ -88,7 +89,7 @@ $t->run();
 
 ################################################################################
 
-# This one should be OK since there is backend rule specified for this path
+# PathTranslation is set as APPEND_PATH_TO_ADDRESS.
 my $response1 = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key');
 
 # This one should fail since there is not backend rule specified for this path

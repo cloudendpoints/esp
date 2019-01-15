@@ -16,9 +16,13 @@
 //
 
 #include "src/api_manager/context/request_context.h"
+#include "google/api/backend.pb.h"
+#include "google/protobuf/stubs/strutil.h"
 
 #include <uuid/uuid.h>
+#include <numeric>
 #include <sstream>
+#include <vector>
 
 using ::google::api_manager::utils::Status;
 
@@ -384,8 +388,52 @@ std::string RequestContext::GetAuthorizationUrl() const {
 }
 
 std::string RequestContext::GetBackendPath() const {
-  // TODO: implement this method, based on BackendRule.
-  return "";
+  if (method_call_.method_info == nullptr) {
+    return "";
+  }
+
+  if (*method_call_.method_info->backend_path_translation() ==
+      ::google::api::BackendRule_PathTranslation_APPEND_PATH_TO_ADDRESS) {
+    return "";
+  } else if (*method_call_.method_info->backend_path_translation() ==
+             ::google::api::BackendRule_PathTranslation_CONSTANT_ADDRESS) {
+    std::string variables;
+    for (std::vector<int>::size_type i = 0;
+         i != method_call_.variable_bindings.size(); i++) {
+      auto variable_binding = method_call_.variable_bindings[i];
+      if (variable_binding.field_path.size() == 1) {
+        variables += variable_binding.field_path[0];
+      } else if (variable_binding.field_path.size() > 1) {
+        variables = std::accumulate(variable_binding.field_path.begin(),
+                                    variable_binding.field_path.end(),
+                                    std::string("."));
+      }
+      variables.append("=");
+      variables.append(variable_binding.value);
+      if (i != method_call_.variable_bindings.size() - 1) {
+        variables.append("&");
+      }
+    }
+
+    if (variables != "") {
+      return method_call_.method_info->backend_path() + "?" + variables;
+    }
+    return method_call_.method_info->backend_path();
+  } else {
+    return "";
+  }
+}
+
+bool RequestContext::ShouldOverrideBackend() const {
+  if (method_call_.method_info == nullptr) {
+    return false;
+  }
+
+  if (*method_call_.method_info->backend_path_translation() ==
+      ::google::api::BackendRule_PathTranslation_PATH_TRANSLATION_UNSPECIFIED) {
+    return false;
+  }
+  return true;
 }
 
 }  // namespace context
