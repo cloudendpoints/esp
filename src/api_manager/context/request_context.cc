@@ -392,31 +392,30 @@ std::string RequestContext::GetBackendPath() const {
     return "";
   }
 
-  if (*method_call_.method_info->backend_path_translation() ==
+  if (method_call_.method_info->backend_path_translation() ==
       ::google::api::BackendRule_PathTranslation_APPEND_PATH_TO_ADDRESS) {
     return "";
-  } else if (*method_call_.method_info->backend_path_translation() ==
+  } else if (method_call_.method_info->backend_path_translation() ==
              ::google::api::BackendRule_PathTranslation_CONSTANT_ADDRESS) {
-    std::string variables;
-    for (std::vector<int>::size_type i = 0;
-         i != method_call_.variable_bindings.size(); i++) {
-      auto variable_binding = method_call_.variable_bindings[i];
+    std::string parameters;
+    for (std::size_t i = 0; i != method_call_.variable_bindings.size(); i++) {
+      auto &variable_binding = method_call_.variable_bindings[i];
       if (variable_binding.field_path.size() == 1) {
-        variables += variable_binding.field_path[0];
+        parameters += variable_binding.field_path[0];
       } else if (variable_binding.field_path.size() > 1) {
-        variables = std::accumulate(variable_binding.field_path.begin(),
-                                    variable_binding.field_path.end(),
-                                    std::string("."));
+        parameters = std::accumulate(variable_binding.field_path.begin(),
+                                     variable_binding.field_path.end(),
+                                     std::string("."));
       }
-      variables.append("=");
-      variables.append(variable_binding.value);
+      parameters.append("=");
+      parameters.append(variable_binding.value);
       if (i != method_call_.variable_bindings.size() - 1) {
-        variables.append("&");
+        parameters.append("&");
       }
     }
 
-    if (variables != "") {
-      return method_call_.method_info->backend_path() + "?" + variables;
+    if (parameters != "") {
+      return method_call_.method_info->backend_path() + "?" + parameters;
     }
     return method_call_.method_info->backend_path();
   } else {
@@ -429,7 +428,7 @@ bool RequestContext::ShouldOverrideBackend() const {
     return false;
   }
 
-  if (*method_call_.method_info->backend_path_translation() ==
+  if (method_call_.method_info->backend_path_translation() ==
       ::google::api::BackendRule_PathTranslation_PATH_TRANSLATION_UNSPECIFIED) {
     return false;
   }

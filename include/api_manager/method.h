@@ -84,7 +84,7 @@ class MethodInfo {
   // Get the backend path for this method.
   virtual const std::string &backend_path() const = 0;
 
-  virtual const ::google::api::BackendRule_PathTranslation *
+  virtual const ::google::api::BackendRule_PathTranslation
   backend_path_translation() const = 0;
 
   // Get the RPC method full name. The full name has the following form:

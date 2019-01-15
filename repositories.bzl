@@ -538,6 +538,8 @@ cc_proto_library(
 )
 """.format(protobuf_repo)
 
+    # Update the SHA due to backend.proto updates, to support
+    # backend routing.
     native.new_git_repository(
         name = "googleapis_git",
         commit = "bf12fe4fd40797ab6701555cdff0bac4c18374e8",  # Jan 15, 2019

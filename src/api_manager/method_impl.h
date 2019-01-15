@@ -72,9 +72,9 @@ class MethodInfoImpl : public MethodInfo {
 
   const std::string &backend_path() const { return backend_path_; }
 
-  const ::google::api::BackendRule_PathTranslation *backend_path_translation()
+  const ::google::api::BackendRule_PathTranslation backend_path_translation()
       const {
-    return &backend_path_translation_;
+    return backend_path_translation_;
   }
 
   const std::string &backend_jwt_audience() const {

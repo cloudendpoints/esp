@@ -99,13 +99,13 @@ $t->run();
 
 ################################################################################
 
-# PathTranslation is set as APPEND_PATH_TO_ADDRESS.
+# PathTranslation is set as CONSTANT_ADDRESS.
 my $response1 = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key');
 
-# PathTranslation is set as APPEND_PATH_TO_ADDRESS, with binding variables.
+# PathTranslation is set as CONSTANT_ADDRESS, with binding variables.
 my $response2 = ApiManager::http_get($NginxPort,'/shelves/123/books?key=this-is-an-api-key');
 
-# PathTranslation is set as APPEND_PATH_TO_ADDRESS, with binding variables and parameters.
+# PathTranslation is set as CONSTANT_ADDRESS, with binding variables and parameters.
 my $response3 = ApiManager::http_get($NginxPort,'/shelves/123/books/1234?key=this-is-an-api-key&timezone=EST');
 
 $t->stop_daemons();

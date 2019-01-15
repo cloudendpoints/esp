@@ -134,13 +134,13 @@ TEST(MethodInfo, PreservesBackendAddress) {
 TEST(MethodInfo, PreservesBackendAddress_Constant) {
   MethodInfoImplPtr method_info(new MethodInfoImpl(kMethodName, "", ""));
   ::google::api::BackendRule rule;
-  rule.set_address("https://example.cloudfunctions.net/getUser");
+  rule.set_address("http://example.cloudfunctions.net/getUser");
   rule.set_path_translation(
       ::google::api::BackendRule_PathTranslation_CONSTANT_ADDRESS);
   rule.set_jwt_audience("test_audience");
   method_info->process_backend_rule(rule);
   ASSERT_EQ(method_info->backend_address(),
-            "https://example.cloudfunctions.net");
+            "http://example.cloudfunctions.net");
   ASSERT_EQ(method_info->backend_path(), "/getUser");
   ASSERT_EQ(*method_info->backend_path_translation(),
             ::google::api::BackendRule_PathTranslation_CONSTANT_ADDRESS);
