@@ -98,6 +98,16 @@ DEFAULT_WORKER_PROCESSES = "1"
 # Google default application credentials environment variable
 GOOGLE_CREDS_KEY = "GOOGLE_APPLICATION_CREDENTIALS"
 
+# Default access log location
+DEFAULT_ACCESS_LOG = "/dev/stdout"
+
+# Default client body buffer size
+DEFAULT_CLIENT_BODY_BUFFER_SIZE = "128k"
+
+# Default maxinum client body size
+DEFAULT_CLIENT_MAX_BODY_SIZE = "32m"
+
+
 Port = collections.namedtuple('Port',
         ['port', 'proto'])
 Location = collections.namedtuple('Location',
@@ -560,7 +570,7 @@ config file.'''.format(
         "localhost" and valid for 10 years.
         ''')
 
-    parser.add_argument('--client_max_body_size', default='32m', help='''
+    parser.add_argument('--client_max_body_size', default=DEFAULT_CLIENT_MAX_BODY_SIZE, help='''
     Sets the maximum allowed size of the client request body, specified
     in the "Content-Length" request header field. If the size in a request
     exceeds the configured value, the 413 (Request Entity Too Large) error
@@ -568,7 +578,7 @@ config file.'''.format(
     display this error. Setting size to 0 disables checking of client request
     body size.''')
 
-    parser.add_argument('--client_body_buffer_size', default='128k', help='''
+    parser.add_argument('--client_body_buffer_size', default=DEFAULT_CLIENT_BODY_BUFFER_SIZE, help='''
     Sets buffer size for reading client request body. In case the request
     body is larger than the buffer, the whole body or only its part is
     written to a temporary file.''')
@@ -651,7 +661,7 @@ config file.'''.format(
 
     # Access log destination. Use special value 'off' to disable.
     parser.add_argument('--access_log',
-        default='/dev/stdout',
+        default=DEFAULT_ACCESS_LOG,
         help=argparse.SUPPRESS)
 
     # PID file location.
@@ -756,22 +766,22 @@ config file.'''.format(
         SSL protocols (e.g., --ssl_protocols=TLSv1.1 --ssl_protocols=TLSv1.2).
         ''')
     parser.add_argument('--generate_config_file_only', action='store_true',
-        help='''Only generate the nginx config file without running ESP. This option is 
+        help='''Only generate the nginx config file without running ESP. This option is
         for testing that the generated nginx config file is as expected.
         ''')
     parser.add_argument('--server_config_generation_path',
         default=None, help='''
         Define where to write the server configuration file(s). For a single server
-        configuration file, this must be a file name. 
+        configuration file, this must be a file name.
         When --experimental_enable_multiple_api_configs is enabled, to write multiple server
-        configuration files, this must be a directory path that ends with a '/'. 
+        configuration files, this must be a directory path that ends with a '/'.
         When --generate_config_file_only is used but
         --server_config_generation_path is absent, the server configuration file generation
         is skipped.
         ''')
     parser.add_argument('--experimental_enable_multiple_api_configs', action='store_true',
                         help='''
-        Enable an experimental feature that proxies multiple Endpoints services. 
+        Enable an experimental feature that proxies multiple Endpoints services.
         By default, this feature is disabled.
         ''')
 
@@ -780,18 +790,101 @@ config file.'''.format(
         default=None,
         help=argparse.SUPPRESS)
 
+    parser.add_argument('--enable_backend_routing',
+        action='store_true', help='''
+        Enables the nginx proxy to route requests according to the `x-google-backend` or
+        `backend` configuration. This flag conflicts with a few of other flags.
+        ''')
+
     return parser
 
+# Check whether there are conflict flags. If so, return the error string. Otherwise returns None.
+# This function also changes some default flag value.
+def enforce_conflict_args(args):
+    if args.generate_config_file_only:
+        if args.nginx_config:
+            return "--nginx_config is not allowed when --generate_config_file_only"
+
+    if args.enable_backend_routing:
+        if args.cloud_trace_url_override:
+            return "Flag --enable_backend_routing cannot be used together with --cloud_trace_url_override."
+        if args.experimental_enable_multiple_api_configs:
+            return "Flag --enable_backend_routing cannot be used together with --experimental_enable_multiple_api_configs."
+        if args.disable_cloud_trace_auto_sampling:
+            return "Flag --enable_backend_routing cannot be used together with --disable_cloud_trace_auto_sampling."
+        if args.non_gcp:
+            return "Flag --enable_backend_routing cannot be used together with --non_gcp."
+        if args.transcoding_always_print_primitive_fields:
+            return "Flag --enable_backend_routing cannot be used together with --transcoding_always_print_primitive_fields."
+        if args.pid_file != DEFAULT_PID_FILE:
+            return "Flag --enable_backend_routing cannot be used together with --pid_file."
+        if args.access_log != DEFAULT_ACCESS_LOG:
+            return "Flag --enable_backend_routing cannot be used together with --access_log."
+        if args.nginx_debug != NGINX_DEBUG:
+            return "Flag --enable_backend_routing cannot be used together with --nginx_debug."
+        if args.nginx != NGINX:
+            return "Flag --enable_backend_routing cannot be used together with --nginx."
+        if args.server_config_template != SERVER_CONF_TEMPLATE:
+            return "Flag --enable_backend_routing cannot be used together with --server_config_template."
+        if args.template != NGINX_CONF_TEMPLATE:
+            return "Flag --enable_backend_routing cannot be used together with --template."
+        if args.config_dir != CONFIG_DIR:
+            return "Flag --enable_backend_routing cannot be used together with --config_dir."
+        if args.service_control_url_override:
+            return "Flag --enable_backend_routing cannot be used together with --service_control_url_override."
+        if args.management != MANAGEMENT_ADDRESS:
+            return "Flag --enable_backend_routing cannot be used together with --management."
+        if args.metadata != METADATA_ADDRESS:
+            return "Flag --enable_backend_routing cannot be used together with --metadata."
+        if args.service_json_path:
+            return "Flag --enable_backend_routing cannot be used together with --service_json_path."
+        if args.worker_processes != DEFAULT_WORKER_PROCESSES:
+            return "Flag --enable_backend_routing cannot be used together with --worker_processes."
+        if args.rewrite:
+            return "Flag --enable_backend_routing cannot be used together with --rewrite."
+        if args.client_body_buffer_size != DEFAULT_CLIENT_BODY_BUFFER_SIZE:
+            return "Flag --enable_backend_routing cannot be used together with --client_body_buffer_size."
+        if args.client_max_body_size != DEFAULT_CLIENT_MAX_BODY_SIZE:
+            return "Flag --enable_backend_routing cannot be used together with --client_max_body_size."
+        if args.generate_self_signed_cert:
+            return "Flag --enable_backend_routing cannot be used together with --generate_self_signed_cert."
+        if args.enable_strict_transport_security:
+            return "Flag --enable_backend_routing cannot be used together with --enable_strict_transport_security."
+        if args.enable_websocket:
+            return "Flag --enable_backend_routing cannot be used together with --enable_websocket."
+        if args.allow_invalid_headers:
+            return "Flag --enable_backend_routing cannot be used together with --allow_invalid_headers."
+        if args.underscores_in_headers:
+            return "Flag --enable_backend_routing cannot be used together with --underscores_in_headers."
+        if args.experimental_proxy_backend_host_header:
+            return "Flag --enable_backend_routing cannot be used together with --experimental_proxy_backend_host_header."
+        if args.xff_trusted_proxy_list != DEFAULT_XFF_TRUSTED_PROXY_LIST:
+            return "Flag --enable_backend_routing cannot be used together with -x or --xff_trusted_proxy_list."
+        if args.healthz:
+            return "Flag --enable_backend_routing cannot be used together with -z or --healthz."
+        if args.tls_mutual_auth:
+            return "Flag --enable_backend_routing cannot be used together with -t or --tls_mutual_auth."
+        if args.backend != DEFAULT_BACKEND:
+            return "Flag --enable_backend_routing cannot be used together with -a or --backend."
+        if args.status_port != DEFAULT_STATUS_PORT:
+            return "Flag --enable_backend_routing cannot be used together with -N or --status_port."
+        if args.nginx_config:
+            return "Flag --enable_backend_routing cannot be used together with -n or --nginx_config."
+
+        # When --enable_backend_routing is specified, set some default value to some of its conflicting flags.
+        args.disable_cloud_trace_auto_sampling = True
+        args.access_log = 'off'
+    return None
 
 if __name__ == '__main__':
     parser = make_argparser()
     args = parser.parse_args()
     logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
-    if args.generate_config_file_only:
-        if args.nginx_config:
-            logging.error("--nginx_config is not allowed when --generate_config_file_only")
-            sys.exit(3)
+    check_conflict_result = enforce_conflict_args(args)
+    if check_conflict_result:
+        logging.error(check_conflict_result)
+        sys.exit(3)
 
     if args.service and '|' in args.service:
         if args.experimental_enable_multiple_api_configs == False:
