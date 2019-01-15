@@ -115,10 +115,11 @@ void MethodInfoImpl::process_backend_rule(
   backend_jwt_audience_ = rule.jwt_audience();
   if (backend_path_translation_ ==
       ::google::api::BackendRule_PathTranslation_CONSTANT_ADDRESS) {
-    // for CONSTANT ADDRESS case, need to split the rule.address into
+    // for CONSTANT ADDRESS case, needs to split the rule.address into
     // address and path. Example: "https://example.cloudfunctions.net/getUser"
-    // should be split to "https://example.cloudfunctions.net/getUser" and
-    // "/getUser". The input format is guaranteed by Inception.
+    // should be split to "https://example.cloudfunctions.net" and
+    // "/getUser". The backend address must contain protocol, host and uri,
+    // which is guaranteed by Inception during service deployment.
     string::size_type i = backend_address_.find("/");
     int j;
     for (j = 0; j < 2 && i != string::npos; ++j) {
