@@ -104,7 +104,39 @@ void ngx_esp_rewrite_uri(ngx_http_request_t *r, ngx_esp_loc_conf_t *lc) {
     std::size_t found = unparsed_uri.find_first_of('?');
     if (found != std::string::npos) {
       std::string uri;
+
       url_decode(unparsed_uri.substr(0, unparsed_uri.find_first_of('?')), uri);
+      ngx_str_copy_from_std(r->pool, uri, &r->uri);
+    }
+  }
+}
+
+// Override the backend path, in order to support backend routing. For more
+// information, please refer to
+// https://github.com/googleapis/googleapis/blob/master/google/api/backend.proto#L36
+void ngx_esp_override_backend_path(ngx_http_request_t *r,
+                                   ngx_esp_request_ctx_t *ctx) {
+  if (!ctx->request_handler->ShouldOverrideBackend()) {
+    return;
+  }
+
+  std::string backend_path = ctx->request_handler->GetBackendPath();
+  if (!backend_path.empty()) {
+    ngx_log_debug1(
+        NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+        "esp: override backend path to: %s, according to backend rule.",
+        backend_path.c_str());
+
+    ngx_str_copy_from_std(r->pool, backend_path, &r->unparsed_uri);
+    ngx_str_copy_from_std(r->pool,
+                          ngx_str_to_std(r->method_name) + " " + backend_path +
+                              " " + ngx_str_to_std(r->http_protocol),
+                          &r->request_line);
+
+    std::size_t found = backend_path.find_first_of('?');
+    if (found != std::string::npos) {
+      std::string uri;
+      url_decode(backend_path.substr(0, backend_path.find_first_of('?')), uri);
       ngx_str_copy_from_std(r->pool, uri, &r->uri);
     }
   }
@@ -679,12 +711,14 @@ Status ngx_http_esp_access_handler(ngx_http_request_t *r) {
     return Status(NGX_ERROR, "Missing esp request context.");
   }
 
-  std::string backend_address = ctx->request_handler->GetBackendAddress();
-  if (!backend_address.empty()) {
-    ngx_str_copy_from_std(r->pool, backend_address, &ctx->backend_url);
-    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                   "esp: use service config backend address: %V",
-                   &ctx->backend_url);
+  if (ctx->request_handler->ShouldOverrideBackend()) {
+    std::string backend_address = ctx->request_handler->GetBackendAddress();
+    if (!backend_address.empty()) {
+      ngx_str_copy_from_std(r->pool, backend_address, &ctx->backend_url);
+      ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                     "esp: use service config backend address: %V",
+                     &ctx->backend_url);
+    }
   }
 
   if (ctx->current_access_handler == nullptr) {
@@ -713,6 +747,10 @@ Status ngx_http_esp_access_handler(ngx_http_request_t *r) {
         if (ctx->current_access_handler != nullptr) {
           wakeup_client_request(r, ctx);
         }
+
+        // Override the backend path if needed, according to service config
+        // BackendRule. This is to support backend routing.
+        ngx_esp_override_backend_path(r, ctx);
       }
     });
 

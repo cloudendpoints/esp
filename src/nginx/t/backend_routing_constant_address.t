@@ -41,15 +41,26 @@ my $NginxPort = ApiManager::pick_port();
 my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(5);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(8);
 
 # Save service name in the service configuration protocol buffer file.
 
-$t->write_file('service.pb.txt', ApiManager::get_bookstore_service_config . <<"EOF");
+$t->write_file('service.pb.txt', ApiManager::get_bookstore_service_config_allow_all_http_requests . <<"EOF");
 backend {
   rules {
     selector: "ListShelves"
-    address: "127.0.0.1:$BackendPort"
+    address: "http://127.0.0.1:$BackendPort/listShelves"
+    path_translation: CONSTANT_ADDRESS
+  }
+  rules {
+    selector: "ListBooks"
+    address: "http://127.0.0.1:$BackendPort/listBooks"
+    path_translation: CONSTANT_ADDRESS
+  }
+  rules {
+    selector: "GetBook"
+    address: "http://127.0.0.1:$BackendPort/getBook"
+    path_translation: CONSTANT_ADDRESS
   }
 }
 control {
@@ -74,7 +85,7 @@ http {
         api service.pb.txt;
         on;
       }
-      proxy_pass http://\$backend_url;
+      proxy_pass \$backend_url;
     }
   }
 }
@@ -88,16 +99,18 @@ $t->run();
 
 ################################################################################
 
-# This one should be OK since there is backend rule specified for this path
+# PathTranslation is set as CONSTANT_ADDRESS.
 my $response1 = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key');
 
-# This one should fail since there is not backend rule specified for this path
-my $response2 = ApiManager::http_get($NginxPort,'/shelves/1?key=this-is-an-api-key');
+# PathTranslation is set as CONSTANT_ADDRESS, with binding variables.
+my $response2 = ApiManager::http_get($NginxPort,'/shelves/123/books?key=this-is-an-api-key');
+
+# PathTranslation is set as CONSTANT_ADDRESS, with binding variables and parameters.
+my $response3 = ApiManager::http_get($NginxPort,'/shelves/123/books/1234?key=this-is-an-api-key&timezone=EST');
 
 $t->stop_daemons();
 
 my ($response_headers1, $response_body1) = split /\r\n\r\n/, $response1, 2;
-
 like($response_headers1, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');
 is($response_body1, <<'EOF', 'Shelves returned in the response body.');
 { "shelves": [
@@ -108,8 +121,19 @@ is($response_body1, <<'EOF', 'Shelves returned in the response body.');
 EOF
 
 my ($response_headers2, $response_body2) = split /\r\n\r\n/, $response2, 2;
+like($response_headers2, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');
+is($response_body2, <<'EOF', 'Shelves returned in the response body.');
+{ "books": [
+    { "id": "1234", "titie": "Fiction" }
+  ]
+}
+EOF
 
-like($response_headers2, qr/HTTP\/1\.1 500 Internal Server Error/, 'Returned HTTP 500.');
+my ($response_headers3, $response_body3) = split /\r\n\r\n/, $response3, 2;
+like($response_headers3, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');
+is($response_body3, <<'EOF', 'Shelves returned in the response body.');
+{ "id": "1234", "titie": "Fiction" }
+EOF
 
 ################################################################################
 
@@ -119,7 +143,7 @@ sub bookstore {
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
 
-  $server->on('GET', '/shelves?key=this-is-an-api-key', <<'EOF');
+  $server->on('GET', '/listShelves', <<'EOF');
 HTTP/1.1 200 OK
 Connection: close
 
@@ -129,6 +153,24 @@ Connection: close
   ]
 }
 EOF
+
+  $server->on('GET', '/listBooks?shelf=123', <<'EOF');
+HTTP/1.1 200 OK
+Connection: close
+
+{ "books": [
+    { "id": "1234", "titie": "Fiction" }
+  ]
+}
+EOF
+
+  $server->on('GET', '/getBook?shelf=123&book=1234&timezone=EST', <<'EOF');
+HTTP/1.1 200 OK
+Connection: close
+
+{ "id": "1234", "titie": "Fiction" }
+EOF
+
   $server->run();
 }
 

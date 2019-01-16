@@ -132,6 +132,14 @@ class RequestContext {
   // Return the authorization url.
   std::string GetAuthorizationUrl() const;
 
+  // Get the backend uri based on BackendRule from service config.
+  // For more information, refer to
+  // https://github.com/googleapis/googleapis/blob/master/google/api/backend.proto#L41
+  std::string GetBackendPath() const;
+
+  // Get whether needs to override the backend or not.
+  bool ShouldOverrideBackend() const;
+
   // Set auth token to RuqestContext.
   void SetAuthToken(const std::string &token) { auth_token_ = token; }
 

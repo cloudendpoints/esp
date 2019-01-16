@@ -50,15 +50,21 @@ class RequestHandlerInterface {
   // Get the backend address.
   virtual std::string GetBackendAddress() const = 0;
 
+  // Get the backend path to support backend routing.
+  virtual std::string GetBackendPath() const = 0;
+
+  // Get whether esp needs to override backend according to service config.
+  virtual bool ShouldOverrideBackend() const = 0;
+
   // Get the full name of the RPC method in the "/<API name>/<method name>"
   // form.
   virtual std::string GetRpcMethodFullName() const = 0;
 
   // Get the method info.
-  virtual const MethodInfo *method() const = 0;
+  virtual const MethodInfo* method() const = 0;
 
   // Get the method info.
-  virtual const MethodCallInfo *method_call() const = 0;
+  virtual const MethodCallInfo* method_call() const = 0;
 
   // Return the authorization url if authentication fails.
   virtual std::string GetAuthorizationUrl() const = 0;

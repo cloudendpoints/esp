@@ -124,8 +124,65 @@ TEST(MethodInfo, TestParameters) {
 
 TEST(MethodInfo, PreservesBackendAddress) {
   MethodInfoImplPtr method_info(new MethodInfoImpl(kMethodName, "", ""));
-  method_info->set_backend_address("backend");
+  ::google::api::BackendRule rule;
+  rule.set_address("backend");
+  method_info->process_backend_rule(rule);
   ASSERT_EQ(method_info->backend_address(), "backend");
+  ASSERT_EQ(method_info->backend_jwt_audience(), "");
+}
+
+TEST(MethodInfo, PreservesBackendAddress_Constant1) {
+  MethodInfoImplPtr method_info(new MethodInfoImpl(kMethodName, "", ""));
+  ::google::api::BackendRule rule;
+  rule.set_address("http://example.cloudfunctions.net/getUser");
+  rule.set_path_translation(
+      ::google::api::BackendRule_PathTranslation_CONSTANT_ADDRESS);
+  rule.set_jwt_audience("test_audience");
+  method_info->process_backend_rule(rule);
+  ASSERT_EQ(method_info->backend_address(),
+            "http://example.cloudfunctions.net");
+  ASSERT_EQ(method_info->backend_path(), "/getUser");
+  ASSERT_EQ(method_info->backend_path_translation(),
+            ::google::api::BackendRule_PathTranslation_CONSTANT_ADDRESS);
+  ASSERT_EQ(method_info->backend_jwt_audience(), "test_audience");
+}
+
+TEST(MethodInfo, PreservesBackendAddress_Constant2) {
+  MethodInfoImplPtr method_info(new MethodInfoImpl(kMethodName, "", ""));
+  ::google::api::BackendRule rule;
+  rule.set_address("http://example.cloudfunctions.net");
+  rule.set_path_translation(
+      ::google::api::BackendRule_PathTranslation_CONSTANT_ADDRESS);
+  method_info->process_backend_rule(rule);
+  ASSERT_EQ(method_info->backend_address(),
+            "http://example.cloudfunctions.net");
+  ASSERT_EQ(method_info->backend_path(), "");
+}
+
+TEST(MethodInfo, PreservesBackendAddress_Constant3) {
+  MethodInfoImplPtr method_info(new MethodInfoImpl(kMethodName, "", ""));
+  ::google::api::BackendRule rule;
+  rule.set_address("backend");
+  rule.set_path_translation(
+      ::google::api::BackendRule_PathTranslation_CONSTANT_ADDRESS);
+  method_info->process_backend_rule(rule);
+  ASSERT_EQ(method_info->backend_address(), "backend");
+  ASSERT_EQ(method_info->backend_path(), "");
+}
+
+TEST(MethodInfo, PreservesBackendAddress_Append) {
+  MethodInfoImplPtr method_info(new MethodInfoImpl(kMethodName, "", ""));
+  ::google::api::BackendRule rule;
+  rule.set_address("https://example.appspot.com");
+  rule.set_path_translation(
+      ::google::api::BackendRule_PathTranslation_APPEND_PATH_TO_ADDRESS);
+  rule.set_jwt_audience("test_audience");
+  method_info->process_backend_rule(rule);
+  ASSERT_EQ(method_info->backend_address(), "https://example.appspot.com");
+  ASSERT_EQ(method_info->backend_path(), "");
+  ASSERT_EQ(method_info->backend_path_translation(),
+            ::google::api::BackendRule_PathTranslation_APPEND_PATH_TO_ADDRESS);
+  ASSERT_EQ(method_info->backend_jwt_audience(), "test_audience");
 }
 
 }  // namespace

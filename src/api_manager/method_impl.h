@@ -20,6 +20,7 @@
 #include <set>
 #include <vector>
 
+#include "google/api/backend.pb.h"
 #include "include/api_manager/method.h"
 #include "src/api_manager/utils/stl_util.h"
 
@@ -69,6 +70,17 @@ class MethodInfoImpl : public MethodInfo {
 
   const std::string &backend_address() const { return backend_address_; }
 
+  const std::string &backend_path() const { return backend_path_; }
+
+  const ::google::api::BackendRule_PathTranslation backend_path_translation()
+      const {
+    return backend_path_translation_;
+  }
+
+  const std::string &backend_jwt_audience() const {
+    return backend_jwt_audience_;
+  }
+
   const std::vector<std::pair<std::string, int>> &metric_cost_vector() const {
     return metric_cost_vector_;
   }
@@ -114,9 +126,7 @@ class MethodInfoImpl : public MethodInfo {
 
   void set_selector(const std::string &selector) { selector_ = selector; }
 
-  void set_backend_address(const std::string &address) {
-    backend_address_ = address;
-  }
+  void process_backend_rule(const ::google::api::BackendRule &rule);
 
   void set_rpc_method_full_name(std::string rpc_method_full_name) {
     rpc_method_full_name_ = std::move(rpc_method_full_name);
@@ -179,8 +189,12 @@ class MethodInfoImpl : public MethodInfo {
 
   const std::vector<std::string> *api_key_url_query_parameters_;
 
-  // The backend address for this method.
+  // The backend address, backend path, path_translation and jwt audience for
+  // this method.
   std::string backend_address_;
+  std::string backend_path_;
+  ::google::api::BackendRule_PathTranslation backend_path_translation_;
+  std::string backend_jwt_audience_;
 
   // Method selector
   std::string selector_;
