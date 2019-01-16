@@ -117,10 +117,8 @@ void MethodInfoImpl::process_backend_rule(
   if (backend_path_translation_ ==
       ::google::api::BackendRule_PathTranslation_CONSTANT_ADDRESS) {
     // for CONSTANT ADDRESS case, needs to split the rule.address into
-    // address and path. Example: "https://example.cloudfunctions.net/getUser"
-    // should be split to "https://example.cloudfunctions.net" and
-    // "/getUser". The backend address must contain protocol, host and uri,
-    // which is guaranteed by Inception during service deployment.
+    // address and path for a full URL. If it is not a full URL, leave
+    // backend_address_ same as rule.address.
     string::size_type i = backend_address_.find("/");
     int j;
     for (j = 0; j < 2; ++j) {
