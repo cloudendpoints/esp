@@ -95,6 +95,13 @@ class TestMethodInfo : public MethodInfo {
     return nullptr;
   }
   const std::string &backend_address() const { return empty_; }
+  const std::string &backend_path() const { return empty_; }
+  const ::google::api::BackendRule_PathTranslation backend_path_translation()
+      const {
+    return ::google::api::
+        BackendRule_PathTranslation_PATH_TRANSLATION_UNSPECIFIED;
+  }
+
   const std::string &rpc_method_full_name() const { return empty_; }
   const std::set<std::string> &system_query_parameter_names() const {
     static std::set<std::string> dummy;
@@ -380,13 +387,13 @@ TEST_F(TranscoderTest, StreamingRequestAndResponse) {
   ASSERT_TRUE(actual2.ParseFromZeroCopyStream(actual_proto2.get()));
 
   Shelf expected1;
-  ASSERT_TRUE(pb::TextFormat::ParseFromString(
-      R"(name : "1" theme : "Fiction")", &expected1));
+  ASSERT_TRUE(pb::TextFormat::ParseFromString(R"(name : "1" theme : "Fiction")",
+                                              &expected1));
   EXPECT_TRUE(pbutil::MessageDifferencer::Equivalent(expected1, actual1));
 
   Shelf expected2;
-  ASSERT_TRUE(pb::TextFormat::ParseFromString(
-      R"(name : "2" theme : "Satire")", &expected2));
+  ASSERT_TRUE(pb::TextFormat::ParseFromString(R"(name : "2" theme : "Satire")",
+                                              &expected2));
   EXPECT_TRUE(pbutil::MessageDifferencer::Equivalent(expected2, actual2));
 
   EXPECT_EQ(nullptr, reader.NextMessage().get());
@@ -414,13 +421,13 @@ TEST_F(TranscoderTest, StreamingRequestAndResponse) {
   ASSERT_TRUE(actual4.ParseFromZeroCopyStream(actual_proto4.get()));
 
   Shelf expected3;
-  ASSERT_TRUE(pb::TextFormat::ParseFromString(
-      R"(name : "3" theme : "Classic")", &expected3));
+  ASSERT_TRUE(pb::TextFormat::ParseFromString(R"(name : "3" theme : "Classic")",
+                                              &expected3));
   EXPECT_TRUE(pbutil::MessageDifferencer::Equivalent(expected3, actual3));
 
   Shelf expected4;
-  ASSERT_TRUE(pb::TextFormat::ParseFromString(
-      R"(name : "4" theme : "Russian")", &expected4));
+  ASSERT_TRUE(pb::TextFormat::ParseFromString(R"(name : "4" theme : "Russian")",
+                                              &expected4));
   EXPECT_TRUE(pbutil::MessageDifferencer::Equivalent(expected4, actual4));
 
   EXPECT_EQ(nullptr, reader.NextMessage().get());
