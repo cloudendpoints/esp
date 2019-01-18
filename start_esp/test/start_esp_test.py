@@ -41,6 +41,7 @@ class TestStartEsp(unittest.TestCase):
     server_conf_template = "./start_esp/test/server-conf-template"
     generated_nginx_config_file = "./start_esp/test/nginx.conf"
     generated_server_config_file = "./start_esp/test/generated_server_configuration.json"
+    empty_flag_config_generator = "./start_esp/test/start_esp_binary --generate_config_file_only --server_config_generation_path ./start_esp/test/generated_server_configuration.json"
     basic_config_generator = "./start_esp/test/start_esp_binary --generate_config_file_only --pid_file ./start_esp/test/pid_file --service_account_key key --config_dir ./start_esp/test --template ./start_esp/test/nginx-conf-template --server_config_template ./start_esp/test/server-conf-template --service_json_path ./start_esp/test/testdata/test_service_config_1.json --server_config_generation_path ./start_esp/test/generated_server_configuration.json"
 
     @staticmethod
@@ -255,6 +256,23 @@ class TestStartEsp(unittest.TestCase):
         expected_config_file = "./start_esp/test/testdata/expected_cloud_trace_url_override_server.json"
         config_generator = self.basic_config_generator + " --cloud_trace_url_override test_cloud_trace_url_override"
         self.run_test_with_expectation(expected_config_file, self.generated_server_config_file, config_generator)
+
+    ########## The tests for validating it should generate failure on conflict flags ##########
+
+    def test_enable_backend_routing_conflicts_with_string_flag(self):
+        config_generator = self.empty_flag_config_generator + " --enable_backend_routing --pid_file fake_value"
+        return_code = os.system(config_generator)
+        self.assertEqual(return_code >> 8, 3)
+
+    def test_enable_backend_routing_conflicts_with_boolean_flag(self):
+        config_generator = self.empty_flag_config_generator + " --enable_backend_routing --non_gcp"
+        return_code = os.system(config_generator)
+        self.assertEqual(return_code >> 8, 3)
+
+    def test_enable_backend_routing_conflicts_with_single_dash_flag(self):
+        config_generator = self.empty_flag_config_generator + " --enable_backend_routing -z fake_value"
+        return_code = os.system(config_generator)
+        self.assertEqual(return_code >> 8, 3)
 
 if __name__ == '__main__':
     unittest.main()
