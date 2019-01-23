@@ -79,12 +79,12 @@ void GlobalFetchServiceAccountToken(
     path = kMetadataServiceAccountToken;
   } else {
     path = kMetadataInstanceIdentityToken + audience;
-    token = context->GetInstianceIdentityToken(audience);
+    token = context->GetInstanceIdentityToken(audience);
     if (token == nullptr) {
-      context->AddInstianceIdentityToken(
+      context->AddInstanceIdentityToken(
           audience, std::move(std::unique_ptr<auth::ServiceAccountToken>(
                         new auth::ServiceAccountToken(env))));
-      token = context->GetInstianceIdentityToken(audience);
+      token = context->GetInstanceIdentityToken(audience);
     }
   }
 

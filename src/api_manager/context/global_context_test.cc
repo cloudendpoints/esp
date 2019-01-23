@@ -108,9 +108,9 @@ metadata_attributes {
 
   token->set_access_token("test_jwt_token", 200);
 
-  ctx.AddInstianceIdentityToken("test-audience", std::move(token));
+  ctx.AddInstanceIdentityToken("test-audience", std::move(token));
 
-  auto got_token = ctx.GetInstianceIdentityToken("test-audience");
+  auto got_token = ctx.GetInstanceIdentityToken("test-audience");
 
   EXPECT_EQ(
       got_token->GetAuthToken(auth::ServiceAccountToken::JWT_TOKEN_TYPE_MAX),

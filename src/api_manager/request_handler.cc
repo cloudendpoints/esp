@@ -63,7 +63,7 @@ void RequestHandler::Check(std::function<void(Status status)> continuation) {
       if (!audience.empty()) {
         auto token_info = context_->service_context()
                               ->global_context()
-                              ->GetInstianceIdentityToken(audience);
+                              ->GetInstanceIdentityToken(audience);
         if (token_info) {
           // Read access token from metadata server itself.
           auto token = token_info->GetAuthToken(

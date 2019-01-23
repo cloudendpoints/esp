@@ -42,26 +42,6 @@ cc_library(
 )
 
 cc_library(
-    name = "identity",
-    srcs = [
-        "instance_identity_cache.cc",
-    ],
-    hdrs = [
-        "instance_identity_cache.h",
-    ],
-    linkopts = select({
-        "//:darwin": [],
-        "//conditions:default": [
-            "-lm",
-            "-luuid",
-        ],
-    }),
-    deps = [
-        "//external:servicecontrol_client",
-    ],
-)
-
-cc_library(
     name = "authz",
     srcs = [
         "authz_cache.cc",
