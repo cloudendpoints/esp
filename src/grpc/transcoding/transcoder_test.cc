@@ -101,6 +101,7 @@ class TestMethodInfo : public MethodInfo {
     return ::google::api::
         BackendRule_PathTranslation_PATH_TRANSLATION_UNSPECIFIED;
   }
+  const std::string &backend_jwt_audience() const { return empty_; }
 
   const std::string &rpc_method_full_name() const { return empty_; }
   const std::set<std::string> &system_query_parameter_names() const {
