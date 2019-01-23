@@ -143,6 +143,7 @@ void GlobalFetchServiceAccountToken(
                       return;
                     }
                   } else {
+                    // TODO: parse JWT to get expiration time.
                     token->set_access_token(body,
                                             kInstanceIdentityTokenExpiration);
                   }
