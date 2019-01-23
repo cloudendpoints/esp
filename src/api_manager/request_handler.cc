@@ -57,9 +57,9 @@ void RequestHandler::Check(std::function<void(Status status)> continuation) {
       // Add InstanceIdentityToken to request header if needed, which is
       // required for backend routing.
       context_->AddInstanceIdentityToken();
-
-      continuation(status);
     }
+
+    continuation(status);
   };
 
   context_->set_check_continuation(interception);
