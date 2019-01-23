@@ -157,8 +157,9 @@ auth::ServiceAccountToken* GlobalContext::GetInstanceIdentityToken(
 
   auto token = std::unique_ptr<auth::ServiceAccountToken>(
       new auth::ServiceAccountToken(env_.get()));
+  auto raw_token = token.get();
   instance_identity_token_map_.emplace(audience, std::move(token));
-  return instance_identity_token_map_.find(audience)->second.get();
+  return raw_token;
 }
 
 }  // namespace context

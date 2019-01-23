@@ -66,6 +66,10 @@ void ServiceAccountToken::SetAudience(JWT_TOKEN_TYPE type,
   }
 }
 
+const std::string& ServiceAccountToken::GetAuthToken() {
+  return access_token_.token();
+}
+
 const std::string& ServiceAccountToken::GetAuthToken(JWT_TOKEN_TYPE type) {
   return GetAuthToken(type, jwt_tokens_[type].audience());
 }

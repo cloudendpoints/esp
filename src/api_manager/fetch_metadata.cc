@@ -168,7 +168,7 @@ void FetchInstanceIdentityToken(
     return;
   }
 
-  auto audience = request_context->method()->backend_jwt_audience();
+  const auto &audience = request_context->method()->backend_jwt_audience();
   if (audience.empty()) {
     on_done(Status::OK);
     return;
