@@ -48,13 +48,8 @@ class GlobalContext {
     return &service_account_token_;
   }
 
-  // Adds the instance identity token for the audience into global context for
-  // cache.
-  void AddInstanceIdentityToken(
-      const std::string &audience,
-      std::unique_ptr<auth::ServiceAccountToken> token);
-
   // Gets the instance identity token for given audience.
+  // If not found, create a new token info and add into the map.
   auth::ServiceAccountToken *GetInstanceIdentityToken(
       const std::string &audience);
 

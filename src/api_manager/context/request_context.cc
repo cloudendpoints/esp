@@ -440,12 +440,28 @@ bool RequestContext::ShouldOverrideBackend() const {
   return true;
 }
 
-void RequestContext::AddInstanceIdentityToken(const std::string &token) {
-  Status status = request()->AddHeaderToBackend(kAuthorizationHeader,
-                                                kBearerPrefix + token);
-  if (!status.ok()) {
-    service_context()->env()->LogError(
-        "Failed to set authorization header to backend.");
+void RequestContext::AddInstanceIdentityToken() {
+  if (!method()) {
+    return;
+  }
+
+  auto audience = method()->backend_jwt_audience();
+  if (!audience.empty()) {
+    auto token_info =
+        service_context()->global_context()->GetInstanceIdentityToken(audience);
+    if (token_info) {
+      // Read access token from metadata server itself.
+      auto token = token_info->GetAuthToken(
+          auth::ServiceAccountToken::JWT_TOKEN_TYPE_MAX);
+      if (!token.empty()) {
+        Status status = request()->AddHeaderToBackend(kAuthorizationHeader,
+                                                      kBearerPrefix + token);
+        if (!status.ok()) {
+          service_context()->env()->LogError(
+              "Failed to set authorization header to backend.");
+        }
+      }
+    }
   }
 }
 

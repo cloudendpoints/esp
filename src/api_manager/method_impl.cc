@@ -112,10 +112,7 @@ void MethodInfoImpl::process_backend_rule(
     const ::google::api::BackendRule &rule) {
   backend_address_ = rule.address();
   backend_path_translation_ = rule.path_translation();
-  backend_jwt_audience_ = rule.address();
-  if (!rule.jwt_audience().empty()) {
-    backend_jwt_audience_ = rule.jwt_audience();
-  }
+  backend_jwt_audience_ = rule.jwt_audience();
 
   if (backend_path_translation_ ==
       ::google::api::BackendRule_PathTranslation_CONSTANT_ADDRESS) {

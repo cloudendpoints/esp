@@ -148,19 +148,17 @@ GlobalContext::CreateCloudTraceAggregator() {
       minimum_qps, env_.get()));
 }
 
-void GlobalContext::AddInstanceIdentityToken(
-    const std::string& audience,
-    std::unique_ptr<auth::ServiceAccountToken> token) {
-  instance_identity_token_map_.emplace(audience, std::move(token));
-}
-
 auth::ServiceAccountToken* GlobalContext::GetInstanceIdentityToken(
     const std::string& audience) {
   auto token_info = instance_identity_token_map_.find(audience);
   if (token_info != std::end(instance_identity_token_map_)) {
     return token_info->second.get();
   }
-  return nullptr;
+
+  auto token = std::unique_ptr<auth::ServiceAccountToken>(
+      new auth::ServiceAccountToken(env_.get()));
+  instance_identity_token_map_.emplace(audience, std::move(token));
+  return instance_identity_token_map_.find(audience)->second.get();
 }
 
 }  // namespace context

@@ -19,6 +19,7 @@
 #include "include/api_manager/http_request.h"
 #include "src/api_manager/auth/lib/auth_token.h"
 
+using ::google::api_manager::utils::Status;
 using ::google::protobuf::util::error::Code;
 
 namespace google {
@@ -68,7 +69,8 @@ void FetchMetadata(
 }  // namespace
 
 void GlobalFetchServiceAccountToken(
-    std::shared_ptr<context::GlobalContext> context, std::string &audience,
+    std::shared_ptr<context::GlobalContext> context,
+    const std::string &audience,
     std::function<void(Status status)> continuation) {
   const auto env = context->env();
 
@@ -80,12 +82,6 @@ void GlobalFetchServiceAccountToken(
   } else {
     path = kMetadataInstanceIdentityToken + audience;
     token = context->GetInstanceIdentityToken(audience);
-    if (token == nullptr) {
-      context->AddInstanceIdentityToken(
-          audience, std::move(std::unique_ptr<auth::ServiceAccountToken>(
-                        new auth::ServiceAccountToken(env))));
-      token = context->GetInstanceIdentityToken(audience);
-    }
   }
 
   // If metadata server is not configured, skip it
@@ -167,10 +163,12 @@ void FetchServiceAccountToken(
 void FetchInstanceIdentityToken(
     std::shared_ptr<context::RequestContext> request_context,
     std::function<void(utils::Status)> on_done) {
-  std::string audience;
-  if (request_context->method()) {
-    audience = request_context->method()->backend_jwt_audience();
+  if (!request_context->method()) {
+    on_done(Status::OK);
+    return;
   }
+
+  auto audience = request_context->method()->backend_jwt_audience();
   if (audience.empty()) {
     on_done(Status::OK);
     return;

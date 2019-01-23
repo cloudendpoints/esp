@@ -19,19 +19,13 @@
 #include "src/api_manager/context/global_context.h"
 #include "src/api_manager/context/request_context.h"
 
-using ::google::api_manager::utils::Status;
-
 namespace google {
 namespace api_manager {
 
 // Fetchs service account token from metadata server.
 void GlobalFetchServiceAccountToken(std::shared_ptr<context::GlobalContext>,
-                                    std::string &,
+                                    const std::string &,
                                     std::function<void(utils::Status)>);
-
-void GlobalFetchInstanceIdentityToken(
-    std::shared_ptr<context::GlobalContext> context,
-    const std::string &audience, std::function<void(Status status)> on_done);
 
 // Fetchs service account token from metadata server.
 void FetchServiceAccountToken(std::shared_ptr<context::RequestContext>,

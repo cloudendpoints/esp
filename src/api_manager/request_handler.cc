@@ -56,23 +56,10 @@ void RequestHandler::Check(std::function<void(Status status)> continuation) {
       }
       // Add InstanceIdentityToken to request header if needed, which is
       // required for backend routing.
-      std::string audience;
-      if (context_->method()) {
-        audience = context_->method()->backend_jwt_audience();
-      }
-      if (!audience.empty()) {
-        auto token_info = context_->service_context()
-                              ->global_context()
-                              ->GetInstanceIdentityToken(audience);
-        if (token_info) {
-          // Read access token from metadata server itself.
-          auto token = token_info->GetAuthToken(
-              auth::ServiceAccountToken::JWT_TOKEN_TYPE_MAX);
-          context_->AddInstanceIdentityToken(token);
-        }
-      }
+      context_->AddInstanceIdentityToken();
+
+      continuation(status);
     }
-    continuation(status);
   };
 
   context_->set_check_continuation(interception);

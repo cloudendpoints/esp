@@ -101,16 +101,11 @@ metadata_attributes {
   std::unique_ptr<ApiManagerEnvInterface> env(
       new testing::NiceMock<MockApiManagerEnvironment>());
 
-  auto token = std::unique_ptr<auth::ServiceAccountToken>(
-      new auth::ServiceAccountToken(env.get()));
-
   GlobalContext ctx(std::move(env), kServerConfig);
 
-  token->set_access_token("test_jwt_token", 200);
-
-  ctx.AddInstanceIdentityToken("test-audience", std::move(token));
-
   auto got_token = ctx.GetInstanceIdentityToken("test-audience");
+
+  got_token->set_access_token("test_jwt_token", 200);
 
   EXPECT_EQ(
       got_token->GetAuthToken(auth::ServiceAccountToken::JWT_TOKEN_TYPE_MAX),
@@ -121,9 +116,11 @@ metadata_attributes {
   EXPECT_EQ(got_token->is_access_token_valid(210), false);
 
   auto non_exist_token =
-      ctx.GetInstianceIdentityToken("non-exist-test-audience");
+      ctx.GetInstanceIdentityToken("non-exist-test-audience");
 
-  EXPECT_EQ(non_exist_token, nullptr);
+  EXPECT_EQ(non_exist_token->GetAuthToken(
+                auth::ServiceAccountToken::JWT_TOKEN_TYPE_MAX),
+            "");
 }
 
 }  // namespace context

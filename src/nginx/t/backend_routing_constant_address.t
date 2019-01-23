@@ -120,7 +120,7 @@ $t->run();
 my $response1 = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key');
 
 # PathTranslation is set as CONSTANT_ADDRESS, with binding variables.
-# Authorization header is added using backend address as audience.
+# no Authorization header is added.
 my $response2 = ApiManager::http_get($NginxPort,'/shelves/123/books?key=this-is-an-api-key');
 
 # PathTranslation is set as CONSTANT_ADDRESS, with binding variables and parameters.
@@ -163,8 +163,7 @@ is($request->{headers}->{'authorization'}, 'Bearer test_audience_override',
     'Authorization header is received.' );
 
 my $request = shift @bookstore_requests;
-is($request->{headers}->{'authorization'}, 'Bearer test_audience_using_backend_address',
-    'Authorization header is received.' );
+is($request->{headers}->{'authorization'}, undef);
 
 my $request = shift @bookstore_requests;
 is($request->{headers}->{'authorization'}, 'Bearer test_audience_override',
@@ -173,7 +172,7 @@ is($request->{headers}->{'authorization'}, 'Bearer test_audience_override',
 
 # Check metadata server log.
 my @metadata_requests = ApiManager::read_http_stream($t, 'metadata.log');
-is(scalar @metadata_requests, 3, 'Metadata server received 3 request.');
+is(scalar @metadata_requests, 2, 'Metadata server received 2 request.');
 
 ################################################################################
 
@@ -268,14 +267,6 @@ Metadata-Flavor: Google
 Content-Type: application/json
 
 test_audience_override\r\n\r\n
-EOF
-
-  $server->on('GET', "/computeMetadata/v1/instance/service-accounts/default/identity?audience=http://127.0.0.1:$BackendPort/listBooks",  <<"EOF");
-HTTP/1.1 200 OK
-Metadata-Flavor: Google
-Content-Type: application/json
-
-test_audience_using_backend_address\r\n\r\n
 EOF
 
   $server->run();
