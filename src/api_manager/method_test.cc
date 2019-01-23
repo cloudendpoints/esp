@@ -157,6 +157,7 @@ TEST(MethodInfo, PreservesBackendAddress_Constant2) {
   ASSERT_EQ(method_info->backend_address(),
             "http://example.cloudfunctions.net");
   ASSERT_EQ(method_info->backend_path(), "");
+  ASSERT_EQ(method_info->backend_jwt_audience(), "");
 }
 
 TEST(MethodInfo, PreservesBackendAddress_Constant3) {

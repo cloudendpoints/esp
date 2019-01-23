@@ -27,8 +27,10 @@ namespace google {
 namespace api_manager {
 
 void CheckWorkflow::RegisterAll() {
-  // Fetchs service account token.
+  // Fetches service account token.
   Register(FetchServiceAccountToken);
+  // Fetches instance identity token.
+  Register(FetchInstanceIdentityToken);
   // Authentication checks.
   Register(CheckAuth);
   // Check Security Rules.

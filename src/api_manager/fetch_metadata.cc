@@ -30,6 +30,15 @@ namespace {
 // URL path for fetching service-account
 const char kMetadataServiceAccountToken[] =
     "/computeMetadata/v1/instance/service-accounts/default/token";
+
+// URL path for fetch instance identity token
+const char kMetadataInstanceIdentityToken[] =
+    "/computeMetadata/v1/instance/service-accounts/default/identity?audience=";
+
+// The maximum lifetime of a cache token. Unit: seconds.
+// Token expired in 1 hour, reduce 100 seconds for grace buffer.
+const int kInstanceIdentityTokenExpiration = 3500;
+
 // Initial metadata fetch timeout (1s)
 const int kMetadataFetchTimeout = 1000;
 // Maximum number of retries to fetch token from metadata
@@ -45,7 +54,7 @@ const char kTokenRefetchWindow = 60;
 
 // Issues a HTTP request to fetch the metadata.
 void FetchMetadata(
-    context::GlobalContext *context, const char *path, const int retry,
+    context::GlobalContext *context, const std::string &path, const int retry,
     std::function<void(Status, std::map<std::string, std::string> &&,
                        std::string &&)>
         continuation) {
@@ -61,9 +70,19 @@ void FetchMetadata(
 
 void GlobalFetchServiceAccountToken(
     std::shared_ptr<context::GlobalContext> context,
+    const std::string &audience,
     std::function<void(Status status)> continuation) {
   const auto env = context->env();
-  const auto token = context->service_account_token();
+
+  auth::ServiceAccountToken *token;
+  std::string path;
+  if (audience.empty()) {
+    token = context->service_account_token();
+    path = kMetadataServiceAccountToken;
+  } else {
+    path = kMetadataInstanceIdentityToken + audience;
+    token = context->GetInstanceIdentityToken(audience);
+  }
 
   // If metadata server is not configured, skip it
   // If client auth secret is available, skip fetching
@@ -106,9 +125,8 @@ void GlobalFetchServiceAccountToken(
   }
 
   token->set_state(auth::ServiceAccountToken::FETCHING);
-  FetchMetadata(context.get(), kMetadataServiceAccountToken,
-                kMetadataTokenFetchRetries,
-                [env, token, continuation](
+  FetchMetadata(context.get(), path, kMetadataTokenFetchRetries,
+                [env, token, continuation, audience](
                     Status status, std::map<std::string, std::string> &&,
                     std::string &&body) {
                   // fetch failed
@@ -118,11 +136,16 @@ void GlobalFetchServiceAccountToken(
                     continuation(Status(Code::INTERNAL, kFailedTokenFetch));
                     return;
                   }
-
-                  if (!token->SetTokenJsonResponse(body)) {
-                    env->LogDebug("Failed to parse token response body");
-                    continuation(Status(Code::INTERNAL, kFailedTokenParse));
-                    return;
+                  if (audience.empty()) {
+                    if (!token->SetTokenJsonResponse(body)) {
+                      env->LogDebug("Failed to parse token response body");
+                      continuation(Status(Code::INTERNAL, kFailedTokenParse));
+                      return;
+                    }
+                  } else {
+                    // TODO: parse JWT to get expiration time.
+                    token->set_access_token(body,
+                                            kInstanceIdentityTokenExpiration);
                   }
                   continuation(Status::OK);
                 });
@@ -132,8 +155,27 @@ void GlobalFetchServiceAccountToken(
 void FetchServiceAccountToken(
     std::shared_ptr<context::RequestContext> request_context,
     std::function<void(utils::Status)> on_done) {
+  std::string audience;
   GlobalFetchServiceAccountToken(
-      request_context->service_context()->global_context(), on_done);
+      request_context->service_context()->global_context(), audience, on_done);
+}
+
+// Fetches instance identity token from metadata server.
+void FetchInstanceIdentityToken(
+    std::shared_ptr<context::RequestContext> request_context,
+    std::function<void(utils::Status)> on_done) {
+  if (!request_context->method()) {
+    on_done(Status::OK);
+    return;
+  }
+
+  const auto &audience = request_context->method()->backend_jwt_audience();
+  if (audience.empty()) {
+    on_done(Status::OK);
+    return;
+  }
+  GlobalFetchServiceAccountToken(
+      request_context->service_context()->global_context(), audience, on_done);
 }
 
 }  // namespace api_manager

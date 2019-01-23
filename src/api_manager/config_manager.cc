@@ -81,14 +81,16 @@ void ConfigManager::OnRolloutsRefreshTimer() {
       window_request_counter_->Count(std::chrono::system_clock::now()) == 0) {
     return;
   }
-  GlobalFetchServiceAccountToken(global_context_, [this](utils::Status status) {
-    if (!status.ok()) {
-      global_context_->env()->LogError("Unexpected status: " +
-                                       status.ToString());
-      return;
-    }
-    FetchRollouts();
-  });
+  std::string audience;
+  GlobalFetchServiceAccountToken(
+      global_context_, audience, [this](utils::Status status) {
+        if (!status.ok()) {
+          global_context_->env()->LogError("Unexpected status: " +
+                                           status.ToString());
+          return;
+        }
+        FetchRollouts();
+      });
 }
 
 void ConfigManager::FetchRollouts() {

@@ -24,11 +24,15 @@ namespace api_manager {
 
 // Fetchs service account token from metadata server.
 void GlobalFetchServiceAccountToken(std::shared_ptr<context::GlobalContext>,
+                                    const std::string &,
                                     std::function<void(utils::Status)>);
 
 // Fetchs service account token from metadata server.
 void FetchServiceAccountToken(std::shared_ptr<context::RequestContext>,
                               std::function<void(utils::Status)>);
+
+void FetchInstanceIdentityToken(std::shared_ptr<context::RequestContext>,
+                                std::function<void(utils::Status)>);
 
 }  // namespace api_manager
 }  // namespace google

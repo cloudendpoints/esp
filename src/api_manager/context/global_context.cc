@@ -148,6 +148,20 @@ GlobalContext::CreateCloudTraceAggregator() {
       minimum_qps, env_.get()));
 }
 
+auth::ServiceAccountToken* GlobalContext::GetInstanceIdentityToken(
+    const std::string& audience) {
+  auto token_info = instance_identity_token_map_.find(audience);
+  if (token_info != std::end(instance_identity_token_map_)) {
+    return token_info->second.get();
+  }
+
+  auto token = std::unique_ptr<auth::ServiceAccountToken>(
+      new auth::ServiceAccountToken(env_.get()));
+  auto raw_token = token.get();
+  instance_identity_token_map_.emplace(audience, std::move(token));
+  return raw_token;
+}
+
 }  // namespace context
 }  // namespace api_manager
 }  // namespace google

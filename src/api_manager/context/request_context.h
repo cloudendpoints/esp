@@ -99,6 +99,10 @@ class RequestContext {
   // backend.
   void StartBackendSpanAndSetTraceContext();
 
+  // Add the instance identity token to request header.
+  // This is required for backend routing, where esp is used as API gateway.
+  void AddInstanceIdentityToken();
+
   // Marks the end of backend trace span.
   void EndBackendSpan() { backend_span_.reset(); }
 

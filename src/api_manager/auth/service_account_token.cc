@@ -72,10 +72,9 @@ const std::string& ServiceAccountToken::GetAuthToken(JWT_TOKEN_TYPE type) {
 
 const std::string& ServiceAccountToken::GetAuthToken(
     JWT_TOKEN_TYPE type, const std::string& audience) {
-  SetAudience(type, audience);
-
   // Uses authentication secret if available.
   if (!client_auth_secret_.empty()) {
+    SetAudience(type, audience);
     GOOGLE_CHECK(type >= 0 && type < JWT_TOKEN_TYPE_MAX);
     if (!jwt_tokens_[type].is_valid(0)) {
       Status status = jwt_tokens_[type].GenerateJwtToken(client_auth_secret_);

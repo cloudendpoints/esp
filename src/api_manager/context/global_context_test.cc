@@ -91,6 +91,34 @@ metadata_attributes {
             "TOKEN");
 }
 
+TEST(GlobalContextTest, TestInstanceIdentityTokenCache) {
+  const char kServerConfig[] = R"(
+metadata_attributes {
+  project_id: "PROJECT_ID"
+  zone: "us-west1-a"
+)";
+
+  std::unique_ptr<ApiManagerEnvInterface> env(
+      new testing::NiceMock<MockApiManagerEnvironment>());
+
+  GlobalContext ctx(std::move(env), kServerConfig);
+
+  auto got_token = ctx.GetInstanceIdentityToken("test-audience");
+
+  got_token->set_access_token("test_jwt_token", 200);
+
+  EXPECT_EQ(got_token->GetAuthToken(), "test_jwt_token");
+
+  EXPECT_EQ(got_token->is_access_token_valid(100), true);
+
+  EXPECT_EQ(got_token->is_access_token_valid(210), false);
+
+  auto non_exist_token =
+      ctx.GetInstanceIdentityToken("non-exist-test-audience");
+
+  EXPECT_EQ(non_exist_token->GetAuthToken(), "");
+}
+
 }  // namespace context
 }  // namespace api_manager
 }  // namespace google

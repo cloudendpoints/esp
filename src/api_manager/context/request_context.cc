@@ -35,6 +35,11 @@ namespace {
 // Cloud Trace Context Header
 const char kCloudTraceContextHeader[] = "X-Cloud-Trace-Context";
 
+// Authorization Header
+const char kAuthorizationHeader[] = "Authorization";
+
+const char kBearerPrefix[] = "Bearer ";
+
 // HTTP Method Override Header
 const char kHttpMethodOverrideHeader[] = "X-HTTP-Method-Override";
 
@@ -433,6 +438,28 @@ bool RequestContext::ShouldOverrideBackend() const {
     return false;
   }
   return true;
+}
+
+void RequestContext::AddInstanceIdentityToken() {
+  if (!method()) {
+    return;
+  }
+
+  const auto &audience = method()->backend_jwt_audience();
+  if (!audience.empty()) {
+    auto &token = service_context()
+                      ->global_context()
+                      ->GetInstanceIdentityToken(audience)
+                      ->GetAuthToken();
+    if (!token.empty()) {
+      Status status = request()->AddHeaderToBackend(kAuthorizationHeader,
+                                                    kBearerPrefix + token);
+      if (!status.ok()) {
+        service_context()->env()->LogError(
+            "Failed to set authorization header to backend.");
+      }
+    }
+  }
 }
 
 }  // namespace context

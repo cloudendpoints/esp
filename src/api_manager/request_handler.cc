@@ -19,6 +19,7 @@
 #include "google/devtools/cloudtrace/v1/trace.pb.h"
 #include "google/protobuf/stubs/logging.h"
 #include "src/api_manager/auth/service_account_token.h"
+#include "src/api_manager/auth/service_account_token.h"
 #include "src/api_manager/check_auth.h"
 #include "src/api_manager/check_workflow.h"
 #include "src/api_manager/cloud_trace/cloud_trace.h"
@@ -49,9 +50,15 @@ RequestHandler::RequestHandler(
 
 void RequestHandler::Check(std::function<void(Status status)> continuation) {
   auto interception = [continuation, this](Status status) {
-    if (status.ok() && context_->cloud_trace()) {
-      context_->StartBackendSpanAndSetTraceContext();
+    if (status.ok()) {
+      if (context_->cloud_trace()) {
+        context_->StartBackendSpanAndSetTraceContext();
+      }
+      // Add InstanceIdentityToken to request header if needed, which is
+      // required for backend routing.
+      context_->AddInstanceIdentityToken();
     }
+
     continuation(status);
   };
 
