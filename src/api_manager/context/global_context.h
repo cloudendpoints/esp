@@ -48,6 +48,13 @@ class GlobalContext {
     return &service_account_token_;
   }
 
+  void AddInstianceIdentityToken(
+      const std::string &audience,
+      std::unique_ptr<auth::ServiceAccountToken> token);
+
+  auth::ServiceAccountToken *GetInstianceIdentityToken(
+      const std::string &audience);
+
   const std::string &metadata_server() const { return metadata_server_; }
 
   // cloud_trace
@@ -95,6 +102,11 @@ class GlobalContext {
 
   // service account tokens
   auth::ServiceAccountToken service_account_token_;
+
+  // stores instance identity token from metadata.
+  // key is audience.
+  std::map<std::string, std::unique_ptr<auth::ServiceAccountToken>>
+      instance_identity_token_map_;
 
   // The service control object. When trace is force disabled, this will be a
   // nullptr.

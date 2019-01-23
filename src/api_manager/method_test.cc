@@ -128,7 +128,7 @@ TEST(MethodInfo, PreservesBackendAddress) {
   rule.set_address("backend");
   method_info->process_backend_rule(rule);
   ASSERT_EQ(method_info->backend_address(), "backend");
-  ASSERT_EQ(method_info->backend_jwt_audience(), "");
+  ASSERT_EQ(method_info->backend_jwt_audience(), "backend");
 }
 
 TEST(MethodInfo, PreservesBackendAddress_Constant1) {
@@ -137,14 +137,14 @@ TEST(MethodInfo, PreservesBackendAddress_Constant1) {
   rule.set_address("http://example.cloudfunctions.net/getUser");
   rule.set_path_translation(
       ::google::api::BackendRule_PathTranslation_CONSTANT_ADDRESS);
-  rule.set_jwt_audience("test_audience");
   method_info->process_backend_rule(rule);
   ASSERT_EQ(method_info->backend_address(),
             "http://example.cloudfunctions.net");
   ASSERT_EQ(method_info->backend_path(), "/getUser");
   ASSERT_EQ(method_info->backend_path_translation(),
             ::google::api::BackendRule_PathTranslation_CONSTANT_ADDRESS);
-  ASSERT_EQ(method_info->backend_jwt_audience(), "test_audience");
+  ASSERT_EQ(method_info->backend_jwt_audience(),
+            "http://example.cloudfunctions.net/getUser");
 }
 
 TEST(MethodInfo, PreservesBackendAddress_Constant2) {
@@ -157,6 +157,8 @@ TEST(MethodInfo, PreservesBackendAddress_Constant2) {
   ASSERT_EQ(method_info->backend_address(),
             "http://example.cloudfunctions.net");
   ASSERT_EQ(method_info->backend_path(), "");
+  ASSERT_EQ(method_info->backend_jwt_audience(),
+            "http://example.cloudfunctions.net");
 }
 
 TEST(MethodInfo, PreservesBackendAddress_Constant3) {
@@ -168,6 +170,7 @@ TEST(MethodInfo, PreservesBackendAddress_Constant3) {
   method_info->process_backend_rule(rule);
   ASSERT_EQ(method_info->backend_address(), "backend");
   ASSERT_EQ(method_info->backend_path(), "");
+  ASSERT_EQ(method_info->backend_jwt_audience(), "backend");
 }
 
 TEST(MethodInfo, PreservesBackendAddress_Append) {

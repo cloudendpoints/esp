@@ -40,8 +40,9 @@ use Test::More;   # And the test framework
 my $NginxPort = ApiManager::pick_port();
 my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
+my $MetadataPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(8);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(14);
 
 # Save service name in the service configuration protocol buffer file.
 
@@ -51,6 +52,7 @@ backend {
     selector: "ListShelves"
     address: "http://127.0.0.1:$BackendPort/listShelves"
     path_translation: CONSTANT_ADDRESS
+    jwt_audience: "test-audience"
   }
   rules {
     selector: "ListBooks"
@@ -61,10 +63,17 @@ backend {
     selector: "GetBook"
     address: "http://127.0.0.1:$BackendPort/getBook"
     path_translation: CONSTANT_ADDRESS
+    jwt_audience: "test-audience"
   }
 }
 control {
   environment: "http://127.0.0.1:${ServiceControlPort}"
+}
+EOF
+
+$t->write_file('server_config.pb.txt', <<"EOF");
+metadata_attributes {
+  zone: "us-west1-d"
 }
 EOF
 
@@ -77,12 +86,16 @@ events {
 http {
   %%TEST_GLOBALS_HTTP%%
   server_tokens off;
+  endpoints {
+    metadata_server http://127.0.0.1:${MetadataPort};
+  }
   server {
     listen 127.0.0.1:${NginxPort};
     server_name localhost;
     location / {
       endpoints {
         api service.pb.txt;
+        server_config server_config.pb.txt;
         on;
       }
       proxy_pass \$backend_url;
@@ -93,19 +106,25 @@ EOF
 
 $t->run_daemon(\&bookstore, $t, $BackendPort, 'bookstore.log');
 $t->run_daemon(\&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log');
+$t->run_daemon(\&metadata, $t, $MetadataPort, 'metadata.log');
 is($t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'Bookstore socket ready.');
 is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control socket ready.');
+is($t->waitforsocket("127.0.0.1:${MetadataPort}"), 1, 'Metadata socket ready.');
+
 $t->run();
 
 ################################################################################
 
-# PathTranslation is set as CONSTANT_ADDRESS.
+# PathTranslation is set as CONSTANT_ADDRESS. Authorization header is added
+# from freshing token, with audience override.
 my $response1 = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key');
 
 # PathTranslation is set as CONSTANT_ADDRESS, with binding variables.
+# Authorization header is added using backend address as audience.
 my $response2 = ApiManager::http_get($NginxPort,'/shelves/123/books?key=this-is-an-api-key');
 
 # PathTranslation is set as CONSTANT_ADDRESS, with binding variables and parameters.
+# Authorization header is added from cached token, with audience override.
 my $response3 = ApiManager::http_get($NginxPort,'/shelves/123/books/1234?key=this-is-an-api-key&timezone=EST');
 
 $t->stop_daemons();
@@ -134,6 +153,27 @@ like($response_headers3, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');
 is($response_body3, <<'EOF', 'Shelves returned in the response body.');
 { "id": "1234", "titie": "Fiction" }
 EOF
+
+# Check Authorization header is added into requests.
+my @bookstore_requests = ApiManager::read_http_stream($t, 'bookstore.log');
+is(scalar @bookstore_requests, 3, 'Bookstore received 3 requests.');
+
+my $request = shift @bookstore_requests;
+is($request->{headers}->{'authorization'}, 'Bearer test_audience_override',
+    'Authorization header is received.' );
+
+my $request = shift @bookstore_requests;
+is($request->{headers}->{'authorization'}, 'Bearer test_audience_using_backend_address',
+    'Authorization header is received.' );
+
+my $request = shift @bookstore_requests;
+is($request->{headers}->{'authorization'}, 'Bearer test_audience_override',
+    'Authorization header is received.' );
+
+
+# Check metadata server log.
+my @metadata_requests = ApiManager::read_http_stream($t, 'metadata.log');
+is(scalar @metadata_requests, 3, 'Metadata server received 3 request.');
 
 ################################################################################
 
@@ -199,6 +239,44 @@ Connection: close
 
 EOF
   });
+
+  $server->run();
+}
+
+
+sub metadata {
+  my ($t, $port, $file) = @_;
+  my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
+    or die "Can't create test server socket: $!\n";
+  local $SIG{PIPE} = 'IGNORE';
+
+  $server->on('GET', '/computeMetadata/v1/instance/service-accounts/default/token', <<'EOF');
+HTTP/1.1 200 OK
+Metadata-Flavor: Google
+Content-Type: application/json
+
+{
+ "access_token":"ya29.7gFRTEGmovWacYDnQIpC9X9Qp8cH0sgQyWVrZaB1Eg1WoAhQMSG4L2rtaHk1",
+ "expires_in":200,
+ "token_type":"Bearer"
+}
+EOF
+
+  $server->on('GET', '/computeMetadata/v1/instance/service-accounts/default/identity?audience=test-audience',  <<"EOF");
+HTTP/1.1 200 OK
+Metadata-Flavor: Google
+Content-Type: application/json
+
+test_audience_override\r\n\r\n
+EOF
+
+  $server->on('GET', "/computeMetadata/v1/instance/service-accounts/default/identity?audience=http://127.0.0.1:$BackendPort/listBooks",  <<"EOF");
+HTTP/1.1 200 OK
+Metadata-Flavor: Google
+Content-Type: application/json
+
+test_audience_using_backend_address\r\n\r\n
+EOF
 
   $server->run();
 }

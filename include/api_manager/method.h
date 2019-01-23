@@ -87,6 +87,9 @@ class MethodInfo {
   virtual const ::google::api::BackendRule_PathTranslation
   backend_path_translation() const = 0;
 
+  // Get the backend audience for this method.
+  virtual const std::string &backend_jwt_audience() const = 0;
+
   // Get the RPC method full name. The full name has the following form:
   // "/<API name>/<method name>".
   virtual const std::string &rpc_method_full_name() const = 0;
