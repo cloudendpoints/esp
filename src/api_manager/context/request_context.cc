@@ -445,7 +445,7 @@ void RequestContext::AddInstanceIdentityToken() {
     return;
   }
 
-  auto &audience = method()->backend_jwt_audience();
+  const auto &audience = method()->backend_jwt_audience();
   if (!audience.empty()) {
     auto &token = service_context()
                       ->global_context()

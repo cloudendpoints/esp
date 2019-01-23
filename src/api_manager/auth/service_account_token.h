@@ -84,7 +84,7 @@ class ServiceAccountToken {
   void SetAudience(JWT_TOKEN_TYPE type, const std::string& audience);
 
   // Gets the auth token from metadata server.
-  const std::string& GetAuthToken();
+  const std::string& GetAuthToken() const { return access_token_.token(); }
 
   // Gets the auth token to access Google services.
   // If client auth secret is specified, use it to calcualte JWT token.
