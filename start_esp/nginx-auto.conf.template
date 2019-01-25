@@ -55,6 +55,7 @@ http {
   endpoints_resolver ${resolver};
   endpoints_certificates /etc/nginx/trusted-ca-certificates.crt;
 
+% if not enable_backend_routing:
 % for i, location in enumerate(ingress.locations):
 % if location.proto != 'grpc':
   upstream app_server${i} {
@@ -65,6 +66,7 @@ http {
   }
 % endif
 % endfor
+% endif
 
 % for trusted_proxy in xff_trusted_proxies:
   set_real_ip_from  ${trusted_proxy};
@@ -221,7 +223,9 @@ http {
       # WARNING: only first backend is used
       grpc_pass ${location.backends[0]} override;
 % else:
-  % if location.proto == 'http':
+  % if enable_backend_routing:
+      proxy_pass \$backend_url;
+  % elif location.proto == 'http':
       proxy_pass http://app_server${i};
   % elif location.proto == 'https':
       proxy_pass https://app_server${i};

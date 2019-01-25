@@ -148,6 +148,7 @@ def write_template(ingress, nginx_conf, args):
             allow_invalid_headers=args.allow_invalid_headers,
             enable_websocket=args.enable_websocket,
             enable_debug=args.enable_debug,
+            enable_backend_routing=args.enable_backend_routing,
             client_max_body_size=args.client_max_body_size,
             client_body_buffer_size=args.client_body_buffer_size,
             worker_processes=args.worker_processes,
@@ -802,6 +803,9 @@ config file.'''.format(
 # This function also changes some default flag value.
 def enforce_conflict_args(args):
     if args.generate_config_file_only:
+        # this is for test purpose.
+        if args.server_config_generation_path:
+            return None
         if args.nginx_config:
             return "--nginx_config is not allowed when --generate_config_file_only"
 
