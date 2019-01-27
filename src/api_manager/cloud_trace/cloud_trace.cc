@@ -203,11 +203,9 @@ void Aggregator::AppendTrace(google::devtools::cloudtrace::v1::Trace *trace) {
 }
 
 CloudTrace::CloudTrace(Trace *trace, const std::string &options,
-                       HeaderType header_type,
-                       const std::string &original_trace_context)
+                       HeaderType header_type)
     : trace_(trace),
       options_(options),
-      original_trace_context_(original_trace_context),
       header_type_(header_type) {
   // Root span must exist and must be the only span as of now.
   root_span_ = trace_->mutable_spans(0);

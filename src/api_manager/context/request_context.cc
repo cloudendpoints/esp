@@ -379,22 +379,15 @@ void RequestContext::StartBackendSpanAndSetTraceContext() {
   // The span id in the header will be the backend span's id.
   std::string trace_context = cloud_trace()->ToTraceContextHeader(
       backend_span_->trace_span()->span_id());
-  if (cloud_trace_->header_type() == HeaderType::CLOUD_TRACE_CONTEXT) {
-    // Set cloud trace context header to backend.
-    Status status = request()->AddHeaderToBackend(kCloudTraceContextHeader,
-                                                  trace_context);
-    if (!status.ok()) {
-      service_context()->env()->LogError(
-          "Failed to set trace context header to backend.");
-    }
-  } else {
-    // Set grpc trace context header to backend.
-    Status status =
-        request()->AddHeaderToBackend(kGRpcTraceContextHeader, trace_context);
-    if (!status.ok()) {
-      service_context()->env()->LogError(
-          "Failed to set trace context header to backend.");
-    }
+  // Set trace context header to backend.
+  Status status = request()->AddHeaderToBackend(
+      cloud_trace_->header_type() == HeaderType::CLOUD_TRACE_CONTEXT
+          ? kCloudTraceContextHeader
+          : kGRpcTraceContextHeader,
+      trace_context);
+  if (!status.ok()) {
+    service_context()->env()->LogError(
+        "Failed to set trace context header to backend.");
   }
 }
 

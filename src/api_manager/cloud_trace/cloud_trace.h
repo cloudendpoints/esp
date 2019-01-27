@@ -125,8 +125,7 @@ class CloudTrace final {
   // Construct with give Trace proto object. This constructor must only be
   // called with non-null pointer.
   CloudTrace(google::devtools::cloudtrace::v1::Trace *trace,
-             const std::string &options,
-             HeaderType header, const std::string &original_trace_context = "");
+             const std::string &options, HeaderType header);
 
   void SetProjectId(const std::string &project_id);
 
