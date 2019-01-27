@@ -386,14 +386,17 @@ TEST_F(CloudTraceTest, TestFormatGrpcTraceContextHeader) {
   ASSERT_EQ(cloud_trace->ToTraceContextHeader(12345),
             std::string(header, sizeof(header)));
   constexpr char expected_header1[] = {
-      0,                                               // version
-      0,                                               // trace_id field
-      0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,  // hi
-      0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,  // lo
-      1,                                               // span_id field
-      0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,  // span_id 0x3031323334353637
-      2,                                               // trace_options field
-      1,                                               // options: enabled
+      0,  // version
+      0,  // trace_id field
+      0x10, 0x11, 0x12, 0x13,
+      0x14, 0x15, 0x16, 0x17,  // hi
+      0x20, 0x21, 0x22, 0x23,
+      0x24, 0x25, 0x26, 0x27,  // lo
+      1,                       // span_id field
+      0x30, 0x31, 0x32, 0x33,
+      0x34, 0x35, 0x36, 0x37,  // span_id 0x3031323334353637
+      2,                       // trace_options field
+      1,                       // options: enabled
   };
   ASSERT_EQ(cloud_trace->ToTraceContextHeader(0x3031323334353637),
             std::string(expected_header1, sizeof(expected_header1)));

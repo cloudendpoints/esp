@@ -204,9 +204,7 @@ void Aggregator::AppendTrace(google::devtools::cloudtrace::v1::Trace *trace) {
 
 CloudTrace::CloudTrace(Trace *trace, const std::string &options,
                        HeaderType header_type)
-    : trace_(trace),
-      options_(options),
-      header_type_(header_type) {
+    : trace_(trace), options_(options), header_type_(header_type) {
   // Root span must exist and must be the only span as of now.
   root_span_ = trace_->mutable_spans(0);
 }
@@ -217,7 +215,7 @@ void CloudTrace::SetProjectId(const std::string &project_id) {
 
 void CloudTrace::EndRootSpan() { GetNow(root_span_->mutable_end_time()); }
 
-std::string CloudTrace::ToTraceContextHeader(uint64_t span_id) const{
+std::string CloudTrace::ToTraceContextHeader(uint64_t span_id) const {
   if (header_type_ == HeaderType::CLOUD_TRACE_CONTEXT) {
     std::ostringstream trace_context_stream;
     trace_context_stream << trace_->trace_id() << "/" << span_id << ";"
@@ -233,7 +231,8 @@ std::string CloudTrace::ToTraceContextHeader(uint64_t span_id) const{
     sscanf(trace_->trace_id().c_str(), "%016lx%016lx", &tid_hi, &tid_lo);
     tid_hi = __builtin_bswap64(tid_hi);
     tid_lo = __builtin_bswap64(tid_lo);
-    memcpy(tc + kTraceIdFieldIdPos + 1, (const char*)&tid_hi, sizeof(uint64_t));
+    memcpy(tc + kTraceIdFieldIdPos + 1, (const char *)&tid_hi,
+           sizeof(uint64_t));
     memcpy(tc + kTraceIdFieldIdPos + 1 + sizeof(uint64_t),
            (const char *)&tid_lo, sizeof(uint64_t));
     // SpanId
@@ -299,16 +298,17 @@ void CloudTraceSpan::Write(const std::string &msg) {
 
 CloudTrace *CreateCloudTrace(const std::string &trace_context,
                              const std::string &root_span_name,
-                             HeaderType header_type,
-                             Sampler *sampler) {
+                             HeaderType header_type, Sampler *sampler) {
   Trace *trace = nullptr;
   std::string options;
-  switch(header_type) {
+  switch (header_type) {
     case HeaderType::CLOUD_TRACE_CONTEXT:
-      GetTraceFromCloudTraceContextHeader(trace_context, root_span_name, &trace, &options);
+      GetTraceFromCloudTraceContextHeader(trace_context, root_span_name, &trace,
+                                          &options);
       break;
     case HeaderType::GRPC_TRACE_CONTEXT:
-      GetTraceFromGRpcTraceContextHeader(trace_context, root_span_name, &trace, &options);
+      GetTraceFromGRpcTraceContextHeader(trace_context, root_span_name, &trace,
+                                         &options);
       break;
   }
   if (trace) {
@@ -418,8 +418,8 @@ void GetTraceFromGRpcTraceContextHeader(const std::string &trace_context,
 
   *options = kDefaultTraceOptions;
 
-  uint64_t trace_id_hi =
-      __builtin_bswap64(*(uint64_t *)(trace_context.data() + kTraceIdFieldIdPos + 1));
+  uint64_t trace_id_hi = __builtin_bswap64(
+      *(uint64_t *)(trace_context.data() + kTraceIdFieldIdPos + 1));
   uint64_t trace_id_lo = __builtin_bswap64(*(uint64_t *)(trace_context.data() +
                                                          kTraceIdFieldIdPos +
                                                          1 + sizeof(uint64_t)));
@@ -428,8 +428,8 @@ void GetTraceFromGRpcTraceContextHeader(const std::string &trace_context,
     return;
   }
 
-  uint64_t span_id =
-      __builtin_bswap64(*(uint64_t *)(trace_context.data() + kSpanIdFieldIdPos + 1));
+  uint64_t span_id = __builtin_bswap64(
+      *(uint64_t *)(trace_context.data() + kSpanIdFieldIdPos + 1));
 
   // At this point, trace is enabled and trace id is successfully parsed.
   GetNewTrace(HexUInt128(trace_id_hi, trace_id_lo), root_span_name, trace);
