@@ -22,11 +22,11 @@
 #include <random>
 #include <sstream>
 #include <string>
+#include "absl/base/internal/endian.h"
+#include "absl/strings/escaping.h"
 #include "google/protobuf/timestamp.pb.h"
 #include "include/api_manager/utils/status.h"
 #include "include/api_manager/utils/version.h"
-#include "absl/base/internal/endian.h"
-#include "absl/strings/escaping.h"
 #include "src/api_manager/utils/marshalling.h"
 
 using google::api_manager::utils::Status;
