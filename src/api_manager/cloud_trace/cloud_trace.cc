@@ -47,6 +47,12 @@ const char kServiceAgentPrefix[] = "esp/";
 // Default trace options
 const char kDefaultTraceOptions[] = "o=1";
 
+// gRPC trace context constants
+constexpr size_t kTraceIdFieldIdPos = 1;
+constexpr size_t kSpanIdFieldIdPos = kTraceIdFieldIdPos + 16 + 1;
+constexpr size_t kTraceOptionsFieldIdPos = kSpanIdFieldIdPos + 8 + 1;
+constexpr size_t kGrpcTraceBinLen = 29;
+
 // Generate a random unsigned 64-bit integer.
 uint64_t RandomUInt64();
 
@@ -61,7 +67,7 @@ void GetNow(Timestamp *ts);
 void GetNewTrace(std::string trace_id_str, const std::string &root_span_name,
                  Trace **trace);
 
-// Parse the trace context header.
+// Parse the cloud trace context header.
 // Assigns Trace object to the trace pointer if context is parsed correctly and
 // trace is enabled. Otherwise the pointer is not modified.
 // If trace is enabled, the option will be modified to the one passed in.
@@ -72,10 +78,17 @@ void GetNewTrace(std::string trace_id_str, const std::string &root_span_name,
 // trace-id      := hex representation of a 128 bit value
 // span-id       := decimal representation of a 64 bit value
 // trace-options := decimal representation of a 32 bit value
-//
-void GetTraceFromContextHeader(const std::string &trace_context,
-                               const std::string &root_span_name, Trace **trace,
-                               std::string *options);
+void GetTraceFromCloudTraceContextHeader(const std::string &trace_context,
+                                         const std::string &root_span_name,
+                                         Trace **trace, std::string *options);
+
+// Parse the grpc trace context header.
+// Assigns Trace object to the trace pointer if context is parsed correctly and
+// trace is enabled. Otherwise the pointer is not modified.
+// If trace is enabled, the option will be modified to the one passed in.
+void GetTraceFromGRpcTraceContextHeader(const std::string &trace_context,
+                                        const std::string &root_span_name,
+                                        Trace **trace, std::string *options);
 }  // namespace
 
 Sampler::Sampler(double qps) {
@@ -189,8 +202,9 @@ void Aggregator::AppendTrace(google::devtools::cloudtrace::v1::Trace *trace) {
   }
 }
 
-CloudTrace::CloudTrace(Trace *trace, const std::string &options)
-    : trace_(trace), options_(options) {
+CloudTrace::CloudTrace(Trace *trace, const std::string &options,
+                       HeaderType header_type)
+    : trace_(trace), options_(options), header_type_(header_type) {
   // Root span must exist and must be the only span as of now.
   root_span_ = trace_->mutable_spans(0);
 }
@@ -200,6 +214,37 @@ void CloudTrace::SetProjectId(const std::string &project_id) {
 }
 
 void CloudTrace::EndRootSpan() { GetNow(root_span_->mutable_end_time()); }
+
+std::string CloudTrace::ToTraceContextHeader(uint64_t span_id) const {
+  if (header_type_ == HeaderType::CLOUD_TRACE_CONTEXT) {
+    std::ostringstream trace_context_stream;
+    trace_context_stream << trace_->trace_id() << "/" << span_id << ";"
+                         << options_;
+    return trace_context_stream.str();
+  } else {
+    char tc[kGrpcTraceBinLen];
+    // Version
+    tc[0] = 0;
+    // TraceId
+    tc[kTraceIdFieldIdPos] = 0;
+    uint64_t tid_hi, tid_lo;
+    sscanf(trace_->trace_id().c_str(), "%016lx%016lx", &tid_hi, &tid_lo);
+    tid_hi = __builtin_bswap64(tid_hi);
+    tid_lo = __builtin_bswap64(tid_lo);
+    memcpy(tc + kTraceIdFieldIdPos + 1, (const char *)&tid_hi,
+           sizeof(uint64_t));
+    memcpy(tc + kTraceIdFieldIdPos + 1 + sizeof(uint64_t),
+           (const char *)&tid_lo, sizeof(uint64_t));
+    // SpanId
+    tc[kSpanIdFieldIdPos] = 1;
+    uint64_t sid = __builtin_bswap64(span_id);
+    memcpy(tc + kSpanIdFieldIdPos + 1, (const char *)&sid, sizeof(uint64_t));
+    // TraceOptions
+    tc[kTraceOptionsFieldIdPos] = 2;
+    tc[kTraceOptionsFieldIdPos + 1] = options_ == kDefaultTraceOptions ? 1 : 0;
+    return std::string(tc, kGrpcTraceBinLen);
+  }
+}
 
 CloudTraceSpan::CloudTraceSpan(CloudTrace *cloud_trace,
                                const std::string &span_name)
@@ -253,21 +298,30 @@ void CloudTraceSpan::Write(const std::string &msg) {
 
 CloudTrace *CreateCloudTrace(const std::string &trace_context,
                              const std::string &root_span_name,
-                             Sampler *sampler) {
+                             HeaderType header_type, Sampler *sampler) {
   Trace *trace = nullptr;
   std::string options;
-  GetTraceFromContextHeader(trace_context, root_span_name, &trace, &options);
+  switch (header_type) {
+    case HeaderType::CLOUD_TRACE_CONTEXT:
+      GetTraceFromCloudTraceContextHeader(trace_context, root_span_name, &trace,
+                                          &options);
+      break;
+    case HeaderType::GRPC_TRACE_CONTEXT:
+      GetTraceFromGRpcTraceContextHeader(trace_context, root_span_name, &trace,
+                                         &options);
+      break;
+  }
   if (trace) {
     // When trace is triggered by the context header, refresh the previous
     // timestamp in sampler.
     if (sampler) {
       sampler->Refresh();
     }
-    return new CloudTrace(trace, options);
+    return new CloudTrace(trace, options, header_type);
   } else if (sampler && sampler->On()) {
     // Trace is turned on by sampler.
     GetNewTrace(RandomUInt128HexString(), root_span_name, &trace);
-    return new CloudTrace(trace, kDefaultTraceOptions);
+    return new CloudTrace(trace, kDefaultTraceOptions, header_type);
   } else {
     return nullptr;
   }
@@ -303,15 +357,19 @@ uint64_t RandomUInt64() {
   return distribution(generator);
 }
 
-std::string RandomUInt128HexString() {
+std::string HexUInt128(uint64_t hi, uint64_t lo) {
   std::stringstream stream;
 
   stream << std::setfill('0') << std::setw(sizeof(uint64_t) * 2) << std::hex
-         << RandomUInt64();
+         << hi;
   stream << std::setfill('0') << std::setw(sizeof(uint64_t) * 2) << std::hex
-         << RandomUInt64();
+         << lo;
 
   return stream.str();
+}
+
+std::string RandomUInt128HexString() {
+  return HexUInt128(RandomUInt64(), RandomUInt64());
 }
 
 void GetNow(Timestamp *ts) {
@@ -338,9 +396,53 @@ void GetNewTrace(std::string trace_id_str, const std::string &root_span_name,
   GetNow(root_span->mutable_start_time());
 }
 
-void GetTraceFromContextHeader(const std::string &trace_context,
-                               const std::string &root_span_name, Trace **trace,
-                               std::string *options) {
+void GetTraceFromGRpcTraceContextHeader(const std::string &trace_context,
+                                        const std::string &root_span_name,
+                                        Trace **trace, std::string *options) {
+  if (trace_context.length() != kGrpcTraceBinLen || trace_context[0] != 0) {
+    // Size or version unknown.
+    return;
+  }
+
+  if (trace_context[kTraceIdFieldIdPos] != 0 ||
+      trace_context[kSpanIdFieldIdPos] != 1 ||
+      trace_context[kTraceOptionsFieldIdPos] != 2) {
+    // Field ids are not in the right positions.
+    return;
+  }
+
+  if (!(trace_context[kTraceOptionsFieldIdPos + 1] & 1)) {
+    // Trace is not enabled
+    return;
+  }
+
+  *options = kDefaultTraceOptions;
+
+  uint64_t trace_id_hi = __builtin_bswap64(
+      *(uint64_t *)(trace_context.data() + kTraceIdFieldIdPos + 1));
+  uint64_t trace_id_lo = __builtin_bswap64(*(uint64_t *)(trace_context.data() +
+                                                         kTraceIdFieldIdPos +
+                                                         1 + sizeof(uint64_t)));
+  if (trace_id_hi == 0 && trace_id_lo == 0) {
+    // Invalid trace id
+    return;
+  }
+
+  uint64_t span_id = __builtin_bswap64(
+      *(uint64_t *)(trace_context.data() + kSpanIdFieldIdPos + 1));
+
+  // At this point, trace is enabled and trace id is successfully parsed.
+  GetNewTrace(HexUInt128(trace_id_hi, trace_id_lo), root_span_name, trace);
+  TraceSpan *root_span = (*trace)->mutable_spans(0);
+  // Set parent of root span to the given one if provided.
+  if (span_id != 0) {
+    root_span->set_parent_span_id(span_id);
+  }
+}
+
+void GetTraceFromCloudTraceContextHeader(const std::string &trace_context,
+                                         const std::string &root_span_name,
+                                         Trace **trace, std::string *options) {
   std::stringstream header_stream(trace_context);
 
   std::string trace_and_span_id;

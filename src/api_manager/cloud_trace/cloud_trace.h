@@ -29,6 +29,11 @@ namespace google {
 namespace api_manager {
 namespace cloud_trace {
 
+enum HeaderType {
+  CLOUD_TRACE_CONTEXT = 1,
+  GRPC_TRACE_CONTEXT = 2,
+};
+
 // A helper class to determine if trace should be enabled for a request.
 // A Sampler instance is put into the Aggregator class.
 // Trace is triggered if the time interval between the request time and the
@@ -120,7 +125,7 @@ class CloudTrace final {
   // Construct with give Trace proto object. This constructor must only be
   // called with non-null pointer.
   CloudTrace(google::devtools::cloudtrace::v1::Trace *trace,
-             const std::string &options);
+             const std::string &options, HeaderType header);
 
   void SetProjectId(const std::string &project_id);
 
@@ -139,10 +144,16 @@ class CloudTrace final {
 
   const std::string &options() const { return options_; }
 
+  const HeaderType header_type() const { return header_type_; }
+
+  std::string ToTraceContextHeader(uint64_t span_id) const;
+
  private:
   std::unique_ptr<google::devtools::cloudtrace::v1::Trace> trace_;
   google::devtools::cloudtrace::v1::TraceSpan *root_span_;
   std::string options_;
+  std::string original_trace_context_;
+  HeaderType header_type_;
 };
 
 // This class stores messages written to a single trace span. There can be
@@ -189,6 +200,7 @@ class CloudTraceSpan {
 // For trace_context, pass the value of "X-Cloud-Trace-Context" HTTP header.
 CloudTrace *CreateCloudTrace(const std::string &trace_context,
                              const std::string &root_span_name,
+                             HeaderType header_type,
                              Sampler *sampler = nullptr);
 
 // Creates trace span if trace is enabled.

@@ -25,6 +25,7 @@
 #include <vector>
 
 using ::google::api_manager::utils::Status;
+using ::google::api_manager::cloud_trace::HeaderType;
 
 namespace google {
 namespace api_manager {
@@ -34,6 +35,8 @@ namespace {
 
 // Cloud Trace Context Header
 const char kCloudTraceContextHeader[] = "X-Cloud-Trace-Context";
+// gRPC Trace Context Header
+const char kGRpcTraceContextHeader[] = "grpc-trace-bin";
 
 // Authorization Header
 const char kAuthorizationHeader[] = "Authorization";
@@ -141,7 +144,13 @@ RequestContext::RequestContext(std::shared_ptr<ServiceContext> service_context,
   // set.
   if (service_context_->cloud_trace_aggregator()) {
     std::string trace_context_header;
-    request_->FindHeader(kCloudTraceContextHeader, &trace_context_header);
+    // Default to CLOUD_TRACE_CONTEXT to not change the default behavior.
+    HeaderType header_type = HeaderType::CLOUD_TRACE_CONTEXT;
+    if (request_->FindHeader(kGRpcTraceContextHeader, &trace_context_header)) {
+      header_type = HeaderType::GRPC_TRACE_CONTEXT;
+    } else {
+      request_->FindHeader(kCloudTraceContextHeader, &trace_context_header);
+    }
 
     std::string method_name = kUnrecognizedOperation;
     if (method_call_.method_info) {
@@ -150,7 +159,7 @@ RequestContext::RequestContext(std::shared_ptr<ServiceContext> service_context,
     // qualify with the service name
     method_name = service_context_->service_name() + "/" + method_name;
     cloud_trace_.reset(cloud_trace::CreateCloudTrace(
-        trace_context_header, method_name,
+        trace_context_header, method_name, header_type,
         &service_context_->cloud_trace_aggregator()->sampler()));
   }
 }
@@ -367,14 +376,15 @@ const std::string RequestContext::FindClientIPAddress() {
 void RequestContext::StartBackendSpanAndSetTraceContext() {
   backend_span_.reset(CreateSpan(cloud_trace_.get(), "Backend"));
 
-  // Set trace context header to backend. The span id in the header will
-  // be the backend span's id.
-  std::ostringstream trace_context_stream;
-  trace_context_stream << cloud_trace()->trace()->trace_id() << "/"
-                       << backend_span_->trace_span()->span_id() << ";"
-                       << cloud_trace()->options();
-  Status status = request()->AddHeaderToBackend(kCloudTraceContextHeader,
-                                                trace_context_stream.str());
+  // The span id in the header will be the backend span's id.
+  std::string trace_context = cloud_trace()->ToTraceContextHeader(
+      backend_span_->trace_span()->span_id());
+  // Set trace context header to backend.
+  Status status = request()->AddHeaderToBackend(
+      cloud_trace_->header_type() == HeaderType::CLOUD_TRACE_CONTEXT
+          ? kCloudTraceContextHeader
+          : kGRpcTraceContextHeader,
+      trace_context);
   if (!status.ok()) {
     service_context()->env()->LogError(
         "Failed to set trace context header to backend.");

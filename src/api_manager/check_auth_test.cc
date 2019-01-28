@@ -392,6 +392,11 @@ class CheckAuthTest : public ::testing::Test {
           *http_referer = "";
           return true;
         }));
+    EXPECT_CALL(*raw_request_, FindHeader("grpc-trace-bin", _))
+        .WillOnce(Invoke([](const std::string &, std::string *trace_context) {
+          *trace_context = "";
+          return false;
+        }));
     EXPECT_CALL(*raw_request_, FindHeader("X-Cloud-Trace-Context", _))
         .WillOnce(Invoke([](const std::string &, std::string *trace_context) {
           *trace_context = "";
