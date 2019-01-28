@@ -23,6 +23,8 @@ cc_library(
         "cloud_trace.h",
     ],
     deps = [
+        "//external:absl_base_endian",
+        "//external:absl_strings",
         "//external:cloud_trace",
         "//include:headers_only",
         "//src/api_manager/auth:service_account_token",

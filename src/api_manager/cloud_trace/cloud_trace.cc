@@ -25,6 +25,8 @@
 #include "google/protobuf/timestamp.pb.h"
 #include "include/api_manager/utils/status.h"
 #include "include/api_manager/utils/version.h"
+#include "absl/base/internal/endian.h"
+#include "absl/strings/escaping.h"
 #include "src/api_manager/utils/marshalling.h"
 
 using google::api_manager::utils::Status;
@@ -227,14 +229,8 @@ std::string CloudTrace::ToTraceContextHeader(uint64_t span_id) const {
     tc[0] = 0;
     // TraceId
     tc[kTraceIdFieldIdPos] = 0;
-    uint64_t tid_hi, tid_lo;
-    sscanf(trace_->trace_id().c_str(), "%016lx%016lx", &tid_hi, &tid_lo);
-    tid_hi = __builtin_bswap64(tid_hi);
-    tid_lo = __builtin_bswap64(tid_lo);
-    memcpy(tc + kTraceIdFieldIdPos + 1, (const char *)&tid_hi,
-           sizeof(uint64_t));
-    memcpy(tc + kTraceIdFieldIdPos + 1 + sizeof(uint64_t),
-           (const char *)&tid_lo, sizeof(uint64_t));
+    std::string bytes_tid = absl::HexStringToBytes(trace_->trace_id());
+    memcpy(tc + kTraceIdFieldIdPos + 1, bytes_tid.data(), 2 * sizeof(uint64_t));
     // SpanId
     tc[kSpanIdFieldIdPos] = 1;
     uint64_t sid = __builtin_bswap64(span_id);
@@ -418,21 +414,26 @@ void GetTraceFromGRpcTraceContextHeader(const std::string &trace_context,
 
   *options = kDefaultTraceOptions;
 
-  uint64_t trace_id_hi = __builtin_bswap64(
-      *(uint64_t *)(trace_context.data() + kTraceIdFieldIdPos + 1));
-  uint64_t trace_id_lo = __builtin_bswap64(*(uint64_t *)(trace_context.data() +
-                                                         kTraceIdFieldIdPos +
-                                                         1 + sizeof(uint64_t)));
-  if (trace_id_hi == 0 && trace_id_lo == 0) {
+  // Check for a valid trace id
+  absl::string_view trace_id_str(trace_context.data() + kTraceIdFieldIdPos + 1,
+                                 2 * sizeof(uint64_t));
+  bool valid_trace_id = false;
+  for (size_t i = 0; i < 2 * sizeof(uint64_t); i++) {
+    if (trace_id_str[i] != 0) {
+      valid_trace_id = true;
+      break;
+    }
+  }
+  if (!valid_trace_id) {
     // Invalid trace id
     return;
   }
 
-  uint64_t span_id = __builtin_bswap64(
-      *(uint64_t *)(trace_context.data() + kSpanIdFieldIdPos + 1));
+  uint64_t span_id =
+      absl::big_endian::Load64(trace_context.data() + kSpanIdFieldIdPos + 1);
 
   // At this point, trace is enabled and trace id is successfully parsed.
-  GetNewTrace(HexUInt128(trace_id_hi, trace_id_lo), root_span_name, trace);
+  GetNewTrace(absl::BytesToHexString(trace_id_str), root_span_name, trace);
   TraceSpan *root_span = (*trace)->mutable_spans(0);
   // Set parent of root span to the given one if provided.
   if (span_id != 0) {

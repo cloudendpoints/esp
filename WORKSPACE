@@ -26,6 +26,14 @@
 #
 # A Bazel (http://bazel.io) workspace for the Google Cloud Endpoints runtime.
 
+# Version from Jul 11, 2018 before they added a dependency on cc_common from
+# a newer bazel version.
+http_archive(
+    name = "com_google_absl",
+    strip_prefix = "abseil-cpp-37d45c0164671963051320598ee8421b87506283",
+    urls = ["https://github.com/abseil/abseil-cpp/archive/37d45c0164671963051320598ee8421b87506283.zip"],
+)
+
 git_repository(
     name = "nginx",
     commit = "f5bf2d17902d1b504faac1a266883dab29dbff75",  # nginx-1.15.6
@@ -55,29 +63,46 @@ git_repository(
     commit = "d2c7d4dea492b9a86a53555aabdbfa90c2b01730",  # v1.15.0
     remote = "https://github.com/grpc/grpc.git",
 )
+
 load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps", "grpc_test_only_deps")
+
 grpc_deps()
+
 grpc_test_only_deps()
 
 bind(
     name = "gpr",
     actual = "@com_github_grpc_grpc//:gpr",
 )
+
 bind(
     name = "grpc",
     actual = "@com_github_grpc_grpc//:grpc",
 )
+
 bind(
     name = "grpc_cpp_plugin",
     actual = "@com_github_grpc_grpc//:grpc_cpp_plugin",
 )
+
 bind(
     name = "grpc++",
     actual = "@com_github_grpc_grpc//:grpc++",
 )
+
 bind(
     name = "grpc_lib",
     actual = "@com_github_grpc_grpc//:grpc++_codegen_proto",
+)
+
+bind(
+    name = "absl_base_endian",
+    actual = "@com_google_absl//absl/base:endian",
+)
+
+bind(
+    name = "absl_strings",
+    actual = "@com_google_absl//absl/strings",
 )
 
 load(
