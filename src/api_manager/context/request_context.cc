@@ -153,10 +153,10 @@ RequestContext::RequestContext(std::shared_ptr<ServiceContext> service_context,
       // parsing it.
       std::string base64_trace_context_header;
       if (request_->FindHeader(kGRpcTraceContextHeader,
-                               &base64_trace_context_header)) {
+                               &base64_trace_context_header) &&
+          absl::Base64Unescape(base64_trace_context_header,
+                               &trace_context_header)) {
         header_type = HeaderType::GRPC_TRACE_CONTEXT;
-        absl::Base64Unescape(base64_trace_context_header,
-                             &trace_context_header);
       }
     }
 
