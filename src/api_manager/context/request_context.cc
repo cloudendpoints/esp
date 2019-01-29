@@ -15,8 +15,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 
-#include "absl/strings/escaping.h"
 #include "src/api_manager/context/request_context.h"
+#include "absl/strings/escaping.h"
 #include "google/api/backend.pb.h"
 #include "google/protobuf/stubs/strutil.h"
 
