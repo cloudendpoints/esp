@@ -47,8 +47,10 @@ my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(14);
 
 $t->write_file('sc_override.pb.txt', <<"EOF");
 service_control_config {
-  log_request_headers: "foo,bar"
-  log_response_headers: "foo2,bar2"
+  log_request_header: "foo"
+  log_request_header: "bar"
+  log_response_header: "foo2"
+  log_response_header: "bar2"
 }
 EOF
 

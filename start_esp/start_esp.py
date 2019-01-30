@@ -159,8 +159,6 @@ def write_template(ingress, nginx_conf, args):
             cors_allow_headers=args.cors_allow_headers,
             cors_allow_credentials=args.cors_allow_credentials,
             cors_expose_headers=args.cors_expose_headers,
-            log_request_headers=args.log_request_headers,
-            log_response_headers=args.log_response_headers,
             ssl_protocols=args.ssl_protocols,
             experimental_proxy_backend_host_header=args.experimental_proxy_backend_host_header,
             enable_strict_transport_security=args.enable_strict_transport_security,
@@ -196,8 +194,8 @@ def write_server_config_template(server_config_path, args):
                 rewrite_rules=args.rewrite,
                 disable_cloud_trace_auto_sampling=args.disable_cloud_trace_auto_sampling,
                 cloud_trace_url_override=args.cloud_trace_url_override,
-                log_request_headers=args.log_request_headers,
-                log_response_headers=args.log_response_headers,
+                log_request_headers=args.request_headers,
+                log_response_headers=args.response_headers,
                 metadata_attributes=args.metadata_attributes)
 
         server_config_file = server_config_path
@@ -285,6 +283,22 @@ def handle_xff_trusted_proxies(args):
             proxy = proxy.strip()
             if proxy:
                 args.xff_trusted_proxies.append(proxy)
+
+# parse http headers list
+def handle_http_headers(args):
+    args.request_headers = []
+    if args.log_request_headers is not None:
+        for header in args.log_request_headers.split(","):
+            header = header.strip()
+            if header:
+                args.request_headers.append(header)
+
+    args.response_headers = []
+    if args.log_response_headers is not None:
+        for header in args.log_response_headers.split(","):
+            header = header.strip()
+            if header:
+                args.response_headers.append(header)
 
 def fetch_service_config(args):
     args.service_config_sets = []
@@ -929,6 +943,9 @@ if __name__ == '__main__':
 
     # Handles IP addresses of trusted proxies
     handle_xff_trusted_proxies(args)
+
+    # Handles http headers
+    handle_http_headers(args)
 
     # Get service config
     if args.service_json_path:

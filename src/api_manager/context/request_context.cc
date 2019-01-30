@@ -69,9 +69,6 @@ const char kDefaultApiKeyHeaderName[] = "x-api-key";
 // Delimiter of the IP addresses in the XFF header
 const char kClientIPHeaderDelimeter = ',';
 
-// Delimiter of the HTTP headers in the service control config
-const char kHttpHeadersDelimeter = ',';
-
 // Header for android package name, used for api key restriction check.
 const char kXAndroidPackage[] = "x-android-package";
 
@@ -274,28 +271,22 @@ void RequestContext::FillHttpHeaders(service_control::ReportRequestInfo *info,
   auto serverConfig = service_context_->config()->server_config();
   if (serverConfig->has_service_control_config()) {
     auto request_headers =
-        serverConfig->service_control_config().log_request_headers();
-    std::vector<std::string> req_headers;
-    split(request_headers, kHttpHeadersDelimeter, &req_headers);
-    for (auto &header : req_headers) {
-      auto key = trim(header);
+        serverConfig->service_control_config().log_request_header();
+    for (auto &header : request_headers) {
       std::string header_value;
-      if (request_->FindHeader(key, &header_value)) {
+      if (request_->FindHeader(header, &header_value)) {
         info->request_headers =
-            info->request_headers + key + "=" + header_value + ";";
+            info->request_headers + header + "=" + header_value + ";";
       }
     }
 
     auto response_headers =
-        serverConfig->service_control_config().log_response_headers();
-    std::vector<std::string> resp_headers;
-    split(response_headers, kHttpHeadersDelimeter, &resp_headers);
-    for (auto &header : resp_headers) {
-      auto key = trim(header);
+        serverConfig->service_control_config().log_response_header();
+    for (auto &header : response_headers) {
       std::string header_value;
-      if (response->FindHeader(key, &header_value)) {
+      if (response->FindHeader(header, &header_value)) {
         info->response_headers =
-            info->response_headers + key + "=" + header_value + ";";
+            info->response_headers + header + "=" + header_value + ";";
       }
     }
   }
