@@ -16,6 +16,7 @@
 //
 #include "src/api_manager/cloud_trace/cloud_trace.h"
 
+#include "absl/strings/escaping.h"
 #include "google/devtools/cloudtrace/v1/trace.pb.h"
 #include "gtest/gtest.h"
 #include "src/api_manager/mock_api_manager_environment.h"
@@ -33,6 +34,12 @@ class CloudTraceTest : public ::testing::Test {
     env_.reset(new ::testing::NiceMock<MockApiManagerEnvironmentWithLog>());
     sa_token_ = std::unique_ptr<auth::ServiceAccountToken>(
         new auth::ServiceAccountToken(env_.get()));
+  }
+
+  std::string Base64Escape(absl::string_view str) {
+    std::string ret;
+    absl::Base64Escape(str, &ret);
+    return ret;
   }
 
   std::unique_ptr<ApiManagerEnvInterface> env_;
@@ -238,7 +245,7 @@ TEST_F(CloudTraceTest, TestFormatCloudTraceContextHeader) {
 TEST_F(CloudTraceTest, TestParseGrpcTraceContextHeader) {
   std::unique_ptr<CloudTrace> cloud_trace;
   {
-    // Trace options missing
+    // Trace options missing.
     constexpr char header[] = {
         0,                                               // version_id
         0,                                               // trace_id field
@@ -249,12 +256,13 @@ TEST_F(CloudTraceTest, TestParseGrpcTraceContextHeader) {
         2,                                               // options missing
     };
     ASSERT_EQ(nullptr,
-              CreateCloudTrace(std::string(header, sizeof(header)), "root-span",
-                               HeaderType::GRPC_TRACE_CONTEXT));
+              CreateCloudTrace(
+                  Base64Escape(absl::string_view(header, sizeof(header))),
+                  "root-span", HeaderType::GRPC_TRACE_CONTEXT));
   }
 
   {
-    // Unrecognized version_id
+    // Unrecognized version_id.
     constexpr char header[] = {
         123,                                             // version_id not 0
         0,                                               // trace_id field
@@ -266,12 +274,13 @@ TEST_F(CloudTraceTest, TestParseGrpcTraceContextHeader) {
         1,                                               // tracing enabled
     };
     ASSERT_EQ(nullptr,
-              CreateCloudTrace(std::string(header, sizeof(header)), "root-span",
-                               HeaderType::GRPC_TRACE_CONTEXT));
+              CreateCloudTrace(
+                  Base64Escape(absl::string_view(header, sizeof(header))),
+                  "root-span", HeaderType::GRPC_TRACE_CONTEXT));
   }
 
   {
-    // Invalid trace id 0
+    // Invalid trace id 0.
     constexpr char header[] = {
         0,                                               // version_id
         0,                                               // trace_id field
@@ -283,12 +292,13 @@ TEST_F(CloudTraceTest, TestParseGrpcTraceContextHeader) {
         1,                                               // tracing enabled
     };
     ASSERT_EQ(nullptr,
-              CreateCloudTrace(std::string(header, sizeof(header)), "root-span",
-                               HeaderType::GRPC_TRACE_CONTEXT));
+              CreateCloudTrace(
+                  Base64Escape(absl::string_view(header, sizeof(header))),
+                  "root-span", HeaderType::GRPC_TRACE_CONTEXT));
   }
 
   {
-    // TraceId short
+    // TraceId short.
     constexpr char header[] = {
         0,                                               // version_id
         0,                                               // trace_id field
@@ -300,12 +310,13 @@ TEST_F(CloudTraceTest, TestParseGrpcTraceContextHeader) {
         1,                                               // tracing enabled
     };
     ASSERT_EQ(nullptr,
-              CreateCloudTrace(std::string(header, sizeof(header)), "root-span",
-                               HeaderType::GRPC_TRACE_CONTEXT));
+              CreateCloudTrace(
+                  Base64Escape(absl::string_view(header, sizeof(header))),
+                  "root-span", HeaderType::GRPC_TRACE_CONTEXT));
   }
 
   {
-    // SpanId short
+    // SpanId short.
     constexpr char header[] = {
         0,                                               // version_id
         0,                                               // trace_id field
@@ -315,6 +326,24 @@ TEST_F(CloudTraceTest, TestParseGrpcTraceContextHeader) {
         0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36,        // span_id
         2,                                               // trace_options field
         1,                                               // tracing enabled
+    };
+    ASSERT_EQ(nullptr,
+              CreateCloudTrace(
+                  Base64Escape(absl::string_view(header, sizeof(header))),
+                  "root-span", HeaderType::GRPC_TRACE_CONTEXT));
+  }
+
+  // Header not base64 encoded.
+  {
+    constexpr char header[] = {
+        0,                                               // version
+        0,                                               // trace_id field
+        0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,  // hi
+        0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,  // lo
+        1,                                               // span_id field
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30, 0x39,  // span_id 12345
+        2,                                               // trace_options field
+        1,                                               // options: enabled
     };
     ASSERT_EQ(nullptr,
               CreateCloudTrace(std::string(header, sizeof(header)), "root-span",
@@ -333,9 +362,9 @@ TEST_F(CloudTraceTest, TestParseGrpcTraceContextHeader) {
         2,                                               // trace_options field
         1,                                               // options: enabled
     };
-    cloud_trace.reset(CreateCloudTrace(std::string(header, sizeof(header)),
-                                       "root-span",
-                                       HeaderType::GRPC_TRACE_CONTEXT));
+    cloud_trace.reset(CreateCloudTrace(
+        Base64Escape(absl::string_view(header, sizeof(header))), "root-span",
+        HeaderType::GRPC_TRACE_CONTEXT));
     ASSERT_TRUE(cloud_trace);
     ASSERT_EQ(cloud_trace->trace()->trace_id(),
               "10111213141516172021222324252627");
@@ -356,9 +385,9 @@ TEST_F(CloudTraceTest, TestParseGrpcTraceContextHeader) {
         2,                                               // trace_options field
         1,                                               // tracing enabled
     };
-    cloud_trace.reset(CreateCloudTrace(std::string(header, sizeof(header)),
-                                       "root-span",
-                                       HeaderType::GRPC_TRACE_CONTEXT));
+    cloud_trace.reset(CreateCloudTrace(
+        Base64Escape(absl::string_view(header, sizeof(header))), "root-span",
+        HeaderType::GRPC_TRACE_CONTEXT));
     ASSERT_TRUE(cloud_trace);
     ASSERT_EQ(cloud_trace->trace()->trace_id(),
               "10111213141516172021222324252627");
@@ -380,11 +409,11 @@ TEST_F(CloudTraceTest, TestFormatGrpcTraceContextHeader) {
       1,                                               // options: enabled
   };
   std::unique_ptr<CloudTrace> cloud_trace(
-      CreateCloudTrace(std::string(header, sizeof(header)), "root-span",
-                       HeaderType::GRPC_TRACE_CONTEXT));
+      CreateCloudTrace(Base64Escape(absl::string_view(header, sizeof(header))),
+                       "root-span", HeaderType::GRPC_TRACE_CONTEXT));
   ASSERT_TRUE(cloud_trace);
   ASSERT_EQ(cloud_trace->ToTraceContextHeader(12345),
-            std::string(header, sizeof(header)));
+            Base64Escape(absl::string_view(header, sizeof(header))));
   constexpr char expected_header1[] = {
       0,  // version
       0,  // trace_id field
@@ -399,7 +428,8 @@ TEST_F(CloudTraceTest, TestFormatGrpcTraceContextHeader) {
       1,                       // options: enabled
   };
   ASSERT_EQ(cloud_trace->ToTraceContextHeader(0x3031323334353637),
-            std::string(expected_header1, sizeof(expected_header1)));
+            Base64Escape(
+                absl::string_view(expected_header1, sizeof(expected_header1))));
   constexpr char expected_header2[] = {
       0,                                               // version
       0,                                               // trace_id field
@@ -411,7 +441,8 @@ TEST_F(CloudTraceTest, TestFormatGrpcTraceContextHeader) {
       1,                                               // options: enabled
   };
   ASSERT_EQ(cloud_trace->ToTraceContextHeader(57),
-            std::string(expected_header2, sizeof(expected_header2)));
+            Base64Escape(
+                absl::string_view(expected_header2, sizeof(expected_header2))));
 }
 
 }  // namespace
