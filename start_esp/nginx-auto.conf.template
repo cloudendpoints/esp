@@ -238,7 +238,7 @@ http {
       proxy_redirect off;
   % if experimental_proxy_backend_host_header:
       proxy_set_header Host ${experimental_proxy_backend_host_header};
-  % else:
+  % elif not enable_backend_routing:
       proxy_set_header Host $host;
   % endif
       proxy_set_header X-Real-IP $remote_addr;
