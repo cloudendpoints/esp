@@ -83,6 +83,7 @@ http {
 
   server {
     server_name ${ingress.host};
+    resolver ${resolver};
 
 % if ssl_protocols:
   <%
@@ -224,7 +225,7 @@ http {
       grpc_pass ${location.backends[0]} override;
 % else:
   % if enable_backend_routing:
-      proxy_pass \$backend_url;
+      proxy_pass $backend_url;
   % elif location.proto == 'http':
       proxy_pass http://app_server${i};
   % elif location.proto == 'https':

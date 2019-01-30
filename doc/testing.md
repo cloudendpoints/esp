@@ -24,9 +24,9 @@ The ESP binary location is:
 
     ./bazel-bin/src/nginx/main/nginx-esp
 
-# Running unit and integratino tests #
+# Running unit and integration tests #
 
-libio-socket-ssl-perl is needed to run ESP tests: 
+libio-socket-ssl-perl is needed to run ESP tests:
 
     sudo apt-get install libio-socket-ssl-perl
 
