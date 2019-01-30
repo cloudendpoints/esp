@@ -121,7 +121,7 @@ def write_pid_file(args):
         f.write(str(os.getpid()))
         f.close()
     except IOError as err:
-        logging.error("Failed to save PID file: " + args.pid_file)
+        logging.error("[ESP] Failed to save PID file: " + args.pid_file)
         logging.error(err.strerror)
         sys.exit(3)
 
@@ -130,7 +130,7 @@ def write_template(ingress, nginx_conf, args):
     try:
         template = Template(filename=args.template)
     except IOError as err:
-        logging.error("Failed to load NGINX config template. " + err.strerror)
+        logging.error("[ESP] Failed to load NGINX config template. " + err.strerror)
         sys.exit(3)
 
     conf = template.render(
@@ -170,7 +170,7 @@ def write_template(ingress, nginx_conf, args):
         f.write(conf)
         f.close()
     except IOError as err:
-        logging.error("Failed to save NGINX config." + err.strerror)
+        logging.error("[ESP] Failed to save NGINX config." + err.strerror)
         sys.exit(3)
 
 def write_server_config_template(server_config_path, args):
@@ -178,7 +178,7 @@ def write_server_config_template(server_config_path, args):
     try:
         template = Template(filename=args.server_config_template)
     except IOError as err:
-        logging.error("Failed to load server config template. " + err.strerror)
+        logging.error("[ESP] Failed to load server config template. " + err.strerror)
         sys.exit(3)
 
     for idx, service_configs in enumerate(args.service_config_sets):
@@ -206,7 +206,7 @@ def write_server_config_template(server_config_path, args):
             f.write(conf)
             f.close()
         except IOError as err:
-            logging.error("Failed to save server config." + err.strerror)
+            logging.error("[ESP] Failed to save server config." + err.strerror)
             sys.exit(3)
 
 def ensure(config_dir):
@@ -214,13 +214,13 @@ def ensure(config_dir):
         try:
             os.makedirs(config_dir)
         except OSError as exc:
-            logging.error("Cannot create config directory.")
+            logging.error("[ESP] Cannot create config directory.")
             sys.exit(3)
 
 
 def assert_file_exists(fl):
     if not os.path.exists(fl):
-        logging.error("Cannot find the specified file " + fl)
+        logging.error("[ESP] Cannot find the specified file " + fl)
         sys.exit(3)
 
 
@@ -229,7 +229,7 @@ def start_nginx(nginx, nginx_conf):
         # Control is relinquished to nginx process after this line
         os.execv(nginx, ['nginx', '-p', '/usr', '-c', nginx_conf])
     except OSError as err:
-        logging.error("Failed to launch NGINX: " + nginx)
+        logging.error("[ESP] Failed to launch NGINX: " + nginx)
         logging.error(err.strerror)
         sys.exit(3)
 
@@ -247,7 +247,7 @@ def fetch_and_save_service_config_url(config_dir, token, service_mgmt_url, filen
                       separators=(',', ': '))
             f.close()
         except IOError as err:
-            logging.error("Cannot save service config." + err.strerror)
+            logging.error("[ESP] Cannot save service config." + err.strerror)
             sys.exit(3)
 
     except fetch.FetchError as err:
@@ -289,7 +289,7 @@ def fetch_service_config(args):
     try:
         # Check service_account_key and non_gcp
         if args.non_gcp and args.service_account_key is None:
-            logging.error("If --non_gcp is specified, --service_account_key has to be specified");
+            logging.error("[ESP] If --non_gcp is specified, --service_account_key has to be specified");
             sys.exit(3)
 
         # Get the access token
@@ -316,9 +316,9 @@ def fetch_service_config(args):
             # if service name is not specified, display error message and exit
             if args.service is None:
                 if args.check_metadata:
-                    logging.error("Unable to fetch service name from the metadata service");
+                    logging.error("[ESP] Unable to fetch service name from the metadata service");
                 else:
-                    logging.error("Service name is not specified");
+                    logging.error("[ESP] Service name is not specified");
                 sys.exit(3)
 
             # fetch service config rollout strategy from metadata, if not specified
@@ -385,7 +385,7 @@ def make_ingress(args):
     if len(collisions) > 0:
         shared_port, count = collisions.most_common(1)[0]
         if count > 1:
-            logging.error("Port " + str(shared_port) + " is used more than once.")
+            logging.error("[ESP] Port " + str(shared_port) + " is used more than once.")
             sys.exit(2)
 
     if args.http_port is not None:
@@ -892,13 +892,13 @@ if __name__ == '__main__':
 
     if args.service and '|' in args.service:
         if args.experimental_enable_multiple_api_configs == False:
-            logging.error("The flag --experimental_enable_multiple_api_configs must be enabled when --service specifies multiple services")
+            logging.error("[ESP] The flag --experimental_enable_multiple_api_configs must be enabled when --service specifies multiple services")
             sys.exit(3)
         if args.version:
-            logging.error("--version is not allowed when --service specifies multiple services")
+            logging.error("[ESP] --version is not allowed when --service specifies multiple services")
             sys.exit(3)
         if args.server_config_generation_path and not args.server_config_generation_path.endswith('/'):
-            logging.error("--server_config_generation_path must end with / when --service specifies multiple services")
+            logging.error("[ESP] --server_config_generation_path must end with / when --service specifies multiple services")
             sys.exit(3)
 
     # Set credentials file from the environment variable
@@ -931,7 +931,7 @@ if __name__ == '__main__':
         # environments.
         args.metadata_attributes = None
         if args.server_config_generation_path is None:
-            logging.error("when --generate_config_file_only, must specify --server_config_generation_path")
+            logging.error("[ESP] when --generate_config_file_only, must specify --server_config_generation_path")
             sys.exit(3)
         else:
             write_server_config_template(args.server_config_generation_path, args)
