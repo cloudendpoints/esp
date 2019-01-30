@@ -147,7 +147,8 @@ RequestContext::RequestContext(std::shared_ptr<ServiceContext> service_context,
     // Default to CLOUD_TRACE_CONTEXT to not change the default behavior.
     HeaderType header_type = HeaderType::CLOUD_TRACE_CONTEXT;
     if (request_->FindHeader(kGRpcTraceContextHeader, &trace_context_header)) {
-      // gRPC trace header found, the type of the header should be GRPC_TRACE_CONTEXT
+      // gRPC trace header found, the type of the header should be
+      // GRPC_TRACE_CONTEXT
       header_type = HeaderType::GRPC_TRACE_CONTEXT;
     } else {
       request_->FindHeader(kCloudTraceContextHeader, &trace_context_header);
