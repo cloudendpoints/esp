@@ -163,6 +163,10 @@ class RequestContext {
   // Fill log message.
   void FillLogMessage(service_control::ReportRequestInfo *info);
 
+  // Fill HTTP headers.
+  void FillHttpHeaders(service_control::ReportRequestInfo *info,
+                       Response *response);
+
   // Extracts api-key
   void ExtractApiKey();
 

@@ -86,6 +86,7 @@ py_test(
         "testdata/expected_rewrite_server.json",
         "testdata/expected_rollout_strategy_server.json",
         "testdata/expected_service_control_url_override_server.json",
+        "testdata/expected_service_control_report_http_headers.json",
         "testdata/expected_ssl_port_nginx.conf",
         "testdata/expected_ssl_protocols_nginx.conf",
         "testdata/expected_status_port_nginx.conf",

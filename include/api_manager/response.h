@@ -43,6 +43,11 @@ class Response {
 
   // Gets the latency info.
   virtual utils::Status GetLatencyInfo(service_control::LatencyInfo *info) = 0;
+
+  // Finds a HTTP header with a name. Returns true if found.
+  // Don't support multiple headers with same name for now. In that case,
+  // the first header will be returned.
+  virtual bool FindHeader(const std::string &name, std::string *header) = 0;
 };
 
 }  // namespace api_manager

@@ -846,6 +846,8 @@ const char kLogFieldNameProducerProjectId[] = "producer_project_id";
 const char kLogFieldNameReferer[] = "referer";
 const char kLogFieldNameLocation[] = "location";
 const char kLogFieldNameRequestSize[] = "request_size_in_bytes";
+const char kLogFieldNameRequestHeaders[] = "request_headers";
+const char kLogFieldNameResponseHeaders[] = "response_headers";
 const char kLogFieldNameResponseSize[] = "response_size_in_bytes";
 const char kLogFieldNameHttpMethod[] = "http_method";
 const char kLogFieldNameHttpResponseCode[] = "http_response_code";
@@ -948,8 +950,16 @@ void FillLogEntry(const ReportRequestInfo& info, const std::string& name,
   if (info.request_size >= 0) {
     (*fields)[kLogFieldNameRequestSize].set_number_value(info.request_size);
   }
+  if (!info.request_headers.empty()) {
+    (*fields)[kLogFieldNameRequestHeaders].set_string_value(
+        info.request_headers);
+  }
   if (info.response_size >= 0) {
     (*fields)[kLogFieldNameResponseSize].set_number_value(info.response_size);
+  }
+  if (!info.response_headers.empty()) {
+    (*fields)[kLogFieldNameResponseHeaders].set_string_value(
+        info.response_headers);
   }
   if (info.latency.request_time_ms >= 0) {
     (*fields)[kLogFieldNameRequestLatency].set_number_value(

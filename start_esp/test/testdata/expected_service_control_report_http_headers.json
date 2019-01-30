@@ -24,68 +24,20 @@
 # SUCH DAMAGE.
 
 service_config_rollout {
-% for file_full_path, percentage  in service_configs.iteritems():
   traffic_percentages {
-    key: "${file_full_path}"
-    value: ${percentage}
+    key: "./start_esp/test/testdata/test_service_config_1.json"
+    value: 100
   }
-% endfor
-% if rollout_id:
-  rollout_id: "${rollout_id}"
-% endif
 }
-% if management:
 service_management_config {
-  url: "${management}"
+  url: "https://servicemanagement.googleapis.com"
 }
-% endif
-% if service_control_url_override or log_request_headers or log_response_headers:
 service_control_config {
-  %if service_control_url_override:
-  url_override: "${service_control_url_override}"
-  % endif
-  %if log_request_headers:
-  log_request_headers: "${log_request_headers}"
-  % endif
-  %if log_response_headers:
-  log_response_headers: "${log_response_headers}"
-  % endif
+  log_request_headers: "foo,bar"
+  log_response_headers: "foo"
 }
-% endif
-% if client_ip_header:
-client_ip_extraction_config {
-  client_ip_header: "${client_ip_header}"
-  client_ip_position: ${client_ip_position}
-}
-% endif
 experimental {
   disable_log_status: true
-% if always_print_primitive_fields:
-  always_print_primitive_fields: true
-% endif
 }
-% if disable_cloud_trace_auto_sampling or cloud_trace_url_override:
-cloud_tracing_config {
-  % if cloud_trace_url_override:
-  url_override: "${cloud_trace_url_override}"
-  % endif
-  % if disable_cloud_trace_auto_sampling:
-  samling_config {
-    minimum_qps: 0
-  }
-  % endif
-}
-% endif
-% if rewrite_rules:
-api_service_config {
-% for rewrite_rule  in rewrite_rules:
-  rewrite: "${rewrite_rule}"
-% endfor
-}
-% endif
-rollout_strategy: "${rollout_strategy}"
-% if metadata_attributes:
-metadata_attributes {
-${metadata_attributes}
-}
-% endif
+rollout_strategy: "None"
+

@@ -75,6 +75,10 @@ ngx_uint_t ngx_http_get_response_status(ngx_http_request_t *r);
 ngx_table_elt_t *ngx_esp_find_headers_in(ngx_http_request_t *r, u_char *name,
                                          size_t len);
 
+// Search HTTP response headers.
+ngx_table_elt_t *ngx_esp_find_headers_out(ngx_http_request_t *r, u_char *name,
+                                          size_t len);
+
 // An InputIterator for nginx headers.
 class ngx_esp_header_iterator {
  public:

@@ -159,6 +159,8 @@ def write_template(ingress, nginx_conf, args):
             cors_allow_headers=args.cors_allow_headers,
             cors_allow_credentials=args.cors_allow_credentials,
             cors_expose_headers=args.cors_expose_headers,
+            log_request_headers=args.log_request_headers,
+            log_response_headers=args.log_response_headers,
             ssl_protocols=args.ssl_protocols,
             experimental_proxy_backend_host_header=args.experimental_proxy_backend_host_header,
             enable_strict_transport_security=args.enable_strict_transport_security,
@@ -194,6 +196,8 @@ def write_server_config_template(server_config_path, args):
                 rewrite_rules=args.rewrite,
                 disable_cloud_trace_auto_sampling=args.disable_cloud_trace_auto_sampling,
                 cloud_trace_url_override=args.cloud_trace_url_override,
+                log_request_headers=args.log_request_headers,
+                log_response_headers=args.log_response_headers,
                 metadata_attributes=args.metadata_attributes)
 
         server_config_file = server_config_path
@@ -790,6 +794,20 @@ config file.'''.format(
     parser.add_argument('--cloud_trace_url_override',
         default=None,
         help=argparse.SUPPRESS)
+
+    parser.add_argument('--log_request_headers', default=None, help='''
+        Log corresponding requests headers into Google cloud console through
+        service control, seperated by comma. Example, when
+        --log_request_headers=foo,bar, endpoint log will have
+        request_headers: foo=foo_value;bar=bar_value if available;
+        ''')
+
+    parser.add_argument('--log_response_headers', default=None, help='''
+        Log corresponding response headers into Google cloud console through
+        service control, seperated by comma. Example, when
+        --log_response_headers=foo,bar, endpoint log will have
+        response_headers: foo=foo_value;bar=bar_value if available;
+        ''')
 
     parser.add_argument('--enable_backend_routing',
         action='store_true', help='''
