@@ -796,17 +796,17 @@ config file.'''.format(
         help=argparse.SUPPRESS)
 
     parser.add_argument('--log_request_headers', default=None, help='''
-        Log corresponding requests headers into Google cloud console through
-        service control, seperated by comma. Example, when
+        Log corresponding request headers into Google cloud console through
+        service control, separated by comma. Example, when
         --log_request_headers=foo,bar, endpoint log will have
-        request_headers: foo=foo_value;bar=bar_value if available;
+        request_headers: foo=foo_value;bar=bar_value if values are available;
         ''')
 
     parser.add_argument('--log_response_headers', default=None, help='''
         Log corresponding response headers into Google cloud console through
-        service control, seperated by comma. Example, when
+        service control, separated by comma. Example, when
         --log_response_headers=foo,bar, endpoint log will have
-        response_headers: foo=foo_value;bar=bar_value if available;
+        response_headers: foo=foo_value;bar=bar_value if values are available;
         ''')
 
     parser.add_argument('--enable_backend_routing',
