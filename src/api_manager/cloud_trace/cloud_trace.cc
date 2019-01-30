@@ -88,7 +88,7 @@ void GetTraceFromCloudTraceContextHeader(const std::string &trace_context,
 // Assigns Trace object to the trace pointer if context is parsed correctly and
 // trace is enabled. Otherwise the pointer is not modified.
 // If trace is enabled, the option will be modified to the one passed in.
-void GetTraceFromGRpcTraceContextHeader(const std::string &trace_context,
+void GetTraceFromGRpcTraceContextHeader(const std::string &raw_trace_context,
                                         const std::string &root_span_name,
                                         Trace **trace, std::string *options);
 }  // namespace
@@ -238,7 +238,11 @@ std::string CloudTrace::ToTraceContextHeader(uint64_t span_id) const {
     // TraceOptions
     tc[kTraceOptionsFieldIdPos] = 2;
     tc[kTraceOptionsFieldIdPos + 1] = options_ == kDefaultTraceOptions ? 1 : 0;
-    return std::string(tc, kGrpcTraceBinLen);
+    std::string trace_context;
+    // For grpc the header must be base64 encoded because this is a binary
+    // header.
+    absl::Base64Escape(absl::string_view(tc, kGrpcTraceBinLen), &trace_context);
+    return trace_context;
   }
 }
 
@@ -392,9 +396,16 @@ void GetNewTrace(std::string trace_id_str, const std::string &root_span_name,
   GetNow(root_span->mutable_start_time());
 }
 
-void GetTraceFromGRpcTraceContextHeader(const std::string &trace_context,
+void GetTraceFromGRpcTraceContextHeader(const std::string &raw_trace_context,
                                         const std::string &root_span_name,
                                         Trace **trace, std::string *options) {
+  std::string trace_context;
+  // Grpc binary headers are base64 encoded, decode the header before parsing
+  // it.
+  if (!absl::Base64Unescape(raw_trace_context, &trace_context)) {
+    // Not a valid base64 encoded string.
+    return;
+  }
   if (trace_context.length() != kGrpcTraceBinLen || trace_context[0] != 0) {
     // Size or version unknown.
     return;

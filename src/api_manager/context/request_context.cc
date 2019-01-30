@@ -147,6 +147,8 @@ RequestContext::RequestContext(std::shared_ptr<ServiceContext> service_context,
     // Default to CLOUD_TRACE_CONTEXT to not change the default behavior.
     HeaderType header_type = HeaderType::CLOUD_TRACE_CONTEXT;
     if (request_->FindHeader(kGRpcTraceContextHeader, &trace_context_header)) {
+      // gRPC trace header found, the type of the header should be
+      // GRPC_TRACE_CONTEXT
       header_type = HeaderType::GRPC_TRACE_CONTEXT;
     } else {
       request_->FindHeader(kCloudTraceContextHeader, &trace_context_header);
@@ -376,15 +378,18 @@ const std::string RequestContext::FindClientIPAddress() {
 void RequestContext::StartBackendSpanAndSetTraceContext() {
   backend_span_.reset(CreateSpan(cloud_trace_.get(), "Backend"));
 
-  // The span id in the header will be the backend span's id.
-  std::string trace_context = cloud_trace()->ToTraceContextHeader(
+  // TODO: A better logic would be to send for GRPC backends the grpc-trace-bin
+  // header, and for http/https backends the X-Cloud-Trace-Context header.
+
+  std::string trace_context_header = cloud_trace()->ToTraceContextHeader(
       backend_span_->trace_span()->span_id());
+
   // Set trace context header to backend.
   Status status = request()->AddHeaderToBackend(
-      cloud_trace_->header_type() == HeaderType::CLOUD_TRACE_CONTEXT
+      cloud_trace()->header_type() == HeaderType::CLOUD_TRACE_CONTEXT
           ? kCloudTraceContextHeader
           : kGRpcTraceContextHeader,
-      trace_context);
+      trace_context_header);
   if (!status.ok()) {
     service_context()->env()->LogError(
         "Failed to set trace context header to backend.");
