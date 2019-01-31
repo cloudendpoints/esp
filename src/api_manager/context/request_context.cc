@@ -270,9 +270,9 @@ void RequestContext::FillHttpHeaders(service_control::ReportRequestInfo *info,
                                      Response *response) {
   auto serverConfig = service_context_->config()->server_config();
   if (serverConfig->has_service_control_config()) {
-    auto request_headers =
+    const auto &request_headers =
         serverConfig->service_control_config().log_request_header();
-    for (auto &header : request_headers) {
+    for (const auto &header : request_headers) {
       std::string header_value;
       if (request_->FindHeader(header, &header_value)) {
         info->request_headers =
@@ -280,9 +280,9 @@ void RequestContext::FillHttpHeaders(service_control::ReportRequestInfo *info,
       }
     }
 
-    auto response_headers =
+    const auto &response_headers =
         serverConfig->service_control_config().log_response_header();
-    for (auto &header : response_headers) {
+    for (const auto &header : response_headers) {
       std::string header_value;
       if (response->FindHeader(header, &header_value)) {
         info->response_headers =
