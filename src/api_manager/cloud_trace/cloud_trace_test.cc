@@ -71,7 +71,8 @@ TEST_F(CloudTraceTest, TestCloudTraceWithCloudHeader) {
 
   ASSERT_EQ(cloud_trace->trace()->spans_size(), 3);
   ASSERT_EQ(cloud_trace->trace()->spans(2).name(), "Span2");
-  ASSERT_EQ(cloud_trace->trace()->spans(2).labels().size(), 1);
+  // the agent label and the "Message".
+  ASSERT_EQ(cloud_trace->trace()->spans(2).labels().size(), 2);
   ASSERT_EQ(cloud_trace->trace()->spans(2).labels().find("000")->second,
             "Message");
 
