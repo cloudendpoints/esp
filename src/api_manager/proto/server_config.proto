@@ -96,6 +96,12 @@ message ServiceControlConfig {
   // Timeout in milliseconds on service control allocate quota requests.
   // If the value is <= 0, default timeout is 5000 milliseconds.
   int32 quota_timeout_ms = 9;
+
+  // Config for log HTTP request headers.
+  repeated string log_request_header = 10;
+
+  // Config for log HTTP response headers.
+  repeated string log_response_header = 11;
 }
 
 // Check aggregator config

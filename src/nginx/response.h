@@ -46,6 +46,7 @@ class NgxEspResponse : public Response {
   virtual std::size_t GetRequestSize();
   virtual std::size_t GetResponseSize();
   virtual utils::Status GetLatencyInfo(service_control::LatencyInfo *info);
+  virtual bool FindHeader(const std::string &name, std::string *header) const;
 
  private:
   ngx_http_request_t *r_;

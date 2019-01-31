@@ -95,6 +95,19 @@ Status NgxEspResponse::GetLatencyInfo(service_control::LatencyInfo *info) {
       info->request_time_ms, info->backend_time_ms, info->overhead_time_ms);
   return Status::OK;
 }
+
+bool NgxEspResponse::FindHeader(const std::string &name,
+                                std::string *header) const {
+  auto h = ngx_esp_find_headers_out(
+      r_, reinterpret_cast<u_char *>(const_cast<char *>(name.data())),
+      name.size());
+  if (h && h->value.len > 0) {
+    *header = ngx_str_to_std(h->value);
+    return true;
+  }
+  return false;
+}
+
 }  // namespace nginx
 }  // namespace api_manager
 }  // namespace google

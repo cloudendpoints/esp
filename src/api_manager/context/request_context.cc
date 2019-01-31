@@ -266,6 +266,32 @@ void RequestContext::FillLogMessage(service_control::ReportRequestInfo *info) {
   }
 }
 
+void RequestContext::FillHttpHeaders(const Response *response,
+                                     service_control::ReportRequestInfo *info) {
+  auto serverConfig = service_context_->config()->server_config();
+  if (serverConfig->has_service_control_config()) {
+    const auto &request_headers =
+        serverConfig->service_control_config().log_request_header();
+    for (const auto &header : request_headers) {
+      std::string header_value;
+      if (request_->FindHeader(header, &header_value)) {
+        info->request_headers =
+            info->request_headers + header + "=" + header_value + ";";
+      }
+    }
+
+    const auto &response_headers =
+        serverConfig->service_control_config().log_response_header();
+    for (const auto &header : response_headers) {
+      std::string header_value;
+      if (response->FindHeader(header, &header_value)) {
+        info->response_headers =
+            info->response_headers + header + "=" + header_value + ";";
+      }
+    }
+  }
+}
+
 void RequestContext::FillCheckRequestInfo(
     service_control::CheckRequestInfo *info) {
   FillOperationInfo(info);
@@ -335,6 +361,7 @@ void RequestContext::FillReportRequestInfo(
 
     // Must be after response_code and method are assigned.
     FillLogMessage(info);
+    FillHttpHeaders(response, info);
     bool is_streaming = false;
     if (method() &&
         (method()->request_streaming() || method()->response_streaming())) {

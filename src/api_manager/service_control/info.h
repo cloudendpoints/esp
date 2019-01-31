@@ -151,8 +151,14 @@ struct ReportRequestInfo : public OperationInfo {
   // request message size till the current time point.
   int64_t request_bytes;
 
+  // request headers that configured to be logged.
+  std::string request_headers;
+
   // response message size till the current time point.
   int64_t response_bytes;
+
+  // response headers that configured to be logged.
+  std::string response_headers;
 
   // number of messages for a stream.
   int64_t streaming_request_message_counts;

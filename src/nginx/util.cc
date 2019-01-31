@@ -171,6 +171,16 @@ ngx_table_elt_t *ngx_esp_find_headers_in(ngx_http_request_t *r, u_char *name,
   return nullptr;
 }
 
+ngx_table_elt_t *ngx_esp_find_headers_out(ngx_http_request_t *r, u_char *name,
+                                          size_t len) {
+  for (auto &h : r->headers_out) {
+    if (len == h.key.len && ngx_strcasecmp(name, h.key.data) == 0) {
+      return &h;
+    }
+  }
+  return nullptr;
+}
+
 ngx_esp_header_iterator::ngx_esp_header_iterator()
     : part_(nullptr), header_(nullptr), i_(0) {}
 

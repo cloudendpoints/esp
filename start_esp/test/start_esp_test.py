@@ -258,6 +258,11 @@ class TestStartEsp(unittest.TestCase):
         config_generator = self.basic_config_generator + " --cloud_trace_url_override test_cloud_trace_url_override"
         self.run_test_with_expectation(expected_config_file, self.generated_server_config_file, config_generator)
 
+    def test_service_control_report_http_headers_arg_output_is_as_expected(self):
+        expected_config_file = "./start_esp/test/testdata/expected_service_control_report_http_headers.json"
+        config_generator = self.basic_config_generator + " --log_request_headers foo,bar --log_response_headers foo"
+        self.run_test_with_expectation(expected_config_file, self.generated_server_config_file, config_generator)
+
     def test_backend_routing_output_is_as_expected(self):
         expected_config_file = "./start_esp/test/testdata/expected_backend_routing_nginx.conf"
         config_generator = self.backend_routing_config_generator
