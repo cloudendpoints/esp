@@ -47,7 +47,8 @@ class Response {
   // Finds a HTTP header with a name. Returns true if found.
   // Don't support multiple headers with same name for now. In that case,
   // the first header will be returned.
-  virtual bool FindHeader(const std::string &name, std::string *header) = 0;
+  virtual bool FindHeader(const std::string &name,
+                          std::string *header) const = 0;
 };
 
 }  // namespace api_manager

@@ -266,8 +266,8 @@ void RequestContext::FillLogMessage(service_control::ReportRequestInfo *info) {
   }
 }
 
-void RequestContext::FillHttpHeaders(service_control::ReportRequestInfo *info,
-                                     Response *response) {
+void RequestContext::FillHttpHeaders(const Response *response,
+                                     service_control::ReportRequestInfo *info) {
   auto serverConfig = service_context_->config()->server_config();
   if (serverConfig->has_service_control_config()) {
     const auto &request_headers =
@@ -361,7 +361,7 @@ void RequestContext::FillReportRequestInfo(
 
     // Must be after response_code and method are assigned.
     FillLogMessage(info);
-    FillHttpHeaders(info, response);
+    FillHttpHeaders(response, info);
     bool is_streaming = false;
     if (method() &&
         (method()->request_streaming() || method()->response_streaming())) {

@@ -96,7 +96,8 @@ Status NgxEspResponse::GetLatencyInfo(service_control::LatencyInfo *info) {
   return Status::OK;
 }
 
-bool NgxEspResponse::FindHeader(const std::string &name, std::string *header) {
+bool NgxEspResponse::FindHeader(const std::string &name,
+                                std::string *header) const {
   auto h = ngx_esp_find_headers_out(
       r_, reinterpret_cast<u_char *>(const_cast<char *>(name.data())),
       name.size());
