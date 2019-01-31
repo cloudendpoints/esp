@@ -271,6 +271,10 @@ void CloudTraceSpan::InitWithParentSpanId(const std::string &span_name,
   trace_span_->set_span_id(RandomUInt64());
   trace_span_->set_parent_span_id(parent_span_id);
   trace_span_->set_name(span_name);
+  // Agent label is defined as "<agent>/<version>".
+  trace_span_->mutable_labels()->insert(
+      {kCloudTraceAgentKey,
+       kServiceAgentPrefix + utils::Version::instance().get()});
   GetNow(trace_span_->mutable_start_time());
 }
 
