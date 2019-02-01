@@ -110,12 +110,7 @@ const std::string &MethodInfoImpl::first_authorization_url() const {
 
 void MethodInfoImpl::process_backend_rule(
     const ::google::api::BackendRule &rule) {
-  // Strip the last "/", in case the address is mis-configured.
-  if (rule.address().back() == '/') {
-    backend_address_ = rule.address().substr(0, rule.address().size() - 1);
-  } else {
-    backend_address_ = rule.address();
-  }
+  backend_address_ = rule.address();
   backend_path_translation_ = rule.path_translation();
   backend_jwt_audience_ = rule.jwt_audience();
 
@@ -133,6 +128,13 @@ void MethodInfoImpl::process_backend_rule(
       backend_path_ = backend_address_.substr(i);
       backend_address_ = backend_address_.substr(0, i);
     }
+    return;
+  }
+  // Strip the last "/", in case the address is mis-configured.
+  if (backend_path_translation_ ==
+          ::google::api::BackendRule_PathTranslation_APPEND_PATH_TO_ADDRESS &&
+      backend_address_.back() == '/') {
+    backend_address_ = backend_address_.substr(0, backend_address_.size() - 1);
   }
 }
 
