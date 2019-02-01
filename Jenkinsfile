@@ -351,6 +351,16 @@ def espDockerImage() {
   return espGenericDockerImage()
 }
 
+def espServerlessDockerImage() {
+  if (isRelease()) {
+    if (getParam('USE_LATEST_RELEASE', false)) {
+      return "gcr.io/endpoints-release/endpoints-runtime-serverless:1"
+    }
+    return "gcr.io/endpoints-release/endpoints-runtime-serverless:${ESP_RUNTIME_VERSION}"
+  }
+  return espGenericDockerImage('-serverless')
+}
+
 def espFlexDockerImage() {
   return espGenericDockerImage('-flex')
 }
@@ -409,10 +419,12 @@ def buildPackages() {
   } else {
     def espDebianPackage = espDebianPackage()
     def espImgFlex = espFlexDockerImage()
+    def espImgServerless = espServerlessDockerImage()
 
     sh("script/robot-release " +
         "-m ${espImgFlex} " +
         "-g ${espImgGeneric} " +
+        "-h ${espImgServerless} " +
         "-d ${espDebianPackage} " +
         "${serverConfigFlag} -s")
     // local perf builds its own esp binary package.
