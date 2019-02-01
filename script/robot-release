@@ -39,18 +39,21 @@ SKIP_TESTS='false'
 RELEASE_FLEX_IMAGE_FORMAT='gcr.io/endpointsv2/endpoints-runtime-flex:debian-git-%H'
 RELEASE_GENERIC_IMAGE_FORMAT='gcr.io/endpointsv2/endpoints-runtime'
 RELEASE_GENERIC_IMAGE_FORMAT+=':debian-git-%H'
+RELEASE_SERVERLESS_IMAGE_FORMAT='gcr.io/endpointsv2/endpoints-runtime-serverless'
+RELEASE_SERVERLESS_IMAGE_FORMAT+=':debian-git-%H'
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . ${ROOT}/script/all-utilities || { echo 'Cannot load Bash utilities'; exit 1; }
 
 CONFIG=''
 
-while getopts :c:d:f:g:j:m:r:st:v: arg; do
+while getopts :c:d:f:g:h:j:m:r:st:v: arg; do
   case ${arg} in
     c) CONFIG="${OPTARG}";;
     d) RELEASE_DEB="${OPTARG}";;
     f) RELEASE_FLEX_IMAGE_FORMAT="${OPTARG}";;
     g) RELEASE_GENERIC_IMAGE_FORMAT="${OPTARG}";;
+    h) RELEASE_SERVERLESS_IMAGE_FORMAT="${OPTARG}";;
     j) RELEASE_JSON="${OPTARG}";;
     m) RELEASE_FLEX_IMAGE_FORMAT="${OPTARG}";;
     s) SKIP_TESTS='true';;
@@ -133,8 +136,10 @@ fi
 if  [[ -n "${RELEASE_GENERIC_IMAGE_FORMAT}" ]]; then
   GENERIC_IMAGE="$(git show -q HEAD \
     --pretty=format:"${RELEASE_GENERIC_IMAGE_FORMAT}")"
+  SERVERLESS_IMAGE="$(git show -q HEAD \
+    --pretty=format:"${RELEASE_SERVERLESS_IMAGE_FORMAT}")"
   ${ROOT}/script/linux-build-docker -c "${CONFIG}" \
-    -d "${TMP_DEBIAN_PACKAGE}" -i "${GENERIC_IMAGE}" -p generic \
+    -d "${TMP_DEBIAN_PACKAGE}" -i "${GENERIC_IMAGE}" -s "${SERVERLESS_IMAGE}" -p generic \
     || error_exit 'Failed to build a generic Docker Image.'
 fi
 
@@ -147,6 +152,7 @@ if [[ -n "${RELEASE_JSON}" ]]; then
   "docker": "${FLEX_IMAGE}",
   "flexDocker": "${FLEX_IMAGE}",
   "genericDocker": "${GENERIC_IMAGE}",
+  "serverlessDocker": "${SERVERLESS_IMAGE}",
   "releaseDeb": "${RELEASE_DEB}",
   "versionedDeb": "${RELEASE_DEB}"
 }

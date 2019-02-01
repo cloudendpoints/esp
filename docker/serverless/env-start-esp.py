@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env python
 #
 # Copyright (C) Extensible Service Proxy Authors
 # All rights reserved.
@@ -24,23 +24,36 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 #
-################################################################################
+###############################################################################
 #
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-. ${ROOT}/script/all-utilities || { echo "Cannot load Bash utilities"; exit 1; }
+import os
 
-DEB="${ROOT}/bazel-bin/src/nginx/main/endpoints-server-proxy.deb"
-IMAGE="gcr.io/endpoints-jenkins/endpoints-ingress"
+_ENV_ERROR = "Serverless ESP expects {} in environment variables."
 
-while getopts :i: arg; do
-  case ${arg} in
-    i) IMAGE=${OPTARG};;
-  esac
-done
+try:
+    PORT = os.environ["PORT"]
+except ValueError:
+    raise ApplicationError(_ENV_ERROR.format("PORT"))
 
-cp $DEB                                 $ROOT/docker/ingress
-cp $ROOT/bazel-bin/test/src/ingress     $ROOT/docker/ingress
-cp $ROOT/test/src/controller/nginx.tmpl $ROOT/docker/ingress
-docker build -t ${IMAGE} $ROOT/docker/ingress || error_exit "Failed to build"
-gcloud docker -- push ${IMAGE}                   || error_exit "Failed to upload docker image"
+try:
+    SERVICE_NAME = os.environ["SERVICE_NAME"]
+except ValueError:
+    raise ApplicationError(_ENV_ERROR.format("SERVICE_NAME"))
+
+CMD = "/usr/sbin/start_esp"
+
+ARGS = [
+    CMD,
+    "--http_port={}".format(PORT),
+    "--service={}".format(SERVICE_NAME),
+    "--enable_backend_routing",
+]
+
+if "ESP_ARGS" in os.environ:
+    ARGS.extend(os.environ["ESP_ARGS"].split(","))
+else:
+    ARGS.append("--rollout_strategy=managed")
+
+
+os.execv(CMD, ARGS)

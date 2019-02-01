@@ -868,8 +868,6 @@ def enforce_conflict_args(args):
             return "Flag --enable_backend_routing cannot be used together with --config_dir."
         if args.service_control_url_override:
             return "Flag --enable_backend_routing cannot be used together with --service_control_url_override."
-        if args.management != MANAGEMENT_ADDRESS:
-            return "Flag --enable_backend_routing cannot be used together with --management."
         if args.metadata != METADATA_ADDRESS:
             return "Flag --enable_backend_routing cannot be used together with --metadata."
         if args.service_json_path:

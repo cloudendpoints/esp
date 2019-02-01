@@ -34,11 +34,12 @@ PLATFORM="flex"
 DEB="${ROOT}/bazel-bin/src/nginx/main/endpoints-server-proxy.deb"
 DOCKERFILE="Dockerfile"
 
-while getopts :c:d:gi:p: arg; do
+while getopts :c:d:i:s:p: arg; do
   case ${arg} in
     c) CONFIG="${OPTARG}";;
     d) DEB="${OPTARG}";;
     i) IMAGE="${OPTARG}";;
+    s) SERVERLESS_IMAGE="${OPTARG}";;
     p) PLATFORM="${OPTARG}";;
     *) error_exit "Unrecognized argument -${OPTARG}";;
   esac
@@ -76,27 +77,24 @@ retry -n 3 docker build --no-cache -t "${IMAGE}" \
   "${DOCKERFILE_PATH}/"  \
   || error_exit "Docker image build failed."
 
-# Build custom docker image for GKE/GCE.
-if  [[ -n "${CONFIG}" ]]; then
-  echo "Building custom docker image."
+echo "Pushing Docker image: ${IMAGE}"
+
+# Try 10 times, shortest wait is 10 seconds, exponential back-off.
+retry -n 10 -s 10 \
+    gcloud docker -- push "${IMAGE}" \
+  || error_exit "Failed to upload Docker image to gcr."
+
+# Build serverless docker image
+if  [[ -n "${SERVERLESS_IMAGE}" ]]; then
+  echo "Building serverless docker image."
   sed -e "s|\${PARENT_IMAGE}|${IMAGE}|g" \
-     "${ROOT}/docker/custom/Dockerfile.template" > "${ROOT}/docker/custom/Dockerfile"
+     "${ROOT}/docker/serverless/Dockerfile.template" > "${ROOT}/docker/serverless/Dockerfile"
 
-  cp "${CONFIG}" "${ROOT}/docker/custom/server_config.cfg" \
-    || error_exit "Cannot copy server config file."
-  retry -n 3 docker build --no-cache  -t "${IMAGE}" ./docker/custom/  \
-    || error_exit "Failed to build a custom Docker Image."
+  retry -n 3 docker build --no-cache  -t "${SERVERLESS_IMAGE}" ./docker/serverless/  \
+    || error_exit "Failed to build serverless Docker Image."
 
-  echo "Pushing Custom Docker image: ${IMAGE}"
+  echo "Pushing serverless Docker image: ${SERVERLESS_IMAGE}"
   retry -n 10 -s 10 \
-      gcloud docker -- push "${IMAGE}" \
-    || error_exit "Failed to upload custom Docker image to gcr."
-else
-
-  echo "Pushing Docker image: ${IMAGE}"
-
-  # Try 10 times, shortest wait is 10 seconds, exponential back-off.
-  retry -n 10 -s 10 \
-      gcloud docker -- push "${IMAGE}" \
-    || error_exit "Failed to upload Docker image to gcr."
+      gcloud docker -- push "${SERVERLESS_IMAGE}" \
+    || error_exit "Failed to upload serverless Docker image to gcr."
 fi
