@@ -41,7 +41,7 @@ my $NginxPort = ApiManager::pick_port();
 my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(5);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(7);
 
 # Save service name in the service configuration protocol buffer file.
 
@@ -50,6 +50,11 @@ backend {
   rules {
     selector: "ListShelves"
     address: "http://127.0.0.1:$BackendPort"
+    path_translation: APPEND_PATH_TO_ADDRESS
+  }
+  rules {
+    selector: "GetBook"
+    address: "http://127.0.0.1:$BackendPort/"
     path_translation: APPEND_PATH_TO_ADDRESS
   }
 }
@@ -92,8 +97,11 @@ $t->run();
 # PathTranslation is set as APPEND_PATH_TO_ADDRESS.
 my $response1 = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key');
 
+# Backend address with an unexpected "/" sufix, should still work.
+my $response2 = ApiManager::http_get($NginxPort,'/shelves/123/books/1234?key=this-is-an-api-key&timezone=EST');
+
 # This one should fail since there is not backend rule specified for this path
-my $response2 = ApiManager::http_get($NginxPort,'/shelves/1?key=this-is-an-api-key');
+my $response3 = ApiManager::http_get($NginxPort,'/shelves/1?key=this-is-an-api-key');
 
 $t->stop_daemons();
 
@@ -110,7 +118,14 @@ EOF
 
 my ($response_headers2, $response_body2) = split /\r\n\r\n/, $response2, 2;
 
-like($response_headers2, qr/HTTP\/1\.1 500 Internal Server Error/, 'Returned HTTP 500.');
+like($response_headers2, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');
+is($response_body2, <<'EOF', 'Book returned in the response body.');
+{ "id": "1234", "titie": "Fiction" }
+EOF
+
+my ($response_headers3, $response_body3) = split /\r\n\r\n/, $response3, 2;
+
+like($response_headers3, qr/HTTP\/1\.1 500 Internal Server Error/, 'Returned HTTP 500.');
 
 ################################################################################
 
@@ -129,6 +144,13 @@ Connection: close
     { "name": "shelves/2", "theme": "Fantasy" }
   ]
 }
+EOF
+
+  $server->on('GET', '/shelves/123/books/1234?key=this-is-an-api-key&timezone=EST', <<'EOF');
+HTTP/1.1 200 OK
+Connection: close
+
+{ "id": "1234", "titie": "Fiction" }
 EOF
   $server->run();
 }

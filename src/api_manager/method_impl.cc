@@ -110,7 +110,12 @@ const std::string &MethodInfoImpl::first_authorization_url() const {
 
 void MethodInfoImpl::process_backend_rule(
     const ::google::api::BackendRule &rule) {
-  backend_address_ = rule.address();
+  // Strip the last "/", in case the address is mis-configured.
+  if (rule.address().back() == '/') {
+    backend_address_ = rule.address().substr(0, rule.address().size() - 1);
+  } else {
+    backend_address_ = rule.address();
+  }
   backend_path_translation_ = rule.path_translation();
   backend_jwt_audience_ = rule.jwt_audience();
 
