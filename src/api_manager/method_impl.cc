@@ -128,6 +128,13 @@ void MethodInfoImpl::process_backend_rule(
       backend_path_ = backend_address_.substr(i);
       backend_address_ = backend_address_.substr(0, i);
     }
+    return;
+  }
+  // Strip the last "/", in case the address is mis-configured.
+  if (backend_path_translation_ ==
+          ::google::api::BackendRule_PathTranslation_APPEND_PATH_TO_ADDRESS &&
+      backend_address_.back() == '/') {
+    backend_address_ = backend_address_.substr(0, backend_address_.size() - 1);
   }
 }
 

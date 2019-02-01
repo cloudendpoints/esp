@@ -186,6 +186,17 @@ TEST(MethodInfo, PreservesBackendAddress_Append) {
   ASSERT_EQ(method_info->backend_jwt_audience(), "test_audience");
 }
 
+TEST(MethodInfo, PreservesBackendAddress_Append2) {
+  MethodInfoImplPtr method_info(new MethodInfoImpl(kMethodName, "", ""));
+  ::google::api::BackendRule rule;
+  rule.set_address("https://example.appspot.com/");
+  rule.set_path_translation(
+      ::google::api::BackendRule_PathTranslation_APPEND_PATH_TO_ADDRESS);
+  method_info->process_backend_rule(rule);
+  ASSERT_EQ(method_info->backend_address(), "https://example.appspot.com");
+  ASSERT_EQ(method_info->backend_path(), "");
+}
+
 }  // namespace
 
 }  // namespace api_manager
