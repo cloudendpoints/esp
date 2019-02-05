@@ -1,8 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_prefix")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("@io_bazel_rules_go//go:def.bzl", "go_binary")
-
-go_prefix("github.com/golang/protobuf")
 
 go_library(
     name = "proto",
@@ -20,6 +17,7 @@ go_library(
         "proto/text.go",
         "proto/text_parser.go",
     ],
+    importpath = "github.com/golang/protobuf",
     visibility = [
         "//visibility:public",
     ]
@@ -30,6 +28,7 @@ go_library(
     srcs = [
         "jsonpb/jsonpb.go",
     ],
+    importpath = "github.com/golang/protobuf",
     visibility = [
         "//visibility:public",
     ],
@@ -43,6 +42,7 @@ go_library(
     srcs = [
         "ptypes/any/any.pb.go",
     ],
+    importpath = "github.com/golang/protobuf",
     visibility = [
         "//visibility:public",
     ],
@@ -56,6 +56,7 @@ go_library(
     srcs = [
         "ptypes/timestamp/timestamp.pb.go",
     ],
+    importpath = "github.com/golang/protobuf",
     visibility = [
         "//visibility:public",
     ],
@@ -69,6 +70,7 @@ go_library(
     srcs = [
         "ptypes/wrappers/wrappers.pb.go",
     ],
+    importpath = "github.com/golang/protobuf",
     visibility = [
         "//visibility:public",
     ],
@@ -82,6 +84,7 @@ go_library(
     srcs = [
         "ptypes/duration/duration.pb.go",
     ],
+    importpath = "github.com/golang/protobuf",
     visibility = [
         "//visibility:public",
     ],
@@ -95,6 +98,7 @@ go_library(
     srcs = [
         "ptypes/struct/struct.pb.go",
     ],
+    importpath = "github.com/golang/protobuf",
     visibility = [
         "//visibility:public",
     ],

@@ -130,18 +130,16 @@ cc_binary(
 
 load(
     "@io_bazel_rules_go//go:def.bzl",
-    "go_prefix",
     "go_binary",
 )
 
-go_prefix("github.com/cloudendpoints/esp/test/grpc")
 
 go_binary(
     name = "interop-client",
     srcs = [
         "interop-client.go",
     ],
-    go_prefix = ":go_prefix",
+    importpath = "github.com/cloudendpoints/esp/test/grpc",
     deps = [
         "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_grpc//credentials:go_default_library",
