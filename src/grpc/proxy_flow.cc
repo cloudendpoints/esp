@@ -273,6 +273,17 @@ void ProxyFlow::StartUpstreamWritesDone(std::shared_ptr<ProxyFlow> flow,
                                         utils::Status status) {
   {
     std::lock_guard<std::mutex> lock(flow->mu_);
+
+    // NOTE: For gRPC steaming, at this point client-side streaming is done, but
+    // server-side streaming is not. There needs to be an additional mechanism
+    // to detect RST_STREAM and finish upstream properly. This problem can arise
+    // for server-side streaming when ESP is connected with connection pooling
+    // and multiple requests share a single HTTP connection.
+    flow->server_call_->SetCancel([flow]() {
+      flow->upstream_context_.TryCancel();
+      StartUpstreamFinish(flow);
+    });
+
     if (flow->sent_upstream_writes_done_) {
       return;
     }
