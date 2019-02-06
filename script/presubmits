@@ -42,6 +42,7 @@ function check_files() {
 }
 
 function build_and_test() {
+  bazel version
   local config="${1}"
   local config_flag=''
   local message='Running unit-tests, integration tests & NGINX tests'
