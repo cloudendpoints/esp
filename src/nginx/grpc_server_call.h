@@ -76,7 +76,8 @@ class NgxEspGrpcServerCall : public grpc::ServerCall {
 
   virtual void UpdateRequestMessageStat(int64_t size);
   virtual void UpdateResponseMessageStat(int64_t size);
-  virtual void SetCancel(std::function<void()> cancel);
+  virtual void SetGrpcUpstreamCancel(
+      std::function<void()> grpc_upstream_cancel);
 
  protected:
   // Converts the request body into gRPC messages and outputs the raw slices.
@@ -115,7 +116,7 @@ class NgxEspGrpcServerCall : public grpc::ServerCall {
   static void OnDownstreamPreread(ngx_http_request_t* r);
   static void OnDownstreamReadable(ngx_http_request_t* r);
   static void OnDownstreamWriteable(ngx_http_request_t* r);
-  static void OnHttpBlockReading(ngx_http_request_t *r);
+  static void OnHttpBlockReading(ngx_http_request_t* r);
 
   void CompletePendingRead(bool proceed, utils::Status status);
 
@@ -136,7 +137,7 @@ class NgxEspGrpcServerCall : public grpc::ServerCall {
   bool reading_;
   std::function<void(bool)> write_continuation_;
   std::function<void(bool, utils::Status)> read_continuation_;
-  std::function<void()> cancel_;
+  std::function<void()> grpc_upstream_cancel_;
   ::grpc::ByteBuffer* read_msg_;
   ::std::vector<grpc_slice> downstream_slices_;
 

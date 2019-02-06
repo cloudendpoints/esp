@@ -273,21 +273,11 @@ void ProxyFlow::StartUpstreamWritesDone(std::shared_ptr<ProxyFlow> flow,
                                         utils::Status status) {
   {
     std::lock_guard<std::mutex> lock(flow->mu_);
-
-    // NOTE: For gRPC steaming, at this point client-side streaming is done, but
-    // server-side streaming is not. There needs to be an additional mechanism
-    // to detect RST_STREAM and finish upstream properly. This problem can arise
-    // for server-side streaming when ESP is connected with connection pooling
-    // and multiple requests share a single HTTP connection.
-    flow->server_call_->SetCancel([flow]() {
-      flow->upstream_context_.TryCancel();
-      StartUpstreamFinish(flow);
-    });
-
     if (flow->sent_upstream_writes_done_) {
       return;
     }
     flow->sent_upstream_writes_done_ = true;
+    RegisterGrpcUpstreamCancel(flow);
   }
   flow->upstream_reader_writer_->WritesDone(
       flow->async_grpc_queue_->MakeTag([flow, status](bool ok) {
@@ -314,6 +304,7 @@ void ProxyFlow::StartUpstreamWriteMessage(std::shared_ptr<ProxyFlow> flow,
       return;
     }
     flow->sent_upstream_writes_done_ = true;
+    RegisterGrpcUpstreamCancel(flow);
   }
   flow->server_call_->UpdateRequestMessageStat(
       static_cast<int64_t>(flow->downstream_to_upstream_buffer_.Length()));
@@ -457,6 +448,13 @@ void ProxyFlow::StartDownstreamFinish(std::shared_ptr<ProxyFlow> flow,
                              .count();
   flow->server_call_->RecordBackendTime(backend_time);
   flow->server_call_->Finish(status, std::move(response_trailers));
+}
+
+void ProxyFlow::RegisterGrpcUpstreamCancel(std::shared_ptr<ProxyFlow> flow) {
+  flow->server_call_->SetGrpcUpstreamCancel([flow]() {
+    flow->upstream_context_.TryCancel();
+    StartUpstreamFinish(flow);
+  });
 }
 
 }  // namespace grpc

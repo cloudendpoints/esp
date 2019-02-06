@@ -197,6 +197,8 @@ NgxEspGrpcServerCall::~NgxEspGrpcServerCall() {
         break;
       }
     }
+    ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
+    ctx->grpc_server_call = nullptr;
   }
   for (auto &slice : downstream_slices_) {
     grpc_slice_unref(slice);
@@ -217,8 +219,9 @@ void NgxEspGrpcServerCall::UpdateResponseMessageStat(int64_t size) {
   ctx->request_handler->AttemptIntermediateReport();
 }
 
-void NgxEspGrpcServerCall::SetCancel(std::function<void()> cancel) {
-  cancel_ = cancel;
+void NgxEspGrpcServerCall::SetGrpcUpstreamCancel(
+    std::function<void()> grpc_upstream_cancel) {
+  grpc_upstream_cancel_ = grpc_upstream_cancel;
 }
 
 void NgxEspGrpcServerCall::AddInitialMetadata(const std::string &key,
@@ -349,16 +352,17 @@ void NgxEspGrpcServerCall::OnHttpBlockReading(ngx_http_request_t *r) {
   ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                  "NgxEspGrpcServerCall::OnHttpBlockReading");
 
-  if (r->connection->error){
-    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                   "NgxEspGrpcServerCall::OnHttpBlockReading: connection error");
+  if (r->connection->error) {
+    ngx_log_debug0(
+        NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+        "NgxEspGrpcServerCall::OnHttpBlockReading: connection error");
 
     ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r);
     NgxEspGrpcServerCall *server_call = ctx->grpc_server_call;
-    if (server_call->cancel_) {
-        std::function<void()> cancel;
-        std::swap(cancel, server_call->cancel_);
-        cancel();
+    if (server_call != nullptr && server_call->grpc_upstream_cancel_) {
+      std::function<void()> grpc_upstream_cancel;
+      std::swap(grpc_upstream_cancel, server_call->grpc_upstream_cancel_);
+      grpc_upstream_cancel();
     }
   }
 
@@ -761,9 +765,9 @@ void NgxEspGrpcServerCall::Cleanup(void *server_call_ptr) {
     server_call->CompletePendingRead(false, utils::Status::OK);
   }
   server_call->cln_.data = nullptr;
-  if (server_call->cancel_) {
-    std::function<void()> cancel;
-    std::swap(server_call->cancel_, cancel);
+  if (server_call->grpc_upstream_cancel_) {
+    std::function<void()> grpc_upstream_cancel;
+    std::swap(server_call->grpc_upstream_cancel_, grpc_upstream_cancel);
   }
 }
 

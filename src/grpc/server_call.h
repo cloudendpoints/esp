@@ -61,7 +61,8 @@ class ServerCall {
 
   virtual void UpdateRequestMessageStat(int64_t size) = 0;
   virtual void UpdateResponseMessageStat(int64_t size) = 0;
-  virtual void SetCancel(std::function<void()> cancel) = 0;
+  virtual void SetGrpcUpstreamCancel(
+      std::function<void()> grpc_upstream_cancel) = 0;
 };
 
 }  // namespace grpc
