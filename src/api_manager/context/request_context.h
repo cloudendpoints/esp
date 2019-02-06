@@ -167,6 +167,8 @@ class RequestContext {
   void FillHttpHeaders(const Response *response,
                        service_control::ReportRequestInfo *info);
 
+  void FillJwtPayloads(service_control::ReportRequestInfo *info);
+
   // Extracts api-key
   void ExtractApiKey();
 

@@ -17,13 +17,9 @@
 
 #include "src/api_manager/context/request_context.h"
 #include "google/api/backend.pb.h"
-#include "google/protobuf/stubs/strutil.h"
-#include "src/api_manager/utils/url_util.h"
 
 #include <uuid/uuid.h>
 #include <numeric>
-#include <sstream>
-#include <vector>
 
 using ::google::api_manager::cloud_trace::HeaderType;
 using ::google::api_manager::utils::Status;
@@ -69,6 +65,9 @@ const char kDefaultApiKeyHeaderName[] = "x-api-key";
 
 // Delimiter of the IP addresses in the XFF header
 const char kClientIPHeaderDelimeter = ',';
+
+// Delimiter of the jwt payloads
+const char kJwtPayloadsDelimeter = '.';
 
 // Header for android package name, used for api key restriction check.
 const char kXAndroidPackage[] = "x-android-package";
@@ -293,6 +292,49 @@ void RequestContext::FillHttpHeaders(const Response *response,
   }
 }
 
+void RequestContext::FillJwtPayloads(service_control::ReportRequestInfo *info) {
+  auto serverConfig = service_context_->config()->server_config();
+  if (serverConfig->has_service_control_config() &&
+      serverConfig->service_control_config().log_jwt_payload().size() != 0) {
+    JwtCache &jwt_cache = service_context()->jwt_cache();
+    JwtCache::ScopedLookup lookup(&jwt_cache, auth_token_);
+    // FillJwtPayloads is called when reporting to service control, which is
+    // after CheckAuth, so the userInfo should always be cached.
+    if (!lookup.Found()) {
+      return;
+    }
+    const auto &jwt_payloads =
+        serverConfig->service_control_config().log_jwt_payload();
+
+    for (const auto &payload : jwt_payloads) {
+      char *json_copy = strdup(lookup.value()->user_info.claims.c_str());
+      grpc_json *property_json =
+          grpc_json_parse_string_with_len(json_copy, strlen(json_copy));
+
+      std::vector<std::string> keys;
+      split(payload, kJwtPayloadsDelimeter, &keys);
+      for (const auto &key : keys) {
+        const grpc_json *next = GetProperty(property_json, key.c_str());
+        if (next) {
+          *property_json = *next;
+        } else {
+          // Not found the corresponding jwt payload.
+          property_json = nullptr;
+          break;
+        }
+      }
+
+      if (property_json) {
+        std::string s;
+        s += property_json->key;
+        s += "=";
+        s += property_json->value;
+        info->jwt_payloads = info->jwt_payloads + s + ";";
+      }
+    }
+  }
+}
+
 void RequestContext::FillCheckRequestInfo(
     service_control::CheckRequestInfo *info) {
   FillOperationInfo(info);
@@ -362,7 +404,9 @@ void RequestContext::FillReportRequestInfo(
 
     // Must be after response_code and method are assigned.
     FillLogMessage(info);
+
     FillHttpHeaders(response, info);
+    FillJwtPayloads(info);
     bool is_streaming = false;
     if (method() &&
         (method()->request_streaming() || method()->response_streaming())) {

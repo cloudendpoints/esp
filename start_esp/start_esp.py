@@ -196,6 +196,7 @@ def write_server_config_template(server_config_path, args):
                 cloud_trace_url_override=args.cloud_trace_url_override,
                 log_request_headers=args.request_headers,
                 log_response_headers=args.response_headers,
+                log_jwt_payloads=args.jwt_payloads,
                 metadata_attributes=args.metadata_attributes)
 
         server_config_file = server_config_path
@@ -284,8 +285,8 @@ def handle_xff_trusted_proxies(args):
             if proxy:
                 args.xff_trusted_proxies.append(proxy)
 
-# parse http headers list
-def handle_http_headers(args):
+# parse log entries list
+def handle_service_control_log_entries(args):
     args.request_headers = []
     if args.log_request_headers is not None:
         for header in args.log_request_headers.split(","):
@@ -299,6 +300,13 @@ def handle_http_headers(args):
             header = header.strip()
             if header:
                 args.response_headers.append(header)
+
+    args.jwt_payloads = []
+    if args.log_jwt_payload is not None:
+        for payload in args.log_jwt_payload.split(","):
+            payload = payload.strip()
+            if header:
+                args.jwt_payloads.append(payload)
 
 def fetch_service_config(args):
     args.service_config_sets = []
@@ -823,6 +831,14 @@ config file.'''.format(
         response_headers: foo=foo_value;bar=bar_value if values are available;
         ''')
 
+    parser.add_argument('--log_jwt_payload', default=None, help='''
+        Log corresponding jwt payload fields into Google cloud console through
+        service control, separated by comma. Example, when
+        --log_jwt_payload=sub,google.compute_engine.project_id, endpoint log
+        will have jwt_payload: sub=[SUBJECT];google.compute_engine.project_id=[PROJECT_ID]
+        if the fields are available;
+        ''')
+
     parser.add_argument('--enable_backend_routing',
         action='store_true', help='''
         Enables the nginx proxy to route requests according to the `x-google-backend` or
@@ -942,8 +958,8 @@ if __name__ == '__main__':
     # Handles IP addresses of trusted proxies
     handle_xff_trusted_proxies(args)
 
-    # Handles http headers
-    handle_http_headers(args)
+    # Handles service control log entries
+    handle_service_control_log_entries(args)
 
     # Get service config
     if args.service_json_path:
