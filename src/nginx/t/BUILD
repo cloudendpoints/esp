@@ -51,7 +51,6 @@ nginx_suite(
     tests = [
         "auth_asymmetrickey.t",
         "auth_check_report_body.t",
-        "auth_report_jwt_payload.t",
         "auth_ok_check_fail.t",
         "auth_pass_user_info.t",
         "auth_pkey_cache.t",
@@ -229,6 +228,7 @@ nginx_suite(
         "report_3xx.t",
         "report_4xx.t",
         "report_with_headers.t",
+        "report_jwt_payload.t",
         "report_compute_platform.t",
         "report_failed.t",
         "report_failed_request.t",
