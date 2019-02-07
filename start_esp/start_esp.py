@@ -832,11 +832,12 @@ config file.'''.format(
         ''')
 
     parser.add_argument('--log_jwt_payload', default=None, help='''
-        Log corresponding jwt payload fields into Google cloud console through
-        service control, separated by comma. Example, when
+        Log corresponding JWT JSON payload primitive fields into Google cloud
+        console through service control, separated by comma. Example, when
         --log_jwt_payload=sub,google.compute_engine.project_id, endpoint log
         will have jwt_payload: sub=[SUBJECT];google.compute_engine.project_id=[PROJECT_ID]
-        if the fields are available;
+        if the fields are available. The value must be a primitive field,
+        JSON objects and arrays will not be logged.
         ''')
 
     parser.add_argument('--enable_backend_routing',

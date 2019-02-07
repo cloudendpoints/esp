@@ -48,12 +48,18 @@ my $PubkeyPort = ApiManager::pick_port();
 
 my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(10);
 
+# log_jwt_payload must be a primitive field.
+# object and array are not supported, which will not be logged.
 $t->write_file('sc_override.pb.txt', <<"EOF");
 service_control_config {
   log_jwt_payload: "exp"
+  log_jwt_payload: "google"
   log_jwt_payload: "google.compute_engine.project_id."
   log_jwt_payload: "google.project_number."
+  log_jwt_payload: "google.google_bool"
   log_jwt_payload: "google.not_existed"
+  log_jwt_payload: "foo.foo_list"
+  log_jwt_payload: "foo.foo_bool"
   log_jwt_payload: "google.compute_engine.not_existed"
   log_jwt_payload: "aud."
   log_jwt_payload: "not_existed."
@@ -126,17 +132,26 @@ my $pubkeys = <<'EOF';
 }
 EOF
 
+
 # es256_token is issued by "es256-issuer".
 # Generated with payloads:
 # {
 #   "aud": "ok_audience_1",
-#   "exp": 4703080574,
+#   "exp": 4703162488,
+#  "foo": {
+#    "foo_list": [
+#      true,
+#      false
+#    ],
+#    "foo_bool": true
+#  },
 #   "google": {
 #     "compute_engine": {
 #       "project_id": "cloudendpoint_testing",
-#       "zone": "us_west1_a"
-#    }
-#       "project_number": 12345,
+#       "zone": "us_west1_a",
+#   }
+#   "project_number": 12345,
+#   "google_bool": false
 #  },
 #  "iat": 1549412881,
 #  "iss": "es256-issuer",
@@ -145,14 +160,16 @@ EOF
 
 my $es256_token = "eyJhbGciOiJSUzI1NiIsImtpZCI6IkRIRmJwb0lVcXJZOHQyenBBMnFYZk".
 "NtcjVWTzVaRXI0UnpIVV8tZW52dlEiLCJ0eXAiOiJKV1QifQ.eyJhdWQiOiJva19hdWRpZW5jZV8".
-"xIiwiZXhwIjo0NzAzMDgwNTc0LCJnb29nbGUiOnsiY29tcHV0ZV9lbmdpbmUiOnsicHJvamVjdF9".
-"pZCI6ImNsb3VkZW5kcG9pbnRfdGVzdGluZyIsInpvbmUiOiJ1c193ZXN0MV9hIn0sInByb2plY3R".
-"fbnVtYmVyIjoxMjM0NX0sImlhdCI6MTU0OTQ4MDU3NCwiaXNzIjoiZXMyNTYtaXNzdWVyIiwic3V".
-"iIjoiZXMyNTYtaXNzdWVyIn0.h5LPppjnXJB35ta1MxyuUfTs-ZeoQoVYUCdWRwJ9u956izbET2Z".
-"i_b2pXA0FdaJHWy4idogNLRx5PRZu8tN4t-Y93v_5g7CmaUGdv6auKOzMYssT3lGoqU51o5V4QAi".
-"eHPLOmNmDdkldUVvz8_ibpiWLcZ7VIwCZKq9V_I6XxMi0ZQYuNfXdqdeMmGmWRRUbDyRHHK7t4c4".
-"ejtNmfEtgLwFOuH42vvBJRrhplRRZqYEPpMjMBYYK5eWGNXIZ8PdUfundjd3lxPz-dyfySO5TN2t".
-"Oxy9gSNXVaJYHQKZGSu6w-5PS9ascrCRpIaLqngq5-b1NOO6YdYfng28buKTe0Q";
+"xIiwiZXhwIjo0NzAzMTYyNDg4LCJmb28iOnsiZm9vX2Jvb2wiOnRydWUsImZvb19saXN0IjpbdHJ".
+"1ZSxmYWxzZV19LCJnb29nbGUiOnsiY29tcHV0ZV9lbmdpbmUiOnsicHJvamVjdF9pZCI6ImNsb3V".
+"kZW5kcG9pbnRfdGVzdGluZyIsInpvbmUiOiJ1c193ZXN0MV9hIn0sImdvb2dsZV9ib29sIjpmYWx".
+"zZSwicHJvamVjdF9udW1iZXIiOjEyMzQ1fSwiaWF0IjoxNTQ5NTYyNDg4LCJpc3MiOiJlczI1Ni1".
+"pc3N1ZXIiLCJzdWIiOiJlczI1Ni1pc3N1ZXIifQ.SnQ66iwlS80VFvtL-8jeEyqtaxaqW0CgN0W4".
+"DoJ5imwatHm1If_ty7EbjZUf-ilUawxD_G-xV6_YJ59JX-C6X3SD_yYYrhJZac1V99awCxG3LxTp".
+"ziiOLzTOY28-xayHNwKLQT_qwM3RoJ4eFO1jOzcwxZdvGiyBBuoaht0cygqqFecfxjaBHtGwfyxQ".
+"cR__FNFxZ2JGwL9PK4ytttFFOey1FOIyDM3kd3O2NwMAb8zfI2vPwKizEEYnWqgsfNkzckp02W4s".
+"01IgOPc5s2XMUjnWoSk_is1Hc527jvIOQhnSDZyHqt9QfsDKdNvZ0qj7E_3p2rbaaTiInogDsvj0".
+"aA";
 
 my $report_done = 'report_done';
 
@@ -203,9 +220,8 @@ my $report_json = decode_json(ServiceControl::convert_proto($r->{body}, 'report_
 my @operations = @{$report_json->{operations}};
 is(scalar @operations, 1, 'There are 1 report operations total');
 
-print Dumper $report_json;
 my $log = $report_json->{operations}[0]->{logEntries}[0]->{structPayload};
-is($log->{jwt_payloads}, 'exp=4703080574;project_id=cloudendpoint_testing;project_number=12345;aud=ok_audience_1;', 'log message includes configured jwt payloads');
+is($log->{jwt_payloads}, 'exp=4703162488;project_id=cloudendpoint_testing;project_number=12345;google_bool=false;foo_bool=true;aud=ok_audience_1;', 'log message includes configured jwt payloads');
 
 ################################################################################
 

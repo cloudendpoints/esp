@@ -328,8 +328,23 @@ void RequestContext::FillJwtPayloads(service_control::ReportRequestInfo *info) {
         std::string s;
         s += property_json->key;
         s += "=";
-        s += property_json->value;
-        info->jwt_payloads = info->jwt_payloads + s + ";";
+        switch (property_json->type) {
+          case GRPC_JSON_STRING:
+          case GRPC_JSON_NUMBER:
+            s += property_json->value;
+            info->jwt_payloads = info->jwt_payloads + s + ";";
+            break;
+          case GRPC_JSON_TRUE:
+            s += "true";
+            info->jwt_payloads = info->jwt_payloads + s + ";";
+            break;
+          case GRPC_JSON_FALSE:
+            s += "false";
+            info->jwt_payloads = info->jwt_payloads + s + ";";
+            break;
+          default:
+            break;
+        }
       }
     }
   }
