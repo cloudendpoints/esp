@@ -1,48 +1,44 @@
-# Release 1.28.0 08-01-2019
+# Release 1.29.0 07-02-2019
 
 ===============================================
+
+- Build ESP Docker image which accepts start_esp arguments from environment variables (#527)
+- Add the agent label to all trace spans. (#526)
+- Log http request and response headers if configured (#524)
+- Add prefix [ESP] in error logging for clarification (#525)
+- Add support for grpc tracing header. (#503)
+- Add access token to upstream requests for backend routing (#518)
+- Support backend routing, based on backed rules (#514)
+
+# Release 1.28.0 08-01-2019
 
 - Not log JWT error when trying multiple public keys (#511)
 
 - Not to extract api-key and use it if not required (#500)
 
-===============================================
 # Release 1.27.0 04-12-2018
 
 - Fix grpc_web crash at sending trailers (#496)
-
 - Clear SSL errors if JWT signature validation fails (#494)
-
 - Not call service management rollouts if not traffic (#492)
-
 - Support downloading large service config (#491)
-
 - Move strict_tls_security header from server level to location level (#487)
-
 - Upgraded nginx to 1.15.0 (#447)
 
 # Release 1.26.0 29-10-2018
 
 - Correctly convert gRPC custom Status to JSON in transcoding. (#479)
-
 - Add start_esp flag: experiental_proxy_backend_host_header. (#476)
-
 - Add an option to enable HSTS (HTTP Strict Transport Security) (#474)
-
 - Add enable_debug flag (#471)
-
 - Not to log access token (#470)
-
 - Upgrade gRPC from 1.4.2 to 1.15.0 (#450)
-
 - CORS always adds the Access-Control-Allow-Origin header (#449)
 
 # Release 1.25.0 17-10-2018
 
 - Change side-way http to use 1.1 (#453)
-
 - Upgrade gRPC from 1.4.2 to 1.15.0 (#450)
-
 - CORS always adds the Access-Control-Allow-Origin header (#449)
 
 # Release 1.24.0 29-08-2018
@@ -52,11 +48,8 @@
 # Release 1.23.0 27-08-2018
 
 - Proxy multiple Endpoints services (#434)
-
 - Move GceMetadata fetching to start_esp. (#435)
-
 - Harden code, not to free nullptr pool (#436)
-
 - Add the start_esp_test to the BUILD file (#433)
 
 # Release 1.22.0 16-08-2018
