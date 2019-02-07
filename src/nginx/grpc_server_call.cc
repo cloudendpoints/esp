@@ -362,8 +362,9 @@ void NgxEspGrpcServerCall::OnHttpBlockReading(ngx_http_request_t *r) {
 
     ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r);
     if (ctx->grpc_upstream_cancel) {
-      // std::swap(grpc_upstream_cancel, ctx->grpc_upstream_cancel);
-      (*ctx->grpc_upstream_cancel)();
+      std::function<void()> *grpc_upstream_cancel =
+          ctx->grpc_upstream_cancel.release();
+      (*grpc_upstream_cancel)();
     }
   }
 
