@@ -107,6 +107,11 @@ function push_docker_image() {
 }
 
 push_docker_image \
+  "gcr.io/endpoints-jenkins/endpoints-runtime-serverless:debian-git-${SHA}" \
+  "gcr.io/endpoints-release/endpoints-runtime-serverless:${VERSION}" \
+  || error_exit "Docker image push failed."
+
+push_docker_image \
   "gcr.io/endpoints-jenkins/endpoints-runtime:debian-git-${SHA}" \
   "gcr.io/endpoints-release/endpoints-runtime:${VERSION}" \
   || error_exit "Docker image push failed."
