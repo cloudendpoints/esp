@@ -28,6 +28,7 @@
 
 #include <grpc/impl/codegen/gpr_types.h>
 #include <cassert>
+#include <memory>
 #include <utility>
 
 #include "grpc++/support/byte_buffer.h"
@@ -221,7 +222,9 @@ void NgxEspGrpcServerCall::UpdateResponseMessageStat(int64_t size) {
 
 void NgxEspGrpcServerCall::SetGrpcUpstreamCancel(
     std::function<void()> grpc_upstream_cancel) {
-  grpc_upstream_cancel_ = grpc_upstream_cancel;
+  ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
+  ctx->grpc_upstream_cancel =
+      std::unique_ptr<std::function<void()>>(new auto(grpc_upstream_cancel));
 }
 
 void NgxEspGrpcServerCall::AddInitialMetadata(const std::string &key,
@@ -358,11 +361,9 @@ void NgxEspGrpcServerCall::OnHttpBlockReading(ngx_http_request_t *r) {
         "NgxEspGrpcServerCall::OnHttpBlockReading: connection error");
 
     ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r);
-    NgxEspGrpcServerCall *server_call = ctx->grpc_server_call;
-    if (server_call != nullptr && server_call->grpc_upstream_cancel_) {
-      std::function<void()> grpc_upstream_cancel;
-      std::swap(grpc_upstream_cancel, server_call->grpc_upstream_cancel_);
-      grpc_upstream_cancel();
+    if (ctx->grpc_upstream_cancel) {
+      // std::swap(grpc_upstream_cancel, ctx->grpc_upstream_cancel);
+      (*ctx->grpc_upstream_cancel)();
     }
   }
 
@@ -765,10 +766,6 @@ void NgxEspGrpcServerCall::Cleanup(void *server_call_ptr) {
     server_call->CompletePendingRead(false, utils::Status::OK);
   }
   server_call->cln_.data = nullptr;
-  if (server_call->grpc_upstream_cancel_) {
-    std::function<void()> grpc_upstream_cancel;
-    std::swap(server_call->grpc_upstream_cancel_, grpc_upstream_cancel);
-  }
 }
 
 grpc_byte_buffer *NgxEspGrpcServerCall::ConvertByteBuffer(

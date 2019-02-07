@@ -137,7 +137,6 @@ class NgxEspGrpcServerCall : public grpc::ServerCall {
   bool reading_;
   std::function<void(bool)> write_continuation_;
   std::function<void(bool, utils::Status)> read_continuation_;
-  std::function<void()> grpc_upstream_cancel_;
   ::grpc::ByteBuffer* read_msg_;
   ::std::vector<grpc_slice> downstream_slices_;
 
