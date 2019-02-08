@@ -88,6 +88,9 @@ class Config {
   void SetJwksUri(const std::string &issuer, const std::string &jwks_uri,
                   bool openid_valid);
 
+  // Return the JSON name for given snake case path.
+  bool GetJsonName(const std::string &snake_name, std::string &json_name) const;
+
   // Get the Firebase server from Server config
   std::string GetFirebaseServer();
 
@@ -135,6 +138,9 @@ class Config {
   // Load Backend info to MethodInfo.
   bool LoadBackends(ApiManagerEnvInterface *env);
 
+  // Load types from service config.
+  bool LoadTypes(ApiManagerEnvInterface *env);
+
   ::google::api::Service service_;
   std::shared_ptr<proto::ServerConfig> server_config_;
   PathMatcherPtr<MethodInfo *> path_matcher_;
@@ -145,6 +151,11 @@ class Config {
   // jwksUri for the issuer. It is set to true if jwksUri is not provided in
   // service config and we have not tried openId discovery to fetch jwksUri.
   std::map<std::string, std::pair<std::string, bool>> issuer_jwks_uri_map_;
+
+  // snake case path to JSON name map.
+  // This is specifically for backend routing, where the path can be snake case,
+  // needs to translate to JSON name in order for redirecting.
+  std::map<std::string, std::string> snake_path_to_json_map_;
 };
 
 }  // namespace api_manager

@@ -40,6 +40,10 @@ http {
     delete: "/shelves/{shelf}/books/{book}"
   }
   rules {
+    selector: "GetBookInfo"
+    get: "/shelves/{s_h_e_l_f}/books/info/{b_o_o_k}"
+  }
+  rules {
     selector: "Unspecified.Paths"
     custom {
       path: "/**"

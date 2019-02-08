@@ -403,6 +403,17 @@ bool Config::LoadBackends(ApiManagerEnvInterface *env) {
   return true;
 }
 
+bool Config::LoadTypes(ApiManagerEnvInterface *env) {
+  for (const auto &type : service_.types()) {
+    for (const auto &field : type.fields()) {
+      if (field.name().find("_") != std::string::npos) {
+        snake_path_to_json_map_.emplace(field.name(), field.json_name());
+      }
+    }
+  }
+  return true;
+}
+
 bool Config::LoadService(ApiManagerEnvInterface *env,
                          const std::string &service_config) {
   if (!service_config.empty()) {
@@ -470,6 +481,9 @@ std::unique_ptr<Config> Config::Create(ApiManagerEnvInterface *env,
     return nullptr;
   }
   if (!config->LoadSystemParameters(env)) {
+    return nullptr;
+  }
+  if (!config->LoadTypes(env)) {
     return nullptr;
   }
   if (!config->LoadBackends(env)) {
@@ -567,6 +581,16 @@ std::string Config::GetFirebaseServer() {
 
 std::string Config::GetFirebaseAudience() {
   return GetFirebaseServer() + kFirebaseAudience;
+}
+
+bool Config::GetJsonName(const std::string &snake_name,
+                         std::string &json_name) const {
+  auto it = snake_path_to_json_map_.find(snake_name);
+  if (it == snake_path_to_json_map_.end()) {
+    return false;
+  }
+  json_name = it->second;
+  return true;
 }
 
 }  // namespace api_manager

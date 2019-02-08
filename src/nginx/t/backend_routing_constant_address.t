@@ -42,7 +42,7 @@ my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $MetadataPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(14);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(16);
 
 # Save service name in the service configuration protocol buffer file.
 
@@ -64,6 +64,22 @@ backend {
     address: "http://127.0.0.1:$BackendPort/getBook"
     path_translation: CONSTANT_ADDRESS
     jwt_audience: "test-audience"
+  }
+  rules {
+    selector: "GetBookInfo"
+    address: "http://127.0.0.1:$BackendPort/getBookInfo"
+    path_translation: CONSTANT_ADDRESS
+    jwt_audience: "test-audience"
+  }
+}
+types {
+  fields {
+    json_name: "BOOK"
+    name: "b_o_o_k"
+  }
+  fields {
+    json_name: "SHELF"
+    name: "s_h_e_l_f"
   }
 }
 control {
@@ -127,6 +143,9 @@ my $response2 = ApiManager::http_get($NginxPort,'/shelves/123/books?key=this-is-
 # Authorization header is added from cached token, with audience override.
 my $response3 = ApiManager::http_get($NginxPort,'/shelves/123/books/1234?key=this-is-an-api-key&timezone=EST');
 
+# if the path field is snake case, need to replace with jsonName instead.
+my $response4 = ApiManager::http_get($NginxPort,'/shelves/123/books/info/1234?key=this-is-an-api-key');
+
 $t->stop_daemons();
 
 my ($response_headers1, $response_body1) = split /\r\n\r\n/, $response1, 2;
@@ -141,7 +160,7 @@ EOF
 
 my ($response_headers2, $response_body2) = split /\r\n\r\n/, $response2, 2;
 like($response_headers2, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');
-is($response_body2, <<'EOF', 'Shelves returned in the response body.');
+is($response_body2, <<'EOF', 'Books returned in the response body.');
 { "books": [
     { "id": "1234", "titie": "Fiction" }
   ]
@@ -150,13 +169,19 @@ EOF
 
 my ($response_headers3, $response_body3) = split /\r\n\r\n/, $response3, 2;
 like($response_headers3, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');
-is($response_body3, <<'EOF', 'Shelves returned in the response body.');
+is($response_body3, <<'EOF', 'Book returned in the response body.');
+{ "id": "1234", "titie": "Fiction" }
+EOF
+
+my ($response_headers4, $response_body4) = split /\r\n\r\n/, $response4, 2;
+like($response_headers4, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');
+is($response_body4, <<'EOF', 'Book Info returned in the response body.');
 { "id": "1234", "titie": "Fiction" }
 EOF
 
 # Check Authorization header is added into requests.
 my @bookstore_requests = ApiManager::read_http_stream($t, 'bookstore.log');
-is(scalar @bookstore_requests, 3, 'Bookstore received 3 requests.');
+is(scalar @bookstore_requests, 4, 'Bookstore received 4 requests.');
 
 my $request = shift @bookstore_requests;
 is($request->{headers}->{'authorization'}, 'Bearer test_audience_override',
@@ -204,6 +229,13 @@ Connection: close
 EOF
 
   $server->on('GET', '/getBook?shelf=123&book=1234&timezone=EST', <<'EOF');
+HTTP/1.1 200 OK
+Connection: close
+
+{ "id": "1234", "titie": "Fiction" }
+EOF
+
+  $server->on('GET', '/getBookInfo?SHELF=123&BOOK=1234', <<'EOF');
 HTTP/1.1 200 OK
 Connection: close
 
