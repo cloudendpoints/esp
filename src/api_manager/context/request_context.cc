@@ -454,16 +454,21 @@ std::string RequestContext::GetBackendPath() const {
         std::string field_path;
         if (found != std::string::npos &&
             service_context_->config()->GetJsonName(
-                variable_binding.field_path[j], field_path)) {
+                variable_binding.field_path[j], &field_path)) {
           parameters.append(field_path);
         } else {
           parameters.append(variable_binding.field_path[j]);
         }
-        parameters.append("=");
-        parameters.append(variable_binding.value);
-        if (i != method_call_.variable_bindings.size() - 1) {
-          parameters.append("&");
+
+        if (j != variable_binding.field_path.size() - 1) {
+          parameters.append(".");
         }
+      }
+
+      parameters.append("=");
+      parameters.append(variable_binding.value);
+      if (i != method_call_.variable_bindings.size() - 1) {
+        parameters.append("&");
       }
     }
 

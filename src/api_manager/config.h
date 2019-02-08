@@ -89,7 +89,7 @@ class Config {
                   bool openid_valid);
 
   // Return the JSON name for given snake case path.
-  bool GetJsonName(const std::string &snake_name, std::string &json_name) const;
+  bool GetJsonName(const std::string &snake_name, std::string *json_name) const;
 
   // Get the Firebase server from Server config
   std::string GetFirebaseServer();
@@ -139,7 +139,7 @@ class Config {
   bool LoadBackends(ApiManagerEnvInterface *env);
 
   // Load types from service config.
-  bool LoadTypes(ApiManagerEnvInterface *env);
+  void LoadTypes(ApiManagerEnvInterface *env);
 
   ::google::api::Service service_;
   std::shared_ptr<proto::ServerConfig> server_config_;

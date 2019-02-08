@@ -533,10 +533,10 @@ TEST(Config, LoadTypes) {
   std::unique_ptr<Config> config = Config::Create(&env, types_config, "");
   ASSERT_TRUE(config);
   std::string json_name;
-  ASSERT_TRUE(config->GetJsonName("i_a_t_a", json_name));
+  ASSERT_TRUE(config->GetJsonName("i_a_t_a", &json_name));
   ASSERT_EQ("IATA", json_name);
-  ASSERT_FALSE(config->GetJsonName("id", json_name));
-  ASSERT_TRUE(config->GetJsonName("d_s_t", json_name));
+  ASSERT_FALSE(config->GetJsonName("id", &json_name));
+  ASSERT_TRUE(config->GetJsonName("d_s_t", &json_name));
   ASSERT_EQ("DST", json_name);
 }
 

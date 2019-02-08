@@ -403,7 +403,7 @@ bool Config::LoadBackends(ApiManagerEnvInterface *env) {
   return true;
 }
 
-bool Config::LoadTypes(ApiManagerEnvInterface *env) {
+void Config::LoadTypes(ApiManagerEnvInterface *env) {
   for (const auto &type : service_.types()) {
     for (const auto &field : type.fields()) {
       if (field.name().find("_") != std::string::npos) {
@@ -411,7 +411,6 @@ bool Config::LoadTypes(ApiManagerEnvInterface *env) {
       }
     }
   }
-  return true;
 }
 
 bool Config::LoadService(ApiManagerEnvInterface *env,
@@ -483,15 +482,14 @@ std::unique_ptr<Config> Config::Create(ApiManagerEnvInterface *env,
   if (!config->LoadSystemParameters(env)) {
     return nullptr;
   }
-  if (!config->LoadTypes(env)) {
-    return nullptr;
-  }
   if (!config->LoadBackends(env)) {
     return nullptr;
   }
   if (!config->LoadQuotaRule(env)) {
     return nullptr;
   }
+
+  config->LoadTypes(env);
   return config;
 }
 
@@ -584,12 +582,12 @@ std::string Config::GetFirebaseAudience() {
 }
 
 bool Config::GetJsonName(const std::string &snake_name,
-                         std::string &json_name) const {
+                         std::string *json_name) const {
   auto it = snake_path_to_json_map_.find(snake_name);
   if (it == snake_path_to_json_map_.end()) {
     return false;
   }
-  json_name = it->second;
+  *json_name = it->second;
   return true;
 }
 
