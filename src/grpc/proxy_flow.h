@@ -82,6 +82,15 @@ class ProxyFlow {
   static void StartDownstreamFinish(std::shared_ptr<ProxyFlow> flow,
                                     utils::Status status);
 
+  // NOTE: For gRPC steaming, at this point client-side streaming is done, but
+  // server-side streaming is not. There needs to be an additional mechanism
+  // to detect RST_STREAM and finish upstream properly. This problem can arise
+  // for server-side streaming when ESP is connected with connection pooling
+  // and multiple requests share a single HTTP connection.
+  // This function must be called when `sent_upstream_writes_done_` is set to
+  // true.
+  static void RegisterGrpcUpstreamCancel(std::shared_ptr<ProxyFlow> flow);
+
   std::mutex mu_;
 
   // If true, the downstream side is no longer sending data, and a

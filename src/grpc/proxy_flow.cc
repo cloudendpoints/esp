@@ -277,6 +277,7 @@ void ProxyFlow::StartUpstreamWritesDone(std::shared_ptr<ProxyFlow> flow,
       return;
     }
     flow->sent_upstream_writes_done_ = true;
+    RegisterGrpcUpstreamCancel(flow);
   }
   flow->upstream_reader_writer_->WritesDone(
       flow->async_grpc_queue_->MakeTag([flow, status](bool ok) {
@@ -303,6 +304,7 @@ void ProxyFlow::StartUpstreamWriteMessage(std::shared_ptr<ProxyFlow> flow,
       return;
     }
     flow->sent_upstream_writes_done_ = true;
+    RegisterGrpcUpstreamCancel(flow);
   }
   flow->server_call_->UpdateRequestMessageStat(
       static_cast<int64_t>(flow->downstream_to_upstream_buffer_.Length()));
@@ -446,6 +448,13 @@ void ProxyFlow::StartDownstreamFinish(std::shared_ptr<ProxyFlow> flow,
                              .count();
   flow->server_call_->RecordBackendTime(backend_time);
   flow->server_call_->Finish(status, std::move(response_trailers));
+}
+
+void ProxyFlow::RegisterGrpcUpstreamCancel(std::shared_ptr<ProxyFlow> flow) {
+  flow->server_call_->SetGrpcUpstreamCancel([flow]() {
+    flow->upstream_context_.TryCancel();
+    StartUpstreamFinish(flow);
+  });
 }
 
 }  // namespace grpc
