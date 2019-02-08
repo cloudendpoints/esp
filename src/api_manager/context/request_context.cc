@@ -18,14 +18,15 @@
 #include "src/api_manager/context/request_context.h"
 #include "google/api/backend.pb.h"
 #include "google/protobuf/stubs/strutil.h"
+#include "src/api_manager/utils/url_util.h"
 
 #include <uuid/uuid.h>
 #include <numeric>
 #include <sstream>
 #include <vector>
 
-using ::google::api_manager::utils::Status;
 using ::google::api_manager::cloud_trace::HeaderType;
+using ::google::api_manager::utils::Status;
 
 namespace google {
 namespace api_manager {
@@ -447,13 +448,23 @@ std::string RequestContext::GetBackendPath() const {
     std::string parameters;
     for (std::size_t i = 0; i != method_call_.variable_bindings.size(); i++) {
       auto &variable_binding = method_call_.variable_bindings[i];
-      if (variable_binding.field_path.size() == 1) {
-        parameters += variable_binding.field_path[0];
-      } else if (variable_binding.field_path.size() > 1) {
-        parameters = std::accumulate(variable_binding.field_path.begin(),
-                                     variable_binding.field_path.end(),
-                                     std::string("."));
+      for (std::size_t j = 0; j < variable_binding.field_path.size(); ++j) {
+        // If field_path is snake case, need to use corresponding jsonName.
+        std::string::size_type found = variable_binding.field_path[j].find("_");
+        std::string field_path;
+        if (found != std::string::npos &&
+            service_context_->config()->GetJsonName(
+                variable_binding.field_path[j], &field_path)) {
+          parameters.append(field_path);
+        } else {
+          parameters.append(variable_binding.field_path[j]);
+        }
+
+        if (j != variable_binding.field_path.size() - 1) {
+          parameters.append(".");
+        }
       }
+
       parameters.append("=");
       parameters.append(variable_binding.value);
       if (i != method_call_.variable_bindings.size() - 1) {

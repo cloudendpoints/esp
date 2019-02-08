@@ -510,6 +510,36 @@ TEST(Config, LoadBackends) {
   EXPECT_TRUE(method_without_backend->backend_address().empty());
 }
 
+static const char types_config[] =
+    "name: \"types-config\"\n"
+    "types {\n"
+    "  fields {\n"
+    "    name: \"d_s_t\"\n"
+    "    json_name: \"DST\"\n"
+    "  }\n"
+    "  fields {\n"
+    "    name: \"i_a_t_a\"\n"
+    "    json_name: \"IATA\"\n"
+    "  }\n"
+    "  fields {\n"
+    "    name: \"id\"\n"
+    "    json_name: \"id\"\n"
+    "  }\n"
+    "}\n";
+
+TEST(Config, LoadTypes) {
+  MockApiManagerEnvironmentWithLog env;
+
+  std::unique_ptr<Config> config = Config::Create(&env, types_config, "");
+  ASSERT_TRUE(config);
+  std::string json_name;
+  ASSERT_TRUE(config->GetJsonName("i_a_t_a", &json_name));
+  ASSERT_EQ("IATA", json_name);
+  ASSERT_FALSE(config->GetJsonName("id", &json_name));
+  ASSERT_TRUE(config->GetJsonName("d_s_t", &json_name));
+  ASSERT_EQ("DST", json_name);
+}
+
 TEST(Config, RpcMethodsWithHttpRules) {
   MockApiManagerEnvironmentWithLog env;
 
