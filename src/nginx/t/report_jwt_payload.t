@@ -54,15 +54,15 @@ $t->write_file('sc_override.pb.txt', <<"EOF");
 service_control_config {
   log_jwt_payload: "exp"
   log_jwt_payload: "google"
-  log_jwt_payload: "google.compute_engine.project_id."
-  log_jwt_payload: "google.project_number."
+  log_jwt_payload: "google.compute_engine.project_id"
+  log_jwt_payload: "google.project_number"
   log_jwt_payload: "google.google_bool"
   log_jwt_payload: "google.not_existed"
   log_jwt_payload: "foo.foo_list"
   log_jwt_payload: "foo.foo_bool"
   log_jwt_payload: "google.compute_engine.not_existed"
-  log_jwt_payload: "aud."
-  log_jwt_payload: "not_existed."
+  log_jwt_payload: "aud"
+  log_jwt_payload: "not_existed"
 }
 EOF
 
@@ -221,7 +221,8 @@ my @operations = @{$report_json->{operations}};
 is(scalar @operations, 1, 'There are 1 report operations total');
 
 my $log = $report_json->{operations}[0]->{logEntries}[0]->{structPayload};
-is($log->{jwt_payloads}, 'exp=4703162488;project_id=cloudendpoint_testing;project_number=12345;google_bool=false;foo_bool=true;aud=ok_audience_1;', 'log message includes configured jwt payloads');
+is($log->{jwt_payloads},
+  'exp=4703162488;google.compute_engine.project_id=cloudendpoint_testing;google.project_number=12345;google.google_bool=false;foo.foo_bool=true;aud=ok_audience_1;', 'log message includes configured jwt payloads');
 
 ################################################################################
 

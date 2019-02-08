@@ -107,6 +107,32 @@ TEST(JsonUtil, GetProperty) {
   free(json_copy);
 }
 
+const char json_input_2[] =
+    "{"
+    "  \"string\": \"string value\","
+    "  \"number\": 12345,"
+    "  \"null\": null,"
+    "  \"true\": true,"
+    "  \"false\": false,"
+    "  \"object\": {"
+    "    \"obj_string\": \"objS\","
+    "    \"sub_obj\":{\"obj_bool\": false}},"
+    "  \"array\": [ ],"
+    "}";
+
+TEST(JsonUtil, GetPrimitiveFieldValue) {
+  ASSERT_EQ("string value", GetPrimitiveFieldValue(json_input_2, "string"));
+  ASSERT_EQ("12345", GetPrimitiveFieldValue(json_input_2, "number"));
+  ASSERT_EQ("true", GetPrimitiveFieldValue(json_input_2, "true"));
+  ASSERT_EQ("objS", GetPrimitiveFieldValue(json_input_2, "object.obj_string"));
+  ASSERT_EQ("false",
+            GetPrimitiveFieldValue(json_input_2, "object.sub_obj.obj_bool"));
+  ASSERT_EQ("", GetPrimitiveFieldValue(json_input_2, "non_exist"));
+  ASSERT_EQ("", GetPrimitiveFieldValue(json_input_2, "null"));
+  ASSERT_EQ("", GetPrimitiveFieldValue(json_input_2, "object"));
+  ASSERT_EQ("", GetPrimitiveFieldValue(json_input_2, "array"));
+}
+
 }  // namespace
 }  // namespace auth
 }  // namespace api_manager

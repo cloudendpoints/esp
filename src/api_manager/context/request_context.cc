@@ -17,10 +17,15 @@
 
 #include "src/api_manager/context/request_context.h"
 #include "google/api/backend.pb.h"
+#include "google/protobuf/stubs/strutil.h"
+#include "src/api_manager/utils/url_util.h"
 
 #include <uuid/uuid.h>
 #include <numeric>
+#include <sstream>
+#include <vector>
 
+using ::google::api_manager::auth::GetPrimitiveFieldValue;
 using ::google::api_manager::cloud_trace::HeaderType;
 using ::google::api_manager::utils::Status;
 
@@ -66,9 +71,6 @@ const char kDefaultApiKeyHeaderName[] = "x-api-key";
 // Delimiter of the IP addresses in the XFF header
 const char kClientIPHeaderDelimeter = ',';
 
-// Delimiter of the jwt payloads
-const char kJwtPayloadsDelimeter = '.';
-
 // Header for android package name, used for api key restriction check.
 const char kXAndroidPackage[] = "x-android-package";
 
@@ -86,21 +88,6 @@ std::string GenerateUUID() {
   uuid_generate(uuid);
   uuid_unparse(uuid, uuid_buf);
   return uuid_buf;
-}
-
-inline void split(const std::string &s, char delim,
-                  std::vector<std::string> *elems) {
-  std::stringstream ss(s);
-  std::string item;
-  while (std::getline(ss, item, delim)) {
-    elems->push_back(item);
-  }
-}
-
-inline const std::string trim(std::string &str) {
-  str.erase(0, str.find_first_not_of(' '));  // heading spaces
-  str.erase(str.find_last_not_of(' ') + 1);  // tailing spaces
-  return str;
 }
 
 }  // namespace
@@ -296,55 +283,12 @@ void RequestContext::FillJwtPayloads(service_control::ReportRequestInfo *info) {
   auto serverConfig = service_context_->config()->server_config();
   if (serverConfig->has_service_control_config() &&
       serverConfig->service_control_config().log_jwt_payload().size() != 0) {
-    JwtCache &jwt_cache = service_context()->jwt_cache();
-    JwtCache::ScopedLookup lookup(&jwt_cache, auth_token_);
-    // FillJwtPayloads is called when reporting to service control, which is
-    // after CheckAuth, so the userInfo should always be cached.
-    if (!lookup.Found()) {
-      return;
-    }
-    const auto &jwt_payloads =
-        serverConfig->service_control_config().log_jwt_payload();
-
-    for (const auto &payload : jwt_payloads) {
-      char *json_copy = strdup(lookup.value()->user_info.claims.c_str());
-      grpc_json *property_json =
-          grpc_json_parse_string_with_len(json_copy, strlen(json_copy));
-
-      std::vector<std::string> keys;
-      split(payload, kJwtPayloadsDelimeter, &keys);
-      for (const auto &key : keys) {
-        const grpc_json *next = GetProperty(property_json, key.c_str());
-        if (next) {
-          *property_json = *next;
-        } else {
-          // Not found the corresponding jwt payload.
-          property_json = nullptr;
-          break;
-        }
-      }
-
-      if (property_json) {
-        std::string s;
-        s += property_json->key;
-        s += "=";
-        switch (property_json->type) {
-          case GRPC_JSON_STRING:
-          case GRPC_JSON_NUMBER:
-            s += property_json->value;
-            info->jwt_payloads = info->jwt_payloads + s + ";";
-            break;
-          case GRPC_JSON_TRUE:
-            s += "true";
-            info->jwt_payloads = info->jwt_payloads + s + ";";
-            break;
-          case GRPC_JSON_FALSE:
-            s += "false";
-            info->jwt_payloads = info->jwt_payloads + s + ";";
-            break;
-          default:
-            break;
-        }
+    for (const auto &payload_path :
+         serverConfig->service_control_config().log_jwt_payload()) {
+      const auto &value = GetPrimitiveFieldValue(auth_claims_, payload_path);
+      if (!value.empty()) {
+        info->jwt_payloads =
+            info->jwt_payloads + payload_path + "=" + value + ";";
       }
     }
   }
@@ -445,7 +389,7 @@ const std::string RequestContext::FindClientIPAddress() {
           &client_ip_header)) {
     // split headers
     std::vector<std::string> secments;
-    split(client_ip_header, kClientIPHeaderDelimeter, &secments);
+    utils::Split(client_ip_header, kClientIPHeaderDelimeter, &secments);
     int client_ip_header_position =
         serverConfig->client_ip_extraction_config().client_ip_position();
 
@@ -455,7 +399,7 @@ const std::string RequestContext::FindClientIPAddress() {
 
     if (client_ip_header_position >= 0 &&
         client_ip_header_position < (int)secments.size()) {
-      return trim(secments[client_ip_header_position]);
+      return utils::Trim(secments[client_ip_header_position]);
     }
   }
 

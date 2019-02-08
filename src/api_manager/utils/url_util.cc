@@ -14,6 +14,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <sstream>
+
 #include "src/api_manager/utils/url_util.h"
 
 namespace google {
@@ -22,6 +24,20 @@ namespace utils {
 namespace {
 const std::string kHttpPrefix = "http://";
 const std::string kHttpsPrefix = "https://";
+}
+
+void Split(const std::string &s, char delim, std::vector<std::string> *elems) {
+  std::stringstream ss(s);
+  std::string item;
+  while (std::getline(ss, item, delim)) {
+    elems->push_back(item);
+  }
+}
+
+const std::string Trim(std::string &str) {
+  str.erase(0, str.find_first_not_of(' '));  // heading spaces
+  str.erase(str.find_last_not_of(' ') + 1);  // tailing spaces
+  return str;
 }
 
 std::string GetUrlContent(const std::string &url) {

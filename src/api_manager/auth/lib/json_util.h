@@ -28,6 +28,10 @@ namespace auth {
 // Gets given JSON property by key name.
 const grpc_json *GetProperty(const grpc_json *json, const char *key);
 
+// Gets the primitive value of the json with given path, seperated by ".".
+const std::string GetPrimitiveFieldValue(const std::string &json,
+                                         const std::string &key);
+
 // Gets string value by key or nullptr if no such key or property is not string
 // type.
 const char *GetStringValue(const grpc_json *json, const char *key);

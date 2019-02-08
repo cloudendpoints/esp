@@ -16,6 +16,7 @@
 #define API_MANAGER_UTILS_URL_UTIL_H_
 
 #include <string>
+#include <vector>
 
 namespace google {
 namespace api_manager {
@@ -26,6 +27,10 @@ namespace utils {
 std::string GetUrlContent(const std::string &url);
 
 bool IsHttpRequest(const std::string &url);
+
+void Split(const std::string &s, char delim, std::vector<std::string> *elems);
+
+const std::string Trim(std::string &str);
 
 }  // namespace utils
 }  // namespace api_manager
