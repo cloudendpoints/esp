@@ -17,7 +17,7 @@
 #include "src/api_manager/auth/lib/json_util.h"
 #include <stddef.h>
 #include <string.h>
-#include "src/api_manager/utils/url_util.h"
+#include "src/api_manager/utils/str_util.h"
 
 extern "C" {
 #include "grpc/support/log.h"
@@ -61,22 +61,21 @@ const char *GetPropertyValue(const grpc_json *json, const char *key,
   return nullptr;
 }
 
-const std::string GetPrimitiveFieldValue(const std::string &json,
-                                         const std::string &payload_path) {
+bool GetPrimitiveFieldValue(const std::string &json,
+                            const std::string &payload_path,
+                            std::string *payload_value) {
   char *json_copy = strdup(json.c_str());
   grpc_json *property_json =
       grpc_json_parse_string_with_len(json_copy, strlen(json_copy));
-  std::vector<std::string> path_field;
-  std::string s;
-  utils::Split(payload_path, kJwtPayloadsDelimeter, &path_field);
-  for (const auto &path : path_field) {
-    const grpc_json *next = GetProperty(property_json, path.c_str());
+  std::vector<std::string> path_fields;
+  utils::Split(payload_path, kJwtPayloadsDelimeter, &path_fields);
+  for (const auto &path_field : path_fields) {
+    const grpc_json *next = GetProperty(property_json, path_field.c_str());
     if (next) {
       *property_json = *next;
     } else {
       // Not found the corresponding jwt payload.
       property_json = nullptr;
-      return "";
     }
   }
 
@@ -84,19 +83,23 @@ const std::string GetPrimitiveFieldValue(const std::string &json,
     switch (property_json->type) {
       case GRPC_JSON_STRING:
       case GRPC_JSON_NUMBER:
-        s += property_json->value;
+        *payload_value = property_json->value;
         break;
       case GRPC_JSON_TRUE:
-        s += "true";
+        *payload_value = "true";
         break;
       case GRPC_JSON_FALSE:
-        s += "false";
+        *payload_value = "false";
         break;
       default:
-        return "";
+        gpr_free(json_copy);
+        return false;
     }
+    gpr_free(json_copy);
+    return true;
   }
-  return s;
+  gpr_free(json_copy);
+  return false;
 }
 
 const char *GetStringValue(const grpc_json *json, const char *key) {

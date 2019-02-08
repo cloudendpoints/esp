@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef API_MANAGER_UTILS_URL_UTIL_H_
-#define API_MANAGER_UTILS_URL_UTIL_H_
+#ifndef API_MANAGER_UTILS_STR_UTIL_H_
+#define API_MANAGER_UTILS_STR_UTIL_H_
 
 #include <string>
 #include <vector>
@@ -22,14 +22,12 @@ namespace google {
 namespace api_manager {
 namespace utils {
 
-// Strips off https or http prefix and trailing '/' from a URL, and returns the
-// processed string.
-std::string GetUrlContent(const std::string &url);
+void Split(const std::string &s, char delim, std::vector<std::string> *elems);
 
-bool IsHttpRequest(const std::string &url);
+const std::string Trim(std::string &str);
 
 }  // namespace utils
 }  // namespace api_manager
 }  // namespace google
 
-#endif  // API_MANAGER_UTILS_URL_UTIL_H_
+#endif  // API_MANAGER_UTILS_STR_UTIL_H_

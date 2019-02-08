@@ -17,8 +17,8 @@
 
 #include "src/api_manager/context/request_context.h"
 #include "google/api/backend.pb.h"
-#include "google/protobuf/stubs/strutil.h"
-#include "src/api_manager/utils/url_util.h"
+#include "src/api_manager/auth/lib/json_util.h"
+#include "src/api_manager/utils/str_util.h"
 
 #include <uuid/uuid.h>
 #include <numeric>
@@ -285,10 +285,10 @@ void RequestContext::FillJwtPayloads(service_control::ReportRequestInfo *info) {
       serverConfig->service_control_config().log_jwt_payload().size() != 0) {
     for (const auto &payload_path :
          serverConfig->service_control_config().log_jwt_payload()) {
-      const auto &value = GetPrimitiveFieldValue(auth_claims_, payload_path);
-      if (!value.empty()) {
+      std::string payload_value;
+      if (GetPrimitiveFieldValue(auth_claims_, payload_path, &payload_value)) {
         info->jwt_payloads =
-            info->jwt_payloads + payload_path + "=" + value + ";";
+            info->jwt_payloads + payload_path + "=" + payload_value + ";";
       }
     }
   }

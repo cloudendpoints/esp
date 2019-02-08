@@ -16,34 +16,24 @@
 
 #include <sstream>
 
-#include "src/api_manager/utils/url_util.h"
+#include "src/api_manager/utils/str_util.h"
 
 namespace google {
 namespace api_manager {
 namespace utils {
-namespace {
-const std::string kHttpPrefix = "http://";
-const std::string kHttpsPrefix = "https://";
-}  // namespace
 
-std::string GetUrlContent(const std::string &url) {
-  std::string result;
-  if (url.compare(0, kHttpsPrefix.size(), kHttpsPrefix) == 0) {
-    result = url.substr(kHttpsPrefix.size());
-  } else if (url.compare(0, kHttpPrefix.size(), kHttpPrefix) == 0) {
-    result = url.substr(kHttpPrefix.size());
-  } else {
-    result = url;
+void Split(const std::string &s, char delim, std::vector<std::string> *elems) {
+  std::stringstream ss(s);
+  std::string item;
+  while (std::getline(ss, item, delim)) {
+    elems->push_back(item);
   }
-  if (result.back() == '/') {
-    result.pop_back();
-  }
-  return result;
 }
 
-bool IsHttpRequest(const std::string &url) {
-  return url.compare(0, kHttpPrefix.size(), kHttpPrefix) == 0 ||
-         url.compare(0, kHttpsPrefix.size(), kHttpsPrefix) == 0;
+const std::string Trim(std::string &str) {
+  str.erase(0, str.find_first_not_of(' '));  // heading spaces
+  str.erase(str.find_last_not_of(' ') + 1);  // tailing spaces
+  return str;
 }
 
 }  // namespace utils

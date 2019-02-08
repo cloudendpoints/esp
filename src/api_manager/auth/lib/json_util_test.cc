@@ -121,16 +121,28 @@ const char json_input_2[] =
     "}";
 
 TEST(JsonUtil, GetPrimitiveFieldValue) {
-  ASSERT_EQ("string value", GetPrimitiveFieldValue(json_input_2, "string"));
-  ASSERT_EQ("12345", GetPrimitiveFieldValue(json_input_2, "number"));
-  ASSERT_EQ("true", GetPrimitiveFieldValue(json_input_2, "true"));
-  ASSERT_EQ("objS", GetPrimitiveFieldValue(json_input_2, "object.obj_string"));
-  ASSERT_EQ("false",
-            GetPrimitiveFieldValue(json_input_2, "object.sub_obj.obj_bool"));
-  ASSERT_EQ("", GetPrimitiveFieldValue(json_input_2, "non_exist"));
-  ASSERT_EQ("", GetPrimitiveFieldValue(json_input_2, "null"));
-  ASSERT_EQ("", GetPrimitiveFieldValue(json_input_2, "object"));
-  ASSERT_EQ("", GetPrimitiveFieldValue(json_input_2, "array"));
+  std::string value;
+  ASSERT_TRUE(GetPrimitiveFieldValue(json_input_2, "string", &value));
+  ASSERT_EQ("string value", value);
+
+  ASSERT_TRUE(GetPrimitiveFieldValue(json_input_2, "number", &value));
+  ASSERT_EQ("12345", value);
+
+  ASSERT_TRUE(GetPrimitiveFieldValue(json_input_2, "true", &value));
+  ASSERT_EQ("true", value);
+
+  ASSERT_TRUE(
+      GetPrimitiveFieldValue(json_input_2, "object.obj_string", &value));
+  ASSERT_EQ("objS", value);
+
+  ASSERT_TRUE(
+      GetPrimitiveFieldValue(json_input_2, "object.sub_obj.obj_bool", &value));
+  ASSERT_EQ("false", value);
+
+  ASSERT_FALSE(GetPrimitiveFieldValue(json_input_2, "non_exist", &value));
+  ASSERT_FALSE(GetPrimitiveFieldValue(json_input_2, "null", &value));
+  ASSERT_FALSE(GetPrimitiveFieldValue(json_input_2, "object", &value));
+  ASSERT_FALSE(GetPrimitiveFieldValue(json_input_2, "array", &value));
 }
 
 }  // namespace
