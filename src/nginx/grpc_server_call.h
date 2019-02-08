@@ -76,6 +76,8 @@ class NgxEspGrpcServerCall : public grpc::ServerCall {
 
   virtual void UpdateRequestMessageStat(int64_t size);
   virtual void UpdateResponseMessageStat(int64_t size);
+  virtual void SetGrpcUpstreamCancel(
+      std::function<void()> grpc_upstream_cancel);
 
  protected:
   // Converts the request body into gRPC messages and outputs the raw slices.
@@ -114,6 +116,7 @@ class NgxEspGrpcServerCall : public grpc::ServerCall {
   static void OnDownstreamPreread(ngx_http_request_t* r);
   static void OnDownstreamReadable(ngx_http_request_t* r);
   static void OnDownstreamWriteable(ngx_http_request_t* r);
+  static void OnHttpBlockReading(ngx_http_request_t* r);
 
   void CompletePendingRead(bool proceed, utils::Status status);
 

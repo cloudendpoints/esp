@@ -28,6 +28,7 @@
 
 #include <grpc/impl/codegen/gpr_types.h>
 #include <cassert>
+#include <memory>
 #include <utility>
 
 #include "grpc++/support/byte_buffer.h"
@@ -197,6 +198,8 @@ NgxEspGrpcServerCall::~NgxEspGrpcServerCall() {
         break;
       }
     }
+    ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
+    ctx->grpc_server_call = nullptr;
   }
   for (auto &slice : downstream_slices_) {
     grpc_slice_unref(slice);
@@ -215,6 +218,13 @@ void NgxEspGrpcServerCall::UpdateResponseMessageStat(int64_t size) {
   ctx->grpc_response_bytes += size;
   ++ctx->grpc_response_message_counts;
   ctx->request_handler->AttemptIntermediateReport();
+}
+
+void NgxEspGrpcServerCall::SetGrpcUpstreamCancel(
+    std::function<void()> grpc_upstream_cancel) {
+  ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
+  ctx->grpc_upstream_cancel =
+      std::unique_ptr<std::function<void()>>(new auto(grpc_upstream_cancel));
 }
 
 void NgxEspGrpcServerCall::AddInitialMetadata(const std::string &key,
@@ -341,6 +351,26 @@ void NgxEspGrpcServerCall::OnDownstreamWriteable(ngx_http_request_t *r) {
   }
 }
 
+void NgxEspGrpcServerCall::OnHttpBlockReading(ngx_http_request_t *r) {
+  ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                 "NgxEspGrpcServerCall::OnHttpBlockReading");
+
+  if (r->connection->error) {
+    ngx_log_debug0(
+        NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+        "NgxEspGrpcServerCall::OnHttpBlockReading: connection error");
+
+    ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r);
+    if (ctx->grpc_upstream_cancel) {
+      std::unique_ptr<std::function<void()>> cancel_func_ptr;
+      std::swap(ctx->grpc_upstream_cancel, cancel_func_ptr);
+      (*cancel_func_ptr)();
+    }
+  }
+
+  ngx_http_block_reading(r);
+}
+
 // This is the proxy's nginx post_handler (i.e. it's passed to
 // ngx_http_read_client_request_body to get data flowing from nginx to
 // this module)
@@ -364,7 +394,7 @@ void NgxEspGrpcServerCall::OnDownstreamPreread(ngx_http_request_t *r) {
     return;
   }
 
-  r->read_event_handler = &ngx_http_block_reading;
+  r->read_event_handler = &OnHttpBlockReading;
 }
 
 // This is the proxy's nginx read_event_handler which will be invoked once
@@ -524,7 +554,7 @@ void NgxEspGrpcServerCall::RunPendingRead() {
     // continuation, so that flow control works correctly.
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r_->connection->log, 0,
                    "NgxEspGrpcServerCall::RunPendingRead: Blocking reads");
-    r_->read_event_handler = &ngx_http_block_reading;
+    r_->read_event_handler = &OnHttpBlockReading;
   }
 }
 

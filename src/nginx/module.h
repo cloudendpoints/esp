@@ -223,6 +223,9 @@ struct ngx_esp_request_ctx_s {
 
   // GRPC Proxying support.
   NgxEspGrpcServerCall *grpc_server_call;
+  // For canceling grpc upstream.
+  std::unique_ptr<std::function<void()>> grpc_upstream_cancel;
+
   // Mark if this request is grpc pass through.
   bool grpc_pass_through;
   // Mark the backend is grpc.
