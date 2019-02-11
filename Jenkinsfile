@@ -53,7 +53,7 @@ SUPPORTED_STAGES = [
 ]
 
 // Supported VM Images
-SLAVE_IMAGE = 'gcr.io/endpoints-jenkins/debian-8:0.10'
+SLAVE_IMAGE = 'gcr.io/endpoints-jenkins/debian-8:0.11'
 
 // Release Qualification end to end tests.
 // If RAPTURE_REPO build parameter is set only those test will run.
