@@ -848,6 +848,7 @@ const char kLogFieldNameLocation[] = "location";
 const char kLogFieldNameRequestSize[] = "request_size_in_bytes";
 const char kLogFieldNameRequestHeaders[] = "request_headers";
 const char kLogFieldNameResponseHeaders[] = "response_headers";
+const char kLogFieldNameJwtPayloads[] = "jwt_payloads";
 const char kLogFieldNameResponseSize[] = "response_size_in_bytes";
 const char kLogFieldNameHttpMethod[] = "http_method";
 const char kLogFieldNameHttpResponseCode[] = "http_response_code";
@@ -944,7 +945,9 @@ void FillLogEntry(const ReportRequestInfo& info, const std::string& name,
   if (!info.log_message.empty()) {
     (*fields)[kLogFieldNameLogMessage].set_string_value(info.log_message);
   }
-
+  if (!info.jwt_payloads.empty()) {
+    (*fields)[kLogFieldNameJwtPayloads].set_string_value(info.jwt_payloads);
+  }
   (*fields)[kLogFieldNameHttpResponseCode].set_number_value(info.response_code);
 
   if (info.request_size >= 0) {

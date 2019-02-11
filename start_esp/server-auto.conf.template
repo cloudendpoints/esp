@@ -39,7 +39,7 @@ service_management_config {
   url: "${management}"
 }
 % endif
-% if service_control_url_override or log_request_headers or log_response_headers:
+% if service_control_url_override or log_request_headers or log_response_headers or log_jwt_payloads:
 service_control_config {
   %if service_control_url_override:
   url_override: "${service_control_url_override}"
@@ -52,6 +52,11 @@ service_control_config {
   % if log_response_headers:
   % for log_response_header in log_response_headers:
   log_response_header: "${log_response_header}"
+  % endfor
+  % endif
+  % if log_jwt_payloads:
+  % for log_jwt_payload in log_jwt_payloads:
+  log_jwt_payload: "${log_jwt_payload}"
   % endfor
   % endif
 }

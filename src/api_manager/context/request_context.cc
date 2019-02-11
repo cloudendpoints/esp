@@ -17,14 +17,15 @@
 
 #include "src/api_manager/context/request_context.h"
 #include "google/api/backend.pb.h"
-#include "google/protobuf/stubs/strutil.h"
-#include "src/api_manager/utils/url_util.h"
+#include "src/api_manager/auth/lib/json_util.h"
+#include "src/api_manager/utils/str_util.h"
 
 #include <uuid/uuid.h>
 #include <numeric>
 #include <sstream>
 #include <vector>
 
+using ::google::api_manager::auth::GetPrimitiveFieldValue;
 using ::google::api_manager::cloud_trace::HeaderType;
 using ::google::api_manager::utils::Status;
 
@@ -87,21 +88,6 @@ std::string GenerateUUID() {
   uuid_generate(uuid);
   uuid_unparse(uuid, uuid_buf);
   return uuid_buf;
-}
-
-inline void split(const std::string &s, char delim,
-                  std::vector<std::string> *elems) {
-  std::stringstream ss(s);
-  std::string item;
-  while (std::getline(ss, item, delim)) {
-    elems->push_back(item);
-  }
-}
-
-inline const std::string trim(std::string &str) {
-  str.erase(0, str.find_first_not_of(' '));  // heading spaces
-  str.erase(str.find_last_not_of(' ') + 1);  // tailing spaces
-  return str;
 }
 
 }  // namespace
@@ -293,6 +279,21 @@ void RequestContext::FillHttpHeaders(const Response *response,
   }
 }
 
+void RequestContext::FillJwtPayloads(service_control::ReportRequestInfo *info) {
+  auto serverConfig = service_context_->config()->server_config();
+  if (serverConfig->has_service_control_config() &&
+      serverConfig->service_control_config().log_jwt_payload().size() != 0) {
+    for (const auto &payload_path :
+         serverConfig->service_control_config().log_jwt_payload()) {
+      std::string payload_value;
+      if (GetPrimitiveFieldValue(auth_claims_, payload_path, &payload_value)) {
+        info->jwt_payloads =
+            info->jwt_payloads + payload_path + "=" + payload_value + ";";
+      }
+    }
+  }
+}
+
 void RequestContext::FillCheckRequestInfo(
     service_control::CheckRequestInfo *info) {
   FillOperationInfo(info);
@@ -362,7 +363,9 @@ void RequestContext::FillReportRequestInfo(
 
     // Must be after response_code and method are assigned.
     FillLogMessage(info);
+
     FillHttpHeaders(response, info);
+    FillJwtPayloads(info);
     bool is_streaming = false;
     if (method() &&
         (method()->request_streaming() || method()->response_streaming())) {
@@ -386,7 +389,7 @@ const std::string RequestContext::FindClientIPAddress() {
           &client_ip_header)) {
     // split headers
     std::vector<std::string> secments;
-    split(client_ip_header, kClientIPHeaderDelimeter, &secments);
+    utils::Split(client_ip_header, kClientIPHeaderDelimeter, &secments);
     int client_ip_header_position =
         serverConfig->client_ip_extraction_config().client_ip_position();
 
@@ -396,7 +399,7 @@ const std::string RequestContext::FindClientIPAddress() {
 
     if (client_ip_header_position >= 0 &&
         client_ip_header_position < (int)secments.size()) {
-      return trim(secments[client_ip_header_position]);
+      return utils::Trim(secments[client_ip_header_position]);
     }
   }
 

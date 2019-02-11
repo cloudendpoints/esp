@@ -36,6 +36,8 @@ service_control_config {
   log_request_header: "foo"
   log_request_header: "bar"
   log_response_header: "foo"
+  log_jwt_payload: "foo"
+  log_jwt_payload: "bar.sub_bar"
 }
 experimental {
   disable_log_status: true

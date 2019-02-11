@@ -25,11 +25,13 @@ cc_library(
         "status.cc",
         "time_based_counter.cc",
         "url_util.cc",
+        "str_util.cc",
         "version.cc",
     ],
     hdrs = [
         "marshalling.h",
         "stl_util.h",
+        "str_util.h",
         "time_based_counter.h",
         "url_util.h",
     ],

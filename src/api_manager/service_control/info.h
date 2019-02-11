@@ -135,6 +135,8 @@ struct ReportRequestInfo : public OperationInfo {
   std::string auth_issuer;
   std::string auth_audience;
 
+  std::string jwt_payloads;
+
   // Protocol used to issue the request.
   protocol::Protocol frontend_protocol;
   protocol::Protocol backend_protocol;

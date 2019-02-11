@@ -107,6 +107,44 @@ TEST(JsonUtil, GetProperty) {
   free(json_copy);
 }
 
+const char json_input_2[] =
+    "{"
+    "  \"string\": \"string value\","
+    "  \"number\": 12345,"
+    "  \"null\": null,"
+    "  \"true\": true,"
+    "  \"false\": false,"
+    "  \"object\": {"
+    "    \"obj_string\": \"objS\","
+    "    \"sub_obj\":{\"obj_bool\": false}},"
+    "  \"array\": [ ],"
+    "}";
+
+TEST(JsonUtil, GetPrimitiveFieldValue) {
+  std::string value;
+  ASSERT_TRUE(GetPrimitiveFieldValue(json_input_2, "string", &value));
+  ASSERT_EQ("string value", value);
+
+  ASSERT_TRUE(GetPrimitiveFieldValue(json_input_2, "number", &value));
+  ASSERT_EQ("12345", value);
+
+  ASSERT_TRUE(GetPrimitiveFieldValue(json_input_2, "true", &value));
+  ASSERT_EQ("true", value);
+
+  ASSERT_TRUE(
+      GetPrimitiveFieldValue(json_input_2, "object.obj_string", &value));
+  ASSERT_EQ("objS", value);
+
+  ASSERT_TRUE(
+      GetPrimitiveFieldValue(json_input_2, "object.sub_obj.obj_bool", &value));
+  ASSERT_EQ("false", value);
+
+  ASSERT_FALSE(GetPrimitiveFieldValue(json_input_2, "non_exist", &value));
+  ASSERT_FALSE(GetPrimitiveFieldValue(json_input_2, "null", &value));
+  ASSERT_FALSE(GetPrimitiveFieldValue(json_input_2, "object", &value));
+  ASSERT_FALSE(GetPrimitiveFieldValue(json_input_2, "array", &value));
+}
+
 }  // namespace
 }  // namespace auth
 }  // namespace api_manager

@@ -102,6 +102,10 @@ message ServiceControlConfig {
 
   // Config for log HTTP response headers.
   repeated string log_response_header = 11;
+
+  // Config for log corresponding fields in jwt payload.
+  // The value must be a field in JWT payload.
+  repeated string log_jwt_payload = 12;
 }
 
 // Check aggregator config
