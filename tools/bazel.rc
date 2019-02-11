@@ -47,3 +47,4 @@ build --cxxopt -Wnon-virtual-dtor
 build --cxxopt -Wformat
 build --cxxopt -Wformat-security
 
+build --incompatible_remove_native_git_repository=false --incompatible_remove_native_http_archive=false  --incompatible_package_name_is_a_function=false
