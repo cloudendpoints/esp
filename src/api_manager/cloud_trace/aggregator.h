@@ -17,8 +17,8 @@
 #define API_MANAGER_CLOUD_TRACE_AGGREGATOR_H_
 
 #include "google/devtools/cloudtrace/v1/trace.pb.h"
-#include "include/api_manager/periodic_timer.h"
 #include "include/api_manager/env_interface.h"
+#include "include/api_manager/periodic_timer.h"
 #include "src/api_manager/auth/service_account_token.h"
 #include "src/api_manager/cloud_trace/sampler.h"
 
