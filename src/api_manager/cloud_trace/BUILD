@@ -20,14 +20,44 @@ cc_library(
     name = "cloud_trace",
     srcs = [
         "cloud_trace.cc",
+    ],
+    hdrs = [
         "cloud_trace.h",
     ],
     deps = [
+        ":aggregator",
+        ":sampler",
         "//external:absl_base_endian",
         "//external:absl_strings",
         "//external:cloud_trace",
         "//include:headers_only",
         "//src/api_manager/auth:service_account_token",
+    ],
+)
+
+cc_library(
+    name = "aggregator",
+    srcs = [
+        "aggregator.cc",
+    ],
+    hdrs = [
+        "aggregator.h",
+    ],
+    deps = [
+        ":sampler",
+        "//external:cloud_trace",
+        "//include:headers_only",
+        "//src/api_manager/auth:service_account_token",
+    ],
+)
+
+cc_library(
+    name = "sampler",
+    srcs = [
+        "sampler.cc",
+    ],
+    hdrs = [
+        "sampler.h",
     ],
 )
 
@@ -54,7 +84,7 @@ cc_test(
     ],
     linkstatic = 1,
     deps = [
-        ":cloud_trace",
+        ":sampler",
         "//external:googletest_main",
     ],
 )
