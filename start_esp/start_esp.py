@@ -544,7 +544,8 @@ config file.'''.format(
     parser.add_argument('-z', '--healthz', default=None, help='''Define a
     health checking endpoint on the same ports as the application backend. For
     example, "-z healthz" makes ESP return code 200 for location "/healthz",
-    instead of forwarding the request to the backend.  Default: not used.''')
+    instead of forwarding the request to the backend. Please don't use path "/"
+    or any paths conflicting with your normal requests. Default: not used.''')
 
     parser.add_argument('-R', '--rollout_strategy',
         default=None,
