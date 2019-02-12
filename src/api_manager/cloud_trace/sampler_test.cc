@@ -14,15 +14,12 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
-#include "src/api_manager/cloud_trace/cloud_trace.h"
+#include "src/api_manager/cloud_trace/sampler.h"
 
 #include <chrono>
 #include <thread>
 
-#include "google/devtools/cloudtrace/v1/trace.pb.h"
 #include "gtest/gtest.h"
-
-using google::devtools::cloudtrace::v1::TraceSpan;
 
 namespace google {
 namespace api_manager {
