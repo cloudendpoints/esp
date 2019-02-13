@@ -73,7 +73,7 @@ ESP_RUNTIME_VERSION = ''
 // Global Variables defined in Jenkins
 BUCKET = ''
 BAZEL_ARGS = '--action_env=PERL5LIB=.'
-BAZEL_BUILD_ARGS = '--incompatible_remove_native_git_repository=false --incompatible_remove_native_http_archive=false  --incompatible_package_name_is_a_function=false'
+BAZEL_BUILD_ARGS = ''
 CLUSTER = ''
 PROJECT_ID = ''
 TOOLS_BUCKET = ''

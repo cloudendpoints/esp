@@ -56,10 +56,12 @@ function build_and_test() {
   echo "BAZEL: ${BAZEL}"
   echo "BAZEL_ARGS: ${BAZEL_ARGS}"
   echo "BAZEL_BUILD_ARGS: ${BAZEL_BUILD_ARGS}"
+  local bazel_build_flag="--incompatible_remove_native_git_repository=false --incompatible_remove_native_http_archive=false  --incompatible_package_name_is_a_function=false"
+  echo "bazel_build_flag: ${bazel_build_flag}"
   retry -n 3 ${BAZEL} ${BAZEL_ARGS} fetch \
     //src/... //third_party:all //start_esp/test/... \
     && retry -n 2 ${BAZEL} ${BAZEL_ARGS} build \
-      ${BAZEL_BUILD_ARGS} ${config_flag} \
+      ${BAZEL_BUILD_ARGS} ${bazel_build_flag} ${config_flag} \
       //src/... //third_party:all //start_esp/test/... \
     && ${BAZEL} ${BAZEL_ARGS} test --test_output=errors ${config_flag} \
       //src/... //third_party:all //start_esp/test/... \
