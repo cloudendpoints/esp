@@ -481,6 +481,7 @@ static const char backends_config[] =
     "  rules {\n"
     "    selector: \"test.api.MethodWithBackend\"\n"
     "    address: \"TestBackend:TestPort\"\n"
+    "    path_translation: CONSTANT_ADDRESS\n"
     "  }\n"
     "}\n"
     "apis {\n"
@@ -503,11 +504,39 @@ TEST(Config, LoadBackends) {
       config->GetMethodInfo("POST", "/test.api/MethodWithBackend");
   ASSERT_NE(nullptr, method_with_backend);
   EXPECT_EQ("TestBackend:TestPort", method_with_backend->backend_address());
+  EXPECT_EQ(1, method_with_backend->backend_path_translation());
 
   const MethodInfo *method_without_backend =
       config->GetMethodInfo("POST", "/test.api/MethodWithoutBackend");
   ASSERT_NE(nullptr, method_without_backend);
   EXPECT_TRUE(method_without_backend->backend_address().empty());
+  EXPECT_EQ(0, method_without_backend->backend_path_translation());
+}
+
+static const char backends_empty_config[] =
+    "name: \"types-config\"\n"
+    "backend {\n"
+    "  rules {\n"
+    "    selector: \"test.api.MethodWithBackend\"\n"
+    "  }\n"
+    "}\n"
+    "apis {\n"
+    "  name: \"test.api\"\n"
+    "  methods {\n"
+    "    name: \"MethodWithBackend\"\n"
+    "  }\n"
+    "}\n";
+
+TEST(Config, LoadEmptyBackends) {
+  MockApiManagerEnvironmentWithLog env;
+
+  std::unique_ptr<Config> config =
+      Config::Create(&env, backends_empty_config, "");
+  ASSERT_TRUE(config);
+  const MethodInfo *method_with_backend =
+      config->GetMethodInfo("POST", "/test.api/MethodWithBackend");
+  ASSERT_NE(nullptr, method_with_backend);
+  EXPECT_EQ(0, method_with_backend->backend_path_translation());
 }
 
 static const char types_config[] =
