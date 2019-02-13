@@ -19,7 +19,10 @@ namespace api_manager {
 
 namespace {
 // The default HTTP request timeout in ms.
-const int kHttpRequestTimeout = 1000;
+// The latency to the service management service could be in seconds.
+// This is a background checking process, is ok to have a big timeout.
+// Hence use 5 seconds timeout.
+const int kHttpRequestTimeout = 5000;
 // Maximum number of HTTP request retries
 const int kHttpRequestRetries = 5;
 
