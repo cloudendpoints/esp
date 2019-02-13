@@ -42,7 +42,6 @@ function check_files() {
 }
 
 function build_and_test() {
-  bazel version
   local config="${1}"
   local config_flag=''
   local message='Running unit-tests, integration tests & NGINX tests'
@@ -54,6 +53,7 @@ function build_and_test() {
   fi
   echo "${message}..."
   echo "BAZEL: ${BAZEL}"
+  bazel version
   echo "BAZEL_ARGS: ${BAZEL_ARGS}"
   echo "BAZEL_BUILD_ARGS: ${BAZEL_BUILD_ARGS}"
   local bazel_build_flag="--incompatible_remove_native_git_repository=false --incompatible_remove_native_http_archive=false  --incompatible_package_name_is_a_function=false"
