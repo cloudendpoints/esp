@@ -29,7 +29,6 @@ SUCH DAMAGE.
 
 import static java.util.UUID.randomUUID
 
-
 // Supported Stages.
 // ALL will run all stage but the one starting with '_'.
 // By default all ALL stages will run.
