@@ -40,6 +40,9 @@ MethodInfoImpl::MethodInfoImpl(const string &name, const string &api_name,
       skip_service_control_(false),
       api_key_http_headers_(nullptr),
       api_key_url_query_parameters_(nullptr),
+      backend_path_translation_(
+          ::google::api::
+              BackendRule_PathTranslation_PATH_TRANSLATION_UNSPECIFIED),
       request_streaming_(false),
       response_streaming_(false) {}
 
