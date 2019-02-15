@@ -36,10 +36,10 @@ ARGS = [CMD, "--enable_backend_routing"]
 
 # A set of ESP flags supported for ESP Serverless
 SUPPORTED_ESP_FLAGS = set([
-  "--cors_allow_origin_regex",
-  "--cors_allow_methods",
-  "--cors_allow_headers",
   "--cors_allow_credentials",
+  "--cors_allow_headers",
+  "--cors_allow_methods",
+  "--cors_allow_origin_regex",
   "--cors_expose_headers",
   "--enable_debug",
   "--service_control_url_override"
