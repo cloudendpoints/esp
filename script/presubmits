@@ -106,6 +106,3 @@ function docker_tests() {
     || { echo  'Docker test failed'; return 1; }
 }
 
-build_and_test 'asan'
-# build_and_test 'tsan'
-
