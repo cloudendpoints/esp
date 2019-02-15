@@ -34,21 +34,19 @@ CMD = "/usr/sbin/start_esp"
 # The command being run must be the 0th arg.
 ARGS = [CMD, "--enable_backend_routing"]
 
-_ENV_ERROR = "Serverless ESP expects {} in environment variables."
 
-try:
-    PORT = os.environ["PORT"]
-except ValueError:
-    raise ApplicationError(_ENV_ERROR.format("PORT"))
+def assert_env_var(name):
+    if name not in os.environ:
+        raise ApplicationError(
+            "Serverless ESP expects {} in environment variables.".format(name)
+        )
 
-ARGS.append("--http_port={}".format(PORT))
 
-try:
-    SERVICE = os.environ["ENDPOINTS_SERVICE_NAME"]
-except ValueError:
-    raise ApplicationError(_ENV_ERROR.format("ENDPOINTS_SERVICE_NAME"))
+assert_env_var("PORT")
+ARGS.append("--http_port={}".format(os.environ["PORT"]))
 
-ARGS.append("--service={}".format(SERVICE))
+assert_env_var("ENDPOINTS_SERVICE_NAME")
+ARGS.append("--service={}".format(os.environ["ENDPOINTS_SERVICE_NAME"]))
 
 if "ENDPOINTS_SERVICE_VERSION" in os.environ:
     ARGS.extend(
