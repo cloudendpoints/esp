@@ -56,16 +56,10 @@ for building ESP on Ubuntu 16.04 can be found in the [document](/doc/build-esp-o
     git submodule update --init --recursive
 
     # Build ESP binary
-    bazel build --incompatible_remove_native_git_repository=false \
-      --incompatible_remove_native_http_archive=false \
-      --incompatible_package_name_is_a_function=false \
-      //src/nginx/main:nginx-esp
+    bazel build //src/nginx/main:nginx-esp
 
     # Run ESP unit and integration tests
-    bazel test --incompatible_remove_native_git_repository=false \
-      --incompatible_remove_native_http_archive=false \
-      --incompatible_package_name_is_a_function=false \
-      //src/... //third_party:all
+    bazel test //src/... //third_party:all
 
 *Note:* If `bazel build ...` fails due to an `expected identifier` related to
 `DEBUG`, you may need to use `bazel build -c opt ...` as explained

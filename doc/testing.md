@@ -36,38 +36,24 @@ libio-socket-ssl-perl is needed to run ESP tests:
 
 Run ESP unit and integration tests:
 
-    bazel test --incompatible_remove_native_git_repository=false \
-      --incompatible_remove_native_http_archive=false \
-      --incompatible_package_name_is_a_function=false \
-      //src/... //third_party:all
+    bazel test //src/... //third_party:all
 
 # Running tests to check that the ESP configuration files are as expected #
 
 Before starting ESP, start_esp executable generates the ESP configuration files based on its input arguments. To test that the
 generated ESP configuration files are as expected:
 
-    bazel test --incompatible_remove_native_git_repository=false \
-      --incompatible_remove_native_http_archive=false \
-      --incompatible_package_name_is_a_function=false \
-      //start_esp/test:start_esp_test
+    bazel test //start_esp/test:start_esp_test
 
 # Running ASAN and TSAN tests #
 
 ASAN works on both Linux and Mac, but TSAN only works on Linux.
 
     # Run ASAN
-    bazel test  --incompatible_remove_native_git_repository=false \
-      --incompatible_remove_native_http_archive=false \
-      --incompatible_package_name_is_a_function=false \
-      --config=asan --test_tag_filters=-no_asan \
-      //src/... //third_party:all
+    bazel test //src/... //third_party:all
 
     # Run TSAN
-    bazel test  --incompatible_remove_native_git_repository=false \
-      --incompatible_remove_native_http_archive=false \
-      --incompatible_package_name_is_a_function=false \
-      --config=tsan --test_tag_filters=-no_tsan \
-      //src/... //third_party:all
+    bazel test //src/... //third_party:all
 
 If you know a test is not going to work under TSAN or ASAN, please add the
 `no_tsan` or `no_asan` flags to your test targets as well as a reference

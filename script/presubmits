@@ -52,10 +52,6 @@ function build_and_test() {
     error="${message} with config ${config}"
   fi
   echo "${message}..."
-  echo "BAZEL: ${BAZEL}"
-  echo "CC: ${CC}"
-  echo "CXX: ${CXX}"
-  bazel version
   retry -n 3 ${BAZEL} ${BAZEL_ARGS} fetch \
     //src/... //third_party:all //start_esp/test/... \
     && retry -n 2 ${BAZEL} ${BAZEL_ARGS} build \
@@ -63,7 +59,7 @@ function build_and_test() {
       //src/... //third_party:all //start_esp/test/... \
     && ${BAZEL} ${BAZEL_ARGS} test --test_output=errors ${config_flag} \
       //src/... //third_party:all //start_esp/test/... \
-    || { echo "error: ${error}..."; return 1; }
+    || { echo "${error}..."; return 1; }
 }
 
 function asan() {
