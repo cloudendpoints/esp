@@ -50,10 +50,12 @@ generated ESP configuration files are as expected:
 ASAN works on both Linux and Mac, but TSAN only works on Linux.
 
     # Run ASAN
-    bazel test //src/... //third_party:all
+    bazel test --config=asan --test_tag_filters=-no_asan \
+      //src/... //third_party:all
 
     # Run TSAN
-    bazel test //src/... //third_party:all
+    bazel test --config=tsan --test_tag_filters=-no_tsan \
+      //src/... //third_party:all
 
 If you know a test is not going to work under TSAN or ASAN, please add the
 `no_tsan` or `no_asan` flags to your test targets as well as a reference
