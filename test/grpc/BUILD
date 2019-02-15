@@ -76,8 +76,8 @@ genrule(
     ],
     outs = ["grpc-interop.descriptor"],
     cmd = """$(location //external:protoc) \
-        $(location @org_golang_google_grpc//interop/grpc_testing:go_default_library_protos) \
-        -I$$(dirname $(location @org_golang_google_grpc//interop/grpc_testing:go_default_library_protos)) \
+        $(location @org_golang_google_grpc//interop/grpc_testing/linux_amd64_stripped:go_default_library_protos) \
+        -I$$(dirname $(location @org_golang_google_grpc//interop/grpc_testing/linux_amd64_stripped:go_default_library_protos)) \
         -Iexternal/protobuf_git/src \
         --include_imports --descriptor_set_out=$@""",
     tools = ["//external:protoc"],
