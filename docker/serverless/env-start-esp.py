@@ -34,12 +34,51 @@ CMD = "/usr/sbin/start_esp"
 # The command being run must be the 0th arg.
 ARGS = [CMD, "--enable_backend_routing"]
 
+# A set of ESP flags supported for ESP Serverless
+SUPPORTED_ESP_FLAGS = set([
+  "--cors_allow_origin_regex",
+  "--cors_allow_methods",
+  "--cors_allow_headers",
+  "--cors_allow_credentials",
+  "--cors_expose_headers",
+  "--enable_debug",
+  "--service_control_url_override"
+])
 
 def assert_env_var(name):
     if name not in os.environ:
         raise ApplicationError(
             "Serverless ESP expects {} in environment variables.".format(name)
         )
+
+def extract_flags(esp_args):
+    flags = set()
+    for arg in esp_args:
+        arg = arg.strip()
+        if not arg.startswith("-"):
+            continue
+
+        flag = arg
+        if "=" in arg:
+            flag = arg[:arg.index("=")].strip()
+
+        for i, c in enumerate(arg):
+            if c.isspace():
+                flag = arg[:i]
+                break
+
+        flags.add(flag)
+
+    return flags
+
+def verify_esp_args(esp_args):
+  provided_flags = extract_flags(esp_args)
+  if not provided_flags.issubset(SUPPORTED_ESP_FLAGS):
+      unsupported_flags = provided_flags - SUPPORTED_ESP_FLAGS
+      raise ApplicationError(
+          "Serverless ESP does not support the following flags:\n {}".format(
+              "  \n".join(unsupported_flags))
+      )
 
 
 assert_env_var("PORT")
@@ -76,7 +115,9 @@ if "ESP_ARGS" in os.environ:
     if not delim:
         raise ApplicationError("Malformed ESP_ARGS environment variable.")
 
-    ARGS.extend(arg_value.split(delim))
+    esp_args = arg_value.split(delim)
+    verify_esp_args(esp_args)
+    ARGS.extend(esp_args)
 
 
 os.execv(CMD, ARGS)
