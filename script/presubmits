@@ -53,6 +53,8 @@ function build_and_test() {
   fi
   echo "${message}..."
   echo "BAZEL: ${BAZEL}"
+  echo "CC: ${CC}"
+  echo "CXX: ${CXX}"
   bazel version
   retry -n 3 ${BAZEL} ${BAZEL_ARGS} fetch \
     //src/... //third_party:all //start_esp/test/... \
@@ -104,6 +106,6 @@ function docker_tests() {
     || { echo  'Docker test failed'; return 1; }
 }
 
-# build_and_test 'asan'
+build_and_test 'asan'
 # build_and_test 'tsan'
 
