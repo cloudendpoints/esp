@@ -71,8 +71,6 @@ done
     || error_exit 'Failed to build and install dependencies.'
 ) || error_exit 'Build of dependencies failed.'
 
-${BAZEL} version
-echo '!!!BAZEL_ARGS: ${BAZEL_ARGS}'
 ${BAZEL} ${BAZEL_ARGS} clean \
   || error_exit 'Failed to ${BAZEL} ${BAZEL_ARGS} clean before the release build.'
 
