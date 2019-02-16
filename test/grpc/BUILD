@@ -72,12 +72,12 @@ genrule(
     name = "grpc-interop_descriptor",
     srcs = [
         "@protobuf_git//:well_known_protos",
-        "test.proto"
+        "@org_golang_google_grpc_git//:test_proto"
     ],
     outs = ["grpc-interop.descriptor"],
     cmd = """$(location //external:protoc) \
-        $(location :test.proto) \
-        -I$$(dirname $(location :test.proto)) \
+        $(location @org_golang_google_grpc_git//:test_proto) \
+        -I$$(dirname $(location @org_golang_google_grpc_git//:test_proto)) \
         -Iexternal/protobuf_git/src \
         --include_imports --descriptor_set_out=$@""",
     tools = ["//external:protoc"],

@@ -109,6 +109,7 @@ load(
     "//:repositories.bzl",
     "googletest_repositories",
     #"grpc_repositories",
+    "go_grpc_repositories",
     "protobuf_repositories",
     "servicecontrol_client_repositories",
     "transcoding_repositories",
@@ -145,6 +146,8 @@ bind(
 )
 
 servicecontrol_client_repositories()
+
+go_grpc_repositories()
 
 protobuf_repositories()
 
