@@ -4,7 +4,8 @@ syntax = "proto3";
 
 package grpc.testing;
 
-message Empty {}
+message Empty {
+}
 
 // The type of payload that should be returned.
 enum PayloadType {
@@ -64,7 +65,7 @@ message SimpleResponse {
   // The user the request came from, for verifying authentication was
   // successful when the client expected it.
   string username = 2;
-  
+
   // OAuth scope.
   string oauth_scope = 3;
 }

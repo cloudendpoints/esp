@@ -72,7 +72,6 @@ genrule(
     name = "grpc-interop_descriptor",
     srcs = [
         "@protobuf_git//:well_known_protos",
-        #"@org_golang_google_grpc//interop/grpc_testing:go_default_library_protos",
         "test.proto"
     ],
     outs = ["grpc-interop.descriptor"],
