@@ -42,7 +42,8 @@ SUPPORTED_ESP_FLAGS = set([
   "--cors_allow_origin_regex",
   "--cors_expose_headers",
   "--enable_debug",
-  "--service_control_url_override"
+  "--management",
+  "--service_control_url_override",
 ])
 
 def assert_env_var(name):
