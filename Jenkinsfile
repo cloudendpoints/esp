@@ -444,7 +444,6 @@ def buildPackages() {
       '@org_golang_google_grpc//interop/server',
       '@org_golang_google_grpc//stress/client',
       '//test/grpc:grpc-test_descriptor',
-      '//test/grpc:grpc-interop_descriptor',
   ]
   def stashPaths = [
       'bazel-bin/src/tools/auth_token_gen',
@@ -454,7 +453,6 @@ def buildPackages() {
       'bazel-bin/external/org_golang_google_grpc/interop/server/server',
       'bazel-bin/external/org_golang_google_grpc/stress/client/client',
       'bazel-genfiles/test/grpc/grpc-test.descriptor',
-      'bazel-genfiles/test/grpc/grpc-interop.descriptor',
   ]
   buildAndStash(
       tools.join(' '),
