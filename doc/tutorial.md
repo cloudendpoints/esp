@@ -61,6 +61,9 @@ for building ESP on Ubuntu 16.04 can be found in the [document](/doc/build-esp-o
     # Run ESP unit and integration tests
     bazel test //src/... //third_party:all
 
+*Note:* If `bazel build ...` fails due to an `expected identifier` related to
+`DEBUG`, you may need to use `bazel build -c opt ...` as explained
+[here](https://github.com/bazelbuild/bazel/issues/3513#issuecomment-323302132).
 
 The ESP binary location is:
 
@@ -117,8 +120,9 @@ Now we are ready to call the the backend via Extensible Service Proxy, using cur
     curl -v http://localhost:8090/shelves/1
     curl -v http://localhost:8090/shelves/1/books
 
-The calls will fail because ESP is not yet completely configured (we'll do
-that next) but you will be able to see the calls registered in the log files:
+The first call should succeed but the last two calls should fail because ESP is
+not yet completely configured (we'll do that next). You should be able to see
+the calls registered in the log files:
 
     cat "${TMPDIR}/esp/access.log"
     cat "${TMPDIR}/esp/error.log"
