@@ -20,6 +20,10 @@ initialize Git submodules, and build ESP using Bazel:
     # Build ESP binary
     bazel build //src/nginx/main:nginx-esp
 
+*Note:* If `bazel build ...` fails due to an `expected identifier` related to
+`DEBUG`, you may need to use `bazel build -c opt ...` as explained
+[here](https://github.com/bazelbuild/bazel/issues/3513#issuecomment-323302132).
+
 The ESP binary location is:
 
     ./bazel-bin/src/nginx/main/nginx-esp
