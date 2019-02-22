@@ -91,7 +91,7 @@ ngx_chain_t *AppendToEnd(ngx_http_request_t *r, ngx_chain_t *chain,
 }
 
 ngx_chain_t *EncodesGrpcStatusCode(ngx_http_request_t *r, const Code &code,
-                                   size_t *length) {
+                                   uint64_t *length) {
   ngx_chain_t *ngx_chain_status = ngx_alloc_chain_link(r->pool);
   size_t size = snprintf(nullptr, 0, kGrpcStatus, code);
   uint8_t *buffer = static_cast<uint8_t *>(ngx_palloc(r->pool, size + 1));
@@ -115,7 +115,7 @@ ngx_chain_t *EncodesGrpcStatusCode(ngx_http_request_t *r, const Code &code,
 }
 
 ngx_chain_t *EncodesGrpcMessage(ngx_http_request_t *r,
-                                const std::string &message, size_t *length) {
+                                const std::string &message, uint64_t *length) {
   ngx_chain_t *ngx_chain_message = ngx_alloc_chain_link(r->pool);
   size_t size = snprintf(nullptr, 0, kGrpcMessage, message.c_str());
   uint8_t *buffer = static_cast<uint8_t *>(ngx_palloc(r->pool, size + 1));
@@ -141,7 +141,7 @@ ngx_chain_t *EncodesGrpcMessage(ngx_http_request_t *r,
 
 ngx_chain_t *EncodesGrpcCustomTrailers(
     ngx_http_request_t *r, std::multimap<std::string, std::string> &trailers,
-    ngx_chain_t *output, size_t *length) {
+    ngx_chain_t *output, uint64_t *length) {
   if (output == nullptr) {
     return nullptr;
   }
