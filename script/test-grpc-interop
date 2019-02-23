@@ -84,6 +84,7 @@ START_TIME=$(date +"%s")
 END_TIME=$((START_TIME + DURATION_IN_SEC))
 RUN_COUNT=0
 FAIL_COUNT=0
+GRPC_GO_LOG_SEVERITY_LEVEL=INFO
 
 detect_memory_leak_init "http://${HOST}"
 
@@ -92,7 +93,7 @@ while true; do
   ((RUN_COUNT++))
 
   sleep 10
-  METRIC_RESULT=$("GRPC_GO_LOG_SEVERITY_LEVEL=INFO $ROOT/bazel-bin/external/org_golang_google_grpc/stress/metrics_client/linux_amd64_stripped/metrics_client" \
+  METRIC_RESULT=$("$ROOT/bazel-bin/external/org_golang_google_grpc/stress/metrics_client/linux_amd64_stripped/metrics_client" \
     --total_only --metrics_server_address=localhost:8081 2>&1 | tail -1)
   QPS=$(echo ${METRIC_RESULT}|awk '{print $NF}')
   echo "Metric report at $((CURR_TIME - START_TIME)) seconds: ${QPS} qps"
