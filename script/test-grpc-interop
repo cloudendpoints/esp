@@ -84,7 +84,7 @@ START_TIME=$(date +"%s")
 END_TIME=$((START_TIME + DURATION_IN_SEC))
 RUN_COUNT=0
 FAIL_COUNT=0
-GRPC_GO_LOG_SEVERITY_LEVEL=INFO
+export GRPC_GO_LOG_SEVERITY_LEVEL=INFO
 
 detect_memory_leak_init "http://${HOST}"
 
@@ -115,4 +115,5 @@ fi
 # We fail the test if memory increase is large.
 detect_memory_leak_final && MEMORY_LEAK=0 || MEMORY_LEAK=1
 
+unset GRPC_GO_LOG_SEVERITY_LEVEL
 exit $((${RESULT} + ${MEMORY_LEAK}))
