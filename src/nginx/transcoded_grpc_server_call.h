@@ -70,7 +70,7 @@ class NgxEspTranscodedGrpcServerCall : public NgxEspGrpcServerCall {
   // NgxEspGrpcServerCall implementation
   virtual bool ConvertRequestBody(std::vector<grpc_slice>* out);
   virtual bool ConvertResponseMessage(const ::grpc::ByteBuffer& msg,
-                                      ngx_chain_t* out);
+                                      ngx_chain_t** out);
   virtual const ngx_str_t& response_content_type() const;
 
   // Constructor
@@ -82,7 +82,7 @@ class NgxEspTranscodedGrpcServerCall : public NgxEspGrpcServerCall {
 
   // Read the translated response message from the transcoder into an
   // ngx_chain_t.
-  bool ReadTranslatedResponse(ngx_chain_t* out);
+  bool ReadTranslatedResponse(ngx_chain_t** out);
 
   // Handle transcoding error
   void HandleError(const utils::Status& error);

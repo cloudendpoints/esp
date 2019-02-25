@@ -155,6 +155,9 @@ grpc_message_compression_algorithm GetCompressionAlgorithm(
 NgxEspGrpcServerCall::NgxEspGrpcServerCall(ngx_http_request_t *r,
                                            bool delay_downstream_headers)
     : r_(r),
+      buf_free_(nullptr),
+      buf_busy_(nullptr),
+      buf_tag_(ngx_buf_tag_t(&ConvertByteBuffer)),
       add_header_failed_(false),
       reading_(false),
       read_msg_(nullptr),
@@ -691,6 +694,37 @@ bool NgxEspGrpcServerCall::TryReadDownstreamMessage() {
   return true;
 }
 
+// Allocate the chain link and buffer.
+ngx_chain_t *NgxEspGrpcServerCall::AllocNgxBufChain(size_t buflen) {
+  ngx_chain_t *cl = ngx_chain_get_free_buf(r_->pool, &buf_free_);
+  if (!cl) {
+    return nullptr;
+  }
+  ngx_buf_t *buf = cl->buf;
+
+  if (buflen > size_t(buf->end - buf->start)) {
+    // Abandon the small buf, allocate a bigger one.
+    buf = ngx_create_temp_buf(r_->pool, buflen);
+    if (!buf) {
+      return nullptr;
+    }
+    cl->buf = buf;
+  }
+
+  // Clear the data except start, end
+  u_char *start = buf->start;
+  u_char *end = buf->end;
+  ngx_memzero(buf, sizeof(ngx_buf_t));
+  buf->start = start;
+  buf->end = end;
+
+  buf->pos = buf->start;
+  buf->last = buf->start;
+  buf->temporary = 1;
+  buf->tag = buf_tag_;
+  return cl;
+}
+
 void NgxEspGrpcServerCall::Write(const ::grpc::ByteBuffer &msg,
                                  std::function<void(bool)> continuation) {
   if (!cln_.data) {
@@ -712,7 +746,7 @@ void NgxEspGrpcServerCall::Write(const ::grpc::ByteBuffer &msg,
   ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r_->connection->log, 0,
                  "NgxEspGrpcServerCall::Write: Writing %z bytes", msg.Length());
 
-  ngx_chain_t out;
+  ngx_chain_t *out = nullptr;
   if (!ConvertResponseMessage(msg, &out)) {
     // Converting the response message failed. ConvertResponseMessage() has
     // finalized the request, call the continuation with false to abort the
@@ -724,7 +758,8 @@ void NgxEspGrpcServerCall::Write(const ::grpc::ByteBuffer &msg,
   }
 
   ngx_int_t rc = ngx_esp_write_output(
-      r_, &out, &NgxEspGrpcServerCall::OnDownstreamWriteable);
+      r_, out, &NgxEspGrpcServerCall::OnDownstreamWriteable);
+  ngx_chain_update_chains(r_->pool, &buf_free_, &buf_busy_, &out, buf_tag_);
 
   if (rc == NGX_OK) {
     // We were immediately able to send the message downstream.

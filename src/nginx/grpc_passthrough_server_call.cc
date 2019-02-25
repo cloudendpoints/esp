@@ -117,7 +117,7 @@ bool NgxEspGrpcPassThroughServerCall::ConvertRequestBody(
 }
 
 bool NgxEspGrpcPassThroughServerCall::ConvertResponseMessage(
-    const ::grpc::ByteBuffer &msg, ngx_chain_t *out) {
+    const ::grpc::ByteBuffer &msg, ngx_chain_t **out) {
   grpc_byte_buffer *grpc_msg = ConvertByteBuffer(msg);
   if (!grpc_msg) {
     return false;
@@ -135,17 +135,17 @@ bool NgxEspGrpcPassThroughServerCall::ConvertResponseMessage(
   buflen += msglen;
 
   // Allocate the chain link and buffer.
-  ngx_buf_t *buf = ngx_create_temp_buf(r_->pool, buflen);
-  if (!buf) {
+  ngx_chain_t *cl = AllocNgxBufChain(buflen);
+  if (!cl) {
     ngx_log_error(
         NGX_LOG_ERR, r_->connection->log, 0,
         "Failed to allocate response buffer header for GRPC response message.");
     return false;
   }
+  *out = cl;
+  ngx_buf_t *buf = cl->buf;
   buf->last_in_chain = 1;
   buf->flush = 1;
-  out->next = nullptr;
-  out->buf = buf;
 
   // Write the 'compressed' flag.
   *buf->last++ = (grpc_msg->data.raw.compression == GRPC_COMPRESS_NONE ? 0 : 1);
