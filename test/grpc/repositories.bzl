@@ -30,7 +30,7 @@ load("@bazel_gazelle//:deps.bzl", "go_repository")
 def grpc_go_repositories():
     go_repository(
         name = "org_golang_google_grpc",
-        commit = "9bf8ea0a8282ebecd1aa474c926e3028f5c22a4c",
+        commit = "8dea3dc473e90c8179e519d91302d0597c0ca1d1",
         importpath = "google.golang.org/grpc",
     )
 
