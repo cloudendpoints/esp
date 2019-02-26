@@ -759,6 +759,9 @@ void NgxEspGrpcServerCall::Write(const ::grpc::ByteBuffer &msg,
 
   ngx_int_t rc = ngx_esp_write_output(
       r_, out, &NgxEspGrpcServerCall::OnDownstreamWriteable);
+  // Completely written buffers are added to the free list so they can be
+  // re-used by AllocNgxBufChain(). They could be used by next respond
+  // messages for passthrough grpc.
   ngx_chain_update_chains(r_->pool, &buf_free_, &buf_busy_, &out, buf_tag_);
 
   if (rc == NGX_OK) {

@@ -245,7 +245,7 @@ bool NgxEspTranscodedGrpcServerCall::ReadTranslatedResponse(ngx_chain_t **out) {
     return false;
   }
 
-  // If the transcoder doesn't return any data.
+  // If the transcoder doesn't return any data, we will return an empty ngx_buf
   buf->last_in_chain = 1;
   buf->flush = 1;
 
