@@ -146,15 +146,17 @@ void NgxEspTranscodedGrpcServerCall::Finish(
   // Finish the Transcoder input response stream and read the translated
   // response output.
   grpc_response_stream_->Finish();
-  ngx_chain_t out;
+  ngx_chain_t *out = nullptr;
   if (!ReadTranslatedResponse(&out)) {
     return;
   }
   // Mark this as the last buffer in the request
-  out.buf->last_buf = 1;
+  if (out) {
+    out->buf->last_buf = 1;
+  }
 
   // Send the final buffer and finalize the request
-  ngx_int_t rc = ngx_http_output_filter(r_, &out);
+  ngx_int_t rc = ngx_http_output_filter(r_, out);
   if (rc == NGX_ERROR) {
     ngx_log_error(NGX_LOG_DEBUG, r_->connection->log, 0,
                   "Failed to send the last buffer - rc=%d", rc);
@@ -192,7 +194,7 @@ bool NgxEspTranscodedGrpcServerCall::ConvertRequestBody(
 }
 
 bool NgxEspTranscodedGrpcServerCall::ConvertResponseMessage(
-    const ::grpc::ByteBuffer &msg, ngx_chain_t *out) {
+    const ::grpc::ByteBuffer &msg, ngx_chain_t **out) {
   // Serialize ::grpc::ByteBuffer into grpc_byte_buffer
   grpc_byte_buffer *grpc_msg = ConvertByteBuffer(msg);
   if (!grpc_msg) {
@@ -208,15 +210,20 @@ bool NgxEspTranscodedGrpcServerCall::ConvertResponseMessage(
   return ReadTranslatedResponse(out);
 }
 
-bool NgxEspTranscodedGrpcServerCall::ReadTranslatedResponse(ngx_chain_t *out) {
+bool NgxEspTranscodedGrpcServerCall::ReadTranslatedResponse(ngx_chain_t **out) {
   // Allocate an ngx_buf.
   ngx_buf_t *buf = reinterpret_cast<ngx_buf_t *>(ngx_calloc_buf(r_->pool));
-  if (!buf) {
+  ngx_chain_t *cl = reinterpret_cast<ngx_chain_t *>(
+      ngx_palloc(r_->pool, sizeof(ngx_chain_t)));
+  if (!buf || !cl) {
     ngx_log_error(NGX_LOG_ERR, r_->connection->log, 0,
                   "Failed to allocate response buffer header for GRPC "
                   "response message.");
     return false;
   }
+  cl->buf = buf;
+  *out = cl;
+  cl->next = nullptr;
 
   // Read the translated response into an ngx_buf.
   const void *buffer = nullptr;
@@ -232,16 +239,15 @@ bool NgxEspTranscodedGrpcServerCall::ReadTranslatedResponse(ngx_chain_t *out) {
     buf->pos = buf->start;
     buf->last = buf->pos + size;
     buf->temporary = 1;
+
   } else if (!transcoder_->ResponseStatus().ok()) {
     HandleError(utils::Status::FromProto(transcoder_->ResponseStatus()));
     return false;
   }
-  // If the transcoder doesn't return any data, we will return an empty ngx_buf
 
+  // If the transcoder doesn't return any data, we will return an empty ngx_buf
   buf->last_in_chain = 1;
   buf->flush = 1;
-  out->next = nullptr;
-  out->buf = buf;
 
   return true;
 }

@@ -92,7 +92,7 @@ class NgxEspGrpcServerCall : public grpc::ServerCall {
   // care of sending the error to the client, finalizing the request and
   // return false.
   virtual bool ConvertResponseMessage(const ::grpc::ByteBuffer& msg,
-                                      ngx_chain_t* out) = 0;
+                                      ngx_chain_t** out) = 0;
 
   // Returns the response content-type
   virtual const ngx_str_t& response_content_type() const = 0;
@@ -111,6 +111,9 @@ class NgxEspGrpcServerCall : public grpc::ServerCall {
   ngx_http_cleanup_t cln_;
 
   static grpc_byte_buffer* ConvertByteBuffer(const ::grpc::ByteBuffer& msg);
+
+  // Allocate a ngx buf chain and its buf from re-cycled free list.
+  ngx_chain_t* AllocNgxBufChain(size_t buflen);
 
  private:
   static void OnDownstreamPreread(ngx_http_request_t* r);
@@ -132,6 +135,11 @@ class NgxEspGrpcServerCall : public grpc::ServerCall {
   // causes currently outstanding and newly initiated operations to be
   // completed with 'false'.
   static void Cleanup(void* server_call_ptr);
+
+  // re cycled buffer chains
+  ngx_chain_t* buf_free_;
+  ngx_chain_t* buf_busy_;
+  ngx_buf_tag_t buf_tag_;
 
   bool add_header_failed_;
   bool reading_;

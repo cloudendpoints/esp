@@ -76,7 +76,7 @@ class NgxEspGrpcPassThroughServerCall : public NgxEspGrpcServerCall {
   // NgxEspGrpcServerCall implementation
   virtual bool ConvertRequestBody(std::vector<grpc_slice>* out);
   virtual bool ConvertResponseMessage(const ::grpc::ByteBuffer& msg,
-                                      ngx_chain_t* out);
+                                      ngx_chain_t** out);
 };
 
 }  // namespace nginx
