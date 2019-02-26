@@ -171,7 +171,7 @@ bind(
 #
 git_repository(
     name = "io_bazel_rules_pex",
-    commit = "0c5773db01ab8aeb3ae749b2fc570749b93af41f",
+    commit = "0c5773db01ab8aeb3ae749b2fc570749b93af41f", # Jul 22, 2018
     remote = "https://github.com/benley/bazel_rules_pex.git",
 )
 
@@ -201,7 +201,7 @@ git_repository(
 http_archive(
     name = "bazel_gazelle",
     urls = ["https://github.com/bazelbuild/bazel-gazelle/releases/download/0.16.0/bazel-gazelle-0.16.0.tar.gz"],
-    sha256 = "7949fc6cc17b5b191103e97481cf8889217263acf52e00b560683413af204fcb",
+    sha256 = "7949fc6cc17b5b191103e97481cf8889217263acf52e00b560683413af204fcb",  # Jan 9, 2019 (v0.16.0)
 )
 
 load("@io_bazel_rules_go//go:def.bzl", "go_rules_dependencies", "go_register_toolchains")

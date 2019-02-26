@@ -160,7 +160,7 @@ filegroup(
 """
     native.new_git_repository(
         name = "org_golang_google_grpc_git",
-        commit = "9bf8ea0a8282ebecd1aa474c926e3028f5c22a4c",
+        commit = "9bf8ea0a8282ebecd1aa474c926e3028f5c22a4c", # May 19, 2017
         remote = "https://github.com/grpc/grpc-go.git",
         build_file_content = BUILD,
     )
