@@ -63,6 +63,7 @@ def main():
     # The command being run must be the 0th arg.
     ARGS = [CMD, "--enable_backend_routing"]
 
+    # Uncaught KeyError; if no port, we can't serve a nice error handler. Crash instead.
     assert_env_var("PORT")
     ARGS.append("--http_port={}".format(os.environ["PORT"]))
 
