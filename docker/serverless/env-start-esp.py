@@ -37,7 +37,7 @@ ARGS = [CMD, "--enable_backend_routing"]
 
 def assert_env_var(name):
     if name not in os.environ:
-        raise ApplicationError(
+        raise KeyError(
             "Serverless ESP expects {} in environment variables.".format(name)
         )
 
@@ -74,7 +74,7 @@ if "ESP_ARGS" in os.environ:
     if arg_value.startswith("^") and "^" in arg_value[1:]:
         delim, arg_value = arg_value[1:].split("^", 1)
     if not delim:
-        raise ApplicationError("Malformed ESP_ARGS environment variable.")
+        raise ValueError("Malformed ESP_ARGS environment variable.")
 
     ARGS.extend(arg_value.split(delim))
 
