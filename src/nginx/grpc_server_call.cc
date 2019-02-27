@@ -225,6 +225,9 @@ void NgxEspGrpcServerCall::UpdateResponseMessageStat(int64_t size) {
 
 void NgxEspGrpcServerCall::SetGrpcUpstreamCancel(
     std::function<void()> grpc_upstream_cancel) {
+  if (!cln_.data) {
+    return;
+  }
   ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
   ctx->grpc_upstream_cancel =
       std::unique_ptr<std::function<void()>>(new auto(grpc_upstream_cancel));
