@@ -220,4 +220,4 @@ detect_memory_leak_final && MEMORY_LEAK=0 || MEMORY_LEAK=1
 # This is to be consistent with other http stress tests.
 # All failure will be analyzed by release-engineers.
 
-exit $((${GRPC_STRESS_FAILURES} + ${MEMORY_LEAK}))
+exit $((${GRPC_STRESS_FAILURES} + ${HTTP_STRESS_FAILURES} + ${MEMORY_LEAK}))
