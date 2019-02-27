@@ -100,7 +100,7 @@ case "${TEST_TYPE}" in
 esac
 
 # set rollout strategy
-ARGS="$ARGS --rollout_strategy ${ESP_ROLLOUT_STRATEGY}"
+ARGS="$ARGS --rollout_strategy ${ESP_ROLLOUT_STRATEGY} --enable_debug"
 
 trap cleanup EXIT
 
