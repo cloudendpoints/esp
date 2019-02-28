@@ -922,6 +922,10 @@ def enforce_conflict_args(args):
             return "Flag --enable_backend_routing cannot be used together with -N or --status_port."
         if args.nginx_config:
             return "Flag --enable_backend_routing cannot be used together with -n or --nginx_config."
+        if args.dns != DNS_RESOLVER:
+            return "Flag --enable_backend_routing cannot be used together with --dns."
+        if args.ssl_protocols:
+            return "Flag --enable_backend_routing cannot be used together with --ssl_protocols."
 
         # When --enable_backend_routing is specified, set some default value to some of its conflicting flags.
         args.disable_cloud_trace_auto_sampling = True
