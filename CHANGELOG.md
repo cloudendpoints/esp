@@ -1,7 +1,11 @@
-# Release 1.29.0 07-02-2019
+# Release 1.30.0 27-02-2019
 
-===============================================
-
+- Fix grpc long stream memory leak by using re-cycled buffers (#552)
+- Improve env variable handling in serverless image startup script. (#544)
+- Increase timeout for checking new service rollout (#543)
+- Log JWT Payloads if configured (#531)
+- CONSTANT ADDRESS backend routing always use jsonName instead of snake… (#537)
+- Support gRPC client RST_STREAM (#530)
 - Build ESP Docker image which accepts start_esp arguments from environment variables (#527)
 - Add the agent label to all trace spans. (#526)
 - Log http request and response headers if configured (#524)
