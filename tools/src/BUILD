@@ -26,14 +26,10 @@
 #
 load(
     "@io_bazel_rules_go//go:def.bzl",
-    "go_prefix",
     "go_library",
     "go_binary",
     "go_test",
 )
-
-# Define an import prefix
-go_prefix("github.com/cloudendpoints/esp")
 
 # NOTE: Below we use a special "vendor/" keyword in target names to specify
 # custom import paths for go libraries. Otherwise, go_library() rule
@@ -51,7 +47,7 @@ go_library(
     srcs = glob(
         ["google/protobuf/*.pb.go"],
     ),
-    go_prefix = "//tools/src:go_prefix",
+    importpath = "github.com/cloudendpoints/esp",
     deps = [
         "@github_com_golang_protobuf//:proto",
         "@github_com_golang_protobuf//:ptypes/any",
@@ -63,7 +59,7 @@ go_library(
     srcs = glob(
         ["google/api/*.pb.go"],
     ),
-    go_prefix = "//tools/src:go_prefix",
+    importpath = "github.com/cloudendpoints/esp",
     deps = [
         ":vendor/google/protobuf",
         "@github_com_golang_protobuf//:proto",
@@ -78,7 +74,7 @@ go_library(
     srcs = glob(
         ["google/rpc/*.pb.go"],
     ),
-    go_prefix = "//tools/src:go_prefix",
+    importpath = "github.com/cloudendpoints/esp",
     deps = [
         ":vendor/google/protobuf",
         "@github_com_golang_protobuf//:proto",
@@ -92,7 +88,7 @@ go_library(
     srcs = glob(
         ["google/type/*.pb.go"],
     ),
-    go_prefix = "//tools/src:go_prefix",
+    importpath = "github.com/cloudendpoints/esp",
     deps = [
         ":vendor/google/protobuf",
         "@github_com_golang_protobuf//:proto",
@@ -104,7 +100,7 @@ go_library(
     srcs = glob(
         ["google/logging/type/*.pb.go"],
     ),
-    go_prefix = "//tools/src:go_prefix",
+    importpath = "github.com/cloudendpoints/esp",
     deps = [
         "@github_com_golang_protobuf//:proto",
     ],
@@ -115,7 +111,7 @@ go_library(
     srcs = glob(
         ["google/api/servicecontrol/v1/*.pb.go"],
     ),
-    go_prefix = "//tools/src:go_prefix",
+    importpath = "github.com/cloudendpoints/esp",
     visibility = [
         "//visibility:public",
     ],
@@ -141,7 +137,7 @@ go_library(
         "fakes/request_data.go",
         "fakes/request_parser.go",
     ],
-    go_prefix = "//tools/src:go_prefix",
+    importpath = "github.com/cloudendpoints/esp",
     deps = [
         "//tools/src:vendor/google/api/servicecontrol/v1",
         "@github_com_golang_protobuf//:proto",
@@ -153,7 +149,7 @@ go_binary(
     srcs = [
         "fakes/server/main.go",
     ],
-    go_prefix = "//tools/src:go_prefix",
+    importpath = "github.com/cloudendpoints/esp",
     deps = [
         ":vendor/fakes",
     ],
@@ -164,7 +160,7 @@ go_library(
     srcs = [
         "deploy/deploy-local/deploy-local.go",
     ],
-    go_prefix = "//tools/src:go_prefix",
+    importpath = "github.com/cloudendpoints/esp",
 )
 
 go_library(
@@ -183,7 +179,7 @@ go_library(
         "//src/nginx/t:testdata/logs_metrics.pb.txt",
         "//src/tools:auth_token_gen",
     ],
-    go_prefix = "//tools/src:go_prefix",
+    importpath = "github.com/cloudendpoints/esp",
     deps = [
         ":vendor/google/api/servicecontrol/v1",
         ":vendor/google/logging/type",
@@ -209,7 +205,7 @@ go_test(
         "//src/nginx/t:matching-client-secret.json",
         "//src/tools:auth_token_gen",
     ],
-    go_prefix = "//tools/src:go_prefix",
+    importpath = "github.com/cloudendpoints/esp",
     deps = [
         ":vendor/deploy/deploy-local",
         ":vendor/fakes",

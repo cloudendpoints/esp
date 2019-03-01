@@ -21,8 +21,8 @@ Install the following software packages:
 
 ESP is built using the [bazel](http://bazel.io) build tool. 
 Follow the bazel [install instructions](https://docs.bazel.build/versions/master/install-ubuntu.html#install-using-binary-installer) to install bazel. 
-ESP currently requires bazel 0.5.4. For bazel 0.5.4 on Ubuntu, 
-the binary installer is bazel-0.5.4-installer-linux-x86_64.sh.
+ESP currently requires bazel 0.21.0. For bazel 0.21.0 on Ubuntu, 
+the binary installer is bazel-0.21.0-installer-linux-x86_64.sh.
 
 *Note:* Bazel is under active development and from time to time, ESP continuous
 integration systems are upgraded to a new version of Bazel. 

@@ -72,12 +72,12 @@ genrule(
     name = "grpc-interop_descriptor",
     srcs = [
         "@protobuf_git//:well_known_protos",
-        "@org_golang_google_grpc//interop/grpc_testing:go_default_library_protos",
+        "@org_golang_google_grpc_git//:test_proto"
     ],
     outs = ["grpc-interop.descriptor"],
     cmd = """$(location //external:protoc) \
-        $(location @org_golang_google_grpc//interop/grpc_testing:go_default_library_protos) \
-        -I$$(dirname $(location @org_golang_google_grpc//interop/grpc_testing:go_default_library_protos)) \
+        $(location @org_golang_google_grpc_git//:test_proto) \
+        -I$$(dirname $(location @org_golang_google_grpc_git//:test_proto)) \
         -Iexternal/protobuf_git/src \
         --include_imports --descriptor_set_out=$@""",
     tools = ["//external:protoc"],
@@ -130,18 +130,16 @@ cc_binary(
 
 load(
     "@io_bazel_rules_go//go:def.bzl",
-    "go_prefix",
     "go_binary",
 )
 
-go_prefix("github.com/cloudendpoints/esp/test/grpc")
 
 go_binary(
     name = "interop-client",
     srcs = [
         "interop-client.go",
     ],
-    go_prefix = ":go_prefix",
+    importpath = "github.com/cloudendpoints/esp/test/grpc",
     deps = [
         "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_grpc//credentials:go_default_library",

@@ -101,7 +101,7 @@ Content-Length: 10
 
 \x00\x00\x00\x00\x04\x10\x80\x80\x40});
 
-is(length(ApiManager::http_response_body($response)), 1048612, 'UnaryCall returns OK.');
+is(length(ApiManager::http_response_body($response)), 1048610, 'UnaryCall returns OK.');
 
 $t->stop_daemons();
 

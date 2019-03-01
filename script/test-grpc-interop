@@ -60,7 +60,7 @@ done
 HOST_IP=${HOST%:*}
 HOST_PORT=${HOST#*:}
 echo "HOST_IP: ${HOST_IP}, HOST_PORT: ${HOST_PORT}"
-retry $ROOT/bazel-bin/test/grpc/interop-client --server_port "${HOST_PORT}" \
+retry $ROOT/bazel-bin/test/grpc/linux_amd64_stripped/interop-client --server_port "${HOST_PORT}" \
           --server_host "${HOST_IP}" \
   || error_exit 'Failed to send one request, the proxy did not start properly.'
 
@@ -72,7 +72,7 @@ echo "Test during is: $((DURATION_IN_SEC / 60)) minutes."
 echo "Test cases are: ${TEST_CASES}"
 
 # Start a background test client job.
-$ROOT/bazel-bin/external/org_golang_google_grpc/stress/client/client \
+$ROOT/bazel-bin/external/org_golang_google_grpc/stress/client/linux_amd64_stripped/client \
   --server_addresses "${HOST}" \
   --num_channels_per_server 200 \
   --num_stubs_per_channel 1 \
@@ -84,6 +84,7 @@ START_TIME=$(date +"%s")
 END_TIME=$((START_TIME + DURATION_IN_SEC))
 RUN_COUNT=0
 FAIL_COUNT=0
+export GRPC_GO_LOG_SEVERITY_LEVEL=INFO
 
 detect_memory_leak_init "http://${HOST}"
 
@@ -92,8 +93,8 @@ while true; do
   ((RUN_COUNT++))
 
   sleep 10
-  METRIC_RESULT=$("$ROOT/bazel-bin/external/org_golang_google_grpc/stress/metrics_client/metrics_client" \
-    --total_only --metrics_server_address=localhost:8081 2>&1)
+  METRIC_RESULT=$("$ROOT/bazel-bin/external/org_golang_google_grpc/stress/metrics_client/linux_amd64_stripped/metrics_client" \
+    --total_only --metrics_server_address=localhost:8081 2>&1 | tail -1)
   QPS=$(echo ${METRIC_RESULT}|awk '{print $NF}')
   echo "Metric report at $((CURR_TIME - START_TIME)) seconds: ${QPS} qps"
   # Count non zero QPS as success.
@@ -114,4 +115,5 @@ fi
 # We fail the test if memory increase is large.
 detect_memory_leak_final && MEMORY_LEAK=0 || MEMORY_LEAK=1
 
+unset GRPC_GO_LOG_SEVERITY_LEVEL
 exit $((${RESULT} + ${MEMORY_LEAK}))

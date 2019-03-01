@@ -53,12 +53,12 @@ function build_and_test() {
   fi
   echo "${message}..."
   retry -n 3 ${BAZEL} ${BAZEL_ARGS} fetch \
-    //src/... //tools/src/... //third_party:all //start_esp/test/... \
+    //src/... //third_party:all //start_esp/test/... \
     && retry -n 2 ${BAZEL} ${BAZEL_ARGS} build \
       ${BAZEL_BUILD_ARGS} ${config_flag} \
-      //src/... //tools/src/... //third_party:all //start_esp/test/... \
+      //src/... //third_party:all //start_esp/test/... \
     && ${BAZEL} ${BAZEL_ARGS} test --test_output=errors ${config_flag} \
-      //src/... //tools/src/... //third_party:all //start_esp/test/... \
+      //src/... //third_party:all //start_esp/test/... \
     || { echo "${error}..."; return 1; }
 }
 

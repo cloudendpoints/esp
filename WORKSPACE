@@ -109,6 +109,7 @@ load(
     "//:repositories.bzl",
     "googletest_repositories",
     #"grpc_repositories",
+    "go_grpc_repositories",
     "protobuf_repositories",
     "servicecontrol_client_repositories",
     "transcoding_repositories",
@@ -146,6 +147,8 @@ bind(
 
 servicecontrol_client_repositories()
 
+go_grpc_repositories()
+
 protobuf_repositories()
 
 googletest_repositories()
@@ -168,7 +171,7 @@ bind(
 #
 git_repository(
     name = "io_bazel_rules_pex",
-    commit = "6af30588d4f11cafcb744c50935cc37f029e6e7f",
+    commit = "0c5773db01ab8aeb3ae749b2fc570749b93af41f", # Jul 22, 2018
     remote = "https://github.com/benley/bazel_rules_pex.git",
 )
 
@@ -191,13 +194,21 @@ git_repository(
 #
 git_repository(
     name = "io_bazel_rules_go",
-    commit = "2d9f328a9723baf2d037ba9db28d9d0e30683938",  # Apr 6, 2017 (buildifier fix)
+    commit = "2d792dea8d22c552f455623bb15eb4f61fcb2f1b",  # Dec 15, 2018 (v0.16.5)
     remote = "https://github.com/bazelbuild/rules_go.git",
 )
 
-load("@io_bazel_rules_go//go:def.bzl", "go_repositories", "go_repository", "new_go_repository")
+http_archive(
+    name = "bazel_gazelle",
+    urls = ["https://github.com/bazelbuild/bazel-gazelle/releases/download/0.16.0/bazel-gazelle-0.16.0.tar.gz"],
+    sha256 = "7949fc6cc17b5b191103e97481cf8889217263acf52e00b560683413af204fcb",  # Jan 9, 2019 (v0.16.0)
+)
 
-go_repositories()
+load("@io_bazel_rules_go//go:def.bzl", "go_rules_dependencies", "go_register_toolchains")
+go_rules_dependencies()
+go_register_toolchains()
+load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
+gazelle_dependencies()
 
 new_git_repository(
     name = "github_com_golang_protobuf",

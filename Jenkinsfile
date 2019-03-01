@@ -29,7 +29,6 @@ SUCH DAMAGE.
 
 import static java.util.UUID.randomUUID
 
-
 // Supported Stages.
 // ALL will run all stage but the one starting with '_'.
 // By default all ALL stages will run.
@@ -53,7 +52,7 @@ SUPPORTED_STAGES = [
 ]
 
 // Supported VM Images
-SLAVE_IMAGE = 'gcr.io/endpoints-jenkins/debian-8:0.7'
+SLAVE_IMAGE = 'gcr.io/endpoints-jenkins/debian-8:0.12'
 
 // Release Qualification end to end tests.
 // If RAPTURE_REPO build parameter is set only those test will run.
@@ -450,10 +449,10 @@ def buildPackages() {
   def stashPaths = [
       'bazel-bin/src/tools/auth_token_gen',
       'bazel-bin/test/grpc/grpc-test-client',
-      'bazel-bin/test/grpc/interop-client',
-      'bazel-bin/external/org_golang_google_grpc/stress/metrics_client/metrics_client',
-      'bazel-bin/external/org_golang_google_grpc/interop/server/server',
-      'bazel-bin/external/org_golang_google_grpc/stress/client/client',
+      'bazel-bin/test/grpc/linux_amd64_stripped/interop-client',
+      'bazel-bin/external/org_golang_google_grpc/stress/metrics_client/linux_amd64_stripped/metrics_client',
+      'bazel-bin/external/org_golang_google_grpc/interop/server/linux_amd64_stripped/server',
+      'bazel-bin/external/org_golang_google_grpc/stress/client/linux_amd64_stripped/client',
       'bazel-genfiles/test/grpc/grpc-test.descriptor',
       'bazel-genfiles/test/grpc/grpc-interop.descriptor',
   ]
