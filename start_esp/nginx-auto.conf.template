@@ -26,8 +26,6 @@
 
 daemon off;
 
-user nginx nginx;
-
 pid ${pid_file};
 
 # Worker/connection processing limits
@@ -136,7 +134,7 @@ http {
       # Begin Endpoints v2 Support
       endpoints {
         on;
-        server_config /etc/nginx/server_config.pb.txt;
+        server_config ${server_config_path};
 % if service_account:
         google_authentication_secret ${service_account};
 % endif

@@ -55,7 +55,7 @@ SERVER_CONF = "/etc/nginx/server_config.pb.txt"
 SERVER_CONF_DIR = "/etc/nginx/"
 
 # Location of generated config files
-CONFIG_DIR = "/etc/nginx/endpoints"
+CONFIG_DIR = "/home/nginx/endpoints"
 
 # Protocol prefixes
 GRPC_PREFIX = "grpc://"
@@ -90,7 +90,7 @@ DEFAULT_ROLLOUT_STRATEGY = "fixed"
 DEFAULT_XFF_TRUSTED_PROXY_LIST = "0.0.0.0/0, 0::/0"
 
 # Default PID file location (for nginx as a daemon)
-DEFAULT_PID_FILE = "/var/run/nginx.pid"
+DEFAULT_PID_FILE = "/home/nginx/nginx.pid"
 
 # Default nginx worker_processes
 DEFAULT_WORKER_PROCESSES = "1"
@@ -125,7 +125,7 @@ def write_pid_file(args):
         logging.error(err.strerror)
         sys.exit(3)
 
-def write_template(ingress, nginx_conf, args):
+def write_nginx_conf(ingress, nginx_conf, args):
     # Load template
     try:
         template = Template(filename=args.template)
@@ -160,6 +160,7 @@ def write_template(ingress, nginx_conf, args):
             cors_allow_credentials=args.cors_allow_credentials,
             cors_expose_headers=args.cors_expose_headers,
             ssl_protocols=args.ssl_protocols,
+            server_config_path=args.server_config_path,
             experimental_proxy_backend_host_header=args.experimental_proxy_backend_host_header,
             enable_strict_transport_security=args.enable_strict_transport_security,
             google_cloud_platform=(args.non_gcp==False))
@@ -980,6 +981,7 @@ if __name__ == '__main__':
 
     # Generate server_config
     args.metadata_attributes = fetch.fetch_metadata_attributes(args.metadata)
+    args.server_config_path = SERVER_CONF
     if args.generate_config_file_only:
         # When generate_config_file_only, metadata_attributes is set as empty
         # to have consistent test results on local bazel test and jenkins test
@@ -991,11 +993,20 @@ if __name__ == '__main__':
         else:
             write_server_config_template(args.server_config_generation_path, args)
     else:
-        server_config_path = SERVER_CONF
+        # Custom nginx config hardcoded server_config to /etc/nginx, not to break them
+        if args.nginx_config:
+          server_config_path = SERVER_CONF
+        else:
+          ensure(args.config_dir)
+          server_config_path = args.config_dir + "/server_config.pb.txt"
         if args.service and '|' in args.service:
+          if args.nginx_config:
             server_config_path = SERVER_CONF_DIR
+          else:
+            server_config_path = args.config_dir + "/"
         if args.server_config_generation_path:
             server_config_path = args.server_config_generation_path
+        args.server_config_path = server_config_path
         write_server_config_template(server_config_path, args)
 
     # Generate nginx config if not specified
@@ -1004,7 +1015,7 @@ if __name__ == '__main__':
         ingress = make_ingress(args)
         nginx_conf = args.config_dir + "/nginx.conf"
         ensure(args.config_dir)
-        write_template(ingress, nginx_conf, args)
+        write_nginx_conf(ingress, nginx_conf, args)
 
     if args.generate_config_file_only:
         exit(0)

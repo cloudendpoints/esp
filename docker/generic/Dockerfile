@@ -1,5 +1,5 @@
 # ESP Proxy that forwards requests into the application server.
-FROM debian:jessie
+FROM ubuntu
 
 # Copy the Endpoints runtime Debian package.
 ADD endpoints-runtime.deb endpoints-runtime.deb
@@ -25,5 +25,16 @@ EXPOSE 8090
 # The default HTTP/1.x port is 8080. It might help to expose this port explicitly
 # since documentation still refers to using docker without additional EXPOSE step
 EXPOSE 8080
+
+# Remove the nginx user created from deb package which doesn't create the home folder.
+RUN deluser nginx
+RUN groupadd -g 999 nginx && useradd -r -u 999 -g nginx nginx
+
+RUN rm -rf /var/log/nginx
+RUN mkdir -p /var/log/nginx /var/cache/nginx /home/nginx
+RUN chown nginx:nginx /var/log/nginx /var/cache/nginx /home/nginx
+RUN chmod 777 /var/log/nginx /var/cache/nginx /home/nginx
+
+USER nginx
 
 ENTRYPOINT ["/usr/sbin/start_esp"]
