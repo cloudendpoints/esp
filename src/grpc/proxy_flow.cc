@@ -125,19 +125,24 @@ namespace grpc {
 
 namespace {
 
-const char kGrpcEncoding[] = "grpc-encoding";
-const char kGrpcAcceptEncoding[] = "grpc-accept-encoding";
-const char kGrpcHostHeader[] = "host";
+const std::unordered_set<std::string> kHeadersToRemove = {
+    // gRPC requests (HTTP2) with a host header will lead some gRPC servers to
+    // reject it, so the host header is skipped here.
+    "host",
+
+    // HTTP/2 prohibits connection-specific header fields.
+    // The following header fields must not appear
+    "connection", "proxy-connection", "transfer-encoding", "upgrade",
+
+    // GRPC lib will add following headers, so removing them.
+    "grpc-encoding", "grpc-accept-encoding",
+};
 
 Status ProcessDownstreamHeaders(
     const std::multimap<std::string, std::string> &headers,
     ::grpc::ClientContext *context) {
   for (const auto &it : headers) {
-    // gRPC requests (HTTP2) with a host header will lead some gRPC servers to
-    // reject it, so the host header is skipped here.
-    if (it.first == kGrpcEncoding || it.first == kGrpcAcceptEncoding ||
-        it.first == kGrpcHostHeader) {
-      // GRPC lib will add this header, so not adding it to client_context_
+    if (kHeadersToRemove.find(it.first) != kHeadersToRemove.end()) {
       continue;
     }
     // GRPC runtime libraries use "-bin" suffix to detect binary headers and
