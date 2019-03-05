@@ -125,7 +125,7 @@ namespace grpc {
 
 namespace {
 
-const std::unordered_set<std::string> kHeadersToRemove = {
+const std::unordered_set<std::string> kHeadersToSkip = {
     // gRPC requests (HTTP2) with a host header will lead some gRPC servers to
     // reject it, so the host header is skipped here.
     "host",
@@ -142,7 +142,7 @@ Status ProcessDownstreamHeaders(
     const std::multimap<std::string, std::string> &headers,
     ::grpc::ClientContext *context) {
   for (const auto &it : headers) {
-    if (kHeadersToRemove.find(it.first) != kHeadersToRemove.end()) {
+    if (kHeadersToSkip.find(it.first) != kHeadersToSkip.end()) {
       continue;
     }
     // GRPC runtime libraries use "-bin" suffix to detect binary headers and
