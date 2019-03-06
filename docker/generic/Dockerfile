@@ -1,5 +1,5 @@
 # ESP Proxy that forwards requests into the application server.
-FROM ubuntu
+FROM debian:jessie
 
 # Copy the Endpoints runtime Debian package.
 ADD endpoints-runtime.deb endpoints-runtime.deb
@@ -26,14 +26,11 @@ EXPOSE 8090
 # since documentation still refers to using docker without additional EXPOSE step
 EXPOSE 8080
 
-# Remove the nginx user created from deb package which doesn't create the home folder.
-RUN deluser nginx && \
-    groupadd -g 999 nginx && useradd -r -u 999 -g nginx nginx && \
-    rm -rf /var/log/nginx && \
-    mkdir -p /var/log/nginx /var/cache/nginx /home/nginx && \
+RUN rm -rf /var/log/nginx && \
+    mkdir -p /var/log/nginx /var/cache/nginx && \
     touch /etc/nginx/server_config.pb.txt && \
-    chown nginx:nginx /var/log/nginx /var/cache/nginx /home/nginx /etc/nginx/server_config.pb.txt && \
-    chmod 777 /var/log/nginx /var/cache/nginx /home/nginx /etc/nginx/server_config.pb.txt
+    chown nginx:nginx /var/log/nginx /var/cache/nginx /etc/nginx/server_config.pb.txt && \
+    chmod 777 /var/log/nginx /var/cache/nginx /etc/nginx/server_config.pb.txt
 
 USER nginx
 

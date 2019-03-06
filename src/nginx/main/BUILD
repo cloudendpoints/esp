@@ -250,7 +250,7 @@ pkg_deb(
     package = "endpoints-runtime",
     postinst = "@nginx_pkgoss//:debian_postinst",
     postrm = "@nginx_pkgoss//:debian_postrm",
-    preinst = "@nginx_pkgoss//:debian_preinst",
+    preinst = "nginx.preinst",
     prerm = "@nginx_pkgoss//:debian_prerm",
     priority = "extra",
     section = "httpd",
