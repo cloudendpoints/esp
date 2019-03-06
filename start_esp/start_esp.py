@@ -50,9 +50,9 @@ NGINX_DEBUG = "/usr/sbin/nginx-debug"
 NGINX_CONF_TEMPLATE = "/etc/nginx/nginx-auto.conf.template"
 SERVER_CONF_TEMPLATE = "/etc/nginx/server-auto.conf.template"
 # Custom nginx config used by customers are hardcoded to this path
-SERVER_CONF = "/etc/nginx/server_config.pb.txt"
-# Default service config output directory when multiple services are proxied
-SERVER_CONF_DIR = "/etc/nginx/"
+# Flex nginx config is hardcoded to use this path
+SERVER_CONF_DIR = "/etc/nginx"
+SERVER_CONF_NAME = "/server_config.pb.txt"
 
 # Location of generated config files
 CONFIG_DIR = "/home/nginx/endpoints"
@@ -663,6 +663,16 @@ config file.'''.format(
         default=CONFIG_DIR,
         help=argparse.SUPPRESS)
 
+    # The server_config dir to save server configs
+    parser.add_argument('--server_config_dir',
+        default=SERVER_CONF_DIR,
+        help='''Sets the folder for writting server config file.
+        The server config file is passed to ESP in Nginx config.
+        If you are using your own nginx config,
+        please be sure its server_config path matches this one.
+        If you want to make esp container root file system read-only
+        for security, please change this folder to /home/nginx.''')
+
     # nginx.conf template
     parser.add_argument('--template',
         default=NGINX_CONF_TEMPLATE,
@@ -927,10 +937,13 @@ def enforce_conflict_args(args):
             return "Flag --enable_backend_routing cannot be used together with --dns."
         if args.ssl_protocols:
             return "Flag --enable_backend_routing cannot be used together with --ssl_protocols."
+        if args.server_config_dir != SERVER_CONF_DIR:
+            return "Flag --enable_backend_routing cannot be used together with --server_config_dir."
 
         # When --enable_backend_routing is specified, set some default value to some of its conflicting flags.
         args.disable_cloud_trace_auto_sampling = True
         args.access_log = 'off'
+        args.server_config_dir = "/home/nginx"
     return None
 
 if __name__ == '__main__':
@@ -981,7 +994,7 @@ if __name__ == '__main__':
 
     # Generate server_config
     args.metadata_attributes = fetch.fetch_metadata_attributes(args.metadata)
-    args.server_config_path = SERVER_CONF
+    args.server_config_path = args.server_config_dir + SERVER_CONF_NAME
     if args.generate_config_file_only:
         # When generate_config_file_only, metadata_attributes is set as empty
         # to have consistent test results on local bazel test and jenkins test
@@ -993,20 +1006,12 @@ if __name__ == '__main__':
         else:
             write_server_config_template(args.server_config_generation_path, args)
     else:
-        # Custom nginx config hardcoded server_config to /etc/nginx, not to break them
-        if args.nginx_config:
-          server_config_path = SERVER_CONF
-        else:
-          ensure(args.config_dir)
-          server_config_path = args.config_dir + "/server_config.pb.txt"
+        ensure(args.server_config_dir)
+        server_config_path = args.server_config_path
         if args.service and '|' in args.service:
-          if args.nginx_config:
-            server_config_path = SERVER_CONF_DIR
-          else:
-            server_config_path = args.config_dir + "/"
+            server_config_path = args.server_config_dir + "/"
         if args.server_config_generation_path:
             server_config_path = args.server_config_generation_path
-        args.server_config_path = server_config_path
         write_server_config_template(server_config_path, args)
 
     # Generate nginx config if not specified

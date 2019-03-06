@@ -27,13 +27,13 @@ EXPOSE 8090
 EXPOSE 8080
 
 # Remove the nginx user created from deb package which doesn't create the home folder.
-RUN deluser nginx
-RUN groupadd -g 999 nginx && useradd -r -u 999 -g nginx nginx
-
-RUN rm -rf /var/log/nginx
-RUN mkdir -p /var/log/nginx /var/cache/nginx /home/nginx
-RUN chown nginx:nginx /var/log/nginx /var/cache/nginx /home/nginx
-RUN chmod 777 /var/log/nginx /var/cache/nginx /home/nginx
+RUN deluser nginx && \
+    groupadd -g 999 nginx && useradd -r -u 999 -g nginx nginx && \
+    rm -rf /var/log/nginx && \
+    mkdir -p /var/log/nginx /var/cache/nginx /home/nginx && \
+    touch /etc/nginx/server_config.pb.txt && \
+    chown nginx:nginx /var/log/nginx /var/cache/nginx /home/nginx /etc/nginx/server_config.pb.txt && \
+    chmod 777 /var/log/nginx /var/cache/nginx /home/nginx /etc/nginx/server_config.pb.txt
 
 USER nginx
 
