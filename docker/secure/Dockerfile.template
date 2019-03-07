@@ -10,4 +10,4 @@ RUN rm -rf /var/log/nginx && \
 
 USER nginx
 
-ENTRYPOINT ["/usr/sbin/start_esp", "--server_config_dir=/home/nginx"]
+ENTRYPOINT ["/usr/sbin/start_esp", "--server_config_dir=/home/nginx", "--config_dir=/home/nginx/endpoints"]

@@ -55,7 +55,7 @@ SERVER_CONF_DIR = "/etc/nginx"
 SERVER_CONF_NAME = "/server_config.pb.txt"
 
 # Location of generated config files
-CONFIG_DIR = "/home/nginx/endpoints"
+CONFIG_DIR = "/etc/nginx/endpoints"
 
 # Protocol prefixes
 GRPC_PREFIX = "grpc://"
@@ -943,7 +943,9 @@ def enforce_conflict_args(args):
         # When --enable_backend_routing is specified, set some default value to some of its conflicting flags.
         args.disable_cloud_trace_auto_sampling = True
         args.access_log = 'off'
+        # For backend routing eabled config, use /home/nginx directly.
         args.server_config_dir = "/home/nginx"
+        args.config_dir = "/home/nginx/endpoints"
     return None
 
 if __name__ == '__main__':
