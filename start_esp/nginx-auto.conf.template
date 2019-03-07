@@ -26,6 +26,8 @@
 
 daemon off;
 
+user nginx nginx;
+
 pid ${pid_file};
 
 # Worker/connection processing limits
