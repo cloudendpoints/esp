@@ -953,6 +953,12 @@ if __name__ == '__main__':
     args = parser.parse_args()
     logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
+    if not args.generate_config_file_only:
+        # nginx needs these directories to exist, but knative may mount volumes in
+        # /var, hiding the directories created in the Dockerfile.
+        for dirname in ["/var/log/nginx", "/var/cache/nginx"]:
+            ensure(dirname)
+
     check_conflict_result = enforce_conflict_args(args)
     if check_conflict_result:
         logging.error(check_conflict_result)
