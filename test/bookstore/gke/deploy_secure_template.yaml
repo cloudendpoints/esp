@@ -70,10 +70,10 @@ spec:
         securityContext:
           readOnlyRootFilesystem: true
         volumeMounts:
-          - mountPath: /var/log/nginx
+          - mountPath: /var/log
             name: var-log-for-nginx
             readOnly: false
-          - mountPath: /var/cache/nginx
+          - mountPath: /var/cache
             name: var-cache-for-nginx
             readOnly: false
           - mountPath: /home/nginx
