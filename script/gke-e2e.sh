@@ -89,7 +89,7 @@ run kubectl create -f ${YAML_FILE}          --namespace "${NAMESPACE}"
 run kubectl get services -o yaml            --namespace "${NAMESPACE}"
 run kubectl get deployments -o yaml         --namespace "${NAMESPACE}"
 
-HOST=$(get_service_ip "${NAMESPACE}" "${GKE_SERVICE_NAME}")
+HOST="http://$(get_service_ip "${NAMESPACE}" "${GKE_SERVICE_NAME}")"
 echo "=== Use the host: ${HOST}";
 
 LOG_DIR="$(mktemp -d /tmp/log.XXXX)"
