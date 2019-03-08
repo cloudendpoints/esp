@@ -31,6 +31,15 @@ from __future__ import print_function
 import os
 
 
+def ensure_dir(dirname):
+    if not os.path.exists(dirname):
+        try:
+            os.makedirs(dirname)
+        except OSError as exc:
+            print("[ESP] Cannot create directory.")
+            sys.exit(3)
+
+
 def assert_env_var(name):
     if name not in os.environ:
         raise KeyError(
@@ -58,6 +67,11 @@ def serve_error_msg(error_msg):
 
 
 def main():
+    # nginx needs these directories to exist, but knative may mount volumes in
+    # /var, hiding the directories created in the Dockerfile.
+    for dirname in ["/var/log/nginx", "/var/cache/nginx"]:
+        ensure_dir(dirname)
+
     CMD = "/usr/sbin/start_esp"
 
     # The command being run must be the 0th arg.
