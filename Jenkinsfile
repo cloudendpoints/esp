@@ -557,11 +557,13 @@ def e2eGKE(coupling, proto, rollout_strategy, backend = 'bookstore') {
 def gkeSecureE2eTest() {
   setupNode()
   fastUnstash('tools')
+  def coupling = 'tight'
+  def proto = 'http'
   def backend = 'bookstore'
   def uniqueID = getUniqueID("gke-${coupling}-${proto}-${backend}-secure", true)
   sh("script/gke-e2e.sh " +
-      " -c tight" +
-      " -t http" +
+      " -c ${coupling}" +
+      " -t ${proto}" +
       " -g ${backend}" +
       " -b " + backendImage(backend) +
       " -e " + espSecureDockerImage() +
