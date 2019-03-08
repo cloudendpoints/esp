@@ -50,9 +50,9 @@ NGINX_DEBUG = "/usr/sbin/nginx-debug"
 NGINX_CONF_TEMPLATE = "/etc/nginx/nginx-auto.conf.template"
 SERVER_CONF_TEMPLATE = "/etc/nginx/server-auto.conf.template"
 # Custom nginx config used by customers are hardcoded to this path
-SERVER_CONF = "/etc/nginx/server_config.pb.txt"
-# Default service config output directory when multiple services are proxied
-SERVER_CONF_DIR = "/etc/nginx/"
+# Flex nginx config is hardcoded to use this path
+SERVER_CONF_DIR = "/etc/nginx"
+SERVER_CONF_NAME = "/server_config.pb.txt"
 
 # Location of generated config files
 CONFIG_DIR = "/etc/nginx/endpoints"
@@ -90,7 +90,7 @@ DEFAULT_ROLLOUT_STRATEGY = "fixed"
 DEFAULT_XFF_TRUSTED_PROXY_LIST = "0.0.0.0/0, 0::/0"
 
 # Default PID file location (for nginx as a daemon)
-DEFAULT_PID_FILE = "/var/run/nginx.pid"
+DEFAULT_PID_FILE = "/home/nginx/nginx.pid"
 
 # Default nginx worker_processes
 DEFAULT_WORKER_PROCESSES = "1"
@@ -125,7 +125,7 @@ def write_pid_file(args):
         logging.error(err.strerror)
         sys.exit(3)
 
-def write_template(ingress, nginx_conf, args):
+def write_nginx_conf(ingress, nginx_conf, args):
     # Load template
     try:
         template = Template(filename=args.template)
@@ -160,6 +160,7 @@ def write_template(ingress, nginx_conf, args):
             cors_allow_credentials=args.cors_allow_credentials,
             cors_expose_headers=args.cors_expose_headers,
             ssl_protocols=args.ssl_protocols,
+            server_config_path=args.server_config_path,
             experimental_proxy_backend_host_header=args.experimental_proxy_backend_host_header,
             enable_strict_transport_security=args.enable_strict_transport_security,
             google_cloud_platform=(args.non_gcp==False))
@@ -662,6 +663,16 @@ config file.'''.format(
         default=CONFIG_DIR,
         help=argparse.SUPPRESS)
 
+    # The server_config dir to save server configs
+    parser.add_argument('--server_config_dir',
+        default=SERVER_CONF_DIR,
+        help='''Sets the folder for writting server config file.
+        The server config file is passed to ESP in Nginx config.
+        If you are using your own nginx config,
+        please be sure its server_config path matches this one.
+        If you want to make esp container root file system read-only
+        for security, please change this folder to /home/nginx.''')
+
     # nginx.conf template
     parser.add_argument('--template',
         default=NGINX_CONF_TEMPLATE,
@@ -926,10 +937,15 @@ def enforce_conflict_args(args):
             return "Flag --enable_backend_routing cannot be used together with --dns."
         if args.ssl_protocols:
             return "Flag --enable_backend_routing cannot be used together with --ssl_protocols."
+        if args.server_config_dir != SERVER_CONF_DIR:
+            return "Flag --enable_backend_routing cannot be used together with --server_config_dir."
 
         # When --enable_backend_routing is specified, set some default value to some of its conflicting flags.
         args.disable_cloud_trace_auto_sampling = True
         args.access_log = 'off'
+        # For backend routing eabled config, use /home/nginx directly.
+        args.server_config_dir = "/home/nginx"
+        args.config_dir = "/home/nginx/endpoints"
     return None
 
 if __name__ == '__main__':
@@ -980,6 +996,7 @@ if __name__ == '__main__':
 
     # Generate server_config
     args.metadata_attributes = fetch.fetch_metadata_attributes(args.metadata)
+    args.server_config_path = args.server_config_dir + SERVER_CONF_NAME
     if args.generate_config_file_only:
         # When generate_config_file_only, metadata_attributes is set as empty
         # to have consistent test results on local bazel test and jenkins test
@@ -991,9 +1008,10 @@ if __name__ == '__main__':
         else:
             write_server_config_template(args.server_config_generation_path, args)
     else:
-        server_config_path = SERVER_CONF
+        ensure(args.server_config_dir)
+        server_config_path = args.server_config_path
         if args.service and '|' in args.service:
-            server_config_path = SERVER_CONF_DIR
+            server_config_path = args.server_config_dir + "/"
         if args.server_config_generation_path:
             server_config_path = args.server_config_generation_path
         write_server_config_template(server_config_path, args)
@@ -1004,7 +1022,7 @@ if __name__ == '__main__':
         ingress = make_ingress(args)
         nginx_conf = args.config_dir + "/nginx.conf"
         ensure(args.config_dir)
-        write_template(ingress, nginx_conf, args)
+        write_nginx_conf(ingress, nginx_conf, args)
 
     if args.generate_config_file_only:
         exit(0)

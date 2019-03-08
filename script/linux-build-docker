@@ -34,12 +34,13 @@ PLATFORM="flex"
 DEB="${ROOT}/bazel-bin/src/nginx/main/endpoints-server-proxy.deb"
 DOCKERFILE="Dockerfile"
 
-while getopts :c:d:i:s:p: arg; do
+while getopts :c:d:i:s:t:p: arg; do
   case ${arg} in
     c) CONFIG="${OPTARG}";;
     d) DEB="${OPTARG}";;
     i) IMAGE="${OPTARG}";;
     s) SERVERLESS_IMAGE="${OPTARG}";;
+    t) SECURE_IMAGE="${OPTARG}";;
     p) PLATFORM="${OPTARG}";;
     *) error_exit "Unrecognized argument -${OPTARG}";;
   esac
@@ -84,10 +85,25 @@ retry -n 10 -s 10 \
     gcloud docker -- push "${IMAGE}" \
   || error_exit "Failed to upload Docker image to gcr."
 
-# Build serverless docker image
-if  [[ -n "${SERVERLESS_IMAGE}" ]]; then
-  echo "Building serverless docker image."
+# Build secure docker image
+if  [[ -n "${SECURE_IMAGE}" ]]; then
+  echo "Building secure docker image."
   sed -e "s|\${PARENT_IMAGE}|${IMAGE}|g" \
+     "${ROOT}/docker/secure/Dockerfile.template" > "${ROOT}/docker/secure/Dockerfile"
+
+  retry -n 3 docker build --no-cache  -t "${SECURE_IMAGE}" ./docker/secure/  \
+    || error_exit "Failed to build secure Docker Image."
+
+  echo "Pushing secure Docker image: ${SECURE_IMAGE}"
+  retry -n 10 -s 10 \
+      gcloud docker -- push "${SECURE_IMAGE}" \
+    || error_exit "Failed to upload secure Docker image to gcr."
+fi
+
+# Build serverless docker image
+if  [[ -n "${SERVERLESS_IMAGE}" && -n "${SECURE_IMAGE}" ]]; then
+  echo "Building serverless docker image."
+  sed -e "s|\${PARENT_IMAGE}|${SECURE_IMAGE}|g" \
      "${ROOT}/docker/serverless/Dockerfile.template" > "${ROOT}/docker/serverless/Dockerfile"
 
   retry -n 3 docker build --no-cache  -t "${SERVERLESS_IMAGE}" ./docker/serverless/  \
@@ -98,3 +114,4 @@ if  [[ -n "${SERVERLESS_IMAGE}" ]]; then
       gcloud docker -- push "${SERVERLESS_IMAGE}" \
     || error_exit "Failed to upload serverless Docker image to gcr."
 fi
+

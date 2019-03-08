@@ -41,13 +41,15 @@ RELEASE_GENERIC_IMAGE_FORMAT='gcr.io/endpointsv2/endpoints-runtime'
 RELEASE_GENERIC_IMAGE_FORMAT+=':debian-git-%H'
 RELEASE_SERVERLESS_IMAGE_FORMAT='gcr.io/endpointsv2/endpoints-runtime-serverless'
 RELEASE_SERVERLESS_IMAGE_FORMAT+=':debian-git-%H'
+RELEASE_SECURE_IMAGE_FORMAT='gcr.io/endpointsv2/endpoints-runtime-secure'
+RELEASE_SECURE_IMAGE_FORMAT+=':debian-git-%H'
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . ${ROOT}/script/all-utilities || { echo 'Cannot load Bash utilities'; exit 1; }
 
 CONFIG=''
 
-while getopts :c:d:f:g:h:j:m:r:st:v: arg; do
+while getopts :c:d:f:g:h:j:m:r:s:t:v: arg; do
   case ${arg} in
     c) CONFIG="${OPTARG}";;
     d) RELEASE_DEB="${OPTARG}";;
@@ -56,7 +58,7 @@ while getopts :c:d:f:g:h:j:m:r:st:v: arg; do
     h) RELEASE_SERVERLESS_IMAGE_FORMAT="${OPTARG}";;
     j) RELEASE_JSON="${OPTARG}";;
     m) RELEASE_FLEX_IMAGE_FORMAT="${OPTARG}";;
-    s) SKIP_TESTS='true';;
+    s) RELEASE_SECURE_IMAGE_FORMAT="${OPTARG}";;
     t) RELEASE_TAR="${OPTARG}";;
     *) echo "Invalid argument -${OPTARG}, ignoring.";;
   esac
@@ -73,16 +75,6 @@ done
 
 ${BAZEL} ${BAZEL_ARGS} clean \
   || error_exit 'Failed to ${BAZEL} ${BAZEL_ARGS} clean before the release build.'
-
-if [[ "${SKIP_TESTS}" == 'false' ]]; then
-  echo 'Running pre-release tests.'
-  retry -n 3 ${BAZEL} ${BAZEL_ARGS} fetch //src/... //third_party:all \
-  && retry -n 2 ${BAZEL} ${BAZEL_ARGS} build ${BAZEL_BUILD_ARGS} \
-    --config=release //src/... //third_party:all \
-  && ${BAZEL} ${BAZEL_ARGS} test --config=release \
-      //src/... //third_party:all \
-    || error_exit 'Failed release tests.'
-fi
 
 read ENDPOINTS_RUNTIME_VERSION < ${ROOT}/src/nginx/version
 BAZEL_VERSION="$(${BAZEL} ${BAZEL_ARGS} version \
@@ -138,8 +130,11 @@ if  [[ -n "${RELEASE_GENERIC_IMAGE_FORMAT}" ]]; then
     --pretty=format:"${RELEASE_GENERIC_IMAGE_FORMAT}")"
   SERVERLESS_IMAGE="$(git show -q HEAD \
     --pretty=format:"${RELEASE_SERVERLESS_IMAGE_FORMAT}")"
+  SECURE_IMAGE="$(git show -q HEAD \
+    --pretty=format:"${RELEASE_SECURE_IMAGE_FORMAT}")"
   ${ROOT}/script/linux-build-docker -c "${CONFIG}" \
-    -d "${TMP_DEBIAN_PACKAGE}" -i "${GENERIC_IMAGE}" -s "${SERVERLESS_IMAGE}" -p generic \
+    -d "${TMP_DEBIAN_PACKAGE}" -i "${GENERIC_IMAGE}" \
+    -s "${SERVERLESS_IMAGE}" -t "${SECURE_IMAGE}" -p generic \
     || error_exit 'Failed to build a generic Docker Image.'
 fi
 
