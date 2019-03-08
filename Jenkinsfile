@@ -269,6 +269,11 @@ def e2eTest() {
           e2eGKE('tight', 'http', 'fixed')
         }
       }],
+      ['gke-tight-http-secure', {
+        DefaultNode {
+          gkeSecureE2eTest()
+        }
+      }],
       ['gke-tight-http-managed', {
         DefaultNode {
           e2eGKE('tight', 'http', 'managed')
@@ -340,34 +345,22 @@ def espGenericDockerImage(suffix = '') {
   return "gcr.io/${PROJECT_ID}/endpoints-runtime${suffix}:debian-git-${GIT_SHA}"
 }
 
-def espDockerImage() {
+def espDockerImage(suffix = '') {
   if (isRelease()) {
     if (getParam('USE_LATEST_RELEASE', false)) {
-      return "gcr.io/endpoints-release/endpoints-runtime:1"
+      return "gcr.io/endpoints-release/endpoints-runtime${suffix}:1"
     }
-    return "gcr.io/endpoints-release/endpoints-runtime:${ESP_RUNTIME_VERSION}"
+    return "gcr.io/endpoints-release/endpoints-runtime${suffix}:${ESP_RUNTIME_VERSION}"
   }
-  return espGenericDockerImage()
+  return espGenericDockerImage(suffix)
 }
 
 def espServerlessDockerImage() {
-  if (isRelease()) {
-    if (getParam('USE_LATEST_RELEASE', false)) {
-      return "gcr.io/endpoints-release/endpoints-runtime-serverless:1"
-    }
-    return "gcr.io/endpoints-release/endpoints-runtime-serverless:${ESP_RUNTIME_VERSION}"
-  }
-  return espGenericDockerImage('-serverless')
+  return espDockerImage('-serverless')
 }
 
 def espSecureDockerImage() {
-  if (isRelease()) {
-    if (getParam('USE_LATEST_RELEASE', false)) {
-      return "gcr.io/endpoints-release/endpoints-runtime-secure:1"
-    }
-    return "gcr.io/endpoints-release/endpoints-runtime-secure:${ESP_RUNTIME_VERSION}"
-  }
-  return espGenericDockerImage('-secure')
+  return espDockerImage('-secure')
 }
 
 def espFlexDockerImage() {
@@ -557,6 +550,24 @@ def e2eGKE(coupling, proto, rollout_strategy, backend = 'bookstore') {
       " -B ${BUCKET} " +
       " -l " + getParam('DURATION_HOUR', 0) +
       " -R ${rollout_strategy} " +
+      (getParam('SKIP_CLEANUP', false) ? " -s" : ""))
+}
+
+// Perform E2E test in GKE for the secure image
+def gkeSecureE2eTest() {
+  setupNode()
+  fastUnstash('tools')
+  def backend = 'bookstore'
+  def uniqueID = getUniqueID("gke-${coupling}-${proto}-${backend}-secure", true)
+  sh("script/gke-e2e.sh " +
+      " -c tight" +
+      " -t http" +
+      " -g ${backend}" +
+      " -b " + backendImage(backend) +
+      " -e " + espSecureDockerImage() +
+      " -i ${uniqueID}" +
+      " -B ${BUCKET}" +
+      " -l " + getParam('DURATION_HOUR', 0) +
       (getParam('SKIP_CLEANUP', false) ? " -s" : ""))
 }
 
