@@ -15,12 +15,12 @@
 #ifndef API_MANAGER_CONTEXT_GLOBAL_CONTEXT_H_
 #define API_MANAGER_CONTEXT_GLOBAL_CONTEXT_H_
 
-#include "include/api_manager/compute_platform.h"
 #include "src/api_manager/auth/authz_cache.h"
 #include "src/api_manager/auth/certs.h"
 #include "src/api_manager/auth/jwt_cache.h"
 #include "src/api_manager/auth/service_account_token.h"
 #include "src/api_manager/cloud_trace/cloud_trace.h"
+#include "src/api_manager/compute_platform.h"
 #include "src/api_manager/proto/server_config.pb.h"
 
 namespace google {
@@ -87,7 +87,7 @@ class GlobalContext {
   void rollout_strategy(const std::string &rollout_strategy) {
     rollout_strategy_ = rollout_strategy;
   }
-  compute_platform::ComputePlatform platform() const { return platform_; }
+  const std::string &platform() const { return platform_; }
   const std::string &location() const { return location_; }
 
  private:
@@ -127,8 +127,8 @@ class GlobalContext {
 
   // The time interval for grpc intermediate report.
   int64_t intermediate_report_interval_;
-  // The computer platform
-  compute_platform::ComputePlatform platform_;
+  // The compute platform
+  std::string platform_;
   // The project_id from metadata zone.
   std::string project_id_;
   // The location from metadata zone.

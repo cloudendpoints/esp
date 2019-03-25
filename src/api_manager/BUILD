@@ -165,6 +165,19 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "compute_platform",
+    srcs = [
+        "compute_platform.cc",
+    ],
+    hdrs = [
+        "compute_platform.h",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+)
+
 cc_test(
     name = "config_test",
     size = "small",

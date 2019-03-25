@@ -52,6 +52,7 @@ cc_library(
         "//src/api_manager/auth:authz",
         "//src/api_manager/auth:service_account_token",
         "//src/api_manager/cloud_trace",
+        "//src/api_manager:compute_platform",
         "//src/api_manager/service_control",
         "//src/api_manager/utils",
     ],
@@ -78,6 +79,7 @@ cc_test(
     deps = [
         "//external:googletest_main",
         "//src/api_manager",
+        "//src/api_manager:compute_platform",
         "//src/api_manager:mock_api_manager_environment",
     ],
 )

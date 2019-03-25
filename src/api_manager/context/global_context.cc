@@ -51,7 +51,7 @@ GlobalContext::GlobalContext(std::unique_ptr<ApiManagerEnvInterface> env,
       disable_log_status_(false),
       always_print_primitive_fields_(false),
       intermediate_report_interval_(kIntermediateReportInterval),
-      platform_(compute_platform::UNKNOWN) {
+      platform_(compute_platform::kUnknown) {
   // Need to load server config first.
   server_config_ = Config::LoadServerConfig(env_.get(), server_config);
 
@@ -83,11 +83,11 @@ GlobalContext::GlobalContext(std::unique_ptr<ApiManagerEnvInterface> env,
     if (server_config_->has_metadata_attributes()) {
       const auto& metadata = server_config_->metadata_attributes();
       if (!metadata.gae_server_software().empty()) {
-        platform_ = compute_platform::GAE_FLEX;
+        platform_ = compute_platform::kGaeFlex;
       } else if (!metadata.kube_env().empty()) {
-        platform_ = compute_platform::GKE;
+        platform_ = compute_platform::kGke;
       } else {
-        platform_ = compute_platform::GCE;
+        platform_ = compute_platform::kGce;
       }
       location_ = metadata.zone();
       project_id_ = metadata.project_id();
@@ -98,6 +98,10 @@ GlobalContext::GlobalContext(std::unique_ptr<ApiManagerEnvInterface> env,
         service_account_token_.set_access_token(token.access_token(),
                                                 token.expires_in() - 50);
       }
+    }
+
+    if (!server_config_->compute_platform_override().empty()) {
+      platform_ = server_config_->compute_platform_override();
     }
 
     if (server_config_->has_experimental()) {

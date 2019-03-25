@@ -12,33 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef API_MANAGER_COMPUTE_PLATFORM_H_
-#define API_MANAGER_COMPUTE_PLATFORM_H_
-
 namespace google {
 namespace api_manager {
-
 namespace compute_platform {
 
-enum ComputePlatform { UNKNOWN = 0, GAE_FLEX = 1, GCE = 2, GKE = 3 };
-
-inline const char *ToString(ComputePlatform p) {
-  switch (p) {
-    case GAE_FLEX:
-      return "GAE Flex";
-    case GCE:
-      return "GCE";
-    case GKE:
-      return "GKE";
-    case UNKNOWN:
-    default:
-      return "unknown";
-  }
-}
+extern const char kGaeFlex[] = "GAE Flex";
+extern const char kGce[] = "GCE";
+extern const char kGke[] = "GKE";
+extern const char kUnknown[] = "unknown";
 
 }  // namespace compute_platform
-
 }  // namespace api_manager
 }  // namespace google
-
-#endif  // API_MANAGER_COMPUTE_PLATFORM_H_

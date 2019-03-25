@@ -51,6 +51,7 @@ cc_library(
         "//src/api_manager:impl_headers",
         "//src/api_manager:server_config_proto",
         "//src/api_manager/cloud_trace",
+        "//src/api_manager:compute_platform",
         "//src/api_manager/utils",
     ],
 )
@@ -79,6 +80,7 @@ cc_test(
     deps = [
         ":service_control",
         "//external:googletest_main",
+        "//src/api_manager:compute_platform",
     ],
 )
 

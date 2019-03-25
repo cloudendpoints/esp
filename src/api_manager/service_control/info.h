@@ -22,10 +22,10 @@
 #include <memory>
 #include <string>
 
-#include "include/api_manager/compute_platform.h"
 #include "include/api_manager/protocol.h"
 #include "include/api_manager/service_control.h"
 #include "include/api_manager/utils/status.h"
+#include "src/api_manager/compute_platform.h"
 
 namespace google {
 namespace api_manager {
@@ -144,8 +144,8 @@ struct ReportRequestInfo : public OperationInfo {
   // HTTP method. all-caps string such as "GET", "POST" etc.
   std::string method;
 
-  // A recognized compute platform (GAE, GCE, GKE).
-  compute_platform::ComputePlatform compute_platform;
+  // A recognized compute platform (GAE Flex, GCE, GKE, and etc.).
+  std::string compute_platform;
 
   // If consumer data should be sent.
   CheckResponseInfo check_response_info;
@@ -184,7 +184,7 @@ struct ReportRequestInfo : public OperationInfo {
         response_size(-1),
         frontend_protocol(protocol::UNKNOWN),
         backend_protocol(protocol::UNKNOWN),
-        compute_platform(compute_platform::UNKNOWN),
+        compute_platform(compute_platform::kUnknown),
         request_bytes(0),
         response_bytes(0),
         streaming_request_message_counts(0),
