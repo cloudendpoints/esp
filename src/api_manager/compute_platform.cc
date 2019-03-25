@@ -12,15 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#include "src/api_manager/compute_platform.h"
+
 namespace google {
 namespace api_manager {
-namespace compute_platform {
 
-extern const char kGaeFlex[] = "GAE Flex";
-extern const char kGce[] = "GCE";
-extern const char kGke[] = "GKE";
-extern const char kUnknown[] = "unknown";
+const std::string ComputePlatform::kGaeFlex = "GAE Flex";
+const std::string ComputePlatform::kGce = "GCE";
+const std::string ComputePlatform::kGke = "GKE";
+const std::string ComputePlatform::kUnknown = "unknown";
 
-}  // namespace compute_platform
 }  // namespace api_manager
 }  // namespace google

@@ -15,17 +15,18 @@
 #ifndef API_MANAGER_COMPUTE_PLATFORM_H_
 #define API_MANAGER_COMPUTE_PLATFORM_H_
 
+#include <string>
+
 namespace google {
 namespace api_manager {
-namespace compute_platform {
 
-// Compute platforms:
-extern const char kGaeFlex[];
-extern const char kGce[];
-extern const char kGke[];
-extern const char kUnknown[];
+struct ComputePlatform {
+  static const std::string kGaeFlex;
+  static const std::string kGce;
+  static const std::string kGke;
+  static const std::string kUnknown;
+};
 
-}  // namespace compute_platform
 }  // namespace api_manager
 }  // namespace google
 

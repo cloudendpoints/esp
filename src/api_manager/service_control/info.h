@@ -184,7 +184,7 @@ struct ReportRequestInfo : public OperationInfo {
         response_size(-1),
         frontend_protocol(protocol::UNKNOWN),
         backend_protocol(protocol::UNKNOWN),
-        compute_platform(compute_platform::kUnknown),
+        compute_platform(ComputePlatform::kUnknown),
         request_bytes(0),
         response_bytes(0),
         streaming_request_message_counts(0),

@@ -37,7 +37,7 @@ TEST(GlobalContextTest, TestEmptyExperimentalFlags) {
   EXPECT_FALSE(ctx.AlwaysPrintPrimitiveFields());
   EXPECT_EQ(ctx.rollout_strategy(), "");
 
-  EXPECT_EQ(ctx.platform(), compute_platform::kUnknown);
+  EXPECT_EQ(ctx.platform(), ComputePlatform::kUnknown);
   EXPECT_EQ(ctx.project_id(), "");
   EXPECT_EQ(ctx.location(), "");
 
@@ -80,7 +80,7 @@ metadata_attributes {
       new testing::NiceMock<MockApiManagerEnvironment>());
   GlobalContext ctx(std::move(env), kServerConfig);
 
-  EXPECT_EQ(ctx.platform(), compute_platform::kGaeFlex);
+  EXPECT_EQ(ctx.platform(), ComputePlatform::kGaeFlex);
   EXPECT_EQ(ctx.project_id(), "PROJECT_ID");
   EXPECT_EQ(ctx.location(), "us-west1-a");
 

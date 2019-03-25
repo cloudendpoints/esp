@@ -51,7 +51,7 @@ GlobalContext::GlobalContext(std::unique_ptr<ApiManagerEnvInterface> env,
       disable_log_status_(false),
       always_print_primitive_fields_(false),
       intermediate_report_interval_(kIntermediateReportInterval),
-      platform_(compute_platform::kUnknown) {
+      platform_(ComputePlatform::kUnknown) {
   // Need to load server config first.
   server_config_ = Config::LoadServerConfig(env_.get(), server_config);
 
@@ -83,11 +83,11 @@ GlobalContext::GlobalContext(std::unique_ptr<ApiManagerEnvInterface> env,
     if (server_config_->has_metadata_attributes()) {
       const auto& metadata = server_config_->metadata_attributes();
       if (!metadata.gae_server_software().empty()) {
-        platform_ = compute_platform::kGaeFlex;
+        platform_ = ComputePlatform::kGaeFlex;
       } else if (!metadata.kube_env().empty()) {
-        platform_ = compute_platform::kGke;
+        platform_ = ComputePlatform::kGke;
       } else {
-        platform_ = compute_platform::kGce;
+        platform_ = ComputePlatform::kGce;
       }
       location_ = metadata.zone();
       project_id_ = metadata.project_id();
