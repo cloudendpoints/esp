@@ -25,7 +25,6 @@ extern const char kGce[];
 extern const char kGke[];
 extern const char kUnknown[];
 
-
 }  // namespace compute_platform
 }  // namespace api_manager
 }  // namespace google

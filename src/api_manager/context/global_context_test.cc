@@ -93,7 +93,7 @@ metadata_attributes {
 }
 
 TEST(GlobalContextTest, TestComputePlatformOverride) {
-    const char kServerConfig[] = R"(
+  const char kServerConfig[] = R"(
 metadata_attributes {
   gae_server_software: "abd"
 }
@@ -101,12 +101,12 @@ metadata_attributes {
 compute_platform_override: "foo"
 )";
 
-    std::unique_ptr<ApiManagerEnvInterface> env(
-                                                new testing::NiceMock<MockApiManagerEnvironment>());
-    GlobalContext ctx(std::move(env), kServerConfig);
+  std::unique_ptr<ApiManagerEnvInterface> env(
+      new testing::NiceMock<MockApiManagerEnvironment>());
+  GlobalContext ctx(std::move(env), kServerConfig);
 
-    EXPECT_EQ(ctx.platform(), "foo");
-  }
+  EXPECT_EQ(ctx.platform(), "foo");
+}
 
 TEST(GlobalContextTest, TestInstanceIdentityTokenCache) {
   const char kServerConfig[] = R"(
