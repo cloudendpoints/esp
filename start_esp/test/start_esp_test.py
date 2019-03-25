@@ -273,6 +273,11 @@ class TestStartEsp(unittest.TestCase):
         config_generator = self.backend_routing_config_generator
         self.run_test_with_expectation(expected_config_file, self.generated_nginx_config_file, config_generator)
 
+    def test_compute_platform_override_arg_output_is_as_expected(self):
+        expected_config_file = "./start_esp/test/testdata/expected_compute_platform_override_server.json"
+        config_generator = self.basic_config_generator + " --compute_platform_override test_platform"
+        self.run_test_with_expectation(expected_config_file, self.generated_server_config_file, config_generator)
+
     ########## The tests for validating it should generate failure on conflict flags ##########
 
     def test_enable_backend_routing_conflicts_with_string_flag(self):
