@@ -60,6 +60,9 @@ message ServerConfig {
 
   // The attributes from the metadata server
   MetadataAttributes metadata_attributes = 15;
+
+  // The overriden compute platform to be reported.
+  string compute_platform_override = 16;
 }
 
 // Server config for service control

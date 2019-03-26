@@ -24,6 +24,7 @@
 #include "google/protobuf/struct.pb.h"
 #include "google/protobuf/text_format.h"
 #include "include/api_manager/utils/version.h"
+#include "src/api_manager/compute_platform.h"
 
 namespace gasv1 = ::google::api::servicecontrol::v1;
 using ::google::api_manager::utils::Status;
@@ -95,7 +96,7 @@ void FillReportRequestInfo(ReportRequestInfo* request) {
   request->latency.backend_time_ms = 101;
   request->latency.overhead_time_ms = 22;
   request->frontend_protocol = protocol::HTTP;
-  request->compute_platform = compute_platform::GKE;
+  request->compute_platform = ComputePlatform::kGke;
   request->auth_issuer = "auth-issuer";
   request->auth_audience = "auth-audience";
 

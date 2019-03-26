@@ -18,6 +18,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+#include "src/api_manager/compute_platform.h"
 #include "src/api_manager/context/global_context.h"
 #include "src/api_manager/mock_api_manager_environment.h"
 
@@ -36,7 +37,7 @@ TEST(GlobalContextTest, TestEmptyExperimentalFlags) {
   EXPECT_FALSE(ctx.AlwaysPrintPrimitiveFields());
   EXPECT_EQ(ctx.rollout_strategy(), "");
 
-  EXPECT_EQ(ctx.platform(), compute_platform::UNKNOWN);
+  EXPECT_EQ(ctx.platform(), ComputePlatform::kUnknown);
   EXPECT_EQ(ctx.project_id(), "");
   EXPECT_EQ(ctx.location(), "");
 
@@ -79,7 +80,7 @@ metadata_attributes {
       new testing::NiceMock<MockApiManagerEnvironment>());
   GlobalContext ctx(std::move(env), kServerConfig);
 
-  EXPECT_EQ(ctx.platform(), compute_platform::GAE_FLEX);
+  EXPECT_EQ(ctx.platform(), ComputePlatform::kGaeFlex);
   EXPECT_EQ(ctx.project_id(), "PROJECT_ID");
   EXPECT_EQ(ctx.location(), "us-west1-a");
 
@@ -89,6 +90,22 @@ metadata_attributes {
   EXPECT_EQ(ctx.service_account_token()->GetAuthToken(
                 auth::ServiceAccountToken::JWT_TOKEN_FOR_SERVICE_CONTROL),
             "TOKEN");
+}
+
+TEST(GlobalContextTest, TestComputePlatformOverride) {
+  const char kServerConfig[] = R"(
+metadata_attributes {
+  gae_server_software: "abd"
+}
+
+compute_platform_override: "foo"
+)";
+
+  std::unique_ptr<ApiManagerEnvInterface> env(
+      new testing::NiceMock<MockApiManagerEnvironment>());
+  GlobalContext ctx(std::move(env), kServerConfig);
+
+  EXPECT_EQ(ctx.platform(), "foo");
 }
 
 TEST(GlobalContextTest, TestInstanceIdentityTokenCache) {

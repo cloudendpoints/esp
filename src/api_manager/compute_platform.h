@@ -15,28 +15,17 @@
 #ifndef API_MANAGER_COMPUTE_PLATFORM_H_
 #define API_MANAGER_COMPUTE_PLATFORM_H_
 
+#include <string>
+
 namespace google {
 namespace api_manager {
 
-namespace compute_platform {
-
-enum ComputePlatform { UNKNOWN = 0, GAE_FLEX = 1, GCE = 2, GKE = 3 };
-
-inline const char *ToString(ComputePlatform p) {
-  switch (p) {
-    case GAE_FLEX:
-      return "GAE Flex";
-    case GCE:
-      return "GCE";
-    case GKE:
-      return "GKE";
-    case UNKNOWN:
-    default:
-      return "unknown";
-  }
-}
-
-}  // namespace compute_platform
+struct ComputePlatform {
+  static const std::string kGaeFlex;
+  static const std::string kGce;
+  static const std::string kGke;
+  static const std::string kUnknown;
+};
 
 }  // namespace api_manager
 }  // namespace google

@@ -94,6 +94,7 @@ py_test(
         "testdata/expected_transcoding_always_print_primitive_fields_server.json",
         "testdata/expected_underscores_in_headers_nginx.conf",
         "testdata/expected_worker_processes_nginx.conf",
+        "testdata/expected_compute_platform_override_server.json",
         "testdata/test_service_config_1.json",
         ":nginx-conf-template",
         ":server-conf-template",

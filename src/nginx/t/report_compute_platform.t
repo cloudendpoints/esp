@@ -44,7 +44,7 @@ my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $MetadataPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(36);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(48);
 
 # Save service name in the service configuration protocol buffer file.
 my $config = ApiManager::get_echo_service_config .
@@ -97,6 +97,7 @@ metadata_attributes {
   zone: "us-west1-a"
   $test_case->{metadata_key}: "$test_case->{metadata_value}"
 }
+compute_platform_override: "$test_case->{compute_platform_override}"
 EOF
 
   $t->run_daemon(\&bookstore, $t, $BackendPort, $bookstore_log, $test_case->{platform});
@@ -159,7 +160,14 @@ my @test_cases = (
     metadata_key => 'project_id',
     metadata_value => 'esp-load-test',
     platform => 'GCE',
-  }
+  },
+  {
+      name => 'compute platform override',
+      metadata_key => 'gae_server_software',
+      metadata_value => 'Google App Engine/1.9.38',
+      compute_platform_override => "test platform",
+      platform => 'test platform',
+  },
 );
 
 for my $test_case ( @test_cases ) {

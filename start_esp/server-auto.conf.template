@@ -98,3 +98,6 @@ metadata_attributes {
 ${metadata_attributes}
 }
 % endif
+% if compute_platform_override:
+compute_platform_override: "${compute_platform_override}"
+% endif

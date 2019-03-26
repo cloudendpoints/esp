@@ -198,7 +198,8 @@ def write_server_config_template(server_config_path, args):
                 log_request_headers=args.request_headers,
                 log_response_headers=args.response_headers,
                 log_jwt_payloads=args.jwt_payloads,
-                metadata_attributes=args.metadata_attributes)
+                metadata_attributes=args.metadata_attributes,
+                compute_platform_override=args.compute_platform_override)
 
         server_config_file = server_config_path
         if server_config_file.endswith('/'):
@@ -857,6 +858,8 @@ config file.'''.format(
         Enables the nginx proxy to route requests according to the `x-google-backend` or
         `backend` configuration. This flag conflicts with a few of other flags.
         ''')
+
+    parser.add_argument('--compute_platform_override', default=None, help=argparse.SUPPRESS)
 
     return parser
 
