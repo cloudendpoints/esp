@@ -50,6 +50,7 @@ http {
   server_tokens off;
   client_max_body_size ${client_max_body_size};
   client_body_buffer_size ${client_body_buffer_size};
+  large_client_header_buffers ${large_client_header_buffers};
 
   # HTTP subrequests
   endpoints_resolver ${resolver};
