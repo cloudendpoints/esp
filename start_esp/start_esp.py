@@ -107,9 +107,6 @@ DEFAULT_CLIENT_BODY_BUFFER_SIZE = "128k"
 # Default maxinum client body size
 DEFAULT_CLIENT_MAX_BODY_SIZE = "32m"
 
-# Default large_client_header_buffers
-DEFAULT_LARGE_CLIENT_HEADER_BUFFERS = "4 8k"
-
 Port = collections.namedtuple('Port',
         ['port', 'proto'])
 Location = collections.namedtuple('Location',
@@ -616,13 +613,15 @@ config file.'''.format(
     body is larger than the buffer, the whole body or only its part is
     written to a temporary file.''')
 
-    parser.add_argument('--large_client_header_buffers', default=DEFAULT_LARGE_CLIENT_HEADER_BUFFERS, help='''
+    parser.add_argument('--large_client_header_buffers', default=None, help='''
     Sets the maximum number and size of buffers used for reading large client
     request header. A request line cannot exceed the size of one buffer, or the
     414 (Request-URI Too Large) error is returned to the client. A request header
     field cannot exceed the size of one buffer as well, or the 400 (Bad Request)
     error is returned to the client.
     http://nginx.org/en/docs/http/ngx_http_core_module.html#large_client_header_buffers
+    Note that the value must be quoted.
+      --large_client_header_buffers="4 32k"
     ''')
 
     parser.add_argument('--rewrite', action='append', help=
