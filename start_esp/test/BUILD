@@ -66,6 +66,7 @@ py_test(
         "testdata/expected_client_ip_header_server.json",
         "testdata/expected_client_ip_position_server.json",
         "testdata/expected_client_max_body_size_nginx.conf",
+        "testdata/expected_large_client_header_buffers_nginx.conf",
         "testdata/expected_cloud_trace_url_override_server.json",
         "testdata/expected_cors_allow_credentials_nginx.conf",
         "testdata/expected_cors_allow_headers_nginx.conf",
