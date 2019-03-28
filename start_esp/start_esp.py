@@ -107,7 +107,6 @@ DEFAULT_CLIENT_BODY_BUFFER_SIZE = "128k"
 # Default maxinum client body size
 DEFAULT_CLIENT_MAX_BODY_SIZE = "32m"
 
-
 Port = collections.namedtuple('Port',
         ['port', 'proto'])
 Location = collections.namedtuple('Location',
@@ -151,6 +150,7 @@ def write_nginx_conf(ingress, nginx_conf, args):
             enable_backend_routing=args.enable_backend_routing,
             client_max_body_size=args.client_max_body_size,
             client_body_buffer_size=args.client_body_buffer_size,
+            large_client_header_buffers=args.large_client_header_buffers,
             worker_processes=args.worker_processes,
             cors_preset=args.cors_preset,
             cors_allow_origin=args.cors_allow_origin,
@@ -613,6 +613,17 @@ config file.'''.format(
     body is larger than the buffer, the whole body or only its part is
     written to a temporary file.''')
 
+    parser.add_argument('--large_client_header_buffers', default=None, help='''
+    Sets the maximum number and size of buffers used for reading large client
+    request header. A request line cannot exceed the size of one buffer, or the
+    414 (Request-URI Too Large) error is returned to the client. A request header
+    field cannot exceed the size of one buffer as well, or the 400 (Bad Request)
+    error is returned to the client.
+    http://nginx.org/en/docs/http/ngx_http_core_module.html#large_client_header_buffers
+    Note that the value must be quoted.
+      --large_client_header_buffers="4 32k"
+    ''')
+
     parser.add_argument('--rewrite', action='append', help=
     '''Internally redirect the request uri with a pair of pattern and
     replacement. Pattern and replacement should be separated by whitespace.
@@ -912,6 +923,8 @@ def enforce_conflict_args(args):
             return "Flag --enable_backend_routing cannot be used together with --client_body_buffer_size."
         if args.client_max_body_size != DEFAULT_CLIENT_MAX_BODY_SIZE:
             return "Flag --enable_backend_routing cannot be used together with --client_max_body_size."
+        if args.large_client_header_buffers != DEFAULT_LARGE_CLIENT_HEADER_BUFFERS:
+            return "Flag --enable_backend_routing cannot be used together with --large_client_header_buffers."
         if args.generate_self_signed_cert:
             return "Flag --enable_backend_routing cannot be used together with --generate_self_signed_cert."
         if args.enable_strict_transport_security:
