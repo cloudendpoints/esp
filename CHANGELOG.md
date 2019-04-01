@@ -1,3 +1,12 @@
+# Release 1.31.0 01-04-2019
+
+- Support large_client_header_buffers via flag (#571)
+- Update the base image from jessie to stretch (#572)
+- Support compute_platform_override (#570)
+- Build a secure ESP docker image run as non-root (#563)
+- Not to send connection headers to gRPC upstream (#562)
+- Build with latest Bazel(upgrade Bazel from 0.5.4 to 0.21.0) (#529)
+
 # Release 1.30.0 27-02-2019
 
 - Fix grpc long stream memory leak by using re-cycled buffers (#552)
