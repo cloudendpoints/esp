@@ -45,20 +45,19 @@ To download the Extensible Service Proxy source code, clone the ESP repository:
     # Initialize Git submodules.
     git -C esp submodule update --init --recursive
 
-## Released ESP docker images##
+## Released ESP docker images ##
 
 ESP docker images are released regularly. The regular images are named as gcr.io/endpoints-release/endpoints-runtime:MAJOR_VERSION.MINOR_VERSION.PATCH_NUMBER. For example, gcr.io/endpoints-release/endpoints-runtime:1.30.0 has MAJOR_VERSION=1, MINOR_VERSION=30 AND PATCH_NUMBER=0.
 
 Symbolically linked images:
-* MAJOR_VERSION.MINOR_VERSION is linked to the latest image with same MAJOR_VERSION.MINOR_VERSION
-* MAJOR_VERSION is linked to the latest image with same MAJOR_VERSION
+* **MAJOR_VERSION** is linked to the latest image with same **MAJOR_VERSION**.
 
-For example, gcr.io/endpoints-release/endpoints-runtime:1 is always pointed to the latest image with 1 major version.
+For example, gcr.io/endpoints-release/endpoints-runtime:1 is always pointed to the latest image with "1" major version.
 
-**Secure image:**
-Normally ESP container runs as root, it is deemed as not secure. To make ESP container secure, it should be run as non-root and its root file system should be read-only. Normal docker images can be made to run as non-root, but such change may break some existing users. Starting 1.31.0, a new secure image is build with suffix "-secure" in the image name, e.g. gcr.io/endpoints-release/endpoints-runtime-secure:1.31.0.  It will be run as non-root.
+### Secure image: ###
+Normally ESP container runs as root, it is deemed as not secure. To make ESP container secure, it should be run as non-root and its root file system should be read-only. Normal docker images can be made to run as non-root, but such change may break some existing users. Starting 1.31.0, a new **secure image** is build with suffix "-secure" in the image name, e.g. gcr.io/endpoints-release/endpoints-runtime-secure:1.31.0.  It will be run as non-root.
 
-You can switch to use the secure images if statisfied followings:
+You can switch to use the **secure images** if statisfied followings:
 * Nginx is not listening on ports requiring root privilege (ports < 1024).
 * Not use custom nginx config. The server_config path is hard coded to /etc/nginx/ folder in the custom nginx config. The secure image moved the server_config to /home/nginx. Please modify your custom nginx config before using the secure image.
 
