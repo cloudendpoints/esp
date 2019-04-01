@@ -116,6 +116,11 @@ push_docker_image \
   "gcr.io/endpoints-release/endpoints-runtime:${VERSION}" \
   || error_exit "Docker image push failed."
 
+push_docker_image \
+  "gcr.io/endpoints-jenkins/endpoints-runtime-secure:debian-git-${SHA}" \
+  "gcr.io/endpoints-release/endpoints-runtime-secure:${VERSION}" \
+  || error_exit "Docker image push failed."
+
 SOURCE_PKG="gs://endpoints-jenkins.appspot.com/${SHA}/artifacts/endpoints-runtime-amd64.deb"
 TARGET_PKG="$(command mktemp -d)/endpoints-runtime-amd64.deb"
 "${GSUTIL}" cp "${SOURCE_PKG}" "${TARGET_PKG}" \
