@@ -286,19 +286,25 @@ class TestStartEsp(unittest.TestCase):
     ########## The tests for validating it should generate failure on conflict flags ##########
 
     def test_enable_backend_routing_conflicts_with_string_flag(self):
-        config_generator = self.empty_flag_config_generator + " --enable_backend_routing --pid_file fake_value"
-        return_code = os.system(config_generator)
-        self.assertEqual(return_code >> 8, 3)
+        for str_flag in ["--cloud_trace_url_override", "--pid_file", "--large_client_header_buffers"]:
+            config_generator = "{} --enable_backend_routing {} fake_value".format(
+                self.empty_flag_config_generator, str_flag)
+            return_code = os.system(config_generator)
+            self.assertEqual(return_code >> 8, 3)
 
     def test_enable_backend_routing_conflicts_with_boolean_flag(self):
-        config_generator = self.empty_flag_config_generator + " --enable_backend_routing --non_gcp"
-        return_code = os.system(config_generator)
-        self.assertEqual(return_code >> 8, 3)
+        for bool_flag in ["--non_gcp", "--disable_cloud_trace_auto_sampling", "--transcoding_always_print_primitive_fields"]:
+            config_generator = "{} --enable_backend_routing {}".format(
+                self.empty_flag_config_generator, bool_flag)
+            return_code = os.system(config_generator)
+            self.assertEqual(return_code >> 8, 3)
 
     def test_enable_backend_routing_conflicts_with_single_dash_flag(self):
-        config_generator = self.empty_flag_config_generator + " --enable_backend_routing -z fake_value"
-        return_code = os.system(config_generator)
-        self.assertEqual(return_code >> 8, 3)
+        for single_dash_flag in ["-z", "-a", "-n"]:
+            config_generator = "{} --enable_backend_routing {} fake_value".format(
+                self.empty_flag_config_generator, single_dash_flag)
+            return_code = os.system(config_generator)
+            self.assertEqual(return_code >> 8, 3)
 
 if __name__ == '__main__':
     unittest.main()
