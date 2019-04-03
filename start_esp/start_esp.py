@@ -923,7 +923,7 @@ def enforce_conflict_args(args):
             return "Flag --enable_backend_routing cannot be used together with --client_body_buffer_size."
         if args.client_max_body_size != DEFAULT_CLIENT_MAX_BODY_SIZE:
             return "Flag --enable_backend_routing cannot be used together with --client_max_body_size."
-        if args.large_client_header_buffers != DEFAULT_LARGE_CLIENT_HEADER_BUFFERS:
+        if args.large_client_header_buffers is not None:
             return "Flag --enable_backend_routing cannot be used together with --large_client_header_buffers."
         if args.generate_self_signed_cert:
             return "Flag --enable_backend_routing cannot be used together with --generate_self_signed_cert."
