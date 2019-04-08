@@ -195,6 +195,7 @@ nginx_suite(
         "by_consumer_metrics.t",
         "check.t",
         "check_api_key.t",
+        "check_api_target_blocked.t",
         "check_custom_api_key.t",
         "check_default.t",
         "check_http_method_override.t",

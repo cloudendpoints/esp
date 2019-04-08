@@ -1313,6 +1313,9 @@ Status Proto::ConvertCheckResponse(const CheckResponse& check_response,
                     std::string("API ") + service_name +
                         " is not enabled for the project.",
                     Status::SERVICE_CONTROL);
+    case CheckError::RESOURCE_EXHAUSTED:
+      return Status(Code::PERMISSION_DENIED, "Quota check failed.",
+                    Status::SERVICE_CONTROL);
     case CheckError::PERMISSION_DENIED:
       return Status(Code::PERMISSION_DENIED, "Permission denied.",
                     Status::SERVICE_CONTROL);
@@ -1324,6 +1327,9 @@ Status Proto::ConvertCheckResponse(const CheckResponse& check_response,
                     Status::SERVICE_CONTROL);
     case CheckError::CLIENT_APP_BLOCKED:
       return Status(Code::PERMISSION_DENIED, "Client application blocked.",
+                    Status::SERVICE_CONTROL);
+    case CheckError::API_TARGET_BLOCKED:
+      return Status(Code::PERMISSION_DENIED, "API target is blocked.",
                     Status::SERVICE_CONTROL);
     case CheckError::PROJECT_DELETED:
       return Status(Code::PERMISSION_DENIED, "Project has been deleted.",
