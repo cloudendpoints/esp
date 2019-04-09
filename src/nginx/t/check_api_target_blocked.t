@@ -42,7 +42,7 @@ my $NginxPort = ApiManager::pick_port();
 my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(9);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(10);
 
 # Save service name in the service configuration protocol buffer file.
 my $config = ApiManager::get_bookstore_service_config .
@@ -98,6 +98,7 @@ $t->stop_daemons();
 my ($response_headers, $response_body) = split /\r\n\r\n/, $response, 2;
 
 like($response, qr/HTTP\/1\.1 403 Forbidden/, 'Response returned HTTP 403.');
+like($response, qr/API target is blocked/, 'Response contains error message.');
 
 my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
 is(scalar @servicecontrol_requests, 2, 'Service control was called twice.');

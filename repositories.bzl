@@ -588,10 +588,12 @@ cc_proto_library(
     #  5) Update `commit` and `remote` in `new_git_repository`
     #  6) Update the below comment to reflect the new version
     #
-    # Corresponds to 9a02c5acecb43f38fae4fa52c6420f21c335b888 of googleapis/googleapis.git
+    # Corresponds to googleapis/googleapis.git:
+    #  Date: April 5, 2019
+    #  SHA:  9a02c5acecb43f38fae4fa52c6420f21c335b888
     native.new_git_repository(
         name = "googleapis_git",
-        commit = "0a75d48b4b1fde4b8b677d3a4756fbaa9d1ae5a4",  # April 5, 2019
+        commit = "0a75d48b4b1fde4b8b677d3a4756fbaa9d1ae5a4",
         remote = "https://github.com/kh-chang/googleapis.git",
         build_file_content = BUILD,
     )
