@@ -160,7 +160,7 @@ filegroup(
 """
     native.new_git_repository(
         name = "org_golang_google_grpc_git",
-        commit = "9bf8ea0a8282ebecd1aa474c926e3028f5c22a4c", # May 19, 2017
+        commit = "9bf8ea0a8282ebecd1aa474c926e3028f5c22a4c",  # May 19, 2017
         remote = "https://github.com/grpc/grpc-go.git",
         build_file_content = BUILD,
     )
@@ -168,7 +168,8 @@ filegroup(
     if bind:
         native.bind(
             name = "test_proto",
-            actual = "@org_golang_google_grpc_git//:test_proto")
+            actual = "@org_golang_google_grpc_git//:test_proto",
+        )
 
 def protobuf_repositories(bind = True):
     native.git_repository(
@@ -535,6 +536,7 @@ cc_proto_library(
         "google/api/documentation.proto",
         "google/api/endpoint.proto",
         "google/api/label.proto",
+        "google/api/launch_stage.proto",
         "google/api/log.proto",
         "google/api/logging.proto",
         "google/api/metric.proto",
@@ -572,14 +574,27 @@ cc_proto_library(
         "//external:cc_wkt_protos",
     ],
 )
-""".format(protobuf_repo)
+"""
 
-    # Update the SHA due to backend.proto updates, to support
-    # backend routing.
+    # googleapis currently require bazel version >= 23.0.
+    # BUILD files were added in the googleapis repository in October 2018, causes "crosses boundary
+    # of subpackage error". As a workaround, a forked repo without BUILD files is used.
+    #
+    # Instructions for updating googleapis:
+    #  1) fork from https://github.com/googleapis/googleapis.git
+    #  2) make a branch
+    #  3) remove BUILD files `$find . -type f -name '*BUILD*' | xargs rm`
+    #  4) commit and push
+    #  5) Update `commit` and `remote` in `new_git_repository`
+    #  6) Update the below comment to reflect the new version
+    #
+    # Corresponds to googleapis/googleapis.git:
+    #  Date: April 5, 2019
+    #  SHA:  9a02c5acecb43f38fae4fa52c6420f21c335b888
     native.new_git_repository(
         name = "googleapis_git",
-        commit = "bf12fe4fd40797ab6701555cdff0bac4c18374e8",  # Jan 15, 2019
-        remote = "https://github.com/JLXIA/googleapis.git",
+        commit = "0a75d48b4b1fde4b8b677d3a4756fbaa9d1ae5a4",
+        remote = "https://github.com/kh-chang/googleapis.git",
         build_file_content = BUILD,
     )
 
