@@ -44,6 +44,7 @@ namespace api_manager {
 namespace nginx {
 
 using ::google::api_manager::proto::ServerConfig;
+using ::google::api_manager::proto::GrpcSslCredentials;
 
 namespace {
 
@@ -507,6 +508,71 @@ bool ngx_esp_read_server_config_from_string(const std::string &str,
   return ::google::protobuf::TextFormat::ParseFromString(str, config);
 }
 
+ngx_int_t ngx_esp_read_grpc_backend_ssl(ngx_conf_t *cf, ngx_esp_loc_conf_t *lc,
+                                        const GrpcSslCredentials &grpc_ssl) {
+  if (!grpc_ssl.use_ssl()) {
+    return NGX_OK;
+  }
+
+  lc->grpc_backend_ssl = reinterpret_cast<ngx_esp_ssl_credentials *>(
+      ngx_pcalloc(cf->pool, sizeof(ngx_esp_ssl_credentials)));
+  if (lc->grpc_backend_ssl == nullptr) {
+    return NGX_ERROR;
+  }
+  ngx_esp_ssl_credentials *ngx_ssl = lc->grpc_backend_ssl;
+
+  // copy the grpc backend ssl credentials.
+  ngx_ssl->use_google_default = grpc_ssl.use_google_default();
+
+  // read root_certs file
+  if (!grpc_ssl.root_certs_file().empty() &&
+      ngx_esp_read_file(grpc_ssl.root_certs_file().c_str(), cf->pool,
+                        &ngx_ssl->root_certs) != NGX_OK) {
+    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                       "Failed to read root_certs file: %s",
+                       grpc_ssl.root_certs_file().c_str());
+    return NGX_ERROR;
+  }
+
+  // read private_key file
+  if (!grpc_ssl.private_key_file().empty() &&
+      ngx_esp_read_file(grpc_ssl.private_key_file().c_str(), cf->pool,
+                        &ngx_ssl->private_key) != NGX_OK) {
+    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                       "Failed to read private_key file: %s",
+                       grpc_ssl.private_key_file().c_str());
+    return NGX_ERROR;
+  }
+
+  // read cert_chain file
+  if (!grpc_ssl.cert_chain_file().empty() &&
+      ngx_esp_read_file(grpc_ssl.cert_chain_file().c_str(), cf->pool,
+                        &ngx_ssl->cert_chain) != NGX_OK) {
+    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                       "Failed to read cert_chain file: %s",
+                       grpc_ssl.cert_chain_file().c_str());
+    return NGX_ERROR;
+  }
+
+  // If priate_key is not empty, neither should cert_chains
+  if (ngx_ssl->private_key.data != nullptr &&
+      ngx_ssl->cert_chain.data == nullptr) {
+    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                       "Invalid grpc_backend_ssl_credentials: "
+                       "private key is specified, but not cert_chain");
+    return NGX_ERROR;
+  }
+  if (ngx_ssl->private_key.data == nullptr &&
+      ngx_ssl->cert_chain.data != nullptr) {
+    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                       "Invalid grpc_backend_ssl_credentials: "
+                       "cert_chain is specified, but not private_key");
+    return NGX_ERROR;
+  }
+
+  return NGX_OK;
+}
+
 }  // namespace
 
 ngx_int_t ngx_esp_build_server_config(ngx_conf_t *cf, ngx_esp_loc_conf_t *lc,
@@ -602,6 +668,10 @@ ngx_int_t ngx_esp_build_server_config(ngx_conf_t *cf, ngx_esp_loc_conf_t *lc,
       }
     }
   }
+
+  ngx_int_t ret = ngx_esp_read_grpc_backend_ssl(
+      cf, lc, config.grpc_backend_ssl_credentials());
+  if (ret != NGX_OK) return ret;
 
   // Reserialize
   if (!config.SerializeToString(server_config)) {

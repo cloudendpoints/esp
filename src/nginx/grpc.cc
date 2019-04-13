@@ -76,6 +76,42 @@ std::pair<Status, std::string> GrpcGetBackendAddress(
       Status(NGX_DECLINED, "No GRPC backend address specified"), std::string());
 }
 
+std::shared_ptr<::grpc::ChannelCredentials> CreateChannelCredentials(
+    ngx_http_request_t *r, ngx_esp_loc_conf_t *espcf) {
+  if (espcf->grpc_backend_ssl == nullptr) {
+    ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
+                  "GrpcGetStub: Use insecure channel credentials");
+    return ::grpc::InsecureChannelCredentials();
+  }
+
+  if (espcf->grpc_backend_ssl->use_google_default) {
+    ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
+                  "GrpcGetStub: Use Google default channel credentials");
+    return ::grpc::GoogleDefaultCredentials();
+  }
+
+  auto ssl = ::grpc::SslCredentialsOptions();
+  ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
+                "GrpcGetStub: Use SSL channel credentials");
+
+  if (espcf->grpc_backend_ssl->root_certs.data != nullptr) {
+    // we have custom roots
+    ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
+                  "GrpcGetStub: found custom grpc roots");
+    ssl.pem_root_certs = ngx_str_to_std(espcf->grpc_backend_ssl->root_certs);
+  }
+
+  // Load key and cert if the user has specified them
+  if (espcf->grpc_backend_ssl->private_key.data != nullptr &&
+      espcf->grpc_backend_ssl->cert_chain.data != nullptr) {
+    ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
+                  "GrpcGetStub: found TLS client key and cert data");
+    ssl.pem_private_key = ngx_str_to_std(espcf->grpc_backend_ssl->private_key);
+    ssl.pem_cert_chain = ngx_str_to_std(espcf->grpc_backend_ssl->cert_chain);
+  }
+  return ::grpc::SslCredentials(ssl);
+}
+
 std::pair<Status, std::shared_ptr<::grpc::GenericStub>> GrpcGetStub(
     ngx_http_request_t *r, ngx_esp_loc_conf_t *espcf,
     ngx_esp_request_ctx_t *ctx) {
@@ -101,7 +137,7 @@ std::pair<Status, std::shared_ptr<::grpc::GenericStub>> GrpcGetStub(
 
   auto result =
       std::make_shared<::grpc::GenericStub>(::grpc::CreateCustomChannel(
-          address, ::grpc::InsecureChannelCredentials(), channel_arguments));
+          address, CreateChannelCredentials(r, espcf), channel_arguments));
 
   if (result) {
     espcf->grpc_stubs.emplace(address, result);
