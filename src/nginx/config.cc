@@ -554,7 +554,7 @@ ngx_int_t ngx_esp_read_grpc_backend_ssl(ngx_conf_t *cf, ngx_esp_loc_conf_t *lc,
     return NGX_ERROR;
   }
 
-  // If priate_key is not empty, neither should cert_chains
+  // Either both private_key and cert_chains exist or neither should.
   if (ngx_ssl->private_key.data != nullptr &&
       ngx_ssl->cert_chain.data == nullptr) {
     ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
