@@ -44,7 +44,7 @@ my $ServiceControlPort = ApiManager::pick_port();
 my $GrpcBackendPort = ApiManager::pick_port();
 my $HttpBackendPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(5);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(6);
 
 $t->write_file(
     'service.pb.txt',
@@ -86,33 +86,79 @@ http {
 }
 EOF
 
-$t->write_file('test.key', ApiManager::read_test_file('testdata/grpc/serverkey.pem'));
-$t->write_file('test.crt', ApiManager::read_test_file('testdata/grpc/servercert.pem'));
-my @ssl_args = (
-  '--use_tls',
-  '--tls_key_file', $t->testdir() . '/test.key',
-  '--tls_cert_file', $t->testdir() . '/test.crt',
-);
+sub run_all_daemons {
+  # Start all daemons: groc interop server with ssl and service_control
+  $t->write_file('test.key', ApiManager::read_test_file('testdata/grpc/serverkey.pem'));
+  $t->write_file('test.crt', ApiManager::read_test_file('testdata/grpc/servercert.pem'));
+  my @ssl_args = (
+    '--use_tls',
+    '--tls_key_file', $t->testdir() . '/test.key',
+    '--tls_cert_file', $t->testdir() . '/test.crt',
+  );
 
-$t->run_daemon(\&service_control, $t, $ServiceControlPort, 'servicecontrol.log');
-$t->run_daemon(\&ApiManager::grpc_interop_server, $t, "${GrpcBackendPort}", @ssl_args);
-is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control socket ready.');
-is($t->waitforsocket("127.0.0.1:${GrpcBackendPort}"), 1, 'GRPC test server socket ready.');
-$t->run();
-is($t->waitforsocket("127.0.0.1:${Http2NginxPort}"), 1, 'Nginx socket ready.');
-
-################################################################################
-my @test_cases = (
-    'empty_unary',
-    'large_unary',
-);
-
-foreach my $case (@test_cases) {
-  my $result = &ApiManager::run_grpc_interop_test($t, $Http2NginxPort,
-      $case, '--api_key', 'api-key');
-  is($result, 0, "${case} test completed as expected.");
+  $t->run_daemon(\&service_control, $t, $ServiceControlPort, 'servicecontrol.log');
+  $t->run_daemon(\&ApiManager::grpc_interop_server, $t, "${GrpcBackendPort}", @ssl_args);
+  $t->run();
+  is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control socket ready.');
+  is($t->waitforsocket("127.0.0.1:${GrpcBackendPort}"), 1, 'GRPC test server socket ready.');
+  is($t->waitforsocket("127.0.0.1:${Http2NginxPort}"), 1, 'Nginx socket ready.');
 }
 
+################################################################################
+
+# 1 test is: server is expecting ssl, but client is not,
+
+# empty server_config: not using ssl
+$t->write_file('server_config.pb.txt', <<"EOF");
+grpc_backend_ssl_credentials {
+}
+EOF
+run_all_daemons();
+
+my $result1 = &ApiManager::run_grpc_interop_test($t, $Http2NginxPort, 'empty_unary', '--api_key', 'api-key');
+isnt($result1, 0, "test1 expected to be failed, not using ssl");
+
+$t->stop;
+$t->stop_daemons();
+
+################################################################################
+
+# 2 test is: server is expecting ssl, but client is ssl, but not root ca
+
+# this test is skipped due a grpc bug: https://github.com/grpc/grpc/issues/18776
+# the request will hang if channel has credential problems, such as could not read files.
+
+$t->write_file('server_config.pb.txt', <<"EOF");
+grpc_backend_ssl_credentials {
+  use_ssl: true
+}
+EOF
+#run_all_daemons();
+
+#my $result2 = &ApiManager::run_grpc_interop_test($t, $Http2NginxPort, 'empty_unary', '--api_key', 'api-key');
+#isnt($result2, 0, "test2 expected to be failed: use ssl but without root CA");
+
+#$t->stop;
+#$t->stop_daemons();
+
+################################################################################
+
+# 3 test is: server is expecting ssl, but client is ssl, and correct root CA
+
+$t->write_file('root.crt', ApiManager::read_test_file('testdata/grpc/cacert.pem'));
+my $root_crt_path = $t->testdir() . '/root.crt';
+$t->write_file('server_config.pb.txt', <<"EOF");
+grpc_backend_ssl_credentials {
+  use_ssl: true
+  root_certs_file: "${root_crt_path}"
+}
+EOF
+run_all_daemons();
+
+my $result3 = &ApiManager::run_grpc_interop_test($t, $Http2NginxPort, 'empty_unary', '--api_key', 'api-key');
+is($result3, 0, "test3 expected to be success");
+
+$t->stop;
 $t->stop_daemons();
 
 ################################################################################
