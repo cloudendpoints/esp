@@ -111,6 +111,14 @@ typedef struct {
 typedef std::map<std::string, std::shared_ptr<::grpc::GenericStub>>
     ngx_esp_grpc_stub_map_t;
 
+// similar to GrpcSslCredentials but using ngx_str_t
+struct ngx_esp_ssl_credentials {
+  bool use_google_default;
+  ngx_str_t root_certs;
+  ngx_str_t private_key;
+  ngx_str_t cert_chain;
+};
+
 //
 // ESP Module Configuration - location context.
 //
@@ -172,6 +180,9 @@ typedef struct {
   // configured backend address for the API method in the API service
   // configuration.
   ngx_str_t grpc_backend_address_fallback;
+
+  // Grpc backend ssl credentials  from server_config.
+  ngx_esp_ssl_credentials *grpc_backend_ssl;
 } ngx_esp_loc_conf_t;
 
 // **************************************************

@@ -328,12 +328,12 @@ sub grpc_test_server {
 }
 
 sub grpc_interop_server {
-  my ($t, $port) = @_;
+  my ($t, $port, @args) = @_;
   my $server = "./external/org_golang_google_grpc/interop/server/$Config{osname}_amd64_stripped/server";
   unless (-e $server) {
     $server = "./external/org_golang_google_grpc/interop/server/$Config{osname}_amd64/server";
   }
-  exec $server, "--port", $port;
+  exec $server, "--port", $port, @args;
 }
 
 sub transcoding_test_server {
