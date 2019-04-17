@@ -283,6 +283,23 @@ class TestStartEsp(unittest.TestCase):
         config_generator = self.basic_config_generator + " --compute_platform_override test_platform"
         self.run_test_with_expectation(expected_config_file, self.generated_server_config_file, config_generator)
 
+    def test_grpc_backend_ssl_enable(self):
+        expected_config_file = "./start_esp/test/testdata/expected_grpc_backend_ssl_enable_server.json"
+        config_generator = self.basic_config_generator + " --enable_grpc_backend_ssl"
+        self.run_test_with_expectation(expected_config_file, self.generated_server_config_file, config_generator)
+
+    def test_grpc_backend_ssl_root_certs_file(self):
+        expected_config_file = "./start_esp/test/testdata/expected_grpc_backend_ssl_root_certs_server.json"
+        config_generator = self.basic_config_generator + " --enable_grpc_backend_ssl" + \
+           " --grpc_backend_ssl_root_certs_file=/etc/nginx/custom-root-ca.cert";
+        self.run_test_with_expectation(expected_config_file, self.generated_server_config_file, config_generator)
+
+    def test_grpc_backend_ssl_client_key_file(self):
+        expected_config_file = "./start_esp/test/testdata/expected_grpc_backend_ssl_client_key_server.json"
+        config_generator = self.basic_config_generator + " --enable_grpc_backend_ssl" + \
+           " --grpc_backend_ssl_private_key_file=/etc/nginx/client.key --grpc_backend_ssl_cert_chain_file=/etc/nginx/client.crt";
+        self.run_test_with_expectation(expected_config_file, self.generated_server_config_file, config_generator)
+
     ########## The tests for validating it should generate failure on conflict flags ##########
 
     def test_enable_backend_routing_conflicts_with_string_flag(self):

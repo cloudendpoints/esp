@@ -199,7 +199,8 @@ def write_server_config_template(server_config_path, args):
                 log_response_headers=args.response_headers,
                 log_jwt_payloads=args.jwt_payloads,
                 metadata_attributes=args.metadata_attributes,
-                compute_platform_override=args.compute_platform_override)
+                compute_platform_override=args.compute_platform_override,
+                grpc_backend_ssl_credentials=args.grpc_backend_ssl_credentials)
 
         server_config_file = server_config_path
         if server_config_file.endswith('/'):
@@ -309,6 +310,18 @@ def handle_service_control_log_entries(args):
             payload = payload.strip()
             if header:
                 args.jwt_payloads.append(payload)
+
+def generate_grpc_backend_ssl_credentials(args):
+    if not args.enable_grpc_backend_ssl:
+      return None
+    out_str = "  use_ssl: true"
+    if args.grpc_backend_ssl_root_certs_file:
+      out_str += "\n  root_certs_file: " + args.grpc_backend_ssl_root_certs_file
+    if args.grpc_backend_ssl_private_key_file:
+      out_str += "\n  private_key_file: " + args.grpc_backend_ssl_private_key_file
+    if args.grpc_backend_ssl_cert_chain_file:
+      out_str += "\n  cert_chain_file: " + args.grpc_backend_ssl_cert_chain_file
+    return out_str
 
 def fetch_service_config(args):
     args.service_config_sets = []
@@ -872,6 +885,21 @@ config file.'''.format(
 
     parser.add_argument('--compute_platform_override', default=None, help=argparse.SUPPRESS)
 
+    parser.add_argument('--enable_grpc_backend_ssl',
+        action='store_true', help='''Enable SSL for gRPC backend.''')
+
+    parser.add_argument('--grpc_backend_ssl_root_certs_file',
+        default='/etc/nginx/trusted-ca-certificates.crt',
+        help='''Set the file path for gRPC backend SSL root certificates.''')
+
+    parser.add_argument('--grpc_backend_ssl_private_key_file',
+        default=None,
+        help='''Set the file path for gRPC backend SSL client private key.''')
+
+    parser.add_argument('--grpc_backend_ssl_cert_chain_file',
+        default=None,
+        help='''Set the file path for gRPC backend SSL client certificate chain.''')
+
     return parser
 
 # Check whether there are conflict flags. If so, return the error string. Otherwise returns None.
@@ -1004,6 +1032,9 @@ if __name__ == '__main__':
 
     # Handles service control log entries
     handle_service_control_log_entries(args)
+
+    # Handles grpc_backend_ssl flags
+    args.grpc_backend_ssl_credentials = generate_grpc_backend_ssl_credentials(args)
 
     # Get service config
     if args.service_json_path:
