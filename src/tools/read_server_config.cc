@@ -31,7 +31,8 @@
 #include "src/api_manager/proto/server_config.pb.h"
 #include "src/api_manager/utils/marshalling.h"
 
-bool ParseConfig(std::istream &src, ::google::api_manager::proto::ServerConfig *service) {
+bool ParseConfig(std::istream &src,
+                 ::google::api_manager::proto::ServerConfig *service) {
   ::google::protobuf::TextFormat::Parser parser;
 
   std::string contents;
@@ -65,7 +66,7 @@ bool ParseConfig(std::istream &src, ::google::api_manager::proto::ServerConfig *
 
 int main(int argc, char **argv) {
   if (argc < 2) {
-    std::cerr  << "Usage: " << argv[0] << " file" << std::endl;
+    std::cerr << "Usage: " << argv[0] << " file" << std::endl;
     return 1;
   }
   const char *src_path = argv[1];
@@ -74,7 +75,8 @@ int main(int argc, char **argv) {
 
   ::google::api_manager::proto::ServerConfig config;
   if (!ParseConfig(src, &config)) {
-    std::cerr << "ERROR: Cannot parse server_config from " << src_path << std::endl;
+    std::cerr << "ERROR: Cannot parse server_config from " << src_path
+              << std::endl;
     return 1;
   }
 
