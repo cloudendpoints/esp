@@ -890,15 +890,15 @@ config file.'''.format(
 
     parser.add_argument('--grpc_backend_ssl_root_certs_file',
         default='/etc/nginx/trusted-ca-certificates.crt',
-        help='''Set the file path for gRPC backend SSL root certificates.''')
+        help='''The file path for gRPC backend SSL root certificates.''')
 
     parser.add_argument('--grpc_backend_ssl_private_key_file',
         default=None,
-        help='''Set the file path for gRPC backend SSL client private key.''')
+        help='''The file path for gRPC backend SSL client private key.''')
 
     parser.add_argument('--grpc_backend_ssl_cert_chain_file',
         default=None,
-        help='''Set the file path for gRPC backend SSL client certificate chain.''')
+        help='''The file path for gRPC backend SSL client certificate chain.''')
 
     return parser
 
@@ -981,6 +981,8 @@ def enforce_conflict_args(args):
             return "Flag --enable_backend_routing cannot be used together with --dns."
         if args.ssl_protocols:
             return "Flag --enable_backend_routing cannot be used together with --ssl_protocols."
+        if args.enable_grpc_backend_ssl:
+            return "Flag --enable_backend_routing cannot be used together with --grpc_backend_ssl flags."
         if args.server_config_dir != SERVER_CONF_DIR:
             return "Flag --enable_backend_routing cannot be used together with --server_config_dir."
 

@@ -310,7 +310,8 @@ class TestStartEsp(unittest.TestCase):
             self.assertEqual(return_code >> 8, 3)
 
     def test_enable_backend_routing_conflicts_with_boolean_flag(self):
-        for bool_flag in ["--non_gcp", "--disable_cloud_trace_auto_sampling", "--transcoding_always_print_primitive_fields"]:
+        for bool_flag in ["--non_gcp", "--disable_cloud_trace_auto_sampling",
+                          "--transcoding_always_print_primitive_fields", "--enable_grpc_backend_ssl"]:
             config_generator = "{} --enable_backend_routing {}".format(
                 self.empty_flag_config_generator, bool_flag)
             return_code = os.system(config_generator)
