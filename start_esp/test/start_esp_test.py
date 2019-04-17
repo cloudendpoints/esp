@@ -44,6 +44,7 @@ class TestStartEsp(unittest.TestCase):
     empty_flag_config_generator = "./start_esp/test/start_esp_binary --generate_config_file_only --server_config_generation_path ./start_esp/test/generated_server_configuration.json"
     basic_config_generator = "./start_esp/test/start_esp_binary --generate_config_file_only --pid_file ./start_esp/test/pid_file --service_account_key key --config_dir ./start_esp/test --template ./start_esp/test/nginx-conf-template --server_config_template ./start_esp/test/server-conf-template --service_json_path ./start_esp/test/testdata/test_service_config_1.json --server_config_generation_path ./start_esp/test/generated_server_configuration.json"
     backend_routing_config_generator = "./start_esp/test/start_esp_binary --enable_backend_routing --generate_config_file_only --pid_file ./start_esp/test/pid_file --service_account_key key --config_dir ./start_esp/test --template ./start_esp/test/nginx-conf-template --server_config_template ./start_esp/test/server-conf-template --service_json_path ./start_esp/test/testdata/test_service_config_1.json --server_config_generation_path ./start_esp/test/generated_server_configuration.json"
+    read_server_config = "./src/tools/read_server_config "
 
     @staticmethod
     def file_equal(path1, path2):
@@ -66,6 +67,8 @@ class TestStartEsp(unittest.TestCase):
         self.assertTrue(os.path.isfile(expected_config_file), "the expected config file does not exist")
         self.assertTrue(os.path.isfile(self.nginx_conf_template), "the template config file does not exist")
         os.system(config_generator)
+        self.assertTrue((os.system(self.read_server_config + self.generated_server_config_file) == 0),
+                        "generate invalid server config format.")
         self.assertTrue(os.path.isfile(generated_config_file), "the config file is not generated")
         is_equal = TestStartEsp.file_equal(generated_config_file, expected_config_file)
         if not is_equal :

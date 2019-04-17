@@ -38,6 +38,18 @@ cc_binary(
 )
 
 cc_binary(
+    name = "read_server_config",
+    srcs = [
+        "read_server_config.cc",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//src/api_manager:server_config_proto",
+        "//src/api_manager/utils",
+    ],
+)
+
+cc_binary(
     name = "auth_token_gen",
     srcs = [
         "auth_token_gen.cc",

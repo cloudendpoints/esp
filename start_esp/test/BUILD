@@ -59,5 +59,6 @@ py_test(
         ":nginx-conf-template",
         ":server-conf-template",
         ":start_esp_binary",
+        "//src/tools:read_server_config",
     ] + glob(["testdata/*"]),
 )

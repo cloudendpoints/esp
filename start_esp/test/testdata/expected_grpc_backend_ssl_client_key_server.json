@@ -39,7 +39,7 @@ experimental {
 rollout_strategy: "None"
 grpc_backend_ssl_credentials: {
   use_ssl: true
-  root_certs_file: /etc/nginx/trusted-ca-certificates.crt
-  private_key_file: /etc/nginx/client.key
-  cert_chain_file: /etc/nginx/client.crt
+  root_certs_file: "/etc/nginx/trusted-ca-certificates.crt"
+  private_key_file: "/etc/nginx/client.key"
+  cert_chain_file: "/etc/nginx/client.crt"
 }
