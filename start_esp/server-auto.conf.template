@@ -101,3 +101,8 @@ ${metadata_attributes}
 % if compute_platform_override:
 compute_platform_override: "${compute_platform_override}"
 % endif
+% if grpc_backend_ssl_credentials:
+grpc_backend_ssl_credentials: {
+${grpc_backend_ssl_credentials}
+}
+% endif
