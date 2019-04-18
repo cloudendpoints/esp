@@ -137,9 +137,9 @@ my $expected_report_body = ServiceControl::gen_report_body({
         'error_cause' => 'service_control',
         'error_type' => '4xx',
         'request_size' => 62,
-        'response_size' => 395,
+        'response_size' => 404,
         'request_bytes' => 62,
-        'response_bytes' => 395,
+        'response_bytes' => 404,
         'no_consumer_data' => 1,
     });
 

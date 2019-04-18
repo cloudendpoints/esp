@@ -126,8 +126,8 @@ $t->stop_daemons();
 my ($response_headers, $response_body) = split /\r\n\r\n/, $response, 2;
 like($response_headers, qr/HTTP\/1\.1 400 Bad Request/,
      'API call returned HTTP 400.');
-like($response_body, qr/Client project not valid./,
-     "An 'invalid client project' error was returned.");
+like($response_body, qr/Consumer project not valid./,
+     "An 'invalid consumer project' error was returned.");
 
 # Verify metadata server was called.
 my @metadata_requests = ApiManager::read_http_stream($t, 'metadata.log');
