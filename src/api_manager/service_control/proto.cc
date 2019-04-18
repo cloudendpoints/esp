@@ -1324,16 +1324,18 @@ Status Proto::ConvertCheckResponse(const CheckResponse& check_response,
           Status::SERVICE_CONTROL);
     case CheckError::IP_ADDRESS_BLOCKED:
       return Status(Code::PERMISSION_DENIED,
-                    "IP address is blocked by API key.",
+                    "IP address is blocked by the API key with restrictions.",
                     Status::SERVICE_CONTROL);
     case CheckError::REFERER_BLOCKED:
-      return Status(Code::PERMISSION_DENIED,
-                    "Referer address is blocked by API key.",
-                    Status::SERVICE_CONTROL);
+      return Status(
+          Code::PERMISSION_DENIED,
+          "Referer address is blocked by the API key with restrictions.",
+          Status::SERVICE_CONTROL);
     case CheckError::CLIENT_APP_BLOCKED:
-      return Status(Code::PERMISSION_DENIED,
-                    "Client application is blocked by API key.",
-                    Status::SERVICE_CONTROL);
+      return Status(
+          Code::PERMISSION_DENIED,
+          "Client application is blocked by the API key with restrictions.",
+          Status::SERVICE_CONTROL);
     case CheckError::API_TARGET_BLOCKED:
       return Status(Code::PERMISSION_DENIED,
                     std::string("API ") + service_name +
