@@ -316,11 +316,11 @@ def generate_grpc_backend_ssl_credentials(args):
       return None
     out_str = "  use_ssl: true"
     if args.grpc_backend_ssl_root_certs_file:
-      out_str += "\n  root_certs_file: " + args.grpc_backend_ssl_root_certs_file
+      out_str += "\n  root_certs_file: \"{}\"".format(args.grpc_backend_ssl_root_certs_file)
     if args.grpc_backend_ssl_private_key_file:
-      out_str += "\n  private_key_file: " + args.grpc_backend_ssl_private_key_file
+      out_str += "\n  private_key_file: \"{}\"".format(args.grpc_backend_ssl_private_key_file)
     if args.grpc_backend_ssl_cert_chain_file:
-      out_str += "\n  cert_chain_file: " + args.grpc_backend_ssl_cert_chain_file
+      out_str += "\n  cert_chain_file: \"{}\"".format(args.grpc_backend_ssl_cert_chain_file)
     return out_str
 
 def fetch_service_config(args):

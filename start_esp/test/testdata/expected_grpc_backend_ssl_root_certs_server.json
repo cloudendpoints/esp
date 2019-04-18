@@ -39,5 +39,5 @@ experimental {
 rollout_strategy: "None"
 grpc_backend_ssl_credentials: {
   use_ssl: true
-  root_certs_file: /etc/nginx/custom-root-ca.cert
+  root_certs_file: "/etc/nginx/custom-root-ca.cert"
 }
