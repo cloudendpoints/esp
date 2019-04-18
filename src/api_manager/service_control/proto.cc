@@ -1289,7 +1289,7 @@ Status Proto::ConvertCheckResponse(const CheckResponse& check_response,
   switch (error.code()) {
     case CheckError::NOT_FOUND:  // The consumer's project id is not found.
       return Status(Code::INVALID_ARGUMENT,
-                    "Client project not found. Please pass a valid project.",
+                    "Consumer project not found. Please pass a valid project.",
                     Status::SERVICE_CONTROL);
     case CheckError::API_KEY_NOT_FOUND:
       if (check_response_info) check_response_info->is_api_key_valid = false;
@@ -1311,32 +1311,40 @@ Status Proto::ConvertCheckResponse(const CheckResponse& check_response,
         check_response_info->service_is_activated = false;
       return Status(Code::PERMISSION_DENIED,
                     std::string("API ") + service_name +
-                        " is not enabled for the project.",
+                        " is not enabled for the consumer project.",
                     Status::SERVICE_CONTROL);
     case CheckError::RESOURCE_EXHAUSTED:
       return Status(Code::PERMISSION_DENIED, "Quota check failed.",
                     Status::SERVICE_CONTROL);
     case CheckError::PERMISSION_DENIED:
-      return Status(Code::PERMISSION_DENIED, "Permission denied.",
-                    Status::SERVICE_CONTROL);
+      return Status(
+          Code::PERMISSION_DENIED,
+          std::string("Consumer project doesn't have access to the API ") +
+              service_name,
+          Status::SERVICE_CONTROL);
     case CheckError::IP_ADDRESS_BLOCKED:
-      return Status(Code::PERMISSION_DENIED, "IP address blocked.",
+      return Status(Code::PERMISSION_DENIED,
+                    "IP address is blocked by API key.",
                     Status::SERVICE_CONTROL);
     case CheckError::REFERER_BLOCKED:
-      return Status(Code::PERMISSION_DENIED, "Referer blocked.",
+      return Status(Code::PERMISSION_DENIED,
+                    "Referer address is blocked by API key.",
                     Status::SERVICE_CONTROL);
     case CheckError::CLIENT_APP_BLOCKED:
-      return Status(Code::PERMISSION_DENIED, "Client application blocked.",
+      return Status(Code::PERMISSION_DENIED,
+                    "Client application is blocked by API key.",
                     Status::SERVICE_CONTROL);
     case CheckError::API_TARGET_BLOCKED:
-      return Status(Code::PERMISSION_DENIED, "API target is blocked.",
+      return Status(Code::PERMISSION_DENIED,
+                    std::string("API ") + service_name +
+                        " is invalid for the consumer project.",
                     Status::SERVICE_CONTROL);
     case CheckError::PROJECT_DELETED:
       return Status(Code::PERMISSION_DENIED, "Project has been deleted.",
                     Status::SERVICE_CONTROL);
     case CheckError::PROJECT_INVALID:
       return Status(Code::INVALID_ARGUMENT,
-                    "Client project not valid. Please pass a valid project.",
+                    "Consumer project not valid. Please pass a valid project.",
                     Status::SERVICE_CONTROL);
     case CheckError::BILLING_DISABLED:
       return Status(Code::PERMISSION_DENIED,
