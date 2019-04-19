@@ -95,7 +95,7 @@ $t->stop_daemons();
 like($response1, qr/HTTP\/1\.1 403 Forbidden/, 'Response1 returned HTTP 403.');
 like($response1, qr/content-type: application\/json/i,
     'Forbidden has application/json body.');
-like($response1, qr/API endpoints-test.cloudendpointsapis.com is not enabled for the project/i,
+like($response1, qr/API endpoints-test.cloudendpointsapis.com is not enabled for the consumer project./i,
     "Error body contains 'activation error'.");
 
 like($response2, qr/HTTP\/1\.1 400 Bad Request/, 'Response2 returned HTTP 400.');

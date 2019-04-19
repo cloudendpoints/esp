@@ -87,7 +87,7 @@ my $response = ApiManager::http_get($NginxPort,'/shelves?key=api-key-1');
 like($response, qr/HTTP\/1\.1 403 Forbidden/, 'Got a 403.');
 like($response, qr/Content-Type: application\/json/i, 'Content-type is application/json');
 like($response,
-    qr/API endpoints-transcoding-test.cloudendpointsapis.com is not enabled for the project./i,
+    qr/API endpoints-transcoding-test.cloudendpointsapis.com is not enabled for the consumer project./i,
     "the message from service-control was propogated.");
 
 

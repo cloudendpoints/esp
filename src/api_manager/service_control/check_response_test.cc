@@ -77,7 +77,8 @@ TEST(CheckResponseTest,
   Status result = ConvertCheckErrorToStatus(
       CheckError::SERVICE_NOT_ACTIVATED, "Service not activated.", "api_xxxx");
   EXPECT_EQ(Code::PERMISSION_DENIED, result.code());
-  EXPECT_EQ(result.message(), "API api_xxxx is not enabled for the project.");
+  EXPECT_EQ(result.message(),
+            "API api_xxxx is not enabled for the consumer project.");
 }
 
 TEST(CheckResponseTest,

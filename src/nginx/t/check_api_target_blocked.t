@@ -98,7 +98,8 @@ $t->stop_daemons();
 my ($response_headers, $response_body) = split /\r\n\r\n/, $response, 2;
 
 like($response, qr/HTTP\/1\.1 403 Forbidden/, 'Response returned HTTP 403.');
-like($response, qr/API target is blocked/, 'Response contains error message.');
+like($response, qr/API endpoints-test.cloudendpointsapis.com is invalid for the consumer project./,
+		'Response contains error message.');
 
 my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
 is(scalar @servicecontrol_requests, 2, 'Service control was called twice.');
@@ -142,9 +143,9 @@ my $expected_report_body = ServiceControl::gen_report_body({
         'error_cause' => 'service_control',
         'error_type' => '4xx',
         'request_size' => 62,
-        'response_size' => 344,
+        'response_size' => 400,
         'request_bytes' => 62,
-        'response_bytes' => 344,
+        'response_bytes' => 400,
     });
 
 ok(ServiceControl::compare_json($report_body, $expected_report_body), 'Report body is received.');
