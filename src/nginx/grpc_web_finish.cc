@@ -25,6 +25,7 @@
  */
 
 #include "src/nginx/grpc_finish.h"
+#include "src/nginx/util.h"
 
 extern "C" {
 #include "src/http/ngx_http.h"
@@ -238,7 +239,8 @@ ngx_int_t GrpcWebFinish(
   // Encodes GRPC message.
   ngx_chain_t *grpc_message = nullptr;
   if (!status.message().empty()) {
-    grpc_message = EncodesGrpcMessage(r, status.message(), &length);
+    grpc_message =
+        EncodesGrpcMessage(r, grpc_percent_encode(status.message()), &length);
     RETURN_IF_NULL(r, grpc_message, NGX_DONE,
                    "Failed to encode gRPC-Web message.");
   }

@@ -43,7 +43,7 @@ my $NginxPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $GrpcBackendPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(4);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(5);
 
 $t->write_file(
     'service.pb.txt',
@@ -91,19 +91,29 @@ is($t->waitforsocket("127.0.0.1:${NginxPort}"), 1, 'Nginx socket ready.');
 # ---------------------------------------------
 #
 ################################################################################
+my $proto_request = ServiceControl::convert_proto("{}", 'interop_request', 'binary');
+my $proto_request_len = length($proto_request);
 
 my $response = ApiManager::http($NginxPort,qq{
 POST /grpc.testing.TestService/EmptyCall HTTP/1.0
 Host: 127.0.0.1:${NginxPort}
 Content-Type: application/grpc-web
 x-api-key: api-key
-Content-Length: 5
+Content-Length: $proto_request_len
 
-\x00\x00\x00\x00\x00});
+$proto_request});
 
-is(ApiManager::http_response_body($response),
-"\x00\x00\x00\x00\x00\x80\x00\x00\x00\x10grpc-status: 0\x0d\x0a",
-'EmptyCall returns OK.');
+# Skip the first frame. only the second frame is tailer frame.
+my $response_body = ApiManager::http_response_body($response);
+my $data_frame = substr $response_body, 0, 5;
+is($data_frame, "\x00\x00\x00\x00\x00", 'data frame is correct');
+
+my $trailer = substr $response_body, 5;
+my $response_json = ServiceControl::convert_proto($trailer, 'grpc_web_trailer', 'json');
+my $expected = {
+   'grpc-status' => '0',
+};
+ok(ServiceControl::compare_json($response_json, $expected), 'trailer is correct.');
 
 $t->stop_daemons();
 

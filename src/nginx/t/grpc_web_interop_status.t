@@ -91,19 +91,32 @@ is($t->waitforsocket("127.0.0.1:${NginxPort}"), 1, 'Nginx socket ready.');
 # --------------------------------------------------------
 #
 ################################################################################
+my $proto_request = ServiceControl::convert_proto(<<"EOF", 'interop_request', 'binary');
+{
+  "response_status": {
+     "code": 4,
+     "message": "test space"
+  }
+}
+EOF
+my $proto_request_len = length($proto_request);
+
 my $response = ApiManager::http($NginxPort,qq{
 POST /grpc.testing.TestService/UnaryCall HTTP/1.0
 Host: 127.0.0.1:${NginxPort}
 Content-Type: application/grpc-web
 x-api-key: api-key
-Content-Length: 15
+Content-Length: $proto_request_len
 
-\x00\x00\x00\x00\x0a\x3a\x08\x08\x04\x12\x04\x74\x65\x73\x74});
+$proto_request});
 
-is(ApiManager::http_response_body($response),
-"\x80\x00\x00\x00\x24grpc-status: 4\x0d\x0a".
-"grpc-message: test\x0d\x0a",
-'UnaryCall returns expected error code(4) and message(test).');
+my $grpc_trailer = ApiManager::http_response_body($response);
+my $trailer_json = ServiceControl::convert_proto($grpc_trailer, 'grpc_web_trailer', 'json');
+my $expected_trailer = {
+   'grpc-status' => '4',
+   'grpc-message' => 'test%20space',
+};
+ok(ServiceControl::compare_json($trailer_json, $expected_trailer), 'trailer is correct.');
 
 $t->stop_daemons();
 

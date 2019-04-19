@@ -24,7 +24,9 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
+
 #include "src/nginx/util.h"
+#include "src/core/lib/slice/percent_encoding.h"
 
 #include <cstdio>
 
@@ -227,6 +229,14 @@ ngx_esp_header_iterator ngx_esp_header_iterator::operator++(int) {
   ngx_esp_header_iterator it(*this);
   operator++();
   return it;
+}
+
+std::string grpc_percent_encode(const std::string &src) {
+  grpc_slice in = grpc_slice_from_static_buffer(src.data(), src.size());
+  grpc_slice out = grpc_percent_encode_slice(
+      in, &grpc_url_percent_encoding_unreserved_bytes[0]);
+  return std::string(reinterpret_cast<const char *>(GRPC_SLICE_START_PTR(out)),
+                     GRPC_SLICE_LENGTH(out));
 }
 
 }  // namespace nginx

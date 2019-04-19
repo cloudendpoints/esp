@@ -25,16 +25,21 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 #include <getopt.h>
+#include <netinet/in.h>
 #include <stdlib.h>
 #include <uuid/uuid.h>
 #include <chrono>
 #include <fstream>
 #include <iostream>
 
+#include "absl/strings/str_split.h"
+
 #include "google/protobuf/io/zero_copy_stream_impl.h"
 #include "google/protobuf/text_format.h"
 #include "src/api_manager/service_control/proto.h"
 #include "src/api_manager/utils/marshalling.h"
+
+#include "src/proto/grpc/testing/messages.pb.h"
 
 const char* const DEFAULT_SERVICE_NAME =
     "endpoints-test.cloudendpointsapis.com";
@@ -49,7 +54,9 @@ enum ProtoMessageType {
   QUOTA_REQUEST,
   QUOTA_RESPONSE,
   REPORT_REQUEST,
-  REPORT_RESPONSE
+  REPORT_RESPONSE,
+  INTEROP_REQUEST,
+  GRPC_WEB_TRAILER
 };
 
 /* Flag set by ‘--verbose’. */
@@ -76,7 +83,10 @@ const int kAllocateQuotaResponseProto = 9;
 const int kReportRequstProto = 10;
 const int kReportResponseProto = 11;
 const int kReportRequestSize = 12;
+const int kInteropRequstProto = 13;
+const int kGrpcWebTrailer = 14;
 
+::grpc::testing::SimpleRequest interop_request;
 ::google::api::servicecontrol::v1::CheckRequest check_request;
 ::google::api::servicecontrol::v1::CheckResponse check_response;
 ::google::api::servicecontrol::v1::AllocateQuotaRequest quota_request;
@@ -98,6 +108,8 @@ void ProcessCmdLine(int argc, char** argv) {
         {"json", no_argument, nullptr, kJsonOutput},
         {"text", no_argument, nullptr, kTextOutput},
         {"binary", no_argument, nullptr, kBinaryOutput},
+        {"interop_request", no_argument, nullptr, kInteropRequstProto},
+        {"grpc_web_trailer", no_argument, nullptr, kGrpcWebTrailer},
         {"check_request", no_argument, nullptr, kCheckRequstProto},
         {"check_response", no_argument, nullptr, kCheckResponseProto},
         {"quota_request", no_argument, nullptr, kAllocateQuotaRequstProto},
@@ -134,6 +146,12 @@ void ProcessCmdLine(int argc, char** argv) {
         break;
       case kBinaryOutput:
         output_format = BINARY;
+        break;
+      case kInteropRequstProto:
+        proto_type = INTEROP_REQUEST;
+        break;
+      case kGrpcWebTrailer:
+        proto_type = GRPC_WEB_TRAILER;
         break;
       case kCheckRequstProto:
         proto_type = CHECK_REQUEST;
@@ -175,6 +193,7 @@ void ProcessCmdLine(int argc, char** argv) {
             "Usage:  service_control_json_gen options\n\n"
             "Generate or convert service control protobuf message.\n"
             "Protobuf message type:\n"
+            "  --interop_request:  InteropRequest protobuf message.\n"
             "  --check_request:  CheckRequest protobuf message.\n"
             "  --check_response:  CheckResponse protobuf message.\n"
             "  --quota_request:  AllocateQuotaRequest protobuf message.\n"
@@ -237,7 +256,8 @@ bool ParseProto(std::istream& src, ::google::protobuf::Message* service) {
 }
 
 bool Output(const ::google::protobuf::Message& service, OutputType ot,
-            std::ostream& dst) {
+            std::ostream& dst, const std::string& prepend) {
+  dst << prepend;
   switch (ot) {
     case TEXT: {
       ::google::protobuf::io::OstreamOutputStream output(&dst);
@@ -321,11 +341,52 @@ std::string UuidGen() {
   return request;
 }
 
+void ParseGrpcWebTrailer(std::istream& src) {
+  std::string contents;
+  src.seekg(0, std::ios::end);
+  auto size = src.tellg();
+  if (size > 0) {
+    contents.reserve(size);
+  }
+  src.seekg(0, std::ios::beg);
+  contents.assign((std::istreambuf_iterator<char>(src)),
+                  (std::istreambuf_iterator<char>()));
+
+  // skip first 5 byte of grpc frame
+  std::cout << "{" << std::endl;
+  bool first = true;
+  for (absl::string_view sp : absl::StrSplit(contents.substr(5), "\x0d\x0a")) {
+    if (sp.empty()) continue;
+    std::pair<std::string, std::string> parts = absl::StrSplit(sp, ": ");
+    if (!first) {
+      std::cout << "," << std::endl;
+    }
+    first = false;
+    std::cout << "   \"" << parts.first << "\": \"" << parts.second << "\"";
+  }
+  std::cout << std::endl << "}" << std::endl;
+}
+
 int main(int argc, char** argv) {
   ProcessCmdLine(argc, argv);
 
+  if (proto_type == GRPC_WEB_TRAILER) {
+    // Dump grpc web trailer frame as JSON into stdout.
+    if (src_path) {
+      std::ifstream src;
+      src.open(src_path, std::ifstream::in | std::ifstream::binary);
+      ParseGrpcWebTrailer(src);
+    } else if (from_stdin) {
+      ParseGrpcWebTrailer(std::cin);
+    }
+    return 0;
+  }
+
   ::google::protobuf::Message* request = nullptr;
   switch (proto_type) {
+    case INTEROP_REQUEST:
+      request = &interop_request;
+      break;
     case CHECK_REQUEST:
       request = &check_request;
       break;
@@ -343,6 +404,8 @@ int main(int argc, char** argv) {
       break;
     case REPORT_RESPONSE:
       request = &report_response;
+      break;
+    default:
       break;
   }
   if (src_path) {
@@ -362,13 +425,22 @@ int main(int argc, char** argv) {
   }
 
   if (request != nullptr) {
+    std::string prepend;
+    if (proto_type == INTEROP_REQUEST && output_format == BINARY) {
+      // prepend a grpc frame for grpc_web_interop test.
+      char buf[5];
+      buf[0] = 0;
+      uint32_t ss = htonl(uint32_t(request->SerializeAsString().size()));
+      memcpy(&buf[1], &ss, 4);
+      prepend = std::string(buf, 5);
+    }
     bool success;
     if (dst_path) {
       std::ofstream dst;
       dst.open(dst_path, std::ofstream::out | std::ofstream::binary);
-      success = Output(*request, output_format, dst);
+      success = Output(*request, output_format, dst, prepend);
     } else {
-      success = Output(*request, output_format, std::cout);
+      success = Output(*request, output_format, std::cout, prepend);
     }
     if (!success) {
       std::cerr << "ERROR: Cannot serialize protobuf.\n";

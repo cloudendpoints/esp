@@ -79,6 +79,9 @@ ngx_table_elt_t *ngx_esp_find_headers_in(ngx_http_request_t *r, u_char *name,
 ngx_table_elt_t *ngx_esp_find_headers_out(ngx_http_request_t *r, u_char *name,
                                           size_t len);
 
+// Call grpc_percent_encode_slice to encode the data
+std::string grpc_percent_encode(const std::string &data);
+
 // An InputIterator for nginx headers.
 class ngx_esp_header_iterator {
  public:
