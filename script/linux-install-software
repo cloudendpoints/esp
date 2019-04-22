@@ -55,7 +55,7 @@ function install_packages() {
     autotools-dev \
     ca-certificates \
     curl \
-    ca-certificates-java=20161107~bpo8+1 \
+    ca-certificates-java \
     g++ \
     gcc \
     gettext \

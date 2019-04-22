@@ -31,7 +31,7 @@ if [[ $UID -ne 0 ]]; then
   SUDO=sudo
 fi
 
-[[ -z "${PLATFORM}" ]] && PLATFORM='debian-8'
+[[ -z "${PLATFORM}" ]] && PLATFORM='debian-9'
 TOOLS_DIR='/tmp/esp-tools'
 
 # Library of useful utilities.

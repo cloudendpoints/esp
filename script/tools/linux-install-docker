@@ -51,7 +51,7 @@ VERSION_SUFFIX="${JESSIE_VERSION_SUFFIX}"
 function set_platform_env() {
   local platform="${1}"
   case "${platform}" in
-    'debian-8')
+    'debian-9')
       REPO="${JESSIE_REPO}"
       VERSION_SUFFIX="${JESSIE_VERSION_SUFFIX}";;
     'ubuntu-16-04')
