@@ -53,6 +53,9 @@ while getopts :b:d:r:s: arg; do
   esac
 done
 
+# "t" tests fail if run under root. So presubmit should run as jenkins user
+su jenkins
+
 [[ -z "${RUN_ID}" ]] && RUN_ID="${SCENARIO}-$(date +"%Y%m%d%H%M%S")"
 [[ -z "${LOG_DIR}" ]] && LOG_DIR="$(mktemp -d /tmp/presubmits.XXXXX)"
 
