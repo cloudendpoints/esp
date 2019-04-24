@@ -54,6 +54,11 @@ while getopts :b:d:r:s: arg; do
 done
 
 # "t" tests fail if run under root. So presubmit should run as jenkins user
+USER="jenkins"
+HOME="/home/${USER}"
+groupadd -g 10000 ${USER}
+-RUN useradd -c "Jenkins user" -d ${HOME} -u 10000 -g 10000 -m ${USER} -s /bin/bash
+
 su jenkins
 
 [[ -z "${RUN_ID}" ]] && RUN_ID="${SCENARIO}-$(date +"%Y%m%d%H%M%S")"
