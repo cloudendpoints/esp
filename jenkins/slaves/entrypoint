@@ -26,5 +26,9 @@
 #
 ################################################################################
 #
-service docker start
+
+if [[ ${UID} -ne 0 ]]; then	service docker start
+  SUDO=sudo	
+fi	
+${SUDO} service docker start
 exec "$@"
