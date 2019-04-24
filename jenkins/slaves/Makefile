@@ -1,5 +1,5 @@
 PROJECT = endpoints-jenkins
-VERSION = 0.tmp
+VERSION = 0.tmp2
 TOOLS_BUCKET = endpoints-tools
 
 # Note: The build directory is the root of the istio/test-infra repository, not ./

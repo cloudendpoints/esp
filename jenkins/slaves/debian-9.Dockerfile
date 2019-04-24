@@ -12,10 +12,6 @@ RUN rm -rf /var/lib/apt/lists/* \
     && apt-get install -qqy git iptables procps sudo xz-utils \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Adding sudo group user no password access.
-# This is used by Jenkins user to start docker service
-RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-
 # Installing Tools
 ADD script /tmp/esp_tmp/script
 RUN chmod +x /tmp/esp_tmp/script/linux-install-software
@@ -28,10 +24,5 @@ ENV PATH /usr/lib/google-cloud-sdk/bin:${PATH}
 
 ADD jenkins/slaves/entrypoint /usr/local/bin/entrypoint
 RUN chmod +rx /usr/local/bin/entrypoint
-
-# Adding a Jenkins User
-ENV HOME /home/jenkins
-RUN groupadd -g 10000 jenkins
-RUN useradd -c "Jenkins user" -d ${HOME} -u 10000 -g 10000 -G docker,sudo -m jenkins -s /bin/bash
 
 ENTRYPOINT ["/usr/local/bin/entrypoint"]
