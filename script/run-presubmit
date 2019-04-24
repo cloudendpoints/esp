@@ -57,9 +57,8 @@ done
 USER="jenkins"
 HOME="/home/${USER}"
 groupadd -g 10000 ${USER}
--RUN useradd -c "Jenkins user" -d ${HOME} -u 10000 -g 10000 -m ${USER} -s /bin/bash
-
-su jenkins
+useradd -c "Jenkins user" -d ${HOME} -u 10000 -g 10000 -m ${USER} -s /bin/bash
+su ${USER}
 
 [[ -z "${RUN_ID}" ]] && RUN_ID="${SCENARIO}-$(date +"%Y%m%d%H%M%S")"
 [[ -z "${LOG_DIR}" ]] && LOG_DIR="$(mktemp -d /tmp/presubmits.XXXXX)"
