@@ -50,6 +50,9 @@ nginx_suite(
             "nginx-tests/ssl.t",
             "nginx-tests/ssl_certificates.t",
             "nginx-tests/ssl_stapling.t",
+            # Jenkins tests require root. This test also set "user root", it fails
+            # Just skip it for now.
+            "nginx-tests/proxy_bind_transparent.t",
         ],
     ),
     deps = [
