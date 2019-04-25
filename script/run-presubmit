@@ -36,8 +36,8 @@ if [[ ${UID} -eq 0 ]]; then
   groupadd -g 10000 ${USER}
   useradd -c "Jenkins user" -d ${HOME} -u 10000 -g 10000 -m ${USER} -s /bin/bash
 
-  echo "$0 ${@}"
-  sudo -u $USER "$0 ${@}"
+  echo "${BASH_SOURCE[0]} ${@}"
+  sudo -u $USER "${BASH_SOURCE[0]} ${@}"
   exit $?
 fi
 
