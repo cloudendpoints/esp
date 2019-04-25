@@ -60,6 +60,8 @@ groupadd -g 10000 ${USER}
 useradd -c "Jenkins user" -d ${HOME} -u 10000 -g 10000 -m ${USER} -s /bin/bash
 su ${USER}
 
+echo "Current user is: $(whoami)"
+
 [[ -z "${RUN_ID}" ]] && RUN_ID="${SCENARIO}-$(date +"%Y%m%d%H%M%S")"
 [[ -z "${LOG_DIR}" ]] && LOG_DIR="$(mktemp -d /tmp/presubmits.XXXXX)"
 
