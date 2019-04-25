@@ -29,6 +29,8 @@
 
 echo "Current user is: $(whoami)"
 
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
 # "t" tests fail if run under root. So presubmit should run as jenkins user
 if [[ ${UID} -eq 0 ]]; then
   USER="jenkins"
@@ -36,12 +38,11 @@ if [[ ${UID} -eq 0 ]]; then
   groupadd -g 10000 ${USER}
   useradd -c "Jenkins user" -d ${HOME} -u 10000 -g 10000 -m ${USER} -s /bin/bash
 
-  echo "${BASH_SOURCE[0]} ${@}"
-  sudo -u $USER "${BASH_SOURCE[0]} ${@}"
+  echo "${ROOT}/${BASH_SOURCE[0]} ${@}"
+  sudo -u $USER "${ROOT}/${BASH_SOURCE[0]} ${@}"
   exit $?
 fi
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . ${ROOT}/script/jenkins-utilities || { echo "Cannot load jenkins-utilities"; exit 1; }
 . ${ROOT}/script/presubmits || { echo "Cannot load presubmits"; exit 1; }
 
