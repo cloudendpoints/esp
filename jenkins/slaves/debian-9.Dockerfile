@@ -1,8 +1,6 @@
 # Stored at gcr.io/endpoints-jenkins/debian-9-slave:latest
 FROM debian:stretch-backports
 
-# Docker version needs to match GKE (Docker Host)
-ENV DOCKER_VERSION 1.11.2
 # Bucket used to store already built binaries
 ARG TOOLS_BUCKET
 

@@ -115,7 +115,7 @@ fi
 update_clang
 update_gcloud
 update_bazel
-update_docker "${PLATFORM}"
+install_docker_for_debian9
 update_wrk
 update_node_js
 clear_apt

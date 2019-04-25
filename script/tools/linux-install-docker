@@ -36,7 +36,7 @@ fi
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . ${DIR}/all-utilities || { echo "Cannot load Bash utilities" ; exit 1 ; }
 
-DOCKER_VERSION='1.12.2'
+DOCKER_VERSION='18.09.5'
 
 # Ubuntu 16-04
 XENIAL_REPO='ubuntu-xenial'
@@ -82,6 +82,16 @@ function update_apt() {
   echo 'Adding repo for docker'
   echo "deb https://apt.dockerproject.org/repo ${REPO} main" \
     | ${SUDO} tee /etc/apt/sources.list.d/docker.list
+}
+
+# run as root
+function install_docker_for_debian9() {
+  apt update
+  apt -qqy install apt-transport-https ca-certificates curl gnupg2 software-properties-common
+  curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
+  add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
+  apt update
+  apt -qqy install docker-ce
 }
 
 function update_docker() {
