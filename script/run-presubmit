@@ -27,6 +27,20 @@
 ################################################################################
 #
 
+echo "Current user is: $(whoami)"
+
+# "t" tests fail if run under root. So presubmit should run as jenkins user
+if [[ ${UID} -eq 0 ]]; then
+  USER="jenkins"
+  HOME="/home/${USER}"
+  groupadd -g 10000 ${USER}
+  useradd -c "Jenkins user" -d ${HOME} -u 10000 -g 10000 -m ${USER} -s /bin/bash
+
+  echo "${@}"
+  sudo -u $USER "${@}"
+  exit $?
+fi
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . ${ROOT}/script/jenkins-utilities || { echo "Cannot load jenkins-utilities"; exit 1; }
 . ${ROOT}/script/presubmits || { echo "Cannot load presubmits"; exit 1; }
@@ -52,18 +66,6 @@ while getopts :b:d:r:s: arg; do
     *) echo "Invalid option: -${OPTARG}";;
   esac
 done
-
-# "t" tests fail if run under root. So presubmit should run as jenkins user
-USER="jenkins"
-HOME="/home/${USER}"
-
-set -x
-groupadd -g 10000 ${USER}
-useradd -c "Jenkins user" -d ${HOME} -u 10000 -g 10000 -m ${USER} -s /bin/bash
-su ${USER}
-set +x
-
-echo "Current user is: $(whoami)"
 
 [[ -z "${RUN_ID}" ]] && RUN_ID="${SCENARIO}-$(date +"%Y%m%d%H%M%S")"
 [[ -z "${LOG_DIR}" ]] && LOG_DIR="$(mktemp -d /tmp/presubmits.XXXXX)"
