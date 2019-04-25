@@ -56,9 +56,12 @@ done
 # "t" tests fail if run under root. So presubmit should run as jenkins user
 USER="jenkins"
 HOME="/home/${USER}"
+
+set -x
 groupadd -g 10000 ${USER}
 useradd -c "Jenkins user" -d ${HOME} -u 10000 -g 10000 -m ${USER} -s /bin/bash
 su ${USER}
+set +x
 
 echo "Current user is: $(whoami)"
 
