@@ -52,7 +52,7 @@ SUPPORTED_STAGES = [
 ]
 
 // Supported VM Images
-SLAVE_IMAGE = 'gcr.io/endpoints-jenkins/debian-9:0.4'
+SLAVE_IMAGE = 'gcr.io/endpoints-jenkins/debian-9:0.5'
 
 // Release Qualification end to end tests.
 // If RAPTURE_REPO build parameter is set only those test will run.
@@ -210,11 +210,7 @@ def presubmit() {
   def branches = [
       'asan': {
         BuildNode {
-          //Temporarily disable the asan presubmit tests.
-          //Jenkins slave image is upgraded to Debiain9 which
-          //has gcc 6.3 installed, asan test fails due to issue
-          //https://github.com/cloudendpoints/esp/issues/546
-          //presubmitTests('asan')
+          presubmitTests('asan')
         }
       },
       'build-and-test': {
