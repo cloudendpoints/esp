@@ -52,7 +52,7 @@ SUPPORTED_STAGES = [
 ]
 
 // Supported VM Images
-SLAVE_IMAGE = 'gcr.io/endpoints-jenkins/debian-8:0.12'
+SLAVE_IMAGE = 'gcr.io/endpoints-jenkins/debian-9:0.1'
 
 // Release Qualification end to end tests.
 // If RAPTURE_REPO build parameter is set only those test will run.
@@ -210,7 +210,7 @@ def presubmit() {
   def branches = [
       'asan': {
         BuildNode {
-          presubmitTests('asan')           
+          presubmitTests('asan')
         }
       },
       'build-and-test': {
@@ -228,7 +228,7 @@ def presubmit() {
         BuildNode {
           //Temporarily disable the tsan presubmit tests
           //as a workaround before the Jenkins problem is resolved.
-          //To-do: enable the tsan presubmit tests after 
+          //To-do: enable the tsan presubmit tests after
           //the Jenkins problem is resolved.
           //presubmitTests('tsan')
         }
@@ -808,7 +808,8 @@ def stashSourceCode() {
 }
 
 def checkoutSourceCode() {
-  deleteDir()
+  //Somehow failed to delete some files.
+  //deleteDir()
   echo('Unstashing source code')
   fastUnstash('src-code')
   sh("git diff")
@@ -874,9 +875,9 @@ def initialize() {
 }
 
 def DefaultNode(Closure body) {
-  podTemplate(label: 'debian-8-pod', cloud: 'kubernetes', containers: [
+  podTemplate(label: 'debian-9-pod', cloud: 'kubernetes', containers: [
       containerTemplate(
-          name: 'debian-8',
+          name: 'debian-9',
           image: SLAVE_IMAGE,
           args: 'cat',
           ttyEnabled: true,
@@ -888,10 +889,10 @@ def DefaultNode(Closure body) {
           resourceRequestMemory: '4Gi',
           resourceLimitMemory: '64Gi',
           envVars: [
-              envVar(key: 'PLATFORM', value: 'debian-8')
+              envVar(key: 'PLATFORM', value: 'debian-9')
           ])]) {
-    node('debian-8-pod') {
-      container('debian-8') {
+    node('debian-9-pod') {
+      container('debian-9') {
         body()
       }
     }
@@ -899,9 +900,9 @@ def DefaultNode(Closure body) {
 }
 
 def BuildNode(Closure body) {
-  podTemplate(label: 'debian-8-pod', cloud: 'kubernetes', containers: [
+  podTemplate(label: 'debian-9-pod', cloud: 'kubernetes', containers: [
       containerTemplate(
-          name: 'debian-8',
+          name: 'debian-9',
           image: SLAVE_IMAGE,
           args: 'cat',
           ttyEnabled: true,
@@ -913,10 +914,10 @@ def BuildNode(Closure body) {
           resourceRequestMemory: '8Gi',
           resourceLimitMemory: '64Gi',
           envVars: [
-              envVar(key: 'PLATFORM', value: 'debian-8')
+              envVar(key: 'PLATFORM', value: 'debian-9')
           ])]) {
-    node('debian-8-pod') {
-      container('debian-8') {
+    node('debian-9-pod') {
+      container('debian-9') {
         body()
       }
     }

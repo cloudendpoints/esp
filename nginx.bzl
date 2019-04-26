@@ -54,6 +54,11 @@ def nginx_test(name, nginx, data=None, env=None, config=None, **kwargs):
   l = Label(nginx)
   env["TEST_PORT"] = "%s" % port
 
+  # This hack is required by Jenkins tests.
+  # Its slave container run as root, if nginx run as non-root
+  # it fails to open some temp files, all "t" tests will fail.
+  env["TEST_NGINX_GLOBALS"] = "user root;\n"
+
   env_files = {
       "TEST_NGINX_BINARY": "../__main__/" + l.package + "/" + l.name
   }
