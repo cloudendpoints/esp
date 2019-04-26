@@ -1,3 +1,5 @@
+#!/bin/bash
+#
 # Copyright (C) Extensible Service Proxy Authors
 # All rights reserved.
 #
@@ -24,39 +26,31 @@
 #
 ################################################################################
 #
-load("@io_bazel_rules_perl//perl:perl.bzl", "perl_library")
-load("//:nginx.bzl", "nginx_suite")
+# May require sudo login.
 
-perl_library(
-    name = "nginx_test",
-    srcs = glob([
-        "nginx-tests/lib/Test/**/*.pm",
-    ]),
-    visibility = ["//visibility:public"],
-)
+if [[ "$(uname)" != "Linux" ]]; then
+  echo "Run on Linux only."
+  exit 1
+fi
 
-# Nginx test suite containing all of the integration tests
-# included with Nginx.
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+. ${DIR}/all-utilities || { echo "Cannot load Bash utilities" ; exit 1 ; }
 
-nginx_suite(
-    nginx = "//src/nginx/main:nginx-esp",
-    tags = ["exclusive"],
-    tests = glob(
-        ["nginx-tests/*.t"],
-        exclude = [
-            # ssl.t, ssl_certificates.t, ssl_stapling are excluded from the
-            # test suite because boring ssl does not support renegotiation
-            # feature required by the test.
-            "nginx-tests/ssl.t",
-            "nginx-tests/ssl_certificates.t",
-            "nginx-tests/ssl_stapling.t",
-            # Jenkins tests require root so env(TEST_NGINX_GLOBALS) adds
-            # "user root;" in nginx.bzl. But this test also adds "user root;"
-            # so it fails. Just skip it for now.
-            "nginx-tests/proxy_bind_transparent.t",
-        ],
-    ),
-    deps = [
-        ":nginx_test",
-    ],
-)
+# asan tests only works for 4.9
+GCC_VERSION='4.9'
+
+function install_gcc() {
+  echo "Installing gcc-${GCC_VERSION}"
+  clear_apt
+  echo "deb http://ftp.us.debian.org/debian/ jessie main contrib non-free" >> /etc/apt/sources.list
+  echo "deb-src http://ftp.us.debian.org/debian/ jessie main contrib non-free" >> /etc/apt/sources.list
+  apt update
+  apt -y install g++-${GCC_VERSION}
+  update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${GCC_VERSION} 1000
+  update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${GCC_VERSION} 1000
+  update-alternatives --config gcc
+  update-alternatives --config g++
+  return 0
+}
+
+

@@ -9,7 +9,7 @@
 # 4) docker build --no-cache -t "${IMAGE}" test/grpc
 # 5) gcloud docker -- push "${IMAGE}"
 
-FROM debian:jessie
+FROM debian:stretch-backports
 
 # Install all of the needed dependencies
 
