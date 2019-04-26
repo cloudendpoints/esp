@@ -43,7 +43,7 @@ my $NginxPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $GrpcBackendPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(4);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(5);
 
 $t->write_file(
     'service.pb.txt',
@@ -91,6 +91,12 @@ is($t->waitforsocket("127.0.0.1:${NginxPort}"), 1, 'Nginx socket ready.');
 # --------------------------------------------------------------------------------
 #
 ##################################################################################
+my $proto_request = ServiceControl::convert_proto(<<"EOF", 'interop_request', 'binary');
+{
+   "response_size": 10
+}
+EOF
+my $proto_request_len = length($proto_request);
 
 my $response = ApiManager::http($NginxPort,qq{
 POST /grpc.testing.TestService/UnaryCall HTTP/1.0
@@ -98,16 +104,22 @@ Host: 127.0.0.1:${NginxPort}
 Content-Type: application/grpc-web
 x-api-key: api-key
 x-grpc-test-echo-trailing-bin: abcdef
-Content-Length: 8
+Content-Length: $proto_request_len
 
-\x00\x00\x00\x00\x02\x10\x0a});
+$proto_request});
 
-is(ApiManager::http_response_body($response),
-"\x00\x00\x00\x00\x0e\x0a".
-"\x0c\x12\x0a".
-"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x00\x00\x007grpc-status: 0\x0d\x0a".
-"x-grpc-test-echo-trailing-bin: abcdeQ\x0d\x0a",
-'UnaryCall returns OK.');
+my $response_body = ApiManager::http_response_body($response);
+my $data_frame = substr $response_body, 0, 19;
+is($data_frame, "\x00\x00\x00\x00\x0e\x0a".
+"\x0c\x12\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", 'data frame is correct');
+
+my $trailer = substr $response_body, 19;
+my $trailer_json = ServiceControl::convert_proto($trailer, 'grpc_web_trailer', 'json');
+my $expected_trailer = {
+   'grpc-status' => '0',
+   'x-grpc-test-echo-trailing-bin' => 'abcdeQ',
+};
+ok(ServiceControl::compare_json($trailer_json, $expected_trailer), 'trailer is correct.');
 
 $t->stop_daemons();
 

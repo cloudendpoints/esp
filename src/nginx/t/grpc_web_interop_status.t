@@ -43,7 +43,7 @@ my $NginxPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $GrpcBackendPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(4);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(5);
 
 $t->write_file(
     'service.pb.txt',
@@ -91,19 +91,42 @@ is($t->waitforsocket("127.0.0.1:${NginxPort}"), 1, 'Nginx socket ready.');
 # --------------------------------------------------------
 #
 ################################################################################
-my $response = ApiManager::http($NginxPort,qq{
+
+sub verify_grpc_message {
+  my ($send_msg, $recv_msg) = @_;
+
+  my $proto_request = ServiceControl::convert_proto(<<"EOF", 'interop_request', 'binary');
+{
+  "response_status": {
+     "code": 4,
+     "message": "$send_msg"
+  }
+}
+EOF
+  my $proto_request_len = length($proto_request);
+
+  my $response = ApiManager::http($NginxPort,qq{
 POST /grpc.testing.TestService/UnaryCall HTTP/1.0
 Host: 127.0.0.1:${NginxPort}
 Content-Type: application/grpc-web
 x-api-key: api-key
-Content-Length: 15
+Content-Length: $proto_request_len
 
-\x00\x00\x00\x00\x0a\x3a\x08\x08\x04\x12\x04\x74\x65\x73\x74});
+$proto_request});
 
-is(ApiManager::http_response_body($response),
-"\x80\x00\x00\x00\x24grpc-status: 4\x0d\x0a".
-"grpc-message: test\x0d\x0a",
-'UnaryCall returns expected error code(4) and message(test).');
+  my $grpc_trailer = ApiManager::http_response_body($response);
+  my $trailer_json = ServiceControl::convert_proto($grpc_trailer, 'grpc_web_trailer', 'json');
+  my $expected_trailer = {
+    'grpc-status' => '4',
+    'grpc-message' => $recv_msg,
+  };
+  ok(ServiceControl::compare_json($trailer_json, $expected_trailer), 'trailer is correct.');
+}
+
+verify_grpc_message("test", "test");
+verify_grpc_message(
+'\t\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\t\n',
+'%09%0Atest%20with%20whitespace%0D%0Aand%20Unicode%20BMP%20%E2%98%BA%20and%20non-BMP%20%F0%9F%98%88%09%0A');
 
 $t->stop_daemons();
 

@@ -108,7 +108,8 @@ ngx_int_t GrpcFinish(
   // Status-Message
   if (!status.ok()) {
     ngx_str_t message;
-    if (ngx_str_copy_from_std(r->pool, status.message(), &message) != NGX_OK) {
+    if (ngx_str_copy_from_std(r->pool, grpc_percent_encode(status.message()),
+                              &message) != NGX_OK) {
       ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0,
                     "Failed to convert gRPC status message.");
       return NGX_DONE;

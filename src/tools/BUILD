@@ -67,8 +67,10 @@ cc_binary(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "//external:absl_strings",
         "//external:api_manager",
         "//external:servicecontrol",
+        "@com_github_grpc_grpc//src/proto/grpc/testing:messages_proto",
     ],
 )
 
