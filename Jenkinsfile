@@ -812,7 +812,7 @@ def stashSourceCode() {
 }
 
 def checkoutSourceCode() {
-  deleteDir()
+  //deleteDir()
   echo('Unstashing source code')
   fastUnstash('src-code')
   sh("git diff")
