@@ -139,7 +139,7 @@ __EOF__
 # Creating and activating a service
 function create_service() {
   local esp_service="${1}"
-  local swagger_json="${2}"
+  local swagger_json="${@:2}"
   local output=''
   local operation=''
   local version=''

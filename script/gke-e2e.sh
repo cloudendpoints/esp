@@ -29,11 +29,6 @@
 
 SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ESP_ROOT="$(cd "${SCRIPT_PATH}/../" && pwd)"
-YAML_FILE_TEMP="${ESP_ROOT}/test/bookstore/gke/deploy_secure_template.yaml"
-YAML_FILE="${ESP_ROOT}/test/bookstore/gke/deploy_secure.yaml"
-SERVICE_IDL="${ESP_ROOT}/test/bookstore/swagger_template.json"
-# GKE service name in the deploy.yaml
-GKE_SERVICE_NAME="bookstore"
 
 . ${ESP_ROOT}/script/jenkins-utilities || { echo "Cannot load Jenkins Bash utilities" ; exit 1 ; }
 
@@ -67,14 +62,31 @@ function get_service_ip () {
 
 e2e_options "${@}"
 
-TEST_ID="gke-${COUPLING_OPTION}-${TEST_TYPE}-${BACKEND}-secure"
+if [[ "${BACKEND}" == 'bookstore' ]]; then
+  YAML_FILE_TEMP="${ESP_ROOT}/test/bookstore/gke/deploy_secure_template.yaml"
+  SERVICE_IDL="${ESP_ROOT}/test/bookstore/swagger_template.json"
+  # GKE service name in the deploy.yaml
+  GKE_SERVICE_NAME="bookstore"
+  TEST_ID_SUFFIX="secure"
+  PROTO_DESCRIPTOR=
+elif [[ "${BACKEND}" == 'interop' ]]; then
+  YAML_FILE_TEMP="${ESP_ROOT}/test/grpc/gke/interop.yaml.temp"
+  SERVICE_IDL="${ESP_ROOT}/test/grpc/grpc-interop.yaml"
+  # GKE service name in the deploy.yaml
+  GKE_SERVICE_NAME="interop"
+  TEST_ID_SUFFIX="grpc-ssl"
+  PROTO_DESCRIPTOR="bazel-genfiles/test/grpc/grpc-interop.descriptor"
+fi
+
+TEST_ID="gke-${COUPLING_OPTION}-${TEST_TYPE}-${BACKEND}-${TEST_ID_SUFFIX}"
 ESP_SERVICE="${TEST_ID}.${PROJECT_ID}.appspot.com"
 NAMESPACE="${UNIQUE_ID}"
 
 sed -i "s|\${ENDPOINT_SERVICE}|${ESP_SERVICE}|g" ${SERVICE_IDL}
 # Deploy new service config
-create_service "${ESP_SERVICE}" "${SERVICE_IDL}"
+create_service "${ESP_SERVICE}" "${SERVICE_IDL}" "${PROTO_DESCRIPTOR}"
 
+YAML_FILE="$(mktemp /tmp/yaml.XXXX)"
 sed -e "s|\$BACKEND_IMAGE|${BOOKSTORE_IMAGE}|g" \
     -e "s|\$ESP_IMAGE|${ESP_IMAGE}|g" \
     -e "s|\${ENDPOINT_SERVICE}|${ESP_SERVICE}|g" \
@@ -85,11 +97,24 @@ trap cleanup EXIT
 
 # Testing protocol
 run kubectl create namespace "${NAMESPACE}" || error_exit "Namespace already exists"
+
+if [[ "${BACKEND}" == 'interop' ]]; then
+  run kubectl -n "${NAMESPACE}" create secret generic grpc-ssl \
+    --from-file=${ESP_ROOT}/src/nginx/t/testdata/grpc/cacert.pem \
+    --from-file=${ESP_ROOT}/src/nginx/t/testdata/grpc/servercert.pem \
+    --from-file=${ESP_ROOT}/src/nginx/t/testdata/grpc/serverkey.pem
+fi
+
 run kubectl create -f ${YAML_FILE}          --namespace "${NAMESPACE}"
 run kubectl get services -o yaml            --namespace "${NAMESPACE}"
 run kubectl get deployments -o yaml         --namespace "${NAMESPACE}"
 
-HOST="http://$(get_service_ip "${NAMESPACE}" "${GKE_SERVICE_NAME}")"
+SERVICE_IP=$(get_service_ip "${NAMESPACE}" "${GKE_SERVICE_NAME}")
+if [[ "${BACKEND}" == 'bookstore' ]]; then
+  HOST="http://${SERVICE_IP}"
+elif [[ "${BACKEND}" == 'interop' ]]; then
+  HOST="${SERVICE_IP}:8080"
+fi
 echo "=== Use the host: ${HOST}";
 
 LOG_DIR="$(mktemp -d /tmp/log.XXXX)"
