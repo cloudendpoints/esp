@@ -205,7 +205,8 @@ while true; do
   detect_memory_leak_check ${RUN_COUNT}
 
   # Break if test has run long enough.
-  [[ $(date +"%s") -lt ${END_TIME} ]] || break
+  #  [[ $(date +"%s") -lt ${END_TIME} ]] || break
+  [[ ${RUN_COUNT} -lt 2 ]] || break
 done
 
 popd > /dev/null
