@@ -52,7 +52,7 @@ spec:
         args: [
           "--http2_port=8080",
           "--backend=grpc://127.0.0.1:8081",
-          "--service=${ENDPOINT_SERVICE}"",
+          "--service=${ENDPOINT_SERVICE}",
           "--rollout_strategy=managed",
           "--enable_grpc_backend_ssl",
           "--grpc_backend_ssl_root_certs_file=/etc/grpc/ssl/cacert.pem",

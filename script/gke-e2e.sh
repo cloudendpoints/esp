@@ -68,23 +68,23 @@ if [[ "${BACKEND}" == 'bookstore' ]]; then
   # GKE service name in the deploy.yaml
   GKE_SERVICE_NAME="bookstore"
   TEST_ID_SUFFIX="secure"
-  PROTO_DESCRIPTOR=
+  CREATE_SERVICE_ARGS="${SERVICE_IDL}"
 elif [[ "${BACKEND}" == 'interop' ]]; then
   YAML_FILE_TEMP="${ESP_ROOT}/test/grpc/gke/interop.yaml.temp"
   SERVICE_IDL="${ESP_ROOT}/test/grpc/grpc-interop.yaml"
   # GKE service name in the deploy.yaml
   GKE_SERVICE_NAME="interop"
   TEST_ID_SUFFIX="grpc-ssl"
-  PROTO_DESCRIPTOR="bazel-genfiles/test/grpc/grpc-interop.descriptor"
+  CREATE_SERVICE_ARGS="${SERVICE_IDL} bazel-genfiles/test/grpc/grpc-interop.descriptor"
 fi
 
 TEST_ID="gke-${COUPLING_OPTION}-${TEST_TYPE}-${BACKEND}-${TEST_ID_SUFFIX}"
 ESP_SERVICE="${TEST_ID}.${PROJECT_ID}.appspot.com"
 NAMESPACE="${UNIQUE_ID}"
 
-sed -i "s|\${ENDPOINT_SERVICE}|${ESP_SERVICE}|g" ${SERVICE_IDL}
+sed -i "s|\${ENDPOINT_SERVICE}|${ESP_SERVICE}|g" "${SERVICE_IDL}"
 # Deploy new service config
-create_service "${ESP_SERVICE}" "${SERVICE_IDL}" "${PROTO_DESCRIPTOR}"
+create_service "${ESP_SERVICE}" "${CREATE_SERVICE_ARGS}"
 
 YAML_FILE="$(mktemp /tmp/yaml.XXXX)"
 sed -e "s|\$BACKEND_IMAGE|${BOOKSTORE_IMAGE}|g" \
