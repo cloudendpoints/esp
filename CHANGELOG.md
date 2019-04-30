@@ -1,3 +1,29 @@
+# Release 1.32.0 30-04-2019
+
+TODO: Edit the section below before submitting! DIRECTORY /usr/local/google/home/yonggangl/esp/esp
+===============================================
+
+- fix memory leak in percent_encode (#592)
+
+- Percent encode for grpc tailer: grpc-message (#588)
+
+- Polish the Check response error messages (#587)
+
+- Fix grpc_backend_ssl server_config format (#585)
+
+- Add 4 grpc_backend_ssl flags (#584)
+
+- Support SSL for gRPC backend (#582)
+
+-  Handle API_TARGET_BLOCKED and RESOURCE_EXHAUSTED (#581)
+
+- Override Compute Platform in serverless docker image (#579)
+
+- Fix the crash from undefined reference in start_esp.py (#578)
+
+
+TODO: Edit the section above before submitting! DIRECTORY /usr/local/google/home/yonggangl/esp/esp
+===============================================
 # Release 1.31.0 01-04-2019
 
 - Support large_client_header_buffers via flag (#571)
