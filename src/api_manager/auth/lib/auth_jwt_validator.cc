@@ -677,6 +677,8 @@ bool JwtValidatorImpl::ExtractPubkeyFromJwkEC(const grpc_json *jkey) {
     gpr_log(GPR_ERROR, "Could not populate ec key coordinates.");
     return false;
   }
+  BN_free(bn_x);
+  BN_free(bn_y);
   return true;
 }
 

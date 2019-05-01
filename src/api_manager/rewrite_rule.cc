@@ -297,15 +297,15 @@ bool RewriteRule::Check(const char *uri, size_t uri_len,
     rewrite_log << kEspRewriteTitle
                 << ": request uri=" << std::string(uri, uri_len) << std::endl;
 
-    const char *psub_str_match_str;
     for (int j = 0; j < pcre_exec_ret; j++) {
+      const char *psub_str_match_str;
       pcre_get_substring(uri, sub_str_vec, pcre_exec_ret, j,
                          &(psub_str_match_str));
 
       rewrite_log << kEspRewriteTitle << ": $" << std::to_string(j) << ": "
                   << std::string(psub_str_match_str) << std::endl;
+      pcre_free_substring(psub_str_match_str);
     }
-    pcre_free_substring(psub_str_match_str);
 
     rewrite_log << kEspRewriteTitle << ": replacement: " << replacement_
                 << std::endl;

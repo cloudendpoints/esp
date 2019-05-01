@@ -16,18 +16,24 @@
 //
 #include "src/api_manager/auth/lib/json.h"
 #include "gtest/gtest.h"
+#include "src/api_manager/auth/lib/auth_token.h"
 
 namespace google {
 namespace api_manager {
 namespace auth {
+
+void VerifyWriteUserInfo(const char* expected_json, const UserInfo& user_info) {
+  char* json_str = WriteUserInfoToJson(user_info);
+  ASSERT_STREQ(expected_json, json_str);
+  esp_grpc_free(json_str);
+}
 
 TEST(EspJsonTest, NormalDataTest) {
   UserInfo user_info{"id", "email", "consumer_id", "iss", {"aud"}};
   static const char expected_json[] =
       "{\"issuer\":\"iss\",\"id\":\"id\",\"email\":\"email\",\"consumer_id\":"
       "\"consumer_id\"}";
-
-  ASSERT_STREQ(expected_json, WriteUserInfoToJson(user_info));
+  VerifyWriteUserInfo(expected_json, user_info);
 }
 
 TEST(EspJsonTest, DoubleQuoteTest) {
@@ -35,8 +41,7 @@ TEST(EspJsonTest, DoubleQuoteTest) {
   static const char expected_json[] =
       "{\"issuer\":\"iss\",\"id\":\"id\",\"email\":\"email \\\"with\\\" "
       "quote\",\"consumer_id\":\"consumer_id\"}";
-
-  ASSERT_STREQ(expected_json, WriteUserInfoToJson(user_info));
+  VerifyWriteUserInfo(expected_json, user_info);
 }
 
 TEST(EspJsonTest, SingleQuoteTest) {
@@ -44,8 +49,7 @@ TEST(EspJsonTest, SingleQuoteTest) {
   static const char expected_json[] =
       "{\"issuer\":\"iss\",\"id\":\"id\",\"email\":\"email 'with' "
       "quote\",\"consumer_id\":\"consumer_id\"}";
-
-  ASSERT_STREQ(expected_json, WriteUserInfoToJson(user_info));
+  VerifyWriteUserInfo(expected_json, user_info);
 }
 
 TEST(EspJsonTest, SlashTest) {
@@ -53,8 +57,7 @@ TEST(EspJsonTest, SlashTest) {
   static const char expected_json[] =
       "{\"issuer\":\"iss\",\"id\":\"id\",\"email\":\"email \\\\with\\\\ "
       "quote\",\"consumer_id\":\"consumer_id\"}";
-
-  ASSERT_STREQ(expected_json, WriteUserInfoToJson(user_info));
+  VerifyWriteUserInfo(expected_json, user_info);
 }
 
 }  // namespace auth

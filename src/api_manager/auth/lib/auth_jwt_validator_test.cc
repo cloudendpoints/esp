@@ -531,7 +531,7 @@ TEST_F(JwtValidatorTest, ParseToken) {
   ASSERT_EQ(status.message(), "BAD_FORMAT") << status.message();
 }
 
-TEST_F(JwtValidatorTest, WrongKey) {
+TEST_F(JwtValidatorTest, WrongX509Key) {
   char *token = esp_get_auth_token(kWrongPrivateKey, kAudience);
   ASSERT_TRUE(token != nullptr);
   UserInfo user_info;
@@ -545,9 +545,23 @@ TEST_F(JwtValidatorTest, WrongKey) {
   ASSERT_FALSE(status.ok());
   ASSERT_EQ(status.message(), "KEY_RETRIEVAL_ERROR") << status.message();
 
+  esp_grpc_free(token);
+}
+
+TEST_F(JwtValidatorTest, WrongJwkKey) {
+  char *token = esp_get_auth_token(kWrongPrivateKey, kAudience);
+  ASSERT_TRUE(token != nullptr);
+  UserInfo user_info;
+
+  std::unique_ptr<JwtValidator> validator =
+      JwtValidator::Create(token, strlen(token));
+  Status status = validator->Parse(&user_info);
+  ASSERT_TRUE(status.ok());
+
   status = validator->VerifySignature(kPublicKeyJwk, strlen(kPublicKeyJwk));
   ASSERT_FALSE(status.ok());
   ASSERT_EQ(status.message(), "KEY_RETRIEVAL_ERROR") << status.message();
+  esp_grpc_free(token);
 }
 
 TEST_F(JwtValidatorTest, TokenWithAuthorizedParty) {

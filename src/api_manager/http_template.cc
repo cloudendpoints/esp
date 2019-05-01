@@ -366,14 +366,14 @@ const char HttpTemplate::kWildCardPathPartKey[] = "*";
 
 const char HttpTemplate::kWildCardPathKey[] = "**";
 
-HttpTemplate *HttpTemplate::Parse(const std::string &ht) {
+std::unique_ptr<HttpTemplate> HttpTemplate::Parse(const std::string &ht) {
   Parser p(ht);
   if (!p.Parse() || !p.ValidateParts()) {
     return nullptr;
   }
 
-  return new HttpTemplate(std::move(p.segments()), std::move(p.verb()),
-                          std::move(p.variables()));
+  return std::unique_ptr<HttpTemplate>(new HttpTemplate(
+      std::move(p.segments()), std::move(p.verb()), std::move(p.variables())));
 }
 
 }  // namespace api_manager
