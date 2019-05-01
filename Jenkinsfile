@@ -274,6 +274,11 @@ def e2eTest() {
           gkeSecureE2eTest()
         }
       }],
+      ['gke-tight-interop-grpc-ssl', {
+        DefaultNode {
+          gkeInteropGrpcSslTest()
+        }
+      }],
       ['gke-tight-http-managed', {
         DefaultNode {
           e2eGKE('tight', 'http', 'managed')
@@ -567,6 +572,26 @@ def gkeSecureE2eTest() {
       " -g ${backend}" +
       " -b " + backendImage(backend) +
       " -e " + espSecureDockerImage() +
+      " -i ${uniqueID}" +
+      " -B ${BUCKET}" +
+      " -l " + getParam('DURATION_HOUR', 0) +
+      (getParam('SKIP_CLEANUP', false) ? " -s" : ""))
+}
+
+// Perform E2E test in GKE for grpc ssl interop
+def gkeInteropGrpcSslTest() {
+  setupNode()
+  fastUnstash('tools')
+  def coupling = 'tight'
+  def proto = 'grpc'
+  def backend = 'interop'
+  def uniqueID = getUniqueID("gke-${coupling}-${proto}-${backend}-grpc-ssl", true)
+  sh("script/gke-e2e.sh " +
+      " -c ${coupling}" +
+      " -t ${proto}" +
+      " -g ${backend}" +
+      " -b " + backendImage(backend) +
+      " -e " + espDockerImage() +
       " -i ${uniqueID}" +
       " -B ${BUCKET}" +
       " -l " + getParam('DURATION_HOUR', 0) +

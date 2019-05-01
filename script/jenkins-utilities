@@ -139,13 +139,12 @@ __EOF__
 # Creating and activating a service
 function create_service() {
   local esp_service="${1}"
-  local swagger_json="${2}"
   local output=''
   local operation=''
   local version=''
 
   echo 'Deploying service'
-  retry -n 3 run ${GCLOUD} endpoints services deploy "${swagger_json}"
+  retry -n 3 run ${GCLOUD} endpoints services deploy ${@:2}
 
   retry -n 5 set_esp_service_version "${esp_service}" \
     || error_exit 'Could not fetch the service version.'
