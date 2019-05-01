@@ -106,6 +106,7 @@ TEST_F(AuthTokenTest, ParseServiceAccountToken) {
       good_token_, strlen(good_token_), &token, &expires));
   ASSERT_STREQ("ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_QtAS08i85nHq39HE3C2LTrCARA",
                token);
+  free(token);
   ASSERT_EQ(3599, expires);
 }
 

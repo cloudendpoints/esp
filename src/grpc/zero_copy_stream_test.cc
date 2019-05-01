@@ -52,7 +52,12 @@ grpc_byte_buffer *CreateByteBuffer(const SliceData &slices) {
                    return grpc_slice_from_copied_buffer(&slice[0],
                                                         slice.size());
                  });
-  return grpc_raw_byte_buffer_create(grpc_slices.data(), grpc_slices.size());
+  auto out =
+      grpc_raw_byte_buffer_create(grpc_slices.data(), grpc_slices.size());
+  for (auto &slice : grpc_slices) {
+    grpc_slice_unref(slice);
+  }
+  return out;
 }
 
 unsigned DelimiterToSize(const unsigned char *delimiter) {
