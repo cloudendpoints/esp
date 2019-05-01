@@ -1,3 +1,11 @@
+# Release 1.32.0 30-04-2019
+
+- Percent encode for grpc tailer: grpc-message (#588)
+- Support SSL for gRPC backend (#582)
+- Handle API_TARGET_BLOCKED and RESOURCE_EXHAUSTED (#581)
+- Override Compute Platform in serverless docker image (#579)
+
+===============================================
 # Release 1.31.0 01-04-2019
 
 - Support large_client_header_buffers via flag (#571)
