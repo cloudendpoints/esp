@@ -69,7 +69,7 @@ function test_asan() {
   local error='Asan Unit, Integration, NGINX, start_esp tests failed'
   echo "${message}..."
   ${BAZEL} ${BAZEL_ARGS} test --test_output=errors --config=asan \
-      //src/api_manager/... //src/grpc/... \
+      //src/... //src/grpc/... \
     || { echo "${error}..."; return 1; }
 }
 
