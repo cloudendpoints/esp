@@ -59,6 +59,9 @@ done
 LOG_FILE="${LOG_DIR}/${SCENARIO}.log"
 JSON_FILE="${LOG_DIR}/${SCENARIO}.json"
 
+echo "gcc version:"
+gcc --version
+
 case $SCENARIO in
   asan) log_output asan;;
   build-and-test) log_output build_and_test;;
