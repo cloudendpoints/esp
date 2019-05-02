@@ -39,7 +39,6 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . ${DIR}/tools/linux-install-bazel || error_exit "Cannot load Bazel install script"
 . ${DIR}/tools/linux-install-docker || error_exit "Cannot load Docker install script"
 . ${DIR}/tools/linux-install-clang || error_exit "Cannot load Clang install script"
-. ${DIR}/tools/linux-install-gcc || error_exit "Cannot load gcc install script"
 . ${DIR}/tools/linux-install-gcloud || error_exit "Cannot load gcloud install script"
 . ${DIR}/tools/linux-install-wrk || error_exit "Cannot load wrk install script"
 . ${DIR}/tools/linux-install-nodejs || error_exit "Cannot load nodejs install script"
@@ -114,7 +113,6 @@ else
   mkdir -p "${TOOLS_DIR}" -m 0777
 fi
 update_clang
-install_gcc
 update_gcloud
 update_bazel
 install_docker_for_debian9
