@@ -48,6 +48,9 @@ cc_test(
         "auth_jwt_validator_test.cc",
     ],
     linkstatic = 1,
+    # With gcc-6.3.0 from debian9, asan test has false alarm
+    # inside openSSL code.
+    tags = ["no_asan"],
     deps = [
         ":lib",
         "//external:googletest_main",
