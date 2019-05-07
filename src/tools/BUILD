@@ -60,6 +60,8 @@ cc_binary(
     ],
 )
 
+# This standalone binary can be used to debug
+# a JWT token with its public key.
 cc_binary(
     name = "verify_token",
     srcs = [

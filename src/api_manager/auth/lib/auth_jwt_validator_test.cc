@@ -397,7 +397,7 @@ void TestTokenWithPubkey(char *token, const char *pkey) {
   std::unique_ptr<JwtValidator> validator =
       JwtValidator::Create(token, strlen(token));
   Status status = validator->Parse(&user_info);
-  EXPECT_TRUE(status.ok());
+  EXPECT_OK(status);
   EXPECT_EQ(status.message(), "");
   EXPECT_EQ(kUserId, user_info.id);
   EXPECT_TRUE(user_info.audiences.end() != user_info.audiences.find(kAudience));
@@ -405,7 +405,7 @@ void TestTokenWithPubkey(char *token, const char *pkey) {
   EXPECT_EQ(kUserId, user_info.issuer);
 
   status = validator->VerifySignature(pkey, strlen(pkey));
-  EXPECT_TRUE(status.ok());
+  EXPECT_OK(status);
   EXPECT_EQ(status.message(), "");
 
   // Wrong length.
@@ -418,7 +418,7 @@ void TestTokenWithPubkey(char *token, const char *pkey) {
   // Wrong key length.
   validator = JwtValidator::Create(token, strlen(token));
   status = validator->Parse(&user_info);
-  EXPECT_TRUE(status.ok());
+  EXPECT_OK(status);
   status = validator->VerifySignature(pkey, strlen(pkey) - 1);
   EXPECT_FALSE(status.ok());
   EXPECT_EQ(status.message(), "Invalid JSON for public key")
@@ -427,7 +427,7 @@ void TestTokenWithPubkey(char *token, const char *pkey) {
   // Empty key.
   validator = JwtValidator::Create(token, strlen(token));
   status = validator->Parse(&user_info);
-  EXPECT_TRUE(status.ok());
+  EXPECT_OK(status);
   status = validator->VerifySignature("", 0);
   EXPECT_FALSE(status.ok());
   EXPECT_EQ(status.message(), "Bad public key format: Public key is empty")
@@ -472,7 +472,7 @@ TEST_F(JwtValidatorTest, ParseToken) {
   std::unique_ptr<JwtValidator> validator =
       JwtValidator::Create(kTokenMultiAud, strlen(kTokenMultiAud));
   Status status = validator->Parse(&user_info);
-  EXPECT_TRUE(status.ok());
+  EXPECT_OK(status);
   EXPECT_EQ(user_info.audiences.size(), 2U);
 
   // Token with only one dot.
@@ -553,7 +553,7 @@ TEST_F(JwtValidatorTest, WrongX509Key) {
   std::unique_ptr<JwtValidator> validator =
       JwtValidator::Create(token, strlen(token));
   Status status = validator->Parse(&user_info);
-  EXPECT_TRUE(status.ok());
+  EXPECT_OK(status);
 
   status = validator->VerifySignature(kPublicKeyX509, strlen(kPublicKeyX509));
   EXPECT_FALSE(status.ok());
@@ -573,7 +573,7 @@ TEST_F(JwtValidatorTest, WrongJwkKey) {
   std::unique_ptr<JwtValidator> validator =
       JwtValidator::Create(token, strlen(token));
   Status status = validator->Parse(&user_info);
-  EXPECT_TRUE(status.ok());
+  EXPECT_OK(status);
 
   status = validator->VerifySignature(kPublicKeyJwk, strlen(kPublicKeyJwk));
   EXPECT_FALSE(status.ok());
@@ -591,13 +591,13 @@ TEST_F(JwtValidatorTest, TokenWithAuthorizedParty) {
   std::unique_ptr<JwtValidator> validator =
       JwtValidator::Create(kTokenNoKid, strlen(kTokenNoKid));
   Status status = validator->Parse(&user_info);
-  EXPECT_TRUE(status.ok());
+  EXPECT_OK(status);
   EXPECT_TRUE(user_info.authorized_party.empty());
 
   // Token with "azp" claim.
   validator = JwtValidator::Create(kTokenWithAzp, strlen(kTokenWithAzp));
   status = validator->Parse(&user_info);
-  EXPECT_TRUE(status.ok());
+  EXPECT_OK(status);
   EXPECT_EQ(user_info.authorized_party, kAuthorizedParty);
 }
 
@@ -606,7 +606,7 @@ TEST_F(JwtValidatorTest, ECX509PubKeyNotSupported) {
   std::unique_ptr<JwtValidator> validator =
       JwtValidator::Create(kTokenEC, strlen(kTokenEC));
   Status status = validator->Parse(&user_info);
-  EXPECT_TRUE(status.ok());
+  EXPECT_OK(status);
   status = validator->VerifySignature(kPublicKeyX509, strlen(kPublicKeyX509));
   EXPECT_FALSE(status.ok());
   EXPECT_EQ(status.message(), "Invalid public key: keys field is missing.")
@@ -625,7 +625,7 @@ TEST_F(JwtValidatorTest, WrongKeyEC) {
   std::unique_ptr<JwtValidator> validator =
       JwtValidator::Create(kTokenECWrongKey, strlen(kTokenECWrongKey));
   Status status = validator->Parse(&user_info);
-  EXPECT_TRUE(status.ok());
+  EXPECT_OK(status);
 
   status = validator->VerifySignature(kPublicKeyJwkEC, strlen(kPublicKeyJwkEC));
   EXPECT_FALSE(status.ok());

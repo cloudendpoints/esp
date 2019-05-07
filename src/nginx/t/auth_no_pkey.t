@@ -120,7 +120,7 @@ like($response, qr/WWW-Authenticate: Bearer, error=\"invalid_token\"/, 'Return i
 like($response, qr/Content-Type: application\/json/i,
      'Invalid token returned application/json body');
 like($response, qr/JWT validation failed: Bad JWT format: Invalid JSON in header/i,
-		'JWT error text in the body.');
+     'JWT error text in the body.');
 
 my $bookstore_requests = $t->read_file('bookstore.log');
 is($bookstore_requests, '', 'Request did not reach the backend.');

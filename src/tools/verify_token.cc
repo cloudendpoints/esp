@@ -46,7 +46,7 @@ void print_usage() {
 }
 
 std::string read_file(const char *file) {
-  std::cerr << "==Reading file: " << file << std::endl;
+  std::cout << "==Reading file: " << file << std::endl;
   FILE *fp = fopen(file, "r");
   char buf[MAX_BUF_SIZE];
   size_t buf_len = fread(buf, 1, sizeof(buf), fp);
@@ -60,21 +60,20 @@ int main(int argc, char **argv) {
     print_usage();
     return 1;
   }
-  //  ::google::api_manager::auth::esp_init_grpc_log();
 
   std::string token = read_file(argv[1]);
   std::string jwks = read_file(argv[2]);
 
-  std::cerr << "Token:" << token << std::endl;
-  std::cerr << "Jwks:" << jwks << std::endl;
+  std::cout << "Token:" << token << std::endl;
+  std::cout << "Jwks:" << jwks << std::endl;
 
   auto validator = ::google::api_manager::auth::JwtValidator::Create(
       token.c_str(), token.size());
   ::google::api_manager::UserInfo user_info;
   auto status1 = validator->Parse(&user_info);
-  std::cerr << "Parse result: " << status1.ToString() << std::endl;
+  std::cout << "==Parse result: " << status1.ToString() << std::endl;
 
   auto status2 = validator->VerifySignature(jwks.c_str(), jwks.size());
-  std::cerr << "Varify result: " << status2.ToString() << std::endl;
+  std::cout << "==Varify result: " << status2.ToString() << std::endl;
   return 0;
 }
