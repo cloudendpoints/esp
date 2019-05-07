@@ -27,12 +27,12 @@
 //
 #include <stdio.h>
 #include <string.h>
+#include <iostream>
 #include <memory>
 #include <string>
-#include <iostream>
 
-#include "src/api_manager/auth/lib/auth_token.h"
 #include "src/api_manager/auth/lib/auth_jwt_validator.h"
+#include "src/api_manager/auth/lib/auth_token.h"
 
 namespace {
 
@@ -41,12 +41,11 @@ const int MAX_BUF_SIZE = 10240;
 }  //  namespace
 
 void print_usage() {
-  std::cerr <<
-      "Invalid argument.\n"
-      "Usage: verify_token token_file public_key_file\n";
+  std::cerr << "Invalid argument.\n"
+               "Usage: verify_token token_file public_key_file\n";
 }
 
-std::string read_file(const char* file) {
+std::string read_file(const char *file) {
   std::cerr << "==Reading file: " << file << std::endl;
   FILE *fp = fopen(file, "r");
   char buf[MAX_BUF_SIZE];
@@ -69,7 +68,8 @@ int main(int argc, char **argv) {
   std::cerr << "Token:" << token << std::endl;
   std::cerr << "Jwks:" << jwks << std::endl;
 
-  auto validator = ::google::api_manager::auth::JwtValidator::Create(token.c_str(), token.size());
+  auto validator = ::google::api_manager::auth::JwtValidator::Create(
+      token.c_str(), token.size());
   ::google::api_manager::UserInfo user_info;
   auto status1 = validator->Parse(&user_info);
   std::cerr << "Parse result: " << status1.ToString() << std::endl;
