@@ -119,7 +119,8 @@ like($response, qr/HTTP\/1\.1 401 Unauthorized/, 'Returned HTTP 401, invalid tok
 like($response, qr/WWW-Authenticate: Bearer, error=\"invalid_token\"/, 'Return invalid_token challenge.');
 like($response, qr/Content-Type: application\/json/i,
      'Invalid token returned application/json body');
-like($response, qr/JWT validation failed: BAD_FORMAT/i, 'JWT error text in the body.');
+like($response, qr/JWT validation failed: Bad JWT format: Invalid JSON in header/i,
+     'JWT error text in the body.');
 
 my $bookstore_requests = $t->read_file('bookstore.log');
 is($bookstore_requests, '', 'Request did not reach the backend.');
@@ -143,9 +144,9 @@ my $expected_report_body = ServiceControl::gen_report_body({
   'response_code' => '401',
   'error_type' => '4xx',
   'request_size' => 75,
-  'response_size' => 371,
+  'response_size' => 399,
   'request_bytes' => 75,
-  'response_bytes' => 371,
+  'response_bytes' => 399,
   });
 
 ok(ServiceControl::compare_json($report_body, $expected_report_body), 'Report body was received.');

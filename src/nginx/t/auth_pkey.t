@@ -126,7 +126,8 @@ EOF
   like($response, qr/WWW-Authenticate: Bearer, error=\"invalid_token\"/, 'Returned invalid_token challenge.');
   like($response, qr/Content-Type: application\/json/i,
        'Invalid token returned application/json body.');
-  like($response, qr/JWT validation failed: BAD_FORMAT/i, "Error body contains 'invalid token'.");
+  like($response, qr/JWT validation failed: Bad JWT format: Invalid JSON in header/i,
+       "Error body contains 'invalid token'.");
 
   # Token generated from different issuer/key.
   my $token = Auth::get_auth_token('./src/nginx/t/wrong-client-secret.json');
