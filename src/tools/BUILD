@@ -56,7 +56,17 @@ cc_binary(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//external:api_manager_auth_lib",
+        "//src/api_manager/auth/lib",
+    ],
+)
+
+cc_binary(
+    name = "verify_token",
+    srcs = [
+        "verify_token.cc",
+    ],
+    deps = [
+        "//src/api_manager/auth/lib",
     ],
 )
 

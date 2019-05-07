@@ -391,44 +391,47 @@ class JwtValidatorTest : public ::testing::Test {
 
 // Test JwtValidator class for a given JWT (token) and public key (pkey).
 void TestTokenWithPubkey(char *token, const char *pkey) {
-  ASSERT_TRUE(token != nullptr);
+  EXPECT_TRUE(token != nullptr);
   UserInfo user_info;
 
   std::unique_ptr<JwtValidator> validator =
       JwtValidator::Create(token, strlen(token));
   Status status = validator->Parse(&user_info);
-  ASSERT_TRUE(status.ok());
-  ASSERT_EQ(status.message(), "");
-  ASSERT_EQ(kUserId, user_info.id);
-  ASSERT_TRUE(user_info.audiences.end() != user_info.audiences.find(kAudience));
-  ASSERT_EQ(1U, user_info.audiences.size());
-  ASSERT_EQ(kUserId, user_info.issuer);
+  EXPECT_TRUE(status.ok());
+  EXPECT_EQ(status.message(), "");
+  EXPECT_EQ(kUserId, user_info.id);
+  EXPECT_TRUE(user_info.audiences.end() != user_info.audiences.find(kAudience));
+  EXPECT_EQ(1U, user_info.audiences.size());
+  EXPECT_EQ(kUserId, user_info.issuer);
 
   status = validator->VerifySignature(pkey, strlen(pkey));
-  ASSERT_TRUE(status.ok());
-  ASSERT_EQ(status.message(), "");
+  EXPECT_TRUE(status.ok());
+  EXPECT_EQ(status.message(), "");
 
   // Wrong length.
   validator = JwtValidator::Create(token + 1, strlen(token));
   status = validator->Parse(&user_info);
-  ASSERT_FALSE(status.ok());
-  ASSERT_EQ(status.message(), "BAD_FORMAT") << status.message();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.message(), "Bad JWT format: Invalid JSON in header")
+      << status.message();
 
   // Wrong key length.
   validator = JwtValidator::Create(token, strlen(token));
   status = validator->Parse(&user_info);
-  ASSERT_TRUE(status.ok());
+  EXPECT_TRUE(status.ok());
   status = validator->VerifySignature(pkey, strlen(pkey) - 1);
-  ASSERT_FALSE(status.ok());
-  ASSERT_EQ(status.message(), "KEY_RETRIEVAL_ERROR") << status.message();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.message(), "Invalid JSON for public key")
+      << status.message();
 
   // Empty key.
   validator = JwtValidator::Create(token, strlen(token));
   status = validator->Parse(&user_info);
-  ASSERT_TRUE(status.ok());
+  EXPECT_TRUE(status.ok());
   status = validator->VerifySignature("", 0);
-  ASSERT_FALSE(status.ok());
-  ASSERT_EQ(status.message(), "KEY_RETRIEVAL_ERROR") << status.message();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.message(), "Bad public key format: Public key is empty")
+      << status.message();
 }
 
 TEST_F(JwtValidatorTest, OkTokenX509) {
@@ -469,98 +472,115 @@ TEST_F(JwtValidatorTest, ParseToken) {
   std::unique_ptr<JwtValidator> validator =
       JwtValidator::Create(kTokenMultiAud, strlen(kTokenMultiAud));
   Status status = validator->Parse(&user_info);
-  ASSERT_TRUE(status.ok());
-  ASSERT_EQ(user_info.audiences.size(), 2U);
+  EXPECT_TRUE(status.ok());
+  EXPECT_EQ(user_info.audiences.size(), 2U);
 
   // Token with only one dot.
   const char *token = "a1234.b5678";  // should have 2 dots.
   validator = JwtValidator::Create(token, strlen(token));
   status = validator->Parse(&user_info);
-  ASSERT_FALSE(status.ok());
-  ASSERT_EQ(status.message(), "BAD_FORMAT") << status.message();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.message(), "Bad JWT format: Invalid base64 in header")
+      << status.message();
 
   // Token with three dots.
   token = "a1234.b5678.c7890.d1234";  // should have 2 dots.
   validator = JwtValidator::Create(token, strlen(token));
   status = validator->Parse(&user_info);
-  ASSERT_FALSE(status.ok());
-  ASSERT_EQ(status.message(), "BAD_FORMAT") << status.message();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.message(), "Bad JWT format: Invalid base64 in header")
+      << status.message();
 
   // Token without dot.
   token = "a1234";  // should have 2 dots.
   validator = JwtValidator::Create(token, strlen(token));
   status = validator->Parse(&user_info);
-  ASSERT_FALSE(status.ok());
-  ASSERT_EQ(status.message(), "BAD_FORMAT") << status.message();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.message(), "Bad JWT format: should have 2 dots")
+      << status.message();
 
   // Empty token.
   token = "";  // should have 2 dots.
   validator = JwtValidator::Create(token, strlen(token));
   status = validator->Parse(&user_info);
-  ASSERT_FALSE(status.ok());
-  ASSERT_EQ(status.message(), "BAD_FORMAT") << status.message();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.message(), "Bad JWT format: empty token")
+      << status.message();
 
   // Token truncated in the second part.
   validator = JwtValidator::Create(kTokenOneDot, strlen(kTokenOneDot));
   status = validator->Parse(&user_info);
-  ASSERT_FALSE(status.ok());
-  ASSERT_EQ(status.message(), "BAD_FORMAT") << status.message();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.message(), "Bad JWT format: should have 2 dots")
+      << status.message();
 
   // Token without the last signature part.
   validator = JwtValidator::Create(kTokenNoSign, strlen(kTokenNoSign));
   status = validator->Parse(&user_info);
-  ASSERT_FALSE(status.ok());
-  ASSERT_EQ(status.message(), "BAD_FORMAT") << status.message();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.message(), "Bad JWT format: invalid base64 for signature")
+      << status.message();
 
   // Token without "iss" field in payload.
   validator = JwtValidator::Create(kTokenNoIss, strlen(kTokenNoIss));
   status = validator->Parse(&user_info);
-  ASSERT_FALSE(status.ok());
-  ASSERT_EQ(status.message(), "BAD_FORMAT") << status.message();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(
+      status.message(),
+      "Bad JWT format: invalid JWT claims; issuer is mssing but required.")
+      << status.message();
 
   // Token without "sub" field in payload.
   validator = JwtValidator::Create(kTokenNoSub, strlen(kTokenNoSub));
   status = validator->Parse(&user_info);
-  ASSERT_FALSE(status.ok());
-  ASSERT_EQ(status.message(), "BAD_FORMAT") << status.message();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.message(), "Bad JWT format: missing subject field.")
+      << status.message();
 
   // Token without "aud" field in payload.
   validator = JwtValidator::Create(kTokenNoAud, strlen(kTokenNoAud));
   status = validator->Parse(&user_info);
-  ASSERT_FALSE(status.ok());
-  ASSERT_EQ(status.message(), "BAD_FORMAT") << status.message();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.message(), "Bad JWT format: missing audience field.")
+      << status.message();
 }
 
 TEST_F(JwtValidatorTest, WrongX509Key) {
   char *token = esp_get_auth_token(kWrongPrivateKey, kAudience);
-  ASSERT_TRUE(token != nullptr);
+  EXPECT_TRUE(token != nullptr);
   UserInfo user_info;
 
   std::unique_ptr<JwtValidator> validator =
       JwtValidator::Create(token, strlen(token));
   Status status = validator->Parse(&user_info);
-  ASSERT_TRUE(status.ok());
+  EXPECT_TRUE(status.ok());
 
   status = validator->VerifySignature(kPublicKeyX509, strlen(kPublicKeyX509));
-  ASSERT_FALSE(status.ok());
-  ASSERT_EQ(status.message(), "KEY_RETRIEVAL_ERROR") << status.message();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.message(),
+            "Could not find matching key in public key set for "
+            "kid=8f0ed82105b173c7267be7185c91b1d74cf52cfd")
+      << status.message();
 
   esp_grpc_free(token);
 }
 
 TEST_F(JwtValidatorTest, WrongJwkKey) {
   char *token = esp_get_auth_token(kWrongPrivateKey, kAudience);
-  ASSERT_TRUE(token != nullptr);
+  EXPECT_TRUE(token != nullptr);
   UserInfo user_info;
 
   std::unique_ptr<JwtValidator> validator =
       JwtValidator::Create(token, strlen(token));
   Status status = validator->Parse(&user_info);
-  ASSERT_TRUE(status.ok());
+  EXPECT_TRUE(status.ok());
 
   status = validator->VerifySignature(kPublicKeyJwk, strlen(kPublicKeyJwk));
-  ASSERT_FALSE(status.ok());
-  ASSERT_EQ(status.message(), "KEY_RETRIEVAL_ERROR") << status.message();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.message(),
+            "Cannot find matching key in key set for "
+            "kid=8f0ed82105b173c7267be7185c91b1d74cf52cfd")
+      << status.message();
   esp_grpc_free(token);
 }
 
@@ -571,14 +591,14 @@ TEST_F(JwtValidatorTest, TokenWithAuthorizedParty) {
   std::unique_ptr<JwtValidator> validator =
       JwtValidator::Create(kTokenNoKid, strlen(kTokenNoKid));
   Status status = validator->Parse(&user_info);
-  ASSERT_TRUE(status.ok());
-  ASSERT_TRUE(user_info.authorized_party.empty());
+  EXPECT_TRUE(status.ok());
+  EXPECT_TRUE(user_info.authorized_party.empty());
 
   // Token with "azp" claim.
   validator = JwtValidator::Create(kTokenWithAzp, strlen(kTokenWithAzp));
   status = validator->Parse(&user_info);
-  ASSERT_TRUE(status.ok());
-  ASSERT_EQ(user_info.authorized_party, kAuthorizedParty);
+  EXPECT_TRUE(status.ok());
+  EXPECT_EQ(user_info.authorized_party, kAuthorizedParty);
 }
 
 TEST_F(JwtValidatorTest, ECX509PubKeyNotSupported) {
@@ -586,10 +606,11 @@ TEST_F(JwtValidatorTest, ECX509PubKeyNotSupported) {
   std::unique_ptr<JwtValidator> validator =
       JwtValidator::Create(kTokenEC, strlen(kTokenEC));
   Status status = validator->Parse(&user_info);
-  ASSERT_TRUE(status.ok());
+  EXPECT_TRUE(status.ok());
   status = validator->VerifySignature(kPublicKeyX509, strlen(kPublicKeyX509));
-  ASSERT_FALSE(status.ok());
-  ASSERT_EQ(status.message(), "KEY_RETRIEVAL_ERROR") << status.message();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.message(), "Invalid public key: keys field is missing.")
+      << status.message();
 }
 
 TEST_F(JwtValidatorTest, OkTokenJwkEC) {
@@ -604,11 +625,12 @@ TEST_F(JwtValidatorTest, WrongKeyEC) {
   std::unique_ptr<JwtValidator> validator =
       JwtValidator::Create(kTokenECWrongKey, strlen(kTokenECWrongKey));
   Status status = validator->Parse(&user_info);
-  ASSERT_TRUE(status.ok());
+  EXPECT_TRUE(status.ok());
 
   status = validator->VerifySignature(kPublicKeyJwkEC, strlen(kPublicKeyJwkEC));
-  ASSERT_FALSE(status.ok());
-  ASSERT_EQ(status.message(), "KEY_RETRIEVAL_ERROR") << status.message();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.message(), "Cannot find matching key in key set for kid=3c")
+      << status.message();
 }
 
 }  // namespace

@@ -33,6 +33,7 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "//external:absl_strings",
         "//external:grpc",
         "//external:protobuf",
         "//include:headers_only",

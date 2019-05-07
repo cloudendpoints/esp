@@ -151,7 +151,7 @@ results {
 results {
   status {
     code: 16
-    details: "JWT validation failed: BAD_FORMAT"
+    details: "JWT validation failed: Bad JWT format: Invalid JSON in header"
   }
 }
 results {

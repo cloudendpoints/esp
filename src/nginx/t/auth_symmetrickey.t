@@ -126,7 +126,7 @@ like($response, qr/HTTP\/1\.1 401 Unauthorized/, 'Returned HTTP 401, invalid tok
 like($response, qr/WWW-Authenticate: Bearer, error=\"invalid_token\"/, 'Returned invalid_token challenge.');
 like($response, qr/Content-Type: application\/json/i,
      'Invalid token returned application/json body.');
-like($response, qr/JWT validation failed: BAD_FORMAT/i,
+like($response, qr/JWT validation failed: Bad JWT format: Invalid JSON in header/i,
      "Error body contains 'bad format'.");
 
 # Token generated from different issuer/key.

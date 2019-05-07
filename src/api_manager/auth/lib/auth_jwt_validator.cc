@@ -53,6 +53,8 @@
 // ]
 // }
 
+#include "absl/strings/str_cat.h"
+
 extern "C" {
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -71,7 +73,6 @@ extern "C" {
 
 using ::google::protobuf::util::error::Code;
 using std::chrono::system_clock;
-using std::string;
 
 namespace google {
 namespace api_manager {
@@ -94,46 +95,38 @@ class JwtValidatorImpl : public JwtValidator {
   ~JwtValidatorImpl();
 
  private:
-  // Validates given JWT with pkey.
-  grpc_jwt_verifier_status Validate(const char *jwt, size_t jwt_len,
-                                    const char *pkey, size_t pkey_len,
-                                    const char *aud);
-  grpc_jwt_verifier_status ParseImpl();
-  grpc_jwt_verifier_status VerifySignatureImpl(const char *pkey,
-                                               size_t pkey_len);
+  Status ParseImpl();
+  Status VerifySignatureImpl(const char *pkey, size_t pkey_len);
   // Parses the audiences and removes the audiences from the json object.
   void UpdateAudience(grpc_json *json);
 
   // Creates header_ from header_json_.
-  void CreateJoseHeader();
+  Status CreateJoseHeader();
   // Checks required fields and fills User Info from claims_.
   // And sets expiration time to exp_.
-  grpc_jwt_verifier_status FillUserInfoAndSetExp(UserInfo *user_info);
+  Status FillUserInfoAndSetExp(UserInfo *user_info);
   // Finds the public key and verifies JWT signature with it.
-  grpc_jwt_verifier_status FindAndVerifySignature();
+  Status FindAndVerifySignature();
   // Extracts the public key from x509 string (key) and sets it to pkey_.
-  // Returns true if successful.
-  bool ExtractPubkeyFromX509(const char *key);
+  Status ExtractPubkeyFromX509(const char *key);
   // Extracts the public key from a jwk key (jkey) and sets it to pkey_.
-  // Returns true if successful.
-  bool ExtractPubkeyFromJwk(const grpc_json *jkey);
-  bool ExtractPubkeyFromJwkRSA(const grpc_json *jkey);
-  bool ExtractPubkeyFromJwkEC(const grpc_json *jkey);
+  Status ExtractPubkeyFromJwk(const grpc_json *jkey);
+  Status ExtractPubkeyFromJwkRSA(const grpc_json *jkey);
+  Status ExtractPubkeyFromJwkEC(const grpc_json *jkey);
   // Extracts the public key from jwk key set and verifies JWT signature with
   // it.
-  grpc_jwt_verifier_status ExtractAndVerifyJwkKeys(const grpc_json *jwt_keys);
+  Status ExtractAndVerifyJwkKeys(const grpc_json *jwt_keys);
   // Extracts the public key from pkey_json_ and verifies JWT signature with
   // it.
-  grpc_jwt_verifier_status ExtractAndVerifyX509Keys();
+  Status ExtractAndVerifyX509Keys();
   // Verifies signature with public key.
-  grpc_jwt_verifier_status VerifyPubkey(bool log_error);
-  grpc_jwt_verifier_status VerifyPubkeyRSA(bool log_error);
-  grpc_jwt_verifier_status VerifyPubkeyEC(bool log_error);
+  Status VerifyPubkey(bool log_error);
+  Status VerifyPubkeyRSA(bool log_error);
+  Status VerifyPubkeyEC(bool log_error);
   // Verifies asymmetric signature, including RS256/384/512 and ES256.
-  grpc_jwt_verifier_status VerifyAsymSignature(const char *pkey,
-                                               size_t pkey_len);
+  Status VerifyAsymSignature(const char *pkey, size_t pkey_len);
   // Verifies HS (symmetric) signature.
-  grpc_jwt_verifier_status VerifyHsSignature(const char *pkey, size_t pkey_len);
+  Status VerifyHsSignature(const char *pkey, size_t pkey_len);
 
   // Not owned.
   const char *jwt;
@@ -167,12 +160,23 @@ const EVP_MD *EvpMdFromAlg(const char *alg);
 size_t HashSizeFromAlg(const char *alg);
 
 // Parses str into grpc_json object. Does not own buffer.
-grpc_json *DecodeBase64AndParseJson(const char *str, size_t len,
-                                    grpc_slice *buffer);
+Status DecodeBase64AndParseJson(const char *str, size_t len, grpc_slice *buffer,
+                                const char *section_name,
+                                grpc_json **output_json);
 
 // Gets BIGNUM from b64 string, used for extracting pkey from jwk.
 // Result owned by rsa_.
 BIGNUM *BigNumFromBase64String(const char *b64);
+
+// Two helper functions to generate Status
+Status ToStatus(const std::string &error_msg) {
+  return Status(Code::UNAUTHENTICATED, error_msg);
+}
+
+Status ToStatus(grpc_jwt_verifier_status grpc_status) {
+  return Status(Code::UNAUTHENTICATED,
+                grpc_jwt_verifier_status_to_string(grpc_status));
+}
 
 }  // namespace
 
@@ -252,16 +256,12 @@ JwtValidatorImpl::~JwtValidatorImpl() {
 }
 
 Status JwtValidatorImpl::Parse(UserInfo *user_info) {
-  grpc_jwt_verifier_status status = ParseImpl();
-  if (status == GRPC_JWT_VERIFIER_OK) {
+  auto status = ParseImpl();
+  if (status.ok()) {
     status = FillUserInfoAndSetExp(user_info);
-    if (status == GRPC_JWT_VERIFIER_OK) {
-      return Status::OK;
-    }
   }
 
-  return Status(Code::UNAUTHENTICATED,
-                grpc_jwt_verifier_status_to_string(status));
+  return status;
 }
 
 // Extracts and removes the audiences from the token.
@@ -304,12 +304,12 @@ void JwtValidatorImpl::UpdateAudience(grpc_json *json) {
   }
 }
 
-grpc_jwt_verifier_status JwtValidatorImpl::ParseImpl() {
+Status JwtValidatorImpl::ParseImpl() {
   // ====================
   // Basic check.
   // ====================
   if (jwt == nullptr || jwt_len <= 0) {
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
+    return ToStatus("Bad JWT format: empty token");
   }
 
   // ====================
@@ -318,12 +318,16 @@ grpc_jwt_verifier_status JwtValidatorImpl::ParseImpl() {
   const char *cur = jwt;
   const char *dot = strchr(cur, '.');
   if (dot == nullptr) {
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
+    return ToStatus("Bad JWT format: should have 2 dots");
   }
-  header_json_ = DecodeBase64AndParseJson(cur, dot - cur, &header_buffer_);
-  CreateJoseHeader();
-  if (header_ == nullptr) {
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
+  auto status = DecodeBase64AndParseJson(cur, dot - cur, &header_buffer_,
+                                         "header", &header_json_);
+  if (!status.ok()) {
+    return status;
+  }
+  status = CreateJoseHeader();
+  if (!status.ok()) {
+    return status;
   }
 
   // =============================
@@ -332,19 +336,20 @@ grpc_jwt_verifier_status JwtValidatorImpl::ParseImpl() {
   cur = dot + 1;
   dot = strchr(cur, '.');
   if (dot == nullptr) {
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
+    return ToStatus("Bad JWT format: should have 2 dots");
   }
 
   // claim_buffer is the only exception that requires deallocation for failure
   // case, and it is owned by claims_ for successful case.
   grpc_slice claims_buffer = grpc_empty_slice();
-  grpc_json *claims_json =
-      DecodeBase64AndParseJson(cur, dot - cur, &claims_buffer);
-  if (claims_json == nullptr) {
+  grpc_json *claims_json;
+  status = DecodeBase64AndParseJson(cur, dot - cur, &claims_buffer, "claims",
+                                    &claims_json);
+  if (!status.ok()) {
     if (!GRPC_SLICE_IS_EMPTY(claims_buffer)) {
       grpc_slice_unref(claims_buffer);
     }
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
+    return status;
   }
 
   UpdateAudience(claims_json);
@@ -356,21 +361,24 @@ grpc_jwt_verifier_status JwtValidatorImpl::ParseImpl() {
     gpr_log(GPR_ERROR,
             "JWT claims could not be created."
             " Incompatible value types for some claim(s)");
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
+    return ToStatus(
+        "Bad JWT format: invalid JWT claims; e.g. wrong data type, iss is not "
+        "a string.");
   }
 
   // issuer is mandatory. grpc_jwt_claims_issuer checks if claims_ is nullptr.
   if (grpc_jwt_claims_issuer(claims_) == nullptr) {
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
+    return ToStatus(
+        "Bad JWT format: invalid JWT claims; issuer is mssing but required.");
   }
 
   // Check timestamp.
   // Passing in its own audience to skip audience check.
   // Audience check should be done by the caller.
-  grpc_jwt_verifier_status status =
+  grpc_jwt_verifier_status grpc_status =
       grpc_jwt_claims_check(claims_, grpc_jwt_claims_audience(claims_));
-  if (status != GRPC_JWT_VERIFIER_OK) {
-    return status;
+  if (grpc_status != GRPC_JWT_VERIFIER_OK) {
+    return ToStatus(grpc_status);
   }
 
   // =============================
@@ -379,45 +387,39 @@ grpc_jwt_verifier_status JwtValidatorImpl::ParseImpl() {
   size_t signed_jwt_len = (size_t)(dot - jwt);
   signed_buffer_ = grpc_slice_from_copied_buffer(jwt, signed_jwt_len);
   if (GRPC_SLICE_IS_EMPTY(signed_buffer_)) {
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
+    return ToStatus("Failed to allocate memory");
   }
   cur = dot + 1;
   sig_buffer_ =
       grpc_base64_decode_with_len(cur, jwt_len - signed_jwt_len - 1, 1);
   if (GRPC_SLICE_IS_EMPTY(sig_buffer_)) {
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
+    return ToStatus("Bad JWT format: invalid base64 for signature");
   }
   // Check signature length if the signing algorihtm is ES256. ES256 is the only
   // supported ECDSA signing algorithm.
   if (strncmp(header_->alg, "ES256", 5) == 0 &&
       GRPC_SLICE_LENGTH(sig_buffer_) != 2 * 32) {
     gpr_log(GPR_ERROR, "ES256 signature length is not correct.");
-    return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
+    return ToStatus("Bad JWT format: signature length is not correct");
   }
 
-  return GRPC_JWT_VERIFIER_OK;
+  return Status::OK;
 }
 
 Status JwtValidatorImpl::VerifySignature(const char *pkey, size_t pkey_len) {
-  grpc_jwt_verifier_status status = VerifySignatureImpl(pkey, pkey_len);
-  if (status == GRPC_JWT_VERIFIER_OK) {
-    return Status::OK;
-  } else {
-    return Status(Code::UNAUTHENTICATED,
-                  grpc_jwt_verifier_status_to_string(status));
-  }
+  return VerifySignatureImpl(pkey, pkey_len);
 }
 
-grpc_jwt_verifier_status JwtValidatorImpl::VerifySignatureImpl(
-    const char *pkey, size_t pkey_len) {
+Status JwtValidatorImpl::VerifySignatureImpl(const char *pkey,
+                                             size_t pkey_len) {
   if (pkey == nullptr || pkey_len <= 0) {
-    return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
+    return ToStatus("Bad public key format: Public key is empty");
   }
   if (jwt == nullptr || jwt_len <= 0) {
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
+    return ToStatus("Bad JWT format: JWT is empty");
   }
   if (GRPC_SLICE_IS_EMPTY(signed_buffer_) || GRPC_SLICE_IS_EMPTY(sig_buffer_)) {
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
+    return ToStatus("Bad JWT format: JWT signature is empty");
   }
   if (strncmp(header_->alg, "ES256", 5) == 0 ||
       strncmp(header_->alg, "RS", 2) == 0) {  // Asymmetric keys.
@@ -427,44 +429,43 @@ grpc_jwt_verifier_status JwtValidatorImpl::VerifySignatureImpl(
   }
 }
 
-void JwtValidatorImpl::CreateJoseHeader() {
-  if (header_json_ == nullptr) {
-    return;
-  }
+Status JwtValidatorImpl::CreateJoseHeader() {
   const char *alg = GetStringValue(header_json_, "alg");
   if (alg == nullptr) {
     gpr_log(GPR_ERROR, "Missing alg field.");
-    return;
+    return ToStatus("Missing alg field.");
   }
   if (EvpMdFromAlg(alg) == nullptr && strncmp(alg, "ES256", 5) != 0) {
     gpr_log(GPR_ERROR, "Invalid alg field [%s].", alg);
-    return;
+    return ToStatus("Failed to allocate memory.");
   }
 
   header_ = reinterpret_cast<JoseHeader *>(gpr_malloc(sizeof(JoseHeader)));
   if (header_ == nullptr) {
     gpr_log(GPR_ERROR, "Jose header creation failed");
+    return ToStatus("Failed to allocate memory.");
   }
   header_->alg = alg;
   header_->kid = GetStringValue(header_json_, "kid");
+  return Status::OK;
 }
 
-grpc_jwt_verifier_status JwtValidatorImpl::FindAndVerifySignature() {
+Status JwtValidatorImpl::FindAndVerifySignature() {
   if (pkey_json_ == nullptr) {
     gpr_log(GPR_ERROR, "The public keys are empty.");
-    return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
+    return ToStatus("The public keys are empty.");
   }
 
   if (header_ == nullptr) {
     gpr_log(GPR_ERROR, "JWT header is empty.");
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
+    return ToStatus("Bad JWT format: JWT header is empty.");
   }
   // JWK set https://tools.ietf.org/html/rfc7517#section-5.
   const grpc_json *jwk_keys = GetProperty(pkey_json_, "keys");
   if (jwk_keys == nullptr) {
     // Currently we only support JWK format for ES256.
     if (strncmp(header_->alg, "ES256", 5) == 0) {
-      return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
+      return ToStatus("Invalid public key: keys field is missing.");
     }
     // Try x509 format.
     return ExtractAndVerifyX509Keys();
@@ -474,7 +475,7 @@ grpc_jwt_verifier_status JwtValidatorImpl::FindAndVerifySignature() {
   }
 }
 
-grpc_jwt_verifier_status JwtValidatorImpl::ExtractAndVerifyX509Keys() {
+Status JwtValidatorImpl::ExtractAndVerifyX509Keys() {
   // Precondition (checked by caller): pkey_json_ and header_ are not nullptr.
   if (header_->kid != nullptr) {
     const char *value = GetStringValue(pkey_json_, header_->kid);
@@ -482,14 +483,17 @@ grpc_jwt_verifier_status JwtValidatorImpl::ExtractAndVerifyX509Keys() {
       gpr_log(GPR_ERROR,
               "Cannot find matching key in key set for kid=%s and alg=%s",
               header_->kid, header_->alg);
-      return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
+      return ToStatus(
+          absl::StrCat("Could not find matching key in public key set for kid=",
+                       header_->kid));
     }
-    if (!ExtractPubkeyFromX509(value)) {
+    if (!ExtractPubkeyFromX509(value).ok()) {
       gpr_log(GPR_ERROR, "Failed to extract public key from X509 key (%s)",
               header_->kid);
-      return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
+      return ToStatus(absl::StrCat(
+          "Failed to extract public key from X509 for kid=", header_->kid));
     }
-    return VerifyPubkey(true);
+    return VerifyPubkey(/*log_error=*/true);
   }
   // If kid is not specified in the header, try all keys. If the JWT can be
   // validated with any of the keys, the request is successful.
@@ -497,36 +501,37 @@ grpc_jwt_verifier_status JwtValidatorImpl::ExtractAndVerifyX509Keys() {
   if (pkey_json_->child == nullptr) {
     gpr_log(GPR_ERROR, "Failed to extract public key from X509 key (%s)",
             header_->kid);
-    return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
+    return ToStatus(absl::StrCat(
+        "Failed to extract public key from X509 for kid=", header_->kid));
   }
   for (cur = pkey_json_->child; cur != nullptr; cur = cur->next) {
-    if (cur->value == nullptr || !ExtractPubkeyFromX509(cur->value)) {
+    if (cur->value == nullptr || !ExtractPubkeyFromX509(cur->value).ok()) {
       // Failed to extract public key from current X509 key, try next one.
       continue;
     }
-    if (VerifyPubkey(false) == GRPC_JWT_VERIFIER_OK) {
-      return GRPC_JWT_VERIFIER_OK;
+    if (VerifyPubkey(/*log_error=*/false).ok()) {
+      return Status::OK;
     }
   }
   // header_->kid is nullptr. The JWT cannot be validated with any of the keys.
   // Return error.
   gpr_log(GPR_ERROR,
           "The JWT cannot be validated with any of the public keys.");
-  return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
+  return ToStatus("The JWT cannot be validated with any of the public keys.");
 }
 
-bool JwtValidatorImpl::ExtractPubkeyFromX509(const char *key) {
+Status JwtValidatorImpl::ExtractPubkeyFromX509(const char *key) {
   if (bio_ != nullptr) {
     BIO_free(bio_);
   }
   bio_ = BIO_new(BIO_s_mem());
   if (bio_ == nullptr) {
     gpr_log(GPR_ERROR, "Unable to allocate a BIO object.");
-    return false;
+    return ToStatus("Unable to allocate a BIO object.");
   }
   if (BIO_write(bio_, key, strlen(key)) <= 0) {
     gpr_log(GPR_ERROR, "BIO write error for key (%s).", key);
-    return false;
+    return ToStatus(absl::StrCat("BIO write error for key", key));
   }
   if (x509_ != nullptr) {
     X509_free(x509_);
@@ -534,7 +539,7 @@ bool JwtValidatorImpl::ExtractPubkeyFromX509(const char *key) {
   x509_ = PEM_read_bio_X509(bio_, nullptr, nullptr, nullptr);
   if (x509_ == nullptr) {
     gpr_log(GPR_ERROR, "Unable to parse x509 cert for key (%s).", key);
-    return false;
+    return ToStatus(absl::StrCat("Unable to parse x509 cert for key", key));
   }
   if (pkey_ != nullptr) {
     EVP_PKEY_free(pkey_);
@@ -542,25 +547,24 @@ bool JwtValidatorImpl::ExtractPubkeyFromX509(const char *key) {
   pkey_ = X509_get_pubkey(x509_);
   if (pkey_ == nullptr) {
     gpr_log(GPR_ERROR, "X509_get_pubkey failed");
-    return false;
+    return ToStatus("X509_get_pubkey failed");
   }
-  return true;
+  return Status::OK;
 }
 
-grpc_jwt_verifier_status JwtValidatorImpl::ExtractAndVerifyJwkKeys(
-    const grpc_json *jwk_keys) {
+Status JwtValidatorImpl::ExtractAndVerifyJwkKeys(const grpc_json *jwk_keys) {
   // Precondition (checked by caller): jwk_keys and header_ are not nullptr.
   if (jwk_keys->type != GRPC_JSON_ARRAY) {
     gpr_log(GPR_ERROR,
             "Unexpected value type of keys property in jwks key set.");
-    return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
+    return ToStatus("Unexpected value type of keys property in jwks key set.");
   }
 
   const grpc_json *jkey = nullptr;
 
   if (jwk_keys->child == nullptr) {
     gpr_log(GPR_ERROR, "The jwks key set is empty");
-    return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
+    return ToStatus("The jwks key set is empty");
   }
 
   // JWK format from https://tools.ietf.org/html/rfc7518#section-6.
@@ -580,18 +584,18 @@ grpc_jwt_verifier_status JwtValidatorImpl::ExtractAndVerifyJwkKeys(
       continue;
     }
 
-    if (!ExtractPubkeyFromJwk(jkey)) {
+    if (!ExtractPubkeyFromJwk(jkey).ok()) {
       // Failed to extract public key from this Jwk key.
       continue;
     }
 
     if (header_->kid != nullptr) {
-      return VerifyPubkey(true);
+      return VerifyPubkey(/*log_error=*/true);
     }
     // If kid is not specified in the header, try all keys. If the JWT can be
     // validated with any of the keys, the request is successful.
-    if (VerifyPubkey(false) == GRPC_JWT_VERIFIER_OK) {
-      return GRPC_JWT_VERIFIER_OK;
+    if (VerifyPubkey(/*log_error=*/false).ok()) {
+      return Status::OK;
     }
   }
 
@@ -599,33 +603,34 @@ grpc_jwt_verifier_status JwtValidatorImpl::ExtractAndVerifyJwkKeys(
     gpr_log(GPR_ERROR,
             "Cannot find matching key in key set for kid=%s and alg=%s",
             header_->kid, header_->alg);
-    return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
+    return ToStatus(absl::StrCat("Cannot find matching key in key set for kid=",
+                                 header_->kid));
   }
   // header_->kid is nullptr. The JWT cannot be validated with any of the keys.
   // Return error.
   gpr_log(GPR_ERROR,
           "The JWT cannot be validated with any of the public keys.");
-  return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
+  return ToStatus("The JWT cannot be validated with any of the public keys.");
 }
 
-bool JwtValidatorImpl::ExtractPubkeyFromJwk(const grpc_json *jkey) {
+Status JwtValidatorImpl::ExtractPubkeyFromJwk(const grpc_json *jkey) {
   if (strncmp(header_->alg, "RS", 2) == 0) {
     return ExtractPubkeyFromJwkRSA(jkey);
   } else if (strncmp(header_->alg, "ES256", 5) == 0) {
     return ExtractPubkeyFromJwkEC(jkey);
   } else {
-    return false;
+    return ToStatus(absl::StrCat("Not supported alg ", header_->alg));
   }
 }
 
-bool JwtValidatorImpl::ExtractPubkeyFromJwkRSA(const grpc_json *jkey) {
+Status JwtValidatorImpl::ExtractPubkeyFromJwkRSA(const grpc_json *jkey) {
   if (rsa_ != nullptr) {
     RSA_free(rsa_);
   }
   rsa_ = RSA_new();
   if (rsa_ == nullptr) {
     gpr_log(GPR_ERROR, "Could not create rsa key.");
-    return false;
+    return ToStatus("Could not create rsa key.");
   }
 
   const char *rsa_n = GetStringValue(jkey, "n");
@@ -635,7 +640,7 @@ bool JwtValidatorImpl::ExtractPubkeyFromJwkRSA(const grpc_json *jkey) {
 
   if (rsa_->e == nullptr || rsa_->n == nullptr) {
     gpr_log(GPR_ERROR, "Missing RSA public key field.");
-    return false;
+    return ToStatus("Missing RSA public key field.");
   }
 
   if (pkey_ != nullptr) {
@@ -644,74 +649,74 @@ bool JwtValidatorImpl::ExtractPubkeyFromJwkRSA(const grpc_json *jkey) {
   pkey_ = EVP_PKEY_new();
   if (EVP_PKEY_set1_RSA(pkey_, rsa_) == 0) {
     gpr_log(GPR_ERROR, "EVP_PKEY_ste1_RSA failed");
-    return false;
+    return ToStatus("EVP_PKEY_ste1_RSA failed");
   }
-  return true;
+  return Status::OK;
 }
 
-bool JwtValidatorImpl::ExtractPubkeyFromJwkEC(const grpc_json *jkey) {
+Status JwtValidatorImpl::ExtractPubkeyFromJwkEC(const grpc_json *jkey) {
   if (eck_ != nullptr) {
     EC_KEY_free(eck_);
   }
   eck_ = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
   if (eck_ == nullptr) {
     gpr_log(GPR_ERROR, "Could not create ec key.");
-    return false;
+    return ToStatus("Could not create ec key.");
   }
   const char *eck_x = GetStringValue(jkey, "x");
   const char *eck_y = GetStringValue(jkey, "y");
   if (eck_x == nullptr || eck_y == nullptr) {
     gpr_log(GPR_ERROR, "Missing EC public key field.");
-    return false;
+    return ToStatus("Missing EC public key field.");
   }
   BIGNUM *bn_x = BigNumFromBase64String(eck_x);
   BIGNUM *bn_y = BigNumFromBase64String(eck_y);
   if (bn_x == nullptr || bn_y == nullptr) {
     gpr_log(GPR_ERROR, "Could not generate BIGNUM-type x and y fields.");
-    return false;
+    return ToStatus("Could not generate BIGNUM-type x and y fields.");
   }
 
   if (EC_KEY_set_public_key_affine_coordinates(eck_, bn_x, bn_y) == 0) {
     BN_free(bn_x);
     BN_free(bn_y);
     gpr_log(GPR_ERROR, "Could not populate ec key coordinates.");
-    return false;
+    return ToStatus("Could not populate ec key coordinates.");
   }
   BN_free(bn_x);
   BN_free(bn_y);
-  return true;
+  return Status::OK;
 }
 
-grpc_jwt_verifier_status JwtValidatorImpl::VerifyAsymSignature(
-    const char *pkey, size_t pkey_len) {
+Status JwtValidatorImpl::VerifyAsymSignature(const char *pkey,
+                                             size_t pkey_len) {
   pkey_buffer_ = grpc_slice_from_copied_buffer(pkey, pkey_len);
   if (GRPC_SLICE_IS_EMPTY(pkey_buffer_)) {
-    return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
+    return ToStatus("Failed to allocate memory");
   }
   pkey_json_ = grpc_json_parse_string_with_len(
       reinterpret_cast<char *>(GRPC_SLICE_START_PTR(pkey_buffer_)),
       GRPC_SLICE_LENGTH(pkey_buffer_));
   if (pkey_json_ == nullptr) {
-    return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
+    return ToStatus("Invalid JSON for public key");
   }
 
   return FindAndVerifySignature();
 }
 
-grpc_jwt_verifier_status JwtValidatorImpl::VerifyPubkey(bool log_error) {
+Status JwtValidatorImpl::VerifyPubkey(bool log_error) {
   if (strncmp(header_->alg, "RS", 2) == 0) {
     return VerifyPubkeyRSA(log_error);
   } else if (strncmp(header_->alg, "ES256", 5) == 0) {
     return VerifyPubkeyEC(log_error);
   } else {
-    return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
+    return ToStatus(absl::StrCat("Not supported alg ", header_->alg));
   }
 }
 
-grpc_jwt_verifier_status JwtValidatorImpl::VerifyPubkeyEC(bool log_error) {
+Status JwtValidatorImpl::VerifyPubkeyEC(bool log_error) {
   if (eck_ == nullptr) {
     gpr_log(GPR_ERROR, "Cannot find eck.");
-    return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
+    return ToStatus("Cannot find eck.");
   }
 
   uint8_t digest[SHA256_DIGEST_LENGTH];
@@ -725,7 +730,7 @@ grpc_jwt_verifier_status JwtValidatorImpl::VerifyPubkeyEC(bool log_error) {
   ecdsa_sig_ = ECDSA_SIG_new();
   if (ecdsa_sig_ == nullptr) {
     gpr_log(GPR_ERROR, "Could not create ECDSA_SIG.");
-    return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
+    return ToStatus("Could not create ECDSA_SIG.");
   }
 
   BN_bin2bn(GRPC_SLICE_START_PTR(sig_buffer_), 32, ecdsa_sig_->r);
@@ -735,15 +740,15 @@ grpc_jwt_verifier_status JwtValidatorImpl::VerifyPubkeyEC(bool log_error) {
       gpr_log(GPR_ERROR, "JWT signature verification failed.");
     }
     ERR_clear_error();
-    return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
+    return ToStatus("JWT signature verification failed.");
   }
-  return GRPC_JWT_VERIFIER_OK;
+  return Status::OK;
 }
 
-grpc_jwt_verifier_status JwtValidatorImpl::VerifyPubkeyRSA(bool log_error) {
+Status JwtValidatorImpl::VerifyPubkeyRSA(bool log_error) {
   if (pkey_ == nullptr) {
     gpr_log(GPR_ERROR, "Cannot find public key.");
-    return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
+    return ToStatus("Cannot find public key.");
   }
   if (md_ctx_ != nullptr) {
     EVP_MD_CTX_destroy(md_ctx_);
@@ -751,19 +756,19 @@ grpc_jwt_verifier_status JwtValidatorImpl::VerifyPubkeyRSA(bool log_error) {
   md_ctx_ = EVP_MD_CTX_create();
   if (md_ctx_ == nullptr) {
     gpr_log(GPR_ERROR, "Could not create EVP_MD_CTX.");
-    return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
+    return ToStatus("Could not create EVP_MD_CTX.");
   }
   const EVP_MD *md = EvpMdFromAlg(header_->alg);
   GPR_ASSERT(md != nullptr);  // Checked before.
 
   if (EVP_DigestVerifyInit(md_ctx_, nullptr, md, nullptr, pkey_) != 1) {
     gpr_log(GPR_ERROR, "EVP_DigestVerifyInit failed.");
-    return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
+    return ToStatus("EVP_DigestVerifyInit failed.");
   }
   if (EVP_DigestVerifyUpdate(md_ctx_, GRPC_SLICE_START_PTR(signed_buffer_),
                              GRPC_SLICE_LENGTH(signed_buffer_)) != 1) {
     gpr_log(GPR_ERROR, "EVP_DigestVerifyUpdate failed.");
-    return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
+    return ToStatus("EVP_DigestVerifyUpdate failed.");
   }
   if (EVP_DigestVerifyFinal(md_ctx_, GRPC_SLICE_START_PTR(sig_buffer_),
                             GRPC_SLICE_LENGTH(sig_buffer_)) != 1) {
@@ -771,20 +776,21 @@ grpc_jwt_verifier_status JwtValidatorImpl::VerifyPubkeyRSA(bool log_error) {
       gpr_log(GPR_ERROR, "JWT signature verification failed.");
     }
     ERR_clear_error();
-    return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
+    return ToStatus("JWT signature verification failed.");
   }
-  return GRPC_JWT_VERIFIER_OK;
+  return Status::OK;
 }
 
-grpc_jwt_verifier_status JwtValidatorImpl::VerifyHsSignature(const char *pkey,
-                                                             size_t pkey_len) {
+Status JwtValidatorImpl::VerifyHsSignature(const char *pkey, size_t pkey_len) {
   const EVP_MD *md = EvpMdFromAlg(header_->alg);
   GPR_ASSERT(md != nullptr);  // Checked before.
 
   pkey_buffer_ = grpc_base64_decode_with_len(pkey, pkey_len, 1);
   if (GRPC_SLICE_IS_EMPTY(pkey_buffer_)) {
     gpr_log(GPR_ERROR, "Unable to decode base64 of secret");
-    return GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
+    return ToStatus(
+        "Invalid base64 encoded HS symmetric key. "
+        "Most likely JWT alg is HS, but public key is ES or RSA.");
   }
 
   unsigned char res[HashSizeFromAlg(header_->alg)];
@@ -794,34 +800,33 @@ grpc_jwt_verifier_status JwtValidatorImpl::VerifyHsSignature(const char *pkey,
        res, &res_len);
   if (res_len == 0) {
     gpr_log(GPR_ERROR, "Cannot compute HMAC from secret.");
-    return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
+    return ToStatus("Cannot compute HMAC from the public key.");
   }
 
   if (res_len != GRPC_SLICE_LENGTH(sig_buffer_) ||
       CRYPTO_memcmp(reinterpret_cast<void *>(GRPC_SLICE_START_PTR(sig_buffer_)),
                     reinterpret_cast<void *>(res), res_len) != 0) {
     gpr_log(GPR_ERROR, "JWT signature verification failed.");
-    return GRPC_JWT_VERIFIER_BAD_SIGNATURE;
+    return ToStatus("JWT signature verification failed.");
   }
-  return GRPC_JWT_VERIFIER_OK;
+  return Status::OK;
 }
 
-grpc_jwt_verifier_status JwtValidatorImpl::FillUserInfoAndSetExp(
-    UserInfo *user_info) {
+Status JwtValidatorImpl::FillUserInfoAndSetExp(UserInfo *user_info) {
   // Required fields.
   const char *issuer = grpc_jwt_claims_issuer(claims_);
   if (issuer == nullptr) {
     gpr_log(GPR_ERROR, "Missing issuer field.");
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
+    return ToStatus("Bad JWT format: missing issuer field.");
   }
   if (audiences_.empty()) {
     gpr_log(GPR_ERROR, "Missing audience field.");
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
+    return ToStatus("Bad JWT format: missing audience field.");
   }
   const char *subject = grpc_jwt_claims_subject(claims_);
   if (subject == nullptr) {
     gpr_log(GPR_ERROR, "Missing subject field.");
-    return GRPC_JWT_VERIFIER_BAD_FORMAT;
+    return ToStatus("Bad JWT format: missing subject field.");
   }
   user_info->issuer = issuer;
   user_info->audiences = audiences_;
@@ -844,7 +849,7 @@ grpc_jwt_verifier_status JwtValidatorImpl::FillUserInfoAndSetExp(
       authorized_party == nullptr ? "" : authorized_party;
   exp_ = system_clock::from_time_t(grpc_jwt_claims_expires_at(claims_).tv_sec);
 
-  return GRPC_JWT_VERIFIER_OK;
+  return Status::OK;
 }
 
 const EVP_MD *EvpMdFromAlg(const char *alg) {
@@ -872,22 +877,28 @@ size_t HashSizeFromAlg(const char *alg) {
   }
 }
 
-grpc_json *DecodeBase64AndParseJson(const char *str, size_t len,
-                                    grpc_slice *buffer) {
+Status DecodeBase64AndParseJson(const char *str, size_t len, grpc_slice *buffer,
+                                const char *section_name,
+                                grpc_json **output_json) {
   grpc_json *json;
+  *output_json = nullptr;
 
   *buffer = grpc_base64_decode_with_len(str, len, 1);
   if (GRPC_SLICE_IS_EMPTY(*buffer)) {
     gpr_log(GPR_ERROR, "Invalid base64.");
-    return nullptr;
+    return ToStatus(
+        absl::StrCat("Bad JWT format: Invalid base64 in ", section_name));
   }
   json = grpc_json_parse_string_with_len(
       reinterpret_cast<char *>(GRPC_SLICE_START_PTR(*buffer)),
       GRPC_SLICE_LENGTH(*buffer));
   if (json == nullptr) {
     gpr_log(GPR_ERROR, "JSON parsing error.");
+    return ToStatus(
+        absl::StrCat("Bad JWT format: Invalid JSON in ", section_name));
   }
-  return json;
+  *output_json = json;
+  return Status::OK;
 }
 
 BIGNUM *BigNumFromBase64String(const char *b64) {
