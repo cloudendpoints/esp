@@ -46,6 +46,7 @@ my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(13);
 ApiManager::write_file_expand($t, 'sc_timeout.pb.txt', <<"EOF");
 service_control_config {
   check_timeout_ms: 1000
+  check_retries: 1
 }
 EOF
 
