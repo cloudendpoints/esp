@@ -137,6 +137,11 @@ ReportAggregationOptions GetReportAggregationOptions(
                                   kReportAggregationFlushIntervalMs);
 }
 
+const std::string& GetEmptyString() {
+  static const std::string* const kEmptyString = new std::string;
+  return *kEmptyString;
+}
+
 }  // namespace
 
 template <class Type>
@@ -528,8 +533,7 @@ const std::string& Aggregated::GetAuthToken<CheckRequest>() {
     return sa_token_->GetAuthToken(
         auth::ServiceAccountToken::JWT_TOKEN_FOR_SERVICE_CONTROL);
   } else {
-    static std::string empty;
-    return empty;
+    return GetEmptyString();
   }
 }
 template <>
@@ -538,8 +542,7 @@ const std::string& Aggregated::GetAuthToken<ReportRequest>() {
     return sa_token_->GetAuthToken(
         auth::ServiceAccountToken::JWT_TOKEN_FOR_SERVICE_CONTROL);
   } else {
-    static std::string empty;
-    return empty;
+    return GetEmptyString();
   }
 }
 template <>
@@ -548,8 +551,7 @@ const std::string& Aggregated::GetAuthToken<AllocateQuotaRequest>() {
     return sa_token_->GetAuthToken(
         auth::ServiceAccountToken::JWT_TOKEN_FOR_QUOTA_CONTROL);
   } else {
-    static std::string empty;
-    return empty;
+    return GetEmptyString();
   }
 }
 
