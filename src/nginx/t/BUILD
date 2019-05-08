@@ -255,6 +255,7 @@ nginx_suite(
     nginx = "//src/nginx/main:nginx-esp",
     tests = [
         "check_network_failures.t",
+        "test_timeout_retry.t",
     ],
     deps = [
         ":perl_library",
