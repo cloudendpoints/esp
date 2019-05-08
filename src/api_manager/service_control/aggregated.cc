@@ -59,11 +59,19 @@ const int kReportAggregationEntries = 10000;
 const int kReportAggregationFlushIntervalMs = 1000;
 
 // The default connection timeout for check requests.
-const int kCheckDefaultTimeoutInMs = 5000;
+const int kCheckDefaultTimeoutInMs = 1000;
 // The default connection timeout for allocate quota requests.
 const int kAllocateQuotaDefaultTimeoutInMs = 1000;
 // The default connection timeout for report requests.
-const int kReportDefaultTimeoutInMs = 15000;
+const int kReportDefaultTimeoutInMs = 2000;
+
+// The default number of retries for check calls.
+const int kCheckDefaultNumberOfRetries = 3;
+// The default number of retries for report calls.
+const int kReportDefaultNumberOfRetries = 5;
+// The default number of retries for allocate quota calls.
+// Allocate quota has fail_open policy, retry once is enough.
+const int kAllocateQuotaDefaultNumberOfRetries = 1;
 
 // The maximum protobuf pool size. All usages of pool alloc() and free() are
 // within a function frame. If no con-current usage, pool size of 1 is enough.
@@ -127,6 +135,11 @@ ReportAggregationOptions GetReportAggregationOptions(
   }
   return ReportAggregationOptions(kReportAggregationEntries,
                                   kReportAggregationFlushIntervalMs);
+}
+
+const std::string& GetEmptyString() {
+  static const std::string* const kEmptyString = new std::string;
+  return *kEmptyString;
 }
 
 }  // namespace
@@ -193,11 +206,45 @@ Aggregated::Aggregated(const std::set<std::string>& logs,
 
 Aggregated::~Aggregated() {}
 
+void Aggregated::InitHttpRequestTimeoutRetries() {
+  check_timeout_ms_ = kCheckDefaultTimeoutInMs;
+  report_timeout_ms_ = kReportDefaultTimeoutInMs;
+  quota_timeout_ms_ = kAllocateQuotaDefaultTimeoutInMs;
+  check_retries_ = kCheckDefaultNumberOfRetries;
+  report_retries_ = kReportDefaultNumberOfRetries;
+  quota_retries_ = kAllocateQuotaDefaultNumberOfRetries;
+
+  if (server_config_ != nullptr &&
+      server_config_->has_service_control_config()) {
+    const auto& config = server_config_->service_control_config();
+    if (config.check_timeout_ms() > 0) {
+      check_timeout_ms_ = config.check_timeout_ms();
+    }
+    if (config.report_timeout_ms() > 0) {
+      report_timeout_ms_ = config.report_timeout_ms();
+    }
+    if (config.quota_timeout_ms() > 0) {
+      quota_timeout_ms_ = config.quota_timeout_ms();
+    }
+    if (config.check_retries() > 0) {
+      check_retries_ = config.check_retries();
+    }
+    if (config.report_retries() > 0) {
+      report_retries_ = config.report_retries();
+    }
+    if (config.quota_retries() > 0) {
+      quota_retries_ = config.quota_retries();
+    }
+  }
+}
+
 Status Aggregated::Init() {
   // Init() can be called repeatedly.
   if (client_) {
     return Status::OK;
   }
+
+  InitHttpRequestTimeoutRetries();
 
   // It is too early to create client_ at constructor.
   // Client creation is calling env->StartPeriodicTimer.
@@ -441,64 +488,70 @@ Status Aggregated::GetStatistics(Statistics* esp_stat) const {
   return Status::OK;
 }
 
-template <class RequestType>
-const std::string& Aggregated::GetApiRequestUrl() {
-  if (typeid(RequestType) == typeid(CheckRequest)) {
-    return url_.check_url();
-  } else if (typeid(RequestType) == typeid(AllocateQuotaRequest)) {
-    return url_.quota_url();
-  } else {
-    return url_.report_url();
-  }
+template <>
+const std::string& Aggregated::GetApiRequestUrl<CheckRequest>() {
+  return url_.check_url();
+}
+template <>
+const std::string& Aggregated::GetApiRequestUrl<ReportRequest>() {
+  return url_.report_url();
+}
+template <>
+const std::string& Aggregated::GetApiRequestUrl<AllocateQuotaRequest>() {
+  return url_.quota_url();
 }
 
-template <class RequestType>
-int Aggregated::GetHttpRequestTimeout() {
-  int timeout_ms = 0;
-
-  // Set timeout on the request if it was so configured.
-  if (typeid(RequestType) == typeid(CheckRequest)) {
-    timeout_ms = kCheckDefaultTimeoutInMs;
-  } else if (typeid(RequestType) == typeid(AllocateQuotaRequest)) {
-    timeout_ms = kAllocateQuotaDefaultTimeoutInMs;
-  } else {
-    timeout_ms = kReportDefaultTimeoutInMs;
-  }
-
-  if (server_config_ != nullptr &&
-      server_config_->has_service_control_config()) {
-    const auto& config = server_config_->service_control_config();
-    if (typeid(RequestType) == typeid(CheckRequest)) {
-      if (config.check_timeout_ms() > 0) {
-        timeout_ms = config.check_timeout_ms();
-      }
-    } else if (typeid(RequestType) == typeid(AllocateQuotaRequest)) {
-      if (config.quota_timeout_ms() > 0) {
-        timeout_ms = config.quota_timeout_ms();
-      }
-    } else {
-      if (config.report_timeout_ms() > 0) {
-        timeout_ms = config.report_timeout_ms();
-      }
-    }
-  }
-
-  return timeout_ms;
+template <>
+int Aggregated::GetHttpRequestTimeout<CheckRequest>() {
+  return check_timeout_ms_;
+}
+template <>
+int Aggregated::GetHttpRequestTimeout<ReportRequest>() {
+  return report_timeout_ms_;
+}
+template <>
+int Aggregated::GetHttpRequestTimeout<AllocateQuotaRequest>() {
+  return quota_timeout_ms_;
 }
 
-template <class RequestType>
-const std::string& Aggregated::GetAuthToken() {
+template <>
+int Aggregated::GetHttpRequestRetries<CheckRequest>() {
+  return check_retries_;
+}
+template <>
+int Aggregated::GetHttpRequestRetries<ReportRequest>() {
+  return report_retries_;
+}
+template <>
+int Aggregated::GetHttpRequestRetries<AllocateQuotaRequest>() {
+  return quota_retries_;
+}
+
+template <>
+const std::string& Aggregated::GetAuthToken<CheckRequest>() {
   if (sa_token_) {
-    if (typeid(RequestType) == typeid(AllocateQuotaRequest)) {
-      return sa_token_->GetAuthToken(
-          auth::ServiceAccountToken::JWT_TOKEN_FOR_QUOTA_CONTROL);
-    } else {
-      return sa_token_->GetAuthToken(
-          auth::ServiceAccountToken::JWT_TOKEN_FOR_SERVICE_CONTROL);
-    }
+    return sa_token_->GetAuthToken(
+        auth::ServiceAccountToken::JWT_TOKEN_FOR_SERVICE_CONTROL);
   } else {
-    static std::string empty;
-    return empty;
+    return GetEmptyString();
+  }
+}
+template <>
+const std::string& Aggregated::GetAuthToken<ReportRequest>() {
+  if (sa_token_) {
+    return sa_token_->GetAuthToken(
+        auth::ServiceAccountToken::JWT_TOKEN_FOR_SERVICE_CONTROL);
+  } else {
+    return GetEmptyString();
+  }
+}
+template <>
+const std::string& Aggregated::GetAuthToken<AllocateQuotaRequest>() {
+  if (sa_token_) {
+    return sa_token_->GetAuthToken(
+        auth::ServiceAccountToken::JWT_TOKEN_FOR_QUOTA_CONTROL);
+  } else {
+    return GetEmptyString();
   }
 }
 
@@ -544,6 +597,7 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
   std::string request_body;
   request.SerializeToString(&request_body);
 
+  // Collect statistics on the maximum report body size.
   if ((typeid(RequestType) == typeid(ReportRequest)) &&
       (request_body.size() > max_report_size_)) {
     max_report_size_ = request_body.size();
@@ -556,6 +610,7 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
       .set_body(request_body);
 
   http_request->set_timeout_ms(GetHttpRequestTimeout<RequestType>());
+  http_request->set_max_retries(GetHttpRequestRetries<RequestType>());
 
   env_->RunHTTPRequest(std::move(http_request));
 }

@@ -41,12 +41,26 @@ my $NginxPort = ApiManager::pick_port();
 my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(13);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(10);
 
 ApiManager::write_file_expand($t, 'sc_timeout.pb.txt', <<"EOF");
 service_control_config {
-  check_timeout_ms: 1000
-  check_retries: 1
+  check_aggregator_config {
+    cache_entries: 0
+  }
+  report_aggregator_config {
+    cache_entries: 0
+  }
+  check_timeout_ms: 500
+  check_retries: 2
+  report_timeout_ms: 500
+  report_retries: 2
+}
+EOF
+
+$t->write_file('service.pb.txt', ApiManager::get_bookstore_service_config . <<"EOF");
+control {
+  environment: "http://127.0.0.1:${ServiceControlPort}"
 }
 EOF
 
@@ -74,105 +88,60 @@ http {
 }
 EOF
 
-################################################################################
-#
-#  Failure with wrong service_control server name
-#  Only starts Nginx
-#
-################################################################################
-
-# Wrong service control server domain name
-my $config1 = ApiManager::get_bookstore_service_config . <<"EOF";
-control {
-  environment: "http://wrong_service_control_server_name"
-}
-EOF
-
-$t->write_file('service.pb.txt', $config1);
+my $report_done = $t->{_testdir} . '/report_done.log';
 
 $t->run_daemon(\&bookstore, $t, $BackendPort, 'bookstore.log');
-is($t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'Bookstore socket ready.');
-$t->run();
-
-my $response1 = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key');
-
-$t->stop();
-$t->stop_daemons();
-
-like($response1, qr/HTTP\/1\.1 503 Service Temporarily Unavailable/, 'Returned HTTP 503.');
-like($response1, qr/Failed to connect to service control/i, 'Failed to connect to service control.');
-
-my $bookstore_requests1 = $t->read_file('bookstore.log');
-is($bookstore_requests1, '', 'Request did not reach the backend.');
-
-################################################################################
-#
-#  Failure with service_control server not running.
-#  Only starts Nginx
-#
-################################################################################
-
-# service control server is not running.
-my $config2 = ApiManager::get_bookstore_service_config . <<"EOF";
-control {
-  environment: "http://127.0.0.1:${ServiceControlPort}"
-}
-EOF
-
-$t->write_file('service.pb.txt', $config2);
-
-$t->run_daemon(\&bookstore, $t, $BackendPort, 'bookstore.log');
-is($t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'Bookstore socket ready.');
-$t->run();
-
-my $response2 = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key');
-
-$t->stop();
-$t->stop_daemons();
-
-like($response2, qr/HTTP\/1\.1 503 Service Temporarily Unavailable/, 'Returned HTTP 503.');
-like($response2, qr/Failed to connect to service control/i, 'Failed to connect to service control.');
-
-my $bookstore_requests2 = $t->read_file('bookstore.log');
-is($bookstore_requests2, '', 'Request did not reach the backend.');
-
-################################################################################
-#
-#  Failure with service_control timeout on response.
-#  starts Nginx, service_control and backend.
-#
-################################################################################
-
-$t->run_daemon(\&bookstore, $t, $BackendPort, 'bookstore.log');
-$t->run_daemon(\&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log');
+$t->run_daemon(\&servicecontrol, $t, $ServiceControlPort, $report_done, 'servicecontrol.log');
 is($t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'Bookstore socket ready.');
 is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control socket ready.');
 $t->run();
 
-my $response3 = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key');
+my $response = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key');
+
+is($t->waitforfile($report_done), 1, 'Report body file ready.');
 
 $t->stop();
 $t->stop_daemons();
 
-like($response3, qr/HTTP\/1\.1 503 Service Temporarily Unavailable/, 'Returned HTTP 503.');
-like($response3, qr/Failed to connect to service control/i, 'Failed to connect to service control.');
+my ($response_headers, $response_body) = split /\r\n\r\n/, $response, 2;
 
-my $bookstore_requests3 = $t->read_file('bookstore.log');
-is($bookstore_requests3, '', 'Request did not reach the backend.');
+like($response_headers, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');
+is($response_body, <<'EOF', 'Shelves returned in the response body.');
+{ "shelves": [
+    { "name": "shelves/1", "theme": "Fiction" },
+    { "name": "shelves/2", "theme": "Fantasy" }
+  ]
+}
+EOF
+
+# Verify ServiceControl was called.
+my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
+is(scalar @servicecontrol_requests, 4, 'Service control was called 4 times.');
+
+my ($check1, $check2, $report1, $report2) = @servicecontrol_requests;
+like($check1->{uri}, qr/:check$/, 'First call is Check');
+like($check2->{uri}, qr/:check$/, 'Second call is Check');
+like($report1->{uri}, qr/:report$/, 'Third call is Report');
+like($report2->{uri}, qr/:report$/, 'Fourth call is Report');
 
 ################################################################################
 
 sub servicecontrol {
-  my ($t, $port, $file) = @_;
+  my ($t, $port, $done, $file) = @_;
   my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
+  my $check_request_count = 0;
+  my $report_request_count = 0;
 
   $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:check', sub {
     my ($headers, $body, $client) = @_;
 
-    # sleep 2 seconds to cause time-out.
-    sleep 2;
+    $check_request_count++;
+    if ($check_request_count != 2) {
+        # sleep 1 second to cause timeout
+        sleep 1;
+    }
 
     print $client <<'EOF';
 HTTP/1.1 200 OK
@@ -181,8 +150,28 @@ Connection: close
 EOF
   });
 
+  $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:report', sub {
+    my ($headers, $body, $client) = @_;
+
+    $report_request_count++;
+    if ($report_request_count != 2) {
+        # sleep 1 second to cause timeout
+        sleep 1;
+    }
+
+    print $client <<'EOF';
+HTTP/1.1 200 OK
+Connection: close
+
+EOF
+
+    ApiManager::write_binary_file($done, ':report done');
+  });
+
   $server->run();
 }
+
+################################################################################
 
 sub bookstore {
   my ($t, $port, $file) = @_;
@@ -190,8 +179,19 @@ sub bookstore {
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
 
-  # Do not initialize any server state, requests won't reach backend anyway.
+  $server->on_sub('GET', '/shelves', sub {
+    my ($headers, $body, $client) = @_;
+    print $client <<'EOF';
+HTTP/1.1 200 OK
+Connection: close
 
+{ "shelves": [
+    { "name": "shelves/1", "theme": "Fiction" },
+    { "name": "shelves/2", "theme": "Fantasy" }
+  ]
+}
+EOF
+  });
   $server->run();
 }
 

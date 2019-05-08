@@ -110,6 +110,9 @@ class Aggregated : public Interface {
              const std::set<std::string>& metrics,
              const std::set<std::string>& labels);
 
+  // Initialize HttpRequest used timeout and retry values.
+  void InitHttpRequestTimeoutRetries();
+
   // Calls to service control server.
   template <class RequestType, class ResponseType>
   void Call(const RequestType& request, ResponseType* response,
@@ -123,6 +126,10 @@ class Aggregated : public Interface {
   // Returns API request timeout in ms based on RequestType
   template <class RequestType>
   int GetHttpRequestTimeout();
+
+  // Returns API request number of retries based on RequestType
+  template <class RequestType>
+  int GetHttpRequestRetries();
 
   // Returns API request auth token based on RequestType
   template <class RequestType>
@@ -166,6 +173,16 @@ class Aggregated : public Interface {
 
   // Maximum report size send to server.
   uint64_t max_report_size_;
+
+  // the configurable timeouts
+  int check_timeout_ms_;
+  int report_timeout_ms_;
+  int quota_timeout_ms_;
+
+  // the configurable retries
+  int check_retries_;
+  int report_retries_;
+  int quota_retries_;
 };
 
 }  // namespace service_control

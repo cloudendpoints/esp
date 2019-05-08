@@ -85,11 +85,11 @@ message ServiceControlConfig {
   ReportAggregatorConfig report_aggregator_config = 4;
 
   // Timeout in milliseconds on service control check requests.
-  // If the value is <= 0, default timeout is 5000 milliseconds.
+  // If the value is <= 0, default timeout is 1000 milliseconds.
   int32 check_timeout_ms = 5;
 
   // Timeout in milliseconds on service control report requests.
-  // If the value is <= 0, default timeout is 15000 milliseconds.
+  // If the value is <= 0, default timeout is 2000 milliseconds.
   int32 report_timeout_ms = 6;
 
   // The intermediate reports for streaming calls should not be more frequent
@@ -100,7 +100,7 @@ message ServiceControlConfig {
   QuotaAggregatorConfig quota_aggregator_config = 8;
 
   // Timeout in milliseconds on service control allocate quota requests.
-  // If the value is <= 0, default timeout is 5000 milliseconds.
+  // If the value is <= 0, default timeout is 1000 milliseconds.
   int32 quota_timeout_ms = 9;
 
   // Config for log HTTP request headers.
@@ -112,6 +112,18 @@ message ServiceControlConfig {
   // Config for log corresponding fields in jwt payload.
   // The value must be a field in JWT payload.
   repeated string log_jwt_payload = 12;
+
+  // The number of retries on service control check calls.
+  // If the value is <= 0, default is 3.
+  int32 check_retries = 13;
+
+  // The number of retries on service control report calls.
+  // If the value is <= 0, default is 5.
+  int32 report_retries = 14;
+
+  // The number of retries on service control allocate quota calls.
+  // If the value is <= 0, default is 1.
+  int32 quota_retries = 15;
 }
 
 // Check aggregator config
