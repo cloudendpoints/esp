@@ -213,6 +213,7 @@ void Aggregated::InitHttpRequestTimeoutRetries() {
   check_retries_ = kCheckDefaultNumberOfRetries;
   report_retries_ = kReportDefaultNumberOfRetries;
   quota_retries_ = kAllocateQuotaDefaultNumberOfRetries;
+  network_fail_open_ = false;
 
   if (server_config_ != nullptr &&
       server_config_->has_service_control_config()) {
@@ -235,6 +236,7 @@ void Aggregated::InitHttpRequestTimeoutRetries() {
     if (config.quota_retries() > 0) {
       quota_retries_ = config.quota_retries();
     }
+    network_fail_open_ = config.network_fail_open();
   }
 }
 
@@ -355,10 +357,8 @@ void Aggregated::Check(
   }
 
   CheckResponse* response = new CheckResponse;
-  bool allow_unregistered_calls = info.allow_unregistered_calls;
 
-  auto check_on_done = [this, response, allow_unregistered_calls, on_done,
-                        trace_span](
+  auto check_on_done = [this, response, on_done, trace_span](
       const ::google::protobuf::util::Status& status) {
     TRACE(trace_span) << "Check returned with status: " << status.ToString();
     CheckResponseInfo response_info;
@@ -377,21 +377,10 @@ void Aggregated::Check(
     if (status.ok()) {
       Status status = Proto::ConvertCheckResponse(
           *response, service_control_proto_.service_name(), &response_info);
-      // If server replied with either invalid api_key or not activated service,
-      // the request is rejected even allow_unregistered_calls is true. Most
-      // likely, users provide a wrong api key. By failing the request, the
-      // users will be notified with the error and have chance to correct it.
-      // Otherwise, the Report call will fail. It is very hard to notice and
-      // debug the Report failure.
-      if (allow_unregistered_calls && response_info.is_api_key_valid &&
-          response_info.service_is_activated) {
-        on_done(Status::OK, response_info);
-      } else {
-        on_done(status, response_info);
-      }
+      on_done(status, response_info);
     } else {
-      // If allow_unregistered_calls is true, it is always OK to proceed.
-      if (allow_unregistered_calls) {
+      // If network_fail_open is true, it is always OK to proceed.
+      if (network_fail_open_) {
         on_done(Status::OK, response_info);
       } else {
         on_done(Status(status.error_code(), status.error_message(),
