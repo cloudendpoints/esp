@@ -183,6 +183,9 @@ class Aggregated : public Interface {
   int check_retries_;
   int report_retries_;
   int quota_retries_;
+
+  // network fail policy, default to false
+  bool network_fail_open_{};
 };
 
 }  // namespace service_control

@@ -297,7 +297,6 @@ void RequestContext::FillJwtPayloads(service_control::ReportRequestInfo *info) {
 void RequestContext::FillCheckRequestInfo(
     service_control::CheckRequestInfo *info) {
   FillOperationInfo(info);
-  info->allow_unregistered_calls = method()->allow_unregistered_calls();
 
   request_->FindHeader(kXAndroidPackage, &info->android_package_name);
   request_->FindHeader(kXAndroidCert, &info->android_cert_fingerprint);

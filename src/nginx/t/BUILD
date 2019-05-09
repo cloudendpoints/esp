@@ -254,6 +254,7 @@ nginx_suite(
 nginx_suite(
     nginx = "//src/nginx/main:nginx-esp",
     tests = [
+        "check_network_fail_open.t",
         "check_network_failures.t",
         "test_timeout_retry.t",
     ],

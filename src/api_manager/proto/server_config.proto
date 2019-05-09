@@ -124,6 +124,10 @@ message ServiceControlConfig {
   // The number of retries on service control allocate quota calls.
   // If the value is <= 0, default is 1.
   int32 quota_retries = 15;
+
+  // In case of failing to connect to service control service, the requests
+  // are allowed if this field is true.  Default is false.
+  bool network_fail_open = 16;
 }
 
 // Check aggregator config
