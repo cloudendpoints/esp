@@ -303,6 +303,11 @@ class TestStartEsp(unittest.TestCase):
            " --grpc_backend_ssl_private_key_file=/etc/nginx/client.key --grpc_backend_ssl_cert_chain_file=/etc/nginx/client.crt";
         self.run_test_with_expectation(expected_config_file, self.generated_server_config_file, config_generator)
 
+    def test_service_control_network_fail_open_arg_output_is_as_expected(self):
+        expected_config_file = "./start_esp/test/testdata/expected_service_control_network_fail_open.json"
+        config_generator = self.basic_config_generator + " --service_control_network_fail_open"
+        self.run_test_with_expectation(expected_config_file, self.generated_server_config_file, config_generator)
+
     ########## The tests for validating it should generate failure on conflict flags ##########
 
     def test_enable_backend_routing_conflicts_with_string_flag(self):

@@ -187,6 +187,7 @@ def write_server_config_template(server_config_path, args):
                 service_configs=service_configs,
                 management=args.management,
                 service_control_url_override=args.service_control_url_override,
+                service_control_network_fail_open=args.service_control_network_fail_open,
                 rollout_id=args.rollout_ids[idx],
                 rollout_strategy=args.rollout_strategy,
                 always_print_primitive_fields=args.transcoding_always_print_primitive_fields,
@@ -899,6 +900,12 @@ config file.'''.format(
     parser.add_argument('--grpc_backend_ssl_cert_chain_file',
         default=None,
         help='''The file path for gRPC backend SSL client certificate chain.''')
+
+    parser.add_argument('--service_control_network_fail_open',
+        action='store_true', help='''
+        In case of network failures when connecting to Google service control,
+        the requests will be allowed if this flag is on. Default is off.
+        ''')
 
     return parser
 
