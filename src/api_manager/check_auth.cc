@@ -46,8 +46,6 @@ const char kAccessTokenName[] = "access_token";
 const char kAuthHeader[] = "authorization";
 const char kAuthHeaderIAP[] = "x-goog-iap-jwt-assertion";
 const char kBearer[] = "Bearer ";
-// The lifetime of a public key cache entry. Unit: seconds.
-const int kPubKeyCacheDuration = 300;
 
 // An AuthChecker object is created for every incoming request. It authenticates
 // the request, extracts user info from the auth token and sets it to the
@@ -356,9 +354,11 @@ void AuthChecker::PostFetchPubKey(Status status, std::string &&body) {
   }
 
   Certs &key_cache = context_->service_context()->certs();
+  int cache_duration_in_s =
+      context_->service_context()->global_context()->jwks_cache_duration_in_s();
   key_cache.Update(
       user_info_.issuer, std::move(body),
-      system_clock::now() + std::chrono::seconds(kPubKeyCacheDuration));
+      system_clock::now() + std::chrono::seconds(cache_duration_in_s));
   VerifySignature();
 }
 

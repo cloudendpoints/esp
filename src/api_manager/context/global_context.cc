@@ -41,6 +41,9 @@ const double kDefaultTraceSampleQps = 0.1;
 // Default to 10s.
 const int kIntermediateReportInterval = 10;
 
+// The lifetime of a public key cache entry. Unit: seconds.
+const int kPubKeyCacheDurationInSecond = 300;
+
 }  // namespace
 
 GlobalContext::GlobalContext(std::unique_ptr<ApiManagerEnvInterface> env,
@@ -51,7 +54,8 @@ GlobalContext::GlobalContext(std::unique_ptr<ApiManagerEnvInterface> env,
       disable_log_status_(false),
       always_print_primitive_fields_(false),
       intermediate_report_interval_(kIntermediateReportInterval),
-      platform_(ComputePlatform::kUnknown) {
+      platform_(ComputePlatform::kUnknown),
+      jwks_cache_duration_in_s_(kPubKeyCacheDurationInSecond) {
   // Need to load server config first.
   server_config_ = Config::LoadServerConfig(env_.get(), server_config);
 
@@ -68,9 +72,13 @@ GlobalContext::GlobalContext(std::unique_ptr<ApiManagerEnvInterface> env,
     service_account_token_.SetClientAuthSecret(
         server_config_->google_authentication_secret());
 
-    is_auth_force_disabled_ =
-        server_config_->has_api_authentication_config() &&
-        server_config_->api_authentication_config().force_disable();
+    if (server_config_->has_api_authentication_config()) {
+      const auto& auth_config = server_config_->api_authentication_config();
+      is_auth_force_disabled_ = auth_config.force_disable();
+      if (auth_config.jwks_cache_duration_in_s() > 0) {
+        jwks_cache_duration_in_s_ = auth_config.jwks_cache_duration_in_s();
+      }
+    }
 
     // Check server_config override.
     if (server_config_->has_service_control_config() &&

@@ -201,7 +201,8 @@ def write_server_config_template(server_config_path, args):
                 log_jwt_payloads=args.jwt_payloads,
                 metadata_attributes=args.metadata_attributes,
                 compute_platform_override=args.compute_platform_override,
-                grpc_backend_ssl_credentials=args.grpc_backend_ssl_credentials)
+                grpc_backend_ssl_credentials=args.grpc_backend_ssl_credentials,
+                jwks_cache_duration_in_s=args.jwks_cache_duration_in_s)
 
         server_config_file = server_config_path
         if server_config_file.endswith('/'):
@@ -906,6 +907,9 @@ config file.'''.format(
         In case of network failures when connecting to Google service control,
         the requests will be allowed if this flag is on. Default is off.
         ''')
+
+    parser.add_argument('--jwks_cache_duration_in_s', default=None, type=int, help='''
+        Specify JWT public key cache duration in seconds. Default is 5 minutes.''')
 
     return parser
 

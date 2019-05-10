@@ -64,6 +64,13 @@ service_control_config {
   % endif
 }
 % endif
+% if jwks_cache_duration_in_s:
+api_authentication_config {
+  % if jwks_cache_duration_in_s:
+  jwks_cache_duration_in_s: ${jwks_cache_duration_in_s}
+  % endif
+}
+% endif
 % if client_ip_header:
 client_ip_extraction_config {
   client_ip_header: "${client_ip_header}"
