@@ -210,6 +210,10 @@ message ApiAuthenticationConfig {
   // Allows to disable the API authentication regardless of the auth
   // configuration in service config.
   bool force_disable = 1;
+
+  // Specify the JWKS public key cache duration in seconds.
+  // If not specified, or 0, default is 300 (5 minutes).
+  int32 jwks_cache_duration_in_s = 2;
 }
 
 // Server config for API Authorization via Firebase Rules

@@ -90,6 +90,8 @@ class GlobalContext {
   const std::string &platform() const { return platform_; }
   const std::string &location() const { return location_; }
 
+  int jwks_cache_duration_in_s() const { return jwks_cache_duration_in_s_; }
+
  private:
   // create cloud trace.
   std::unique_ptr<cloud_trace::Aggregator> CreateCloudTraceAggregator();
@@ -133,6 +135,9 @@ class GlobalContext {
   std::string project_id_;
   // The location from metadata zone.
   std::string location_;
+
+  // The jwks public key cache duration.
+  int jwks_cache_duration_in_s_;
 };
 
 }  // namespace context
