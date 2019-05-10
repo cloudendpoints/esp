@@ -43,7 +43,7 @@ my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $PubkeyPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(15);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(24);
 
 my $config = ApiManager::get_bookstore_service_config;
 $config .= <<"EOF";
@@ -66,6 +66,14 @@ control {
 EOF
 
 $t->write_file('service.pb.txt', $config);
+
+# Set the jwks cache duration as 1 second.
+ApiManager::write_file_expand($t, 'server_config.txt', <<"EOF");
+api_authentication_config {
+  jwks_cache_duration_in_s: 1
+}
+EOF
+
 ApiManager::write_file_expand($t, 'nginx.conf', <<"EOF");
 %%TEST_GLOBALS%%
 daemon off;
@@ -81,7 +89,7 @@ http {
     location / {
       endpoints {
         api service.pb.txt;
-        %%TEST_CONFIG%%
+        server_config server_config.txt;
         on;
       }
       proxy_pass http://127.0.0.1:${BackendPort};
@@ -91,7 +99,6 @@ http {
 EOF
 
 # TODO: refactor so nginx is only started once per test.
-my $token = Auth::get_auth_token('./src/nginx/t/matching-client-secret.json');
 my $pkey = Auth::get_public_key_jwk;
 
 # --------------------------------------------------------------------
@@ -107,7 +114,7 @@ $t->run();
 make_request_n_validate_pubkey_fetch($t, 1, 'expect fetch');
 
 # --------------------------------------------------------------------
-# Auth OK, cached key (default 5 mins)
+# Auth OK, cached key (1 second)
 # --------------------------------------------------------------------
 $t->run_daemon(\&bookstore, $t, $BackendPort, 'bookstore.log');
 $t->run_daemon(\&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log');
@@ -116,6 +123,18 @@ is($t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'Bookstore socket ready.');
 is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service Control socket ready.');
 is($t->waitforsocket("127.0.0.1:${PubkeyPort}"), 1, 'Pubkey socket ready.');
 make_request_n_validate_pubkey_fetch($t, 0, 'expect no fetch');
+
+# sleep 1 second, cache should expired
+sleep(1);
+
+$t->run_daemon(\&bookstore, $t, $BackendPort, 'bookstore.log');
+$t->run_daemon(\&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log');
+$t->run_daemon(\&pubkey, $t, $PubkeyPort, $pkey, 'pubkey.log');
+is($t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'Bookstore socket ready.');
+is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service Control socket ready.');
+is($t->waitforsocket("127.0.0.1:${PubkeyPort}"), 1, 'Pubkey socket ready.');
+make_request_n_validate_pubkey_fetch($t, 1, 'expect fetch');
+
 $t->stop();
 
 ################################################################################
@@ -171,6 +190,8 @@ EOF
 
 sub make_request_n_validate_pubkey_fetch {
   my ($t, $is_fetched, $comment) = @_;
+
+  my $token = Auth::get_auth_token('./src/nginx/t/matching-client-secret.json');
 
   # Need to use different api-keys to avoid service_control cache.
   my $response = ApiManager::http($NginxPort,<<"EOF");
