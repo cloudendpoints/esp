@@ -85,11 +85,11 @@ message ServiceControlConfig {
   ReportAggregatorConfig report_aggregator_config = 4;
 
   // Timeout in milliseconds on service control check requests.
-  // If the value is <= 0, default timeout is 1000 milliseconds.
+  // If the value is <= 0, default timeout is 1500 milliseconds.
   int32 check_timeout_ms = 5;
 
   // Timeout in milliseconds on service control report requests.
-  // If the value is <= 0, default timeout is 2000 milliseconds.
+  // If the value is <= 0, default timeout is 3500 milliseconds.
   int32 report_timeout_ms = 6;
 
   // The intermediate reports for streaming calls should not be more frequent
@@ -100,7 +100,7 @@ message ServiceControlConfig {
   QuotaAggregatorConfig quota_aggregator_config = 8;
 
   // Timeout in milliseconds on service control allocate quota requests.
-  // If the value is <= 0, default timeout is 1000 milliseconds.
+  // If the value is <= 0, default timeout is 1500 milliseconds.
   int32 quota_timeout_ms = 9;
 
   // Config for log HTTP request headers.
