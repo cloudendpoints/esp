@@ -59,11 +59,15 @@ const int kReportAggregationEntries = 10000;
 const int kReportAggregationFlushIntervalMs = 1000;
 
 // The default connection timeout for check requests.
-const int kCheckDefaultTimeoutInMs = 1000;
+// 1.5s Check timeout is based on SYN resend timeout is 1s.
+const int kCheckDefaultTimeoutInMs = 1500;
 // The default connection timeout for allocate quota requests.
-const int kAllocateQuotaDefaultTimeoutInMs = 1000;
+// 1.5s Quota timeout is based on SYN resend timeout is 1s.
+const int kAllocateQuotaDefaultTimeoutInMs = 1500;
 // The default connection timeout for report requests.
-const int kReportDefaultTimeoutInMs = 2000;
+// 3.5s Report timeout is based on SYN resend timeout is 1s.
+// and Server processing Report is much slower.
+const int kReportDefaultTimeoutInMs = 3500;
 
 // The default number of retries for check calls.
 const int kCheckDefaultNumberOfRetries = 3;
