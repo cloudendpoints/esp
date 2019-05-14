@@ -30,64 +30,51 @@
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . ${ROOT}/script/all-utilities || { echo "Cannot load Bash utilities"; exit 1; }
 
+ESP_RELEASE_PROJECT=endpoints-release
+STABLE_ESP_REPO=google-cloud-endpoints-jessie
+DIRECT_REPO=''
+
 function usage() {
   [[ -n "${1}" ]] && echo "${1}"
   cat << END_USAGE
 
-Usage: ${BASH_SOURCE[0]} -r <DIRECT_REPO>
+Usage: ${BASH_SOURCE[0]} [-r <DIRECT_REPO>]
 
-This script will release stable ESP docker image with format of:
-  gcr.io/endpoints-release/endpoints-runtime:\${MINOR_BASE_VERSION}
-  gcr.io/endpoints-release/endpoints-runtime:\${MAJOR_BASE_VERSION}
-where:
-  MINOR_BASE_VERSION=major.minor
-  MAJOR_BASE_VERSION=major
-
-It will also mark debian package <DIRECT_REPO> in rapture as stable.
+This script will show all release ESP image tags, and stable rapture tag
+If DIRECT_REPO is specified, show that tag too.
 
 END_USAGE
   exit 1
 }
 
-ESP_RELEASE_PROJECT=endpoints-release
-DEBIAN_PACKAGE_REPOSITORY=''
 
 while getopts :r: arg; do
   case ${arg} in
-    r) DEBIAN_PACKAGE_REPOSITORY="${OPTARG}";;
+    r) DIRECT_REPO="${OPTARG}";;
     *) usage "Invalid option: -${OPTARG}";;
   esac
 done
 
-[[ -n "${DEBIAN_PACKAGE_REPOSITORY}" ]] \
-  || usage "Please provide name of the Debian repository (DIRECT_REPO) via -r."
-
-which rapture > /dev/null 2>&1 \
-  || error_exit "rapture client not installed on this machine."
-
-set -x
-
-VERSION="$(command cat ${ROOT}/src/nginx/version)"
-# Minor base is 1.33  if version is 1.33.0
-MINOR_BASE_VERSION=${VERSION%.*}
-# Major base is 1  if version is 1.33.0
-MAJOR_BASE_VERSION=${MINOR_BASE_VERSION%.*}
-
-function tag_stable_image() {
+function list_image_tags() {
   local image="gcr.io/${ESP_RELEASE_PROJECT}/$1"
-
-  gcloud container images add-tag "${image}:${VERSION}" \
-    "${image}:${MINOR_BASE_VERSION}" "${image}:${MAJOR_BASE_VERSION}" --project ${ESP_RELEASE_PROJECT}
+  echo "show tags for ${image}"
+  gcloud container images list-tags ${image} --project ${ESP_RELEASE_PROJECT}
 }
 
-tag_stable_image "endpoints-runtime"
-tag_stable_image "endpoints-runtime-secure"
-tag_stable_image "endpoints-runtime-serverless"
+list_image_tags "endpoints-runtime"
+list_image_tags "endpoints-runtime-secure"
+list_image_tags "endpoints-runtime-serverless"
 
+function rapture_show_repo() {
+  local repo="$1"
+  echo "rapture ${repo}"
+  rapture --universe=cloud-apt showrepo "${repo}"
+}
 
-rapture --universe=cloud-apt settag ${DEBIAN_PACKAGE_REPOSITORY} \
-  endpoints-dev.stable:true \
-  || error_exit "ERROR: failed to mark the debian package '${DEBIAN_PACKAGE_REPOSITORY}' as stable"
+rapture_show_repo "${STABLE_ESP_REPO}"
+[[ -n "${DIRECT_REPO}" ]] && {
+  rapture_show_repo ${DIRECT_REPO}
+}
 
 printf '\e[31m
 ***************************************************************************
