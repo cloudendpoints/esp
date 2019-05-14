@@ -1,3 +1,10 @@
+# Release 1.33.0 13-05-2019
+
+- Add a flag to config jwks cache duration (#607)
+- Add network_fail_open flag for service control check (#603)
+- Add retry for service control calls (#601)
+- Improve JWT verification error reporting (#599)
+
 # Release 1.32.0 30-04-2019
 
 - Percent encode for grpc tailer: grpc-message (#588)
