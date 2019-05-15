@@ -26,6 +26,13 @@
 #
 # A Bazel (http://bazel.io) workspace for the Google Cloud Endpoints runtime.
 
+load(
+    "@bazel_tools//tools/build_defs/repo:git.bzl",
+    "git_repository",
+    "new_git_repository",
+)
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
 # Version from Jul 11, 2018 before they added a dependency on cc_common from
 # a newer bazel version.
 http_archive(
@@ -36,7 +43,7 @@ http_archive(
 
 git_repository(
     name = "nginx",
-    commit = "f5bf2d17902d1b504faac1a266883dab29dbff75",  # nginx-1.15.6
+    commit = "2746d4169f5376bb24c119e45aabe4fb70ca7150",  # nginx-1.15.9
     remote = "https://nginx.googlesource.com/nginx",
 )
 

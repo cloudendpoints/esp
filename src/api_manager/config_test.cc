@@ -976,15 +976,6 @@ static const char kServiceConfigWithoutAuthz[] = R"(
   name: "Service.Name"
 )";
 
-static const char kServiceConfigWithAuthz[] = R"(
-  name: "Service.Name"
-  experimental {
-    authorization {
-      provider: "authz@firebase.com"
-    }
-  }
-)";
-
 static const char kServerConfigWithoutAuthz[] = R"(
   service_control_config {
     check_aggregator_config {
@@ -1004,26 +995,6 @@ static const char kServerConfigWithAuthz[] = R"(
     firebase_server: "https://myfirebaseserver.com"
   }
 )";
-
-TEST(Config, TestFirebaseServerCheckWithServiceAuthzWithoutServerAuthz) {
-  MockApiManagerEnvironmentWithLog env;
-
-  std::unique_ptr<Config> config =
-      Config::Create(&env, kServiceConfigWithAuthz, kServerConfigWithoutAuthz);
-  ASSERT_TRUE(config);
-
-  ASSERT_EQ(config->GetFirebaseServer(), "authz@firebase.com");
-}
-
-TEST(Config, TestFirebaseServerCheckWithServiceAuthzWithServerAuthz) {
-  MockApiManagerEnvironmentWithLog env;
-
-  std::unique_ptr<Config> config =
-      Config::Create(&env, kServiceConfigWithAuthz, kServerConfigWithAuthz);
-  ASSERT_TRUE(config);
-
-  ASSERT_EQ(config->GetFirebaseServer(), "https://myfirebaseserver.com");
-}
 
 TEST(Config, TestFirebaseServerCheckWithoutServiceAuthzWithoutServerAuthz) {
   MockApiManagerEnvironmentWithLog env;
@@ -1048,7 +1019,7 @@ TEST(Config, TestFirebaseServerCheckWithoutServiceConfigWithServerConfig) {
 TEST(Config, TestFirebaseServerAudience) {
   MockApiManagerEnvironmentWithLog env;
   std::unique_ptr<Config> config =
-      Config::Create(&env, kServiceConfigWithAuthz, kServerConfigWithAuthz);
+      Config::Create(&env, kServiceConfigWithoutAuthz, kServerConfigWithAuthz);
   ASSERT_TRUE(config);
 
   ASSERT_EQ(config->GetFirebaseAudience(),

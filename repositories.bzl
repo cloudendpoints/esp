@@ -14,6 +14,14 @@
 #
 ################################################################################
 #
+
+load(
+    "@bazel_tools//tools/build_defs/repo:git.bzl",
+    "git_repository",
+    "new_git_repository",
+)
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
 def cares_repositories(bind = True):
     BUILD = """
 cc_library(
@@ -121,7 +129,7 @@ genrule(
 )
 """
 
-    native.new_git_repository(
+    new_git_repository(
         name = "cares_git",
         remote = "https://github.com/c-ares/c-ares.git",
         commit = "7691f773af79bf75a62d1863fd0f13ebf9dc51b1",  # v1.12.0
@@ -158,7 +166,7 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 """
-    native.new_git_repository(
+    new_git_repository(
         name = "org_golang_google_grpc_git",
         commit = "9bf8ea0a8282ebecd1aa474c926e3028f5c22a4c",  # May 19, 2017
         remote = "https://github.com/grpc/grpc-go.git",
@@ -172,7 +180,7 @@ filegroup(
         )
 
 def protobuf_repositories(bind = True):
-    native.git_repository(
+    git_repository(
         name = "protobuf_git",
         commit = "48cb18e5c419ddd23d9badcfe4e9df7bde1979b2",  # same as grpc
         remote = "https://github.com/google/protobuf.git",
@@ -271,7 +279,7 @@ cc_library(
     visibility = ["//visibility:public"],
 )
 """
-    native.new_git_repository(
+    new_git_repository(
         name = "googletest_git",
         build_file_content = BUILD,
         commit = "d225acc90bc3a8c420a9bcd1f033033c1ccd7fe0",
@@ -295,7 +303,7 @@ cc_library(
         )
 
 def transcoding_repositories(bind = True):
-    native.git_repository(
+    git_repository(
         name = "httpjson_transcoding",
         commit = "6c54b75dbd294e1e264e3f9476ffb52be8763cd3",
         remote = "https://github.com/grpc-ecosystem/grpc-httpjson-transcoding.git",
@@ -373,7 +381,7 @@ cc_library(
 )
 """
 
-    native.new_git_repository(
+    new_git_repository(
         name = "zlib_git",
         build_file_content = BUILD,
         commit = "50893291621658f355bc5b4d450a8d06a563053d",  # v1.2.8
@@ -443,7 +451,7 @@ genrule(
 )
 """
 
-    native.new_git_repository(
+    new_git_repository(
         name = "nanopb_git",
         build_file_content = BUILD,
         commit = "f8ac463766281625ad710900479130c7fcb4d63b",
@@ -544,6 +552,7 @@ cc_proto_library(
         "google/api/experimental/authorization_config.proto",
         "google/api/monitored_resource.proto",
         "google/api/monitoring.proto",
+        "google/api/resource.proto",
         "google/api/quota.proto",
         "google/api/service.proto",
         "google/api/source_info.proto",
@@ -575,27 +584,13 @@ cc_proto_library(
     ],
 )
 """
-
-    # googleapis currently require bazel version >= 23.0.
-    # BUILD files were added in the googleapis repository in October 2018, causes "crosses boundary
-    # of subpackage error". As a workaround, a forked repo without BUILD files is used.
-    #
-    # Instructions for updating googleapis:
-    #  1) fork from https://github.com/googleapis/googleapis.git
-    #  2) make a branch
-    #  3) remove BUILD files `$find . -type f -name '*BUILD*' | xargs rm`
-    #  4) commit and push
-    #  5) Update `commit` and `remote` in `new_git_repository`
-    #  6) Update the below comment to reflect the new version
-    #
-    # Corresponds to googleapis/googleapis.git:
-    #  Date: April 5, 2019
-    #  SHA:  9a02c5acecb43f38fae4fa52c6420f21c335b888
-    native.new_git_repository(
+    http_archive(
         name = "googleapis_git",
-        commit = "0a75d48b4b1fde4b8b677d3a4756fbaa9d1ae5a4",
-        remote = "https://github.com/kh-chang/googleapis.git",
         build_file_content = BUILD,
+        patch_cmds = ["find . -type f -name '*BUILD*' | xargs rm"],
+        strip_prefix = "googleapis-275cdfcdc3188a60456f43acd139b8cc037379f4",  # May 14, 2019
+        url = "https://github.com/googleapis/googleapis/archive/275cdfcdc3188a60456f43acd139b8cc037379f4.tar.gz",
+        sha256 = "d07a9bf06bb02b51ff6e913211cedc7511430af550b6a775908c33c8ee218985",
     )
 
     if bind:
@@ -627,7 +622,7 @@ cc_proto_library(
 def servicecontrol_client_repositories(bind = True):
     googleapis_repositories(bind = bind)
 
-    native.git_repository(
+    git_repository(
         name = "servicecontrol_client_git",
         commit = "79fbf18aaeeed2933324b620ff19580875095440",  # 2019.05.09
         remote = "https://github.com/cloudendpoints/service-control-client-cxx.git",
