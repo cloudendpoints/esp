@@ -169,13 +169,11 @@ void Aggregated::ProtoPool<Type>::Free(std::unique_ptr<Type> item) {
   }
 }
 
-Aggregated::Aggregated(const ::google::api::Service& service,
-                       const ServerConfig* server_config,
-                       ApiManagerEnvInterface* env,
-                       auth::ServiceAccountToken* sa_token,
-                       const std::set<std::string>& logs,
-                       const std::set<std::string>& metrics,
-                       const std::set<std::string>& labels)
+Aggregated::Aggregated(
+    const ::google::api::Service& service, const ServerConfig* server_config,
+    ApiManagerEnvInterface* env, auth::ServiceAccountToken* sa_token,
+    const std::set<std::string>& logs, const std::set<std::string>& metrics,
+    const std::set<std::string>& labels, SetRolloutIdFunc set_rollout_id_func)
     : service_(&service),
       server_config_(server_config),
       env_(env),
@@ -185,7 +183,8 @@ Aggregated::Aggregated(const ::google::api::Service& service,
       url_(service_, server_config),
       mismatched_check_config_id_(service.id()),
       mismatched_report_config_id_(service.id()),
-      max_report_size_(0) {
+      max_report_size_(0),
+      set_rollout_id_func_(set_rollout_id_func) {
   if (sa_token_) {
     sa_token_->SetAudience(
         auth::ServiceAccountToken::JWT_TOKEN_FOR_SERVICE_CONTROL,
@@ -314,24 +313,9 @@ Status Aggregated::Report(const ReportRequestInfo& info) {
   client_->Report(
       *request, response,
       [this, response](const ::google::protobuf::util::Status& status) {
-        // When the callback comes, this object may have been deleted.
-        // In this case, client_ should have been freed.
-        if (client_) {
-          if (service_control_proto_.service_config_id() !=
-              response->service_config_id()) {
-            if (mismatched_report_config_id_ != response->service_config_id()) {
-              env_->LogDebug(
-                  "Received non-matching report response service config ID: '" +
-                  response->service_config_id() + "', requested: '" +
-                  service_control_proto_.service_config_id() + "'");
-              mismatched_report_config_id_ = response->service_config_id();
-            }
-          }
-
-          if (!status.ok() && env_) {
-            env_->LogError(std::string("Service control report failed. " +
-                                       status.ToString()));
-          }
+        if (!status.ok() && env_) {
+          env_->LogError(std::string("Service control report failed. " +
+                                     status.ToString()));
         }
         delete response;
       });
@@ -366,18 +350,6 @@ void Aggregated::Check(
       const ::google::protobuf::util::Status& status) {
     TRACE(trace_span) << "Check returned with status: " << status.ToString();
     CheckResponseInfo response_info;
-
-    if (service_control_proto_.service_config_id() !=
-        response->service_config_id()) {
-      if (mismatched_check_config_id_ != response->service_config_id()) {
-        env_->LogWarning(
-            "Received non-matching check response service config ID: '" +
-            response->service_config_id() + "', requested: '" +
-            service_control_proto_.service_config_id() + "'");
-        mismatched_check_config_id_ = response->service_config_id();
-      }
-    }
-
     if (status.ok()) {
       Status status = Proto::ConvertCheckResponse(
           *response, service_control_proto_.service_name(), &response_info);
@@ -548,6 +520,47 @@ const std::string& Aggregated::GetAuthToken<AllocateQuotaRequest>() {
   }
 }
 
+template <>
+void Aggregated::HandleResponse(const CheckResponse& response) {
+  if (set_rollout_id_func_ && !response.service_rollout_id().empty()) {
+    set_rollout_id_func_(response.service_rollout_id());
+  }
+
+  if (!response.service_config_id().empty() &&
+      service_control_proto_.service_config_id() !=
+          response.service_config_id()) {
+    if (mismatched_check_config_id_ != response.service_config_id()) {
+      env_->LogDebug(
+          "Received non-matching check response service config ID: '" +
+          response.service_config_id() + "', requested: '" +
+          service_control_proto_.service_config_id() + "'");
+      mismatched_check_config_id_ = response.service_config_id();
+    }
+  }
+}
+
+template <>
+void Aggregated::HandleResponse(const ReportResponse& response) {
+  if (set_rollout_id_func_ && !response.service_rollout_id().empty()) {
+    set_rollout_id_func_(response.service_rollout_id());
+  }
+
+  if (!response.service_config_id().empty() &&
+      service_control_proto_.service_config_id() !=
+          response.service_config_id()) {
+    if (mismatched_report_config_id_ != response.service_config_id()) {
+      env_->LogDebug(
+          "Received non-matching report response service config ID: '" +
+          response.service_config_id() + "', requested: '" +
+          service_control_proto_.service_config_id() + "'");
+      mismatched_report_config_id_ = response.service_config_id();
+    }
+  }
+}
+
+template <>
+void Aggregated::HandleResponse(const AllocateQuotaResponse& response) {}
+
 template <class RequestType, class ResponseType>
 void Aggregated::Call(const RequestType& request, ResponseType* response,
                       TransportDoneFunc on_done,
@@ -569,6 +582,7 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
         status =
             Status(Code::INVALID_ARGUMENT, std::string("Invalid response"));
       }
+      HandleResponse(*response);
     } else {
       env_->LogError(std::string("Failed to call ") + url + ", Error: " +
                      status.ToString() + ", Response body: " + body);
@@ -611,7 +625,8 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
 Interface* Aggregated::Create(const ::google::api::Service& service,
                               const ServerConfig* server_config,
                               ApiManagerEnvInterface* env,
-                              auth::ServiceAccountToken* sa_token) {
+                              auth::ServiceAccountToken* sa_token,
+                              SetRolloutIdFunc set_rollout_id_func) {
   if (server_config &&
       server_config->service_control_config().force_disable()) {
     env->LogError("Service control is disabled.");
@@ -626,7 +641,7 @@ Interface* Aggregated::Create(const ::google::api::Service& service,
   std::set<std::string> logs, metrics, labels;
   Status s = LogsMetricsLoader::Load(service, &logs, &metrics, &labels);
   return new Aggregated(service, server_config, env, sa_token, logs, metrics,
-                        labels);
+                        labels, set_rollout_id_func);
 }
 
 }  // namespace service_control

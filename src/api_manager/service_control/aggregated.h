@@ -34,13 +34,18 @@ namespace google {
 namespace api_manager {
 namespace service_control {
 
+// The function prototype to set the latest rollout id
+// from Check and Report response.
+typedef std::function<void(const std::string& rollout_id)> SetRolloutIdFunc;
+
 // This implementation uses service-control-client-cxx module.
 class Aggregated : public Interface {
  public:
   static Interface* Create(const ::google::api::Service& service,
                            const proto::ServerConfig* server_config,
                            ApiManagerEnvInterface* env,
-                           auth::ServiceAccountToken* sa_token);
+                           auth::ServiceAccountToken* sa_token,
+                           SetRolloutIdFunc set_rollout_id_func);
 
   virtual ~Aggregated();
 
@@ -108,7 +113,8 @@ class Aggregated : public Interface {
              ApiManagerEnvInterface* env, auth::ServiceAccountToken* sa_token,
              const std::set<std::string>& logs,
              const std::set<std::string>& metrics,
-             const std::set<std::string>& labels);
+             const std::set<std::string>& labels,
+             SetRolloutIdFunc set_rollout_id_func);
 
   // Initialize HttpRequest used timeout and retry values.
   void InitHttpRequestTimeoutRetries();
@@ -134,6 +140,9 @@ class Aggregated : public Interface {
   // Returns API request auth token based on RequestType
   template <class RequestType>
   const std::string& GetAuthToken();
+
+  template <class ResponseType>
+  void HandleResponse(const ResponseType& response);
 
   // the sevice config.
   const ::google::api::Service* service_;
@@ -186,6 +195,10 @@ class Aggregated : public Interface {
 
   // network fail policy, default to false
   bool network_fail_open_{};
+
+  // The callback function to set the latest rollout id
+  // from Check and Report response
+  SetRolloutIdFunc set_rollout_id_func_;
 };
 
 }  // namespace service_control
