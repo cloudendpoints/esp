@@ -569,11 +569,6 @@ std::string Config::GetFirebaseServer() {
     return server_config_->api_check_security_rules_config().firebase_server();
   }
 
-  if (service_.has_experimental() &&
-      service_.experimental().has_authorization() &&
-      !service_.experimental().authorization().provider().empty()) {
-    return service_.experimental().authorization().provider();
-  }
   return "";
 }
 
