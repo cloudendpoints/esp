@@ -95,7 +95,7 @@ class GlobalContext {
   void set_rollout_id(const std::string &rollout_id) {
     rollout_id_ = rollout_id;
   }
-  const std::string& rollout_id() const { return rollout_id_; }
+  const std::string &rollout_id() const { return rollout_id_; }
 
  private:
   // create cloud trace.
