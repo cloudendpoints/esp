@@ -543,6 +543,18 @@ operations {
           number_value: 1048576
         }
       }
+      fields {
+        key: "service_agent"
+        value {
+          string_value: "ESP/"
+        }
+      }
+      fields {
+        key: "service_config_id"
+        value {
+          string_value: "2016-09-19r0"
+        }
+      }
     }
     name: "local_test_log"
     timestamp {
