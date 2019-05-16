@@ -299,21 +299,21 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, ResponseRolloutID) {
   config_manager->Init();
   ASSERT_EQ(0, sequence);
 
-  // set rollout_id to 2017-05-01r0 which is same as one from from
-  // global_context
+  // Set the same rollout_id to config_manager and global_context
   config_manager->set_current_rollout_id("2017-05-01r0");
   global_context_->set_rollout_id("2017-05-01r0");
   config_manager->CountRequests(1);
 
-  // This is not called at first timeer
+  // So no need to make rollout HTTP call.
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_)).Times(0);
 
   raw_env_->RunTimer();
   // callback should not be called
   ASSERT_EQ(0, sequence);
 
-  // global_context_->set_rollout_id() is not called
-  // So Http request to inception rollout is called, but ID did not changed
+  // Not calling global_context_->set_rollout_id() means there
+  // is not Check or Report called since last timeout.
+  // So Http request to get rollout is called, but ID did not changed
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
       .WillOnce(Invoke([this](HTTPRequest* req) {
         ASSERT_EQ(
@@ -327,7 +327,8 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, ResponseRolloutID) {
   // callback should not be called
   ASSERT_EQ(0, sequence);
 
-  // global_context_->set_rollout_id() is called with different id
+  // Call global_context_->set_rollout_id() with different id
+  // to simulate Report/Check response get a new rollout id,
   global_context_->set_rollout_id("2017-05-01r111");
   // So Http request to inception rollout is called, but ID did not changed
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))

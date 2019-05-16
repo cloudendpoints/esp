@@ -82,13 +82,11 @@ void ConfigManager::OnRolloutsRefreshTimer() {
     return;
   }
 
-  // Check the rollout id from Check/Report response and stored in
-  // global_context
-  // This rollout id is fresh and it is fetched since previous timeout.
+  // The rollout id in global_context is from Check/Report response.
+  // It is fresh and should have been fetched since last timeout.
   if (!global_context_->rollout_id().empty()) {
-    // If the fresh rollout id is the same as the current one, bailout
     bool bail_out = (global_context_->rollout_id() == current_rollout_id_);
-    // Clear the rollout_id to make sure it is fresh at next timeout.
+    // Clear it to make sure it is fresh for the next timeout
     global_context_->set_rollout_id("");
     if (bail_out) {
       return;
