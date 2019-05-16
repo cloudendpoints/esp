@@ -126,7 +126,7 @@ $proto_request});
 verify_grpc_message("test", "test");
 verify_grpc_message(
 '\t\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\t\n',
-'%09%0Atest%20with%20whitespace%0D%0Aand%20Unicode%20BMP%20%E2%98%BA%20and%20non-BMP%20%F0%9F%98%88%09%0A');
+'%09%0Atest with whitespace%0D%0Aand Unicode BMP %E2%98%BA and non-BMP %F0%9F%98%88%09%0A');
 
 $t->stop_daemons();
 
