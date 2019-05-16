@@ -234,7 +234,7 @@ ngx_esp_header_iterator ngx_esp_header_iterator::operator++(int) {
 std::string grpc_percent_encode(const std::string &src) {
   grpc_slice in_slice = grpc_slice_from_static_buffer(src.data(), src.size());
   grpc_slice out_slice = grpc_percent_encode_slice(
-      in_slice, &grpc_url_percent_encoding_unreserved_bytes[0]);
+      in_slice, &grpc_compatible_percent_encoding_unreserved_bytes[0]);
   std::string out_str(
       reinterpret_cast<const char *>(GRPC_SLICE_START_PTR(out_slice)),
       GRPC_SLICE_LENGTH(out_slice));
