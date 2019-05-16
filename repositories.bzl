@@ -588,9 +588,11 @@ cc_proto_library(
         name = "googleapis_git",
         build_file_content = BUILD,
         patch_cmds = ["find . -type f -name '*BUILD*' | xargs rm"],
-        strip_prefix = "googleapis-275cdfcdc3188a60456f43acd139b8cc037379f4",  # May 14, 2019
-        url = "https://github.com/googleapis/googleapis/archive/275cdfcdc3188a60456f43acd139b8cc037379f4.tar.gz",
-        sha256 = "d07a9bf06bb02b51ff6e913211cedc7511430af550b6a775908c33c8ee218985",
+        strip_prefix = "googleapis-33602a3174cc7b5d1726aebed4836c3bd7725469",  # forked with rollout_id
+        # TODO(qiwzhang): use forked repo with manually added service_rollout_id field
+        # Switch over once googleapis repo has the latest proto files.
+        url = "https://github.com/qiwzhang/googleapis/archive/33602a3174cc7b5d1726aebed4836c3bd7725469.tar.gz",
+        sha256 = "fa1274fe2d5b59e957be2a63edf2b4c058b1c3e228857e9724cd51c8f374873c",
     )
 
     if bind:

@@ -216,14 +216,14 @@ class ConfigManagerServiceNameConfigIdTest : public ::testing::Test {
 TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutSingleServiceConfig) {
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
       .WillOnce(Invoke([this](HTTPRequest* req) {
-        ASSERT_EQ(
+        EXPECT_EQ(
             "https://servicemanagement.googleapis.com/v1/services/"
             "service_name_from_metadata/rollouts?filter=status=SUCCESS",
             req->url());
         req->OnComplete(Status::OK, {}, kRolloutsResponse1);
       }))
       .WillOnce(Invoke([this](HTTPRequest* req) {
-        ASSERT_EQ(
+        EXPECT_EQ(
             "https://servicemanagement.googleapis.com/v1/services/"
             "service_name_from_metadata/configs/2017-05-01r0",
             req->url());
@@ -236,24 +236,24 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutSingleServiceConfig) {
       [this, &sequence](const utils::Status& status,
                         const std::vector<std::pair<std::string, int>>& list) {
 
-        ASSERT_EQ(1, list.size());
-        ASSERT_EQ(kServiceConfig1, list[0].first);
-        ASSERT_EQ(100, list[0].second);
+        EXPECT_EQ(1, list.size());
+        EXPECT_EQ(kServiceConfig1, list[0].first);
+        EXPECT_EQ(100, list[0].second);
         sequence++;
       }));
 
   config_manager->Init();
-  ASSERT_EQ(0, sequence);
+  EXPECT_EQ(0, sequence);
   config_manager->CountRequests(1);
   raw_env_->RunTimer();
-  ASSERT_EQ(1, sequence);
+  EXPECT_EQ(1, sequence);
 }
 
 TEST_F(ConfigManagerServiceNameConfigIdTest,
        RemoteRolloutIDIsSameAsRolloutIDInServerConfig) {
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
       .WillOnce(Invoke([this](HTTPRequest* req) {
-        ASSERT_EQ(
+        EXPECT_EQ(
             "https://servicemanagement.googleapis.com/v1/services/"
             "service_name_from_metadata/rollouts?filter=status=SUCCESS",
             req->url());
@@ -266,9 +266,9 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
       [this, &sequence](const utils::Status& status,
                         const std::vector<std::pair<std::string, int>>& list) {
 
-        ASSERT_EQ(1, list.size());
-        ASSERT_EQ(kServiceConfig1, list[0].first);
-        ASSERT_EQ(100, list[0].second);
+        EXPECT_EQ(1, list.size());
+        EXPECT_EQ(kServiceConfig1, list[0].first);
+        EXPECT_EQ(100, list[0].second);
         sequence++;
       }));
 
@@ -276,11 +276,73 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
   config_manager->set_current_rollout_id("2017-05-01r0");
 
   config_manager->Init();
-  ASSERT_EQ(0, sequence);
+  EXPECT_EQ(0, sequence);
   config_manager->CountRequests(1);
   raw_env_->RunTimer();
   // callback should not be called
-  ASSERT_EQ(0, sequence);
+  EXPECT_EQ(0, sequence);
+}
+
+TEST_F(ConfigManagerServiceNameConfigIdTest, ResponseRolloutID) {
+  int sequence = 0;
+  std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
+      global_context_,
+      [this, &sequence](const utils::Status& status,
+                        const std::vector<std::pair<std::string, int>>& list) {
+
+        EXPECT_EQ(1, list.size());
+        EXPECT_EQ(kServiceConfig1, list[0].first);
+        EXPECT_EQ(100, list[0].second);
+        sequence++;
+      }));
+
+  config_manager->Init();
+  EXPECT_EQ(0, sequence);
+
+  // Set the same rollout_id to config_manager and global_context
+  config_manager->set_current_rollout_id("2017-05-01r0");
+  global_context_->set_rollout_id("2017-05-01r0");
+  config_manager->CountRequests(1);
+
+  // So no need to make rollout HTTP call.
+  EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_)).Times(0);
+
+  raw_env_->RunTimer();
+  // callback should not be called
+  EXPECT_EQ(0, sequence);
+
+  // Not calling global_context_->set_rollout_id() means there
+  // is not Check or Report called since last timeout.
+  // So Http request to get rollout is called, but ID did not changed
+  EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
+      .WillOnce(Invoke([this](HTTPRequest* req) {
+        EXPECT_EQ(
+            "https://servicemanagement.googleapis.com/v1/services/"
+            "service_name_from_metadata/rollouts?filter=status=SUCCESS",
+            req->url());
+        req->OnComplete(Status::OK, {}, kRolloutsResponse1);
+      }));
+
+  raw_env_->RunTimer();
+  // callback should not be called
+  EXPECT_EQ(0, sequence);
+
+  // Call global_context_->set_rollout_id() with different id
+  // to simulate Report/Check response get a new rollout id,
+  global_context_->set_rollout_id("2017-05-01r111");
+  // So Http request to inception rollout is called, but ID did not changed
+  EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
+      .WillOnce(Invoke([this](HTTPRequest* req) {
+        EXPECT_EQ(
+            "https://servicemanagement.googleapis.com/v1/services/"
+            "service_name_from_metadata/rollouts?filter=status=SUCCESS",
+            req->url());
+        req->OnComplete(Status::OK, {}, kRolloutsResponse1);
+      }));
+
+  raw_env_->RunTimer();
+  // callback should not be called
+  EXPECT_EQ(0, sequence);
 }
 
 TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutMultipleServiceConfig) {
@@ -302,7 +364,7 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutMultipleServiceConfig) {
 
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
       .WillOnce(Invoke([this](HTTPRequest* req) {
-        ASSERT_EQ(
+        EXPECT_EQ(
             "https://servicemanagement.googleapis.com/v1/services/"
             "service_name_from_metadata/rollouts?filter=status=SUCCESS",
             req->url());
@@ -319,19 +381,19 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutMultipleServiceConfig) {
                         std::vector<std::pair<std::string, int>> list) {
         std::sort(list.begin(), list.end());
 
-        ASSERT_EQ(2, list.size());
-        ASSERT_EQ(kServiceConfig1, list[0].first);
-        ASSERT_EQ(80, list[0].second);
-        ASSERT_EQ(kServiceConfig2, list[1].first);
-        ASSERT_EQ(20, list[1].second);
+        EXPECT_EQ(2, list.size());
+        EXPECT_EQ(kServiceConfig1, list[0].first);
+        EXPECT_EQ(80, list[0].second);
+        EXPECT_EQ(kServiceConfig2, list[1].first);
+        EXPECT_EQ(20, list[1].second);
         sequence++;
       }));
 
   config_manager->Init();
-  ASSERT_EQ(0, sequence);
+  EXPECT_EQ(0, sequence);
   config_manager->CountRequests(1);
   raw_env_->RunTimer();
-  ASSERT_EQ(1, sequence);
+  EXPECT_EQ(1, sequence);
 }
 
 TEST_F(ConfigManagerServiceNameConfigIdTest,
@@ -369,7 +431,7 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
 
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
       .WillOnce(Invoke([this](HTTPRequest* req) {
-        ASSERT_EQ(
+        EXPECT_EQ(
             "https://servicemanagement.googleapis.com/v1/services/"
             "service_name_from_metadata/rollouts?filter=status=SUCCESS",
             req->url());
@@ -378,7 +440,7 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
       .WillOnce(Invoke(first_hanlder))
       .WillOnce(Invoke(first_hanlder))
       .WillOnce(Invoke([this](HTTPRequest* req) {
-        ASSERT_EQ(
+        EXPECT_EQ(
             "https://servicemanagement.googleapis.com/v1/services/"
             "service_name_from_metadata/rollouts?filter=status=SUCCESS",
             req->url());
@@ -397,42 +459,42 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
       }));
 
   config_manager->Init();
-  ASSERT_EQ(0, sequence);
+  EXPECT_EQ(0, sequence);
   config_manager->CountRequests(1);
   raw_env_->RunTimer();
   // One of ServiceConfig download was failed. The callback should not be
   // invoked
-  ASSERT_EQ(0, sequence);
+  EXPECT_EQ(0, sequence);
   // Succeeded on the next timer event. Invoke the callback function
   raw_env_->RunTimer();
-  ASSERT_EQ(1, sequence);
+  EXPECT_EQ(1, sequence);
 }
 
 TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutSingleServiceConfigUpdate) {
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
       .WillOnce(Invoke([this](HTTPRequest* req) {
-        ASSERT_EQ(
+        EXPECT_EQ(
             "https://servicemanagement.googleapis.com/v1/services/"
             "service_name_from_metadata/rollouts?filter=status=SUCCESS",
             req->url());
         req->OnComplete(Status::OK, {}, kRolloutsResponse1);
       }))
       .WillOnce(Invoke([this](HTTPRequest* req) {
-        ASSERT_EQ(
+        EXPECT_EQ(
             "https://servicemanagement.googleapis.com/v1/services/"
             "service_name_from_metadata/configs/2017-05-01r0",
             req->url());
         req->OnComplete(Status::OK, {}, kServiceConfig1);
       }))
       .WillOnce(Invoke([this](HTTPRequest* req) {
-        ASSERT_EQ(
+        EXPECT_EQ(
             "https://servicemanagement.googleapis.com/v1/services/"
             "service_name_from_metadata/rollouts?filter=status=SUCCESS",
             req->url());
         req->OnComplete(Status::OK, {}, kRolloutsResponse2);
       }))
       .WillOnce(Invoke([this](HTTPRequest* req) {
-        ASSERT_EQ(
+        EXPECT_EQ(
             "https://servicemanagement.googleapis.com/v1/services/"
             "service_name_from_metadata/configs/2017-05-01r1",
             req->url());
@@ -446,47 +508,47 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutSingleServiceConfigUpdate) {
       [this, &sequence](const utils::Status& status,
                         const std::vector<std::pair<std::string, int>>& list) {
 
-        ASSERT_EQ(1, list.size());
+        EXPECT_EQ(1, list.size());
 
         // depends on sequence, different service_config will downloaded
-        ASSERT_EQ(sequence == 0 ? kServiceConfig1 : kServiceConfig2,
+        EXPECT_EQ(sequence == 0 ? kServiceConfig1 : kServiceConfig2,
                   list[0].first);
 
-        ASSERT_EQ(100, list[0].second);
+        EXPECT_EQ(100, list[0].second);
 
         sequence++;
       }));
 
   config_manager->Init();
   // run first periodic timer
-  ASSERT_EQ(0, sequence);
+  EXPECT_EQ(0, sequence);
   config_manager->CountRequests(1);
   raw_env_->RunTimer();
   // run second periodic timer
-  ASSERT_EQ(1, sequence);
+  EXPECT_EQ(1, sequence);
   raw_env_->RunTimer();
-  ASSERT_EQ(2, sequence);
+  EXPECT_EQ(2, sequence);
 }
 
 TEST_F(ConfigManagerServiceNameConfigIdTest,
        RolloutSingleServiceConfigNoupdate) {
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
       .WillOnce(Invoke([this](HTTPRequest* req) {
-        ASSERT_EQ(
+        EXPECT_EQ(
             "https://servicemanagement.googleapis.com/v1/services/"
             "service_name_from_metadata/rollouts?filter=status=SUCCESS",
             req->url());
         req->OnComplete(Status::OK, {}, kRolloutsResponse1);
       }))
       .WillOnce(Invoke([this](HTTPRequest* req) {
-        ASSERT_EQ(
+        EXPECT_EQ(
             "https://servicemanagement.googleapis.com/v1/services/"
             "service_name_from_metadata/configs/2017-05-01r0",
             req->url());
         req->OnComplete(Status::OK, {}, kServiceConfig1);
       }))
       .WillOnce(Invoke([this](HTTPRequest* req) {
-        ASSERT_EQ(
+        EXPECT_EQ(
             "https://servicemanagement.googleapis.com/v1/services/"
             "service_name_from_metadata/rollouts?filter=status=SUCCESS",
             req->url());
@@ -499,23 +561,23 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
       [this, &sequence](const utils::Status& status,
                         const std::vector<std::pair<std::string, int>>& list) {
 
-        ASSERT_EQ(1, list.size());
-        ASSERT_EQ(kServiceConfig1, list[0].first);
-        ASSERT_EQ(100, list[0].second);
+        EXPECT_EQ(1, list.size());
+        EXPECT_EQ(kServiceConfig1, list[0].first);
+        EXPECT_EQ(100, list[0].second);
 
         sequence++;
       }));
 
   config_manager->Init();
   // run first periodic timer
-  ASSERT_EQ(0, sequence);
+  EXPECT_EQ(0, sequence);
   config_manager->CountRequests(1);
   raw_env_->RunTimer();
   // run second periodic timer
-  ASSERT_EQ(1, sequence);
+  EXPECT_EQ(1, sequence);
   raw_env_->RunTimer();
   // Same rollout_id, no update
-  ASSERT_EQ(1, sequence);
+  EXPECT_EQ(1, sequence);
 }
 
 }  // namespace

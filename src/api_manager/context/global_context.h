@@ -92,6 +92,11 @@ class GlobalContext {
 
   int jwks_cache_duration_in_s() const { return jwks_cache_duration_in_s_; }
 
+  void set_rollout_id(const std::string &rollout_id) {
+    rollout_id_ = rollout_id;
+  }
+  const std::string &rollout_id() const { return rollout_id_; }
+
  private:
   // create cloud trace.
   std::unique_ptr<cloud_trace::Aggregator> CreateCloudTraceAggregator();
@@ -138,6 +143,9 @@ class GlobalContext {
 
   // The jwks public key cache duration.
   int jwks_cache_duration_in_s_;
+
+  // The rollout id fetched from Check and Report response.
+  std::string rollout_id_;
 };
 
 }  // namespace context

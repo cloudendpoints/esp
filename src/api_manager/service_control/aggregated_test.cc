@@ -109,6 +109,12 @@ class MockServiceControClient : public ServiceControlClient {
                      ::google::protobuf::util::Status(
                          ::google::service_control_client::Statistics*));
 };
+
+class MockSetRolloutID {
+ public:
+  MOCK_METHOD1(Set, void(const std::string& id));
+};
+
 }  // namespace
 
 class AggregatedTestWithMockedClient : public ::testing::Test {
@@ -204,7 +210,9 @@ class AggregatedTestWithRealClient : public ::testing::Test {
     service_.mutable_control()->set_environment(
         "servicecontrol.googleapis.com");
     env_.reset(new ::testing::NiceMock<MockApiManagerEnvironment>);
-    sc_lib_.reset(Aggregated::Create(service_, nullptr, env_.get(), nullptr));
+    sc_lib_.reset(Aggregated::Create(
+        service_, nullptr, env_.get(), nullptr,
+        [this](const std::string& id) { mock_set_rollout_id_.Set(id); }));
     ASSERT_TRUE((bool)(sc_lib_));
     // This is the call actually creating the client.
     sc_lib_->Init();
@@ -212,18 +220,22 @@ class AggregatedTestWithRealClient : public ::testing::Test {
 
   void DoRunHTTPRequest(HTTPRequest* request) {
     std::map<std::string, std::string> headers;
-    std::string body;
+    CheckResponse response;
+    response.set_service_rollout_id("test_rollout_id");
+    std::string body = response.SerializeAsString();
     request->OnComplete(Status::OK, std::move(headers), std::move(body));
   }
 
   ::google::api::Service service_;
   std::unique_ptr<MockApiManagerEnvironment> env_;
   std::unique_ptr<Interface> sc_lib_;
+  MockSetRolloutID mock_set_rollout_id_;
 };
 
 TEST_F(AggregatedTestWithRealClient, CheckOKTest) {
   EXPECT_CALL(*env_, DoRunHTTPRequest(_))
       .WillOnce(Invoke(this, &AggregatedTestWithRealClient::DoRunHTTPRequest));
+  EXPECT_CALL(mock_set_rollout_id_, Set("test_rollout_id"));
 
   CheckRequestInfo info;
   FillOperationInfo(&info);
@@ -248,7 +260,8 @@ class QuotaAllocationTestWithRealClient : public ::testing::Test {
     service_.mutable_control()->set_environment(
         "servicecontrol.googleapis.com");
     env_.reset(new ::testing::NiceMock<MockApiManagerEnvironment>);
-    sc_lib_.reset(Aggregated::Create(service_, nullptr, env_.get(), nullptr));
+    sc_lib_.reset(
+        Aggregated::Create(service_, nullptr, env_.get(), nullptr, nullptr));
     ASSERT_TRUE((bool)(sc_lib_));
     // This is the call actually creating the client.
     sc_lib_->Init();
@@ -341,8 +354,8 @@ TEST(AggregatedServiceControlTest, Create) {
 
   std::unique_ptr<ApiManagerEnvInterface> env(
       new ::testing::NiceMock<MockApiManagerEnvironment>);
-  std::unique_ptr<Interface> sc_lib(
-      Aggregated::Create(invalid_service, nullptr, env.get(), nullptr));
+  std::unique_ptr<Interface> sc_lib(Aggregated::Create(
+      invalid_service, nullptr, env.get(), nullptr, nullptr));
   ASSERT_FALSE(sc_lib);
 }
 
