@@ -81,6 +81,20 @@ void ConfigManager::OnRolloutsRefreshTimer() {
       window_request_counter_->Count(std::chrono::system_clock::now()) == 0) {
     return;
   }
+
+  // Check the rollout id from Check/Report response and stored in
+  // global_context
+  // This rollout id is fresh and it is fetched since previous timeout.
+  if (!global_context_->rollout_id().empty()) {
+    // If the fresh rollout id is the same as the current one, bailout
+    bool bail_out = (global_context_->rollout_id() == current_rollout_id_);
+    // Clear the rollout_id to make sure it is fresh at next timeout.
+    global_context_->set_rollout_id("");
+    if (bail_out) {
+      return;
+    }
+  }
+
   std::string audience;
   GlobalFetchServiceAccountToken(
       global_context_, audience, [this](utils::Status status) {

@@ -283,6 +283,67 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
   ASSERT_EQ(0, sequence);
 }
 
+TEST_F(ConfigManagerServiceNameConfigIdTest, ResponseRolloutID) {
+  int sequence = 0;
+  std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
+      global_context_,
+      [this, &sequence](const utils::Status& status,
+                        const std::vector<std::pair<std::string, int>>& list) {
+
+        ASSERT_EQ(1, list.size());
+        ASSERT_EQ(kServiceConfig1, list[0].first);
+        ASSERT_EQ(100, list[0].second);
+        sequence++;
+      }));
+
+  config_manager->Init();
+  ASSERT_EQ(0, sequence);
+
+  // set rollout_id to 2017-05-01r0 which is same as one from from
+  // global_context
+  config_manager->set_current_rollout_id("2017-05-01r0");
+  global_context_->set_rollout_id("2017-05-01r0");
+  config_manager->CountRequests(1);
+
+  // This is not called at first timeer
+  EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_)).Times(0);
+
+  raw_env_->RunTimer();
+  // callback should not be called
+  ASSERT_EQ(0, sequence);
+
+  // global_context_->set_rollout_id() is not called
+  // So Http request to inception rollout is called, but ID did not changed
+  EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
+      .WillOnce(Invoke([this](HTTPRequest* req) {
+        ASSERT_EQ(
+            "https://servicemanagement.googleapis.com/v1/services/"
+            "service_name_from_metadata/rollouts?filter=status=SUCCESS",
+            req->url());
+        req->OnComplete(Status::OK, {}, kRolloutsResponse1);
+      }));
+
+  raw_env_->RunTimer();
+  // callback should not be called
+  ASSERT_EQ(0, sequence);
+
+  // global_context_->set_rollout_id() is called with different id
+  global_context_->set_rollout_id("2017-05-01r111");
+  // So Http request to inception rollout is called, but ID did not changed
+  EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
+      .WillOnce(Invoke([this](HTTPRequest* req) {
+        ASSERT_EQ(
+            "https://servicemanagement.googleapis.com/v1/services/"
+            "service_name_from_metadata/rollouts?filter=status=SUCCESS",
+            req->url());
+        req->OnComplete(Status::OK, {}, kRolloutsResponse1);
+      }));
+
+  raw_env_->RunTimer();
+  // callback should not be called
+  ASSERT_EQ(0, sequence);
+}
+
 TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutMultipleServiceConfig) {
   std::function<void(HTTPRequest * req)> hanlder = [this](HTTPRequest* req) {
     std::map<std::string, std::string> data = {

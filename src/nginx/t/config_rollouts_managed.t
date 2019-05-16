@@ -213,7 +213,7 @@ is($endpoints_status->{processes}[0]->{espStatus}[0]->{serviceConfigRollouts}->
     {rolloutId}, '2016-08-25r1',
     "Rollout was updated from the service management API" );
 is($endpoints_status->{processes}[0]->{espStatus}[0]->{serviceConfigRollouts}->
-    {percentages}->{'2016-08-25r3'}, '100', "Rollout 2016-08-25r3 is 10%" );
+    {percentages}->{'2016-08-25r3'}, '100', "Rollout 2016-08-25r3 is 100%" );
 
 $t->stop_daemons();
 

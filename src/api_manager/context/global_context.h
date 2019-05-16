@@ -15,8 +15,6 @@
 #ifndef API_MANAGER_CONTEXT_GLOBAL_CONTEXT_H_
 #define API_MANAGER_CONTEXT_GLOBAL_CONTEXT_H_
 
-#include <chrono>
-
 #include "src/api_manager/auth/authz_cache.h"
 #include "src/api_manager/auth/certs.h"
 #include "src/api_manager/auth/jwt_cache.h"
@@ -95,9 +93,9 @@ class GlobalContext {
   int jwks_cache_duration_in_s() const { return jwks_cache_duration_in_s_; }
 
   void set_rollout_id(const std::string &rollout_id) {
-    rollout_id_from_response_ = rollout_id;
-    rollout_id_response_time_ = std::chrono::system_clock::now();
+    rollout_id_ = rollout_id;
   }
+  const std::string& rollout_id() const { return rollout_id_; }
 
  private:
   // create cloud trace.
@@ -147,9 +145,7 @@ class GlobalContext {
   int jwks_cache_duration_in_s_;
 
   // The rollout id fetched from Check and Report response.
-  std::string rollout_id_from_response_;
-  // The time response is received.
-  std::chrono::system_clock::time_point rollout_id_response_time_;
+  std::string rollout_id_;
 };
 
 }  // namespace context
