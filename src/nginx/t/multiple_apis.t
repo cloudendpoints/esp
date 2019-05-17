@@ -232,7 +232,9 @@ my $expected_report_body = {
       'http_response_code' => 200,
       'request_size_in_bytes' => 55,
       'response_size_in_bytes' =>  90,
-      'http_method' => 'GET'
+      'http_method' => 'GET',
+      'service_agent' => ServiceControl::service_agent(),
+      'service_config_id' => '2016-08-25r1'
      },
      'name' => 'endpoints_log',
      'severity' => 'INFO'

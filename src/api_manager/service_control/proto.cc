@@ -842,6 +842,8 @@ const char kLogFieldNameApiName[] = "api_name";
 const char kLogFieldNameApiVersion[] = "api_version";
 const char kLogFieldNameApiMethod[] = "api_method";
 const char kLogFieldNameApiKey[] = "api_key";
+const char kLogFieldNameConfigId[] = "service_config_id";
+const char kLogFieldNameServiceAgent[] = "service_agent";
 const char kLogFieldNameProducerProjectId[] = "producer_project_id";
 const char kLogFieldNameReferer[] = "referer";
 const char kLogFieldNameLocation[] = "location";
@@ -906,7 +908,8 @@ void SetOperationCommonFields(const OperationInfo& info,
 }
 
 void FillLogEntry(const ReportRequestInfo& info, const std::string& name,
-                  const Timestamp& current_time, LogEntry* log_entry) {
+                  const std::string& config_id, const Timestamp& current_time,
+                  LogEntry* log_entry) {
   log_entry->set_name(name);
   *log_entry->mutable_timestamp() = current_time;
   auto severity = (info.response_code >= 400) ? google::logging::type::ERROR
@@ -917,6 +920,9 @@ void FillLogEntry(const ReportRequestInfo& info, const std::string& name,
   (*fields)[kLogFieldNameTimestamp].set_number_value(
       (double)current_time.seconds() +
       (double)current_time.nanos() / (double)1000000000.0);
+  (*fields)[kLogFieldNameConfigId].set_string_value(config_id);
+  (*fields)[kLogFieldNameServiceAgent].set_string_value(
+      kServiceAgentPrefix + utils::Version::instance().get());
   if (!info.producer_project_id.empty()) {
     (*fields)[kLogFieldNameProducerProjectId].set_string_value(
         info.producer_project_id);
@@ -1176,7 +1182,8 @@ Status Proto::FillReportRequest(const ReportRequestInfo& info,
   // Fill log entries.
   if (info.is_final_report) {
     for (auto it = logs_.begin(), end = logs_.end(); it != end; it++) {
-      FillLogEntry(info, *it, current_time, op->add_log_entries());
+      FillLogEntry(info, *it, service_config_id_, current_time,
+                   op->add_log_entries());
     }
   }
 

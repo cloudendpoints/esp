@@ -1,6 +1,7 @@
 name: "endpoints-grpc-test.cloudendpointsapis.com"
 producer_project_id: "endpoints-grpc-test"
 title: "GRPC Echo Test"
+id: "2016-08-25r1"
 apis {
   name: "test.grpc.Test"
   methods {

@@ -165,6 +165,8 @@ sub gen_log_entry {
     'http_response_code' => $in->{response_code},
   };
 
+  $payload->{service_agent} = service_agent();
+  $payload->{service_config_id} = $in->{serviceConfigId} if exists $in->{serviceConfigId};
   $payload->{api_method} = $in->{api_method} if exists $in->{api_method};
   $payload->{api_name} = $in->{api_name} if exists $in->{api_name};
   $payload->{api_version} = $in->{api_version} if exists $in->{api_version};
