@@ -243,6 +243,9 @@ void RequestContext::FillLogMessage(service_control::ReportRequestInfo *info) {
     info->api_name = method()->api_name();
     info->api_version = method()->api_version();
     info->log_message = std::string(kMessage) + method()->selector();
+    if (info->response_code >= 400) {
+      info->log_message += std::string(" failed: ") + info->status.ToString();
+    }
   } else {
     std::string http_verb = info->method;
     if (http_verb.empty()) {

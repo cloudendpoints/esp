@@ -132,7 +132,7 @@ my $expected_report_body = ServiceControl::gen_report_body({
         'url' => '/shelves?key=this-is-an-api-key',
         'api_method' =>  'ListShelves',
         'http_method' => 'GET',
-        'log_message' => 'Method: ListShelves',
+        'log_message' => 'Method: ListShelves failed: PERMISSION_DENIED: API endpoints-test.cloudendpointsapis.com is not enabled for the consumer project.',
         'response_code' => '403',
         'error_cause' => 'service_control',
         'error_type' => '4xx',
