@@ -58,8 +58,8 @@ service_control_config {
     flush_interval_ms: 1000
   }
   check_aggregator_config {
-  	cache_entries: 0
-  	flush_interval_ms: 1000
+    cache_entries: 0
+    flush_interval_ms: 1000
   }
 }
 service_management_config {
@@ -112,14 +112,10 @@ http {
 }
 EOF
 
-my $report_done = 'report_done';
-my $rollout_done = 'rollout_done';
-
 $t->run_daemon( \&bookstore, $t, $BackendPort, 'bookstore.log' );
-$t->run_daemon( \&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log',
-  $report_done);
+$t->run_daemon( \&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log');
 $t->run_daemon( \&servicemanagement, $t, $ServiceManagementPort,
-  'servicemanagement.log', $rollout_done);
+  'servicemanagement.log');
   
 is( $t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'Bookstore socket ready.' );
 is( $t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1,
@@ -152,9 +148,18 @@ EOF
     usleep(10);
 }
 
-# Since Report response ID is set, serviemanagement server should not be called.
-my @servicemanagement_requests = ApiManager::read_http_stream( $t, 'servicemanagement.log' );
-is( scalar @servicemanagement_requests, 0, 'Service management is not called' );
+# wait for the endponts_status to be updated. Its update is timer based.
+sleep(1);
+
+my $response = ApiManager::http_get($NginxPort, '/endpoints_status' );
+my ( $response_headers, $response_body ) = split /\r\n\r\n/, $response, 2;
+my $endpoints_status = decode_json( $response_body );
+
+# skipped rollout calls should be greater than 0.
+cmp_ok($endpoints_status->{processes}[0]->{espStatus}[0]->{serviceConfigRollouts}->
+    {skippedRolloutCalls}, 'gt', 0, "Some rollout calls are skipped" );
+
+$t->stop_daemons();
 
 ################################################################################
 
@@ -182,11 +187,17 @@ EOF
 }
 
 sub servicecontrol {
-  my ( $t, $port, $file, $done) = @_;
+  my ( $t, $port, $file) = @_;
   my $server = HttpServer->new( $port, $t->testdir() . '/' . $file )
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
   
+  my $report_response = ServiceControl::convert_proto(<<'EOF', 'report_response', 'binary');
+{
+  "serviceRolloutId": "2017-05-16r0"
+}
+EOF
+
   $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:check', sub {
     my ($headers, $body, $client) = @_;
     print $client <<'EOF';
@@ -196,14 +207,9 @@ Connection: close
 EOF
   });
 
-  my $proto_response = ServiceControl::convert_proto(<<'EOF', 'report_response', 'binary');
-{
-  "serviceRolloutId": "2017-05-16r0"
-}
-EOF
   $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:report', sub {
     my ($headers, $body, $client) = @_;
-    print $client <<'EOF' . $proto_response;
+    print $client <<'EOF' . $report_response;
 HTTP/1.1 200 OK
 Connection: close
 
@@ -218,6 +224,32 @@ sub servicemanagement {
   my $server = HttpServer->new( $port, $t->testdir() . '/' . $file )
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
+
+  $server->on_sub('GET', '/v1/services/endpoints-test.cloudendpointsapis.com/rollouts?filter=status=SUCCESS', sub {
+    my ($headers, $body, $client) = @_;
+
+    print $client <<'EOF' ;
+HTTP/1.1 200 OK
+Connection: close
+
+{
+  "rollouts": [
+    {
+      "rolloutId": "2017-05-16r0",
+      "createTime": "2017-05-01T22:40:09.884Z",
+      "createdBy": "test_user@google.com",
+      "status": "SUCCESS",
+      "trafficPercentStrategy": {
+        "percentages": {
+          "2016-08-25r3": 100
+        }
+      },
+      "serviceName": "endpoints-test.cloudendpointsapis.com"
+    }
+  ]
+}
+EOF
+  });
 
   $server->run();
 }

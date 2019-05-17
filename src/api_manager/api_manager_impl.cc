@@ -290,6 +290,16 @@ utils::Status ApiManagerImpl::GetServiceConfigRollouts(
     rollouts->percentages[item.first] = item.second;
   }
 
+  if (config_manager_) {
+    rollouts->remote_rollout_calls =
+        config_manager_->get_remote_rollout_calls();
+    rollouts->skipped_rollout_calls =
+        config_manager_->get_skipped_rollout_calls();
+  } else {
+    rollouts->remote_rollout_calls = 0;
+    rollouts->skipped_rollout_calls = 0;
+  }
+
   return utils::Status::OK;
 }
 

@@ -49,8 +49,17 @@ message ServiceControlStatistics {
 // Maps service configuration IDs to their corresponding traffic percentage.
 // Key is the service configuration ID, Value is the traffic percentage
 message ServiceConfigRollouts {
+  // Current rollout id
   string rollout_id = 1;
+
+  // map of service config id to its traffic percentage.
   map<string, uint64> percentages = 2;
+
+  // number of remote calls to check the rollout_id
+  uint64 remote_rollout_calls = 3;
+
+  // number of skipped calls by using response rollout_id
+  uint64 skipped_rollout_calls = 4;
 }
 
 // Status for ESP instances

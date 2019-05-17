@@ -43,6 +43,11 @@ struct ServiceConfigRolloutsInfo {
   // Maps service configuration IDs to their corresponding traffic percentage.
   // Key is the service configuration ID, Value is the traffic percentage
   std::map<std::string, int> percentages;
+
+  // number of remote calls to check the rollout_id
+  uint64_t remote_rollout_calls;
+  // number of skipped calls by using response rollout_id
+  uint64_t skipped_rollout_calls;
 };
 
 class ApiManager {
