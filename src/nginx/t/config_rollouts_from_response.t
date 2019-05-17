@@ -47,7 +47,7 @@ my $BackendPort        = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $ServiceManagementPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(24);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(204);
 
 # Save service configuration that disables the report cache.
 # Report request will be sent for each client request
@@ -130,7 +130,7 @@ $t->run();
 
 ################################################################################
 
-for (my $count = 0 ; $count < 10 ; $count++) {
+for (my $count = 0 ; $count < 100 ; $count++) {
     # send the request
     my $response = ApiManager::http_get($NginxPort, '/shelves?key=this-is-an-api-key' );
 
@@ -144,9 +144,12 @@ for (my $count = 0 ; $count < 10 ; $count++) {
   ]
 }
 EOF
-    # Refresh interval is 0.1s and 10 requests (with 0.1s sleep in between) are send,
-    # Refresh timer should have been called multiple times.
-    usleep(1000);
+    # Refresh interval is 0.1s and there should have 10 timeout during 1s.
+    # Send 100 requests with 0.01 interval, total is 1s.
+    # For each refresh period (0.1s), there should have 10 requests with
+    # 10 reports (report batch is disabled), so each refresh interval
+    # should have fresh rollout id
+    usleep(10);
 }
 
 # Since Report response ID is set, serviemanagement server should not be called.
