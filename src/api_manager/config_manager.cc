@@ -76,9 +76,12 @@ void ConfigManager::Init() {
 }
 
 void ConfigManager::OnRolloutsRefreshTimer() {
+  global_context_->env()->LogDebug("RolloutsRefreshTimer start");
   // If there is not any requests in the last window, not to call.
   if (window_request_counter_ &&
       window_request_counter_->Count(std::chrono::system_clock::now()) == 0) {
+    global_context_->env()->LogDebug(
+        "RolloutsRefresh skipped due to no traffic.");
     return;
   }
 
@@ -89,10 +92,14 @@ void ConfigManager::OnRolloutsRefreshTimer() {
     // Clear it to make sure it is fresh for the next timeout
     global_context_->set_rollout_id("");
     if (bail_out) {
+      skipped_rollout_calls_++;
+      global_context_->env()->LogDebug(
+          "RolloutsRefresh skipped due to response rollout_id.");
       return;
     }
   }
 
+  global_context_->env()->LogDebug("RolloutsRefresh makes a remote call.");
   std::string audience;
   GlobalFetchServiceAccountToken(
       global_context_, audience, [this](utils::Status status) {
@@ -106,6 +113,7 @@ void ConfigManager::OnRolloutsRefreshTimer() {
 }
 
 void ConfigManager::FetchRollouts() {
+  remote_rollout_calls_++;
   service_management_fetch_->GetRollouts(
       [this](const utils::Status& status, std::string&& rollouts) {
         OnRolloutResponse(status, std::move(rollouts));

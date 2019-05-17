@@ -300,6 +300,8 @@ ngx_int_t ngx_esp_update_rollout(std::shared_ptr<ApiManager> esp,
   for (auto percentage : rollouts_info.percentages) {
     (*new_rollouts.mutable_percentages())[percentage.first] = percentage.second;
   }
+  new_rollouts.set_remote_rollout_calls(rollouts_info.remote_rollout_calls);
+  new_rollouts.set_skipped_rollout_calls(rollouts_info.skipped_rollout_calls);
 
   int length = new_rollouts.ByteSize();
   if (0 < length && length <= kMaxServiceRolloutsInfoSize) {
