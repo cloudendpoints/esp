@@ -134,6 +134,7 @@ std::pair<Status, std::shared_ptr<::grpc::GenericStub>> GrpcGetStub(
 
   channel_arguments.SetMaxReceiveMessageSize(INT_MAX);
   channel_arguments.SetMaxSendMessageSize(INT_MAX);
+  channel_arguments.SetInt(GRPC_ARG_MAX_METADATA_SIZE, INT_MAX);
 
   auto result =
       std::make_shared<::grpc::GenericStub>(::grpc::CreateCustomChannel(

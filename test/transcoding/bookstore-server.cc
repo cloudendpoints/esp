@@ -175,7 +175,8 @@ class BookstoreServiceImpl : public Bookstore::Service {
 
     ShelfNotFoundDetail custom_pb;
     custom_pb.set_for_shelf_id(id);
-    custom_pb.set_why("Custom detail: shell not found");
+    // Set 200KB details to test grpc.max_metadata_size
+    custom_pb.set_why(std::string(200 * 1024, 'c') + "Custom detail: shell not found");
     rpc_status.add_details()->PackFrom(custom_pb);
 
     return ::grpc::Status(grpc::NOT_FOUND,
