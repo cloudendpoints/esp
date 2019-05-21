@@ -75,7 +75,7 @@ template <>
 std::shared_ptr<ChannelCredentials> GetCreds(const CallConfig &call_config) {
   if (call_config.use_ssl()) {
     SslCredentialsOptions opts;
-    return SslCredentials(opts);
+    return ::grpc::SslCredentials(opts);
   }
   return InsecureChannelCredentials();
 }

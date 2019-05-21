@@ -193,7 +193,7 @@ genrule(
 
 pkg_tar(
     name = "nginx-bin",
-    files = [
+    srcs = [
         ":nginx",
     ],
     mode = "0755",
@@ -203,7 +203,7 @@ pkg_tar(
 
 pkg_tar(
     name = "esp-copyright",
-    files = [
+    srcs = [
         ":copyright",
     ],
     mode = "0644",
