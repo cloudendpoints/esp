@@ -1,3 +1,13 @@
+# Release 1.34.0 20-05-2019
+
+- Update googleapis to official repo (#621)
+- Set grpc.max_metadata_size to INT_MAX (#620)
+- Append error message to log_message (#616)
+- Add service_agent and service_config_id to log_entries (#615)
+- Use the service_rollout_id from Check/Report response (#613)
+- Fix grpc percent encode reserved code table (#614)
+- Change default timeout (#611)
+
 # Release 1.33.0 13-05-2019
 
 - Add a flag to config jwks cache duration (#607)
