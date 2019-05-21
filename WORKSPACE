@@ -67,8 +67,21 @@ iap_jwt_verify_nginx_repositories(True)
 
 git_repository(
     name = "com_github_grpc_grpc",
-    commit = "d2c7d4dea492b9a86a53555aabdbfa90c2b01730",  # v1.15.0
+    commit = "61e77cb7644ef22449fdf7c0ddd7edfe0ae1c9b2",  # v1.21.0
     remote = "https://github.com/grpc/grpc.git",
+)
+
+git_repository(
+    name = "io_bazel_rules_python",
+    commit = "8b5d0683a7d878b28fffe464779c8a53659fc645",
+    remote = "https://github.com/bazelbuild/rules_python.git",
+)
+
+load("@io_bazel_rules_python//python:pip.bzl", "pip_repositories", "pip_import")
+
+pip_import(
+    name = "grpc_python_dependencies",
+    requirements = "@com_github_grpc_grpc//:requirements.bazel.txt",
 )
 
 load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps", "grpc_test_only_deps")
@@ -76,6 +89,11 @@ load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps", "grpc_test_only_
 grpc_deps()
 
 grpc_test_only_deps()
+
+load("@com_github_grpc_grpc//bazel:grpc_python_deps.bzl", "grpc_python_deps")
+
+grpc_python_deps()
+
 
 bind(
     name = "gpr",

@@ -112,8 +112,8 @@ Content-Length: $request_size
 $request
 EOF
 
-# Internal server error coming from the backend as it fails to parse the proto so deep.
-like($response, qr/HTTP\/1\.1 500 Internal Server Error/, 'Got a 500 from the backend.');
+# 400 Bad request error coming from the backend as it fails to parse the proto so deep.
+like($response, qr/HTTP\/1\.1 400 Bad Request/, 'Got a 400 from the backend.');
 like($response, qr/Content-Type: application\/json/i, 'Content-type is application/json');
 
 # An invalid JSON 1000 levels deep. ESP must be able to detect it's invalid

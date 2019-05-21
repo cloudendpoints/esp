@@ -182,7 +182,7 @@ filegroup(
 def protobuf_repositories(bind = True):
     git_repository(
         name = "protobuf_git",
-        commit = "48cb18e5c419ddd23d9badcfe4e9df7bde1979b2",  # same as grpc
+        commit = "582743bf40c5d3639a70f98f183914a2c0cd0680",  # same as grpc
         remote = "https://github.com/google/protobuf.git",
     )
 
