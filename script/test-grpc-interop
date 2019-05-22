@@ -30,7 +30,7 @@
 # This script runs a grpc interop long-running test.
 # It requires bazel build following targets:
 #   //test/grpc:all
-#   @@com_github_grpc_grpc//test/cpp/interop:interop_server
+#   @@com_github_grpc_grpc//test/cpp/interop:interop_client
 #   @@com_github_grpc_grpc//test/cpp/interop:stress_test
 #   @@com_github_grpc_grpc//test/cpp/interop:metrics_client
 #set -x
@@ -60,7 +60,7 @@ done
 HOST_IP=${HOST%:*}
 HOST_PORT=${HOST#*:}
 echo "HOST_IP: ${HOST_IP}, HOST_PORT: ${HOST_PORT}"
-retry $ROOT/bazel-bin/test/grpc/linux_amd64_stripped/interop-client --server_port "${HOST_PORT}" \
+retry $ROOT/bazel-bin/com_github_grpc_grpc/test/cpp/interop/interop_client --server_port "${HOST_PORT}" \
           --server_host "${HOST_IP}" \
   || error_exit 'Failed to send one request, the proxy did not start properly.'
 
