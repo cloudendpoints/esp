@@ -30,9 +30,9 @@
 # This script runs a grpc interop long-running test.
 # It requires bazel build following targets:
 #   //test/grpc:all
-#   @org_golang_google_grpc//stress/metrics_client
-#   @org_golang_google_grpc//interop/server
-#   @org_golang_google_grpc//stress/client
+#   @@com_github_grpc_grpc//test/cpp/interop:interop_server
+#   @@com_github_grpc_grpc//test/cpp/interop:stress_test
+#   @@com_github_grpc_grpc//test/cpp/interop:metrics_client
 #set -x
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -72,7 +72,7 @@ echo "Test during is: $((DURATION_IN_SEC / 60)) minutes."
 echo "Test cases are: ${TEST_CASES}"
 
 # Start a background test client job.
-$ROOT/bazel-bin/external/org_golang_google_grpc/stress/client/linux_amd64_stripped/client \
+$ROOT/bazel-bin/external/com_github_grpc_grpc/test/cpp/interop/stress_test \
   --server_addresses "${HOST}" \
   --num_channels_per_server 200 \
   --num_stubs_per_channel 1 \
@@ -93,7 +93,7 @@ while true; do
   ((RUN_COUNT++))
 
   sleep 10
-  METRIC_RESULT=$("$ROOT/bazel-bin/external/org_golang_google_grpc/stress/metrics_client/linux_amd64_stripped/metrics_client" \
+  METRIC_RESULT=$("$ROOT/bazel-bin/external/com_github_grpc_grpc/test/cpp/interop/metrics_client" \
     --total_only --metrics_server_address=localhost:8081 2>&1 | tail -1)
   QPS=$(echo ${METRIC_RESULT}|awk '{print $NF}')
   echo "Metric result: ${METRIC_RESULT}"

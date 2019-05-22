@@ -115,7 +115,8 @@ grpc_backend_ssl_credentials {
 EOF
 run_all_daemons();
 
-my $result1 = &ApiManager::run_grpc_interop_test($t, $Http2NginxPort, 'empty_unary', '--api_key', 'api-key');
+my $result1 = &ApiManager::run_grpc_interop_test($t, $Http2NginxPort, 'empty_unary',
+   '--additional_metadata', 'x-api-key:api-key');
 isnt($result1, 0, "test1 expected to be failed, not using ssl");
 
 $t->stop;
@@ -135,7 +136,8 @@ grpc_backend_ssl_credentials {
 EOF
 #run_all_daemons();
 
-#my $result2 = &ApiManager::run_grpc_interop_test($t, $Http2NginxPort, 'empty_unary', '--api_key', 'api-key');
+#my $result2 = &ApiManager::run_grpc_interop_test($t, $Http2NginxPort, 'empty_unary',
+#    '--additional_metadata', 'x-api-key:api-key');
 #isnt($result2, 0, "test2 expected to be failed: use ssl but without root CA");
 
 #$t->stop;
@@ -155,7 +157,8 @@ grpc_backend_ssl_credentials {
 EOF
 run_all_daemons();
 
-my $result3 = &ApiManager::run_grpc_interop_test($t, $Http2NginxPort, 'empty_unary', '--api_key', 'api-key');
+my $result3 = &ApiManager::run_grpc_interop_test($t, $Http2NginxPort, 'empty_unary',
+   '--additional_metadata', 'x-api-key:api-key');
 is($result3, 0, "test3 expected to be success");
 
 $t->stop;

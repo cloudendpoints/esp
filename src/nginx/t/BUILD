@@ -134,8 +134,8 @@ nginx_suite(
 nginx_suite(
     size = "small",
     data = [
-        "//test/grpc:interop-client",
-        "@org_golang_google_grpc//interop/server",
+        "@com_github_grpc_grpc//test/cpp/interop:interop_client",
+        "@com_github_grpc_grpc//test/cpp/interop:interop_server",
     ],
     nginx = "//src/nginx/main:nginx-esp",
     tests = [
@@ -158,13 +158,12 @@ nginx_suite(
 nginx_suite(
     size = "medium",
     data = [
-        "@org_golang_google_grpc//interop/server",
-        "@org_golang_google_grpc//stress/client",
+        "@com_github_grpc_grpc//test/cpp/interop:interop_server",
+        "@com_github_grpc_grpc//test/cpp/interop:stress_test",
     ],
     nginx = "//src/nginx/main:nginx-esp",
     tests = [
-        # grpc_interop_ministress is disabled as it is a flaky test
-        #"grpc_interop_ministress.t",
+        "grpc_interop_ministress.t",
     ],
     deps = [
         ":perl_library",

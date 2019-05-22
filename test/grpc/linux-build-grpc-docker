@@ -46,8 +46,8 @@ while getopts :i:o arg; do
   case ${arg} in
     i) IMAGE="${OPTARG}";;
     o)
-      TEST_SERVER_TARGET='@org_golang_google_grpc//interop/server'
-      TEST_SERVER_BIN='external/org_golang_google_grpc/interop/server/linux_amd64_stripped/server'
+      TEST_SERVER_TARGET='@com_github_grpc_grpc//test/cpp/interop:interop_server'
+      TEST_SERVER_BIN='external/com_github_grpc_grpc/test/cpp/interop/interop_server'
       TEST_SERVER_ARGS='--port=8081'
       ;;
     *) error_exit "Unrecognized argument -${OPTARG}";;
