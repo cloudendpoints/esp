@@ -329,10 +329,7 @@ sub grpc_test_server {
 
 sub grpc_interop_server {
   my ($t, $port, @args) = @_;
-  my $server = "./external/org_golang_google_grpc/interop/server/$Config{osname}_amd64_stripped/server";
-  unless (-e $server) {
-    $server = "./external/org_golang_google_grpc/interop/server/$Config{osname}_amd64/server";
-  }
+  my $server = "./external/com_github_grpc_grpc/test/cpp/interop/interop_server";
   exec $server, "--port", $port, @args;
 }
 
@@ -377,17 +374,14 @@ sub run_grpc_test {
 sub run_grpc_interop_test {
   my ($t, $port, $test_case, @args) = @_;
   my $testdir = $t->testdir();
-  my $client = "./test/grpc/$Config{osname}_amd64_stripped/interop-client";
-  unless (-e $client) {
-    $client = "./test/grpc/$Config{osname}_amd64/interop-client";
-  }
+  my $client = "./external/com_github_grpc_grpc/test/cpp/interop/interop_client";
   return system "$client --server_port $port --test_case $test_case " . join(' ', @args)
 }
 
 sub run_grpc_interop_stress_test {
   my ($t, $port, $metrics_port, $test_cases, $duration, @args) = @_;
   my $testdir = $t->testdir();
-  my $client = './external/org_golang_google_grpc/stress/client/client';
+  my $client = './external/com_github_grpc_grpc/test/cpp/interop/stress_test';
   return system "$client --server_addresses localhost:$port " .
       "--test_cases $test_cases --test_duration_secs $duration " .
       "--num_channels_per_server 200 --num_stubs_per_channel 1 " . 

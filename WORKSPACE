@@ -67,8 +67,10 @@ iap_jwt_verify_nginx_repositories(True)
 
 git_repository(
     name = "com_github_grpc_grpc",
-    commit = "61e77cb7644ef22449fdf7c0ddd7edfe0ae1c9b2",  # v1.21.0
-    remote = "https://github.com/grpc/grpc.git",
+    commit = "edc506849f3429c6b4a6d90ec604aeb1b7b0eb54",  # v1.21.0
+    # TODO: use forked one with some small changes.
+    # changes is https://github.com/grpc/grpc/pull/19114
+    remote = "https://github.com/qiwzhang/grpc.git",
 )
 
 git_repository(
@@ -133,8 +135,6 @@ bind(
 load(
     "//:repositories.bzl",
     "googletest_repositories",
-    #"grpc_repositories",
-    "go_grpc_repositories",
     "protobuf_repositories",
     "servicecontrol_client_repositories",
     "transcoding_repositories",
@@ -171,8 +171,6 @@ bind(
 )
 
 servicecontrol_client_repositories()
-
-go_grpc_repositories()
 
 protobuf_repositories()
 
@@ -241,7 +239,3 @@ new_git_repository(
     commit = "8616e8ee5e20a1704615e6c8d7afcdac06087a67",
     remote = "https://github.com/golang/protobuf.git",
 )
-
-load("//test/grpc:repositories.bzl", "grpc_go_repositories")
-
-grpc_go_repositories()
