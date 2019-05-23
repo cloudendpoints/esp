@@ -60,7 +60,7 @@ done
 HOST_IP=${HOST%:*}
 HOST_PORT=${HOST#*:}
 echo "HOST_IP: ${HOST_IP}, HOST_PORT: ${HOST_PORT}"
-retry $ROOT/bazel-bin/com_github_grpc_grpc/test/cpp/interop/interop_client --server_port "${HOST_PORT}" \
+retry $ROOT/bazel-bin/external/com_github_grpc_grpc/test/cpp/interop/interop_client --server_port "${HOST_PORT}" \
           --server_host "${HOST_IP}" \
   || error_exit 'Failed to send one request, the proxy did not start properly.'
 
