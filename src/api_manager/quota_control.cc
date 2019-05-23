@@ -43,7 +43,6 @@ void QuotaControl(std::shared_ptr<context::RequestContext> context,
   context->service_context()->service_control()->Quota(
       info, trace_span.get(),
       [context, continuation, trace_span](utils::Status status) {
-
         TRACE(trace_span) << "Quota service control request returned with "
                           << "status " << status.ToString();
 
@@ -54,5 +53,5 @@ void QuotaControl(std::shared_ptr<context::RequestContext> context,
       });
 }
 
-}  // namespace service_control_client
+}  // namespace api_manager
 }  // namespace google

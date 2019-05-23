@@ -31,7 +31,7 @@ const int kWindowCounterSize = 10;
 
 // static configs for error handling
 static std::vector<std::pair<std::string, int>> kEmptyConfigs;
-}  // namespace anonymous
+}  // namespace
 
 ConfigManager::ConfigManager(
     std::shared_ptr<context::GlobalContext> global_context,
@@ -133,8 +133,8 @@ void ConfigManager::OnRolloutResponse(const utils::Status& status,
   if (!utils::JsonToProto(rollouts, (::google::protobuf::Message*)&response)
            .ok()) {
     global_context_->env()->LogError(std::string("Invalid response: ") +
-                                     status.ToString() + ", Response body: " +
-                                     rollouts);
+                                     status.ToString() +
+                                     ", Response body: " + rollouts);
     return;
   }
 
@@ -178,7 +178,6 @@ void ConfigManager::FetchConfigs(
                                                         const utils::Status&
                                                             status,
                                                         std::string&& config) {
-
       if (status.ok()) {
         config_fetch_info->configs.push_back({std::move(config), percentage});
       } else {

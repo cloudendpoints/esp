@@ -34,11 +34,11 @@ using ::testing::StrCaseEq;
 using ::testing::StrEq;
 using ::testing::StrNe;
 
-using ::google::protobuf::util::MessageDifferencer;
 using ::google::api_manager::utils::Status;
 using ::google::protobuf::Map;
-using ::google::protobuf::util::error::Code;
 using ::google::protobuf::RepeatedPtrField;
+using ::google::protobuf::util::MessageDifferencer;
+using ::google::protobuf::util::error::Code;
 
 // Tuple with arg<0> = function name
 // arg<1> = url, arg<2> = method, arg<3> = body.
@@ -502,13 +502,11 @@ TEST_F(CheckSecurityRulesTest, CheckAuthzFailGetRelease) {
                              Property(&HTTPRequest::url, StrNe(release_url_)),
                              Property(&HTTPRequest::method, StrCaseEq("GET")))))
       .WillOnce(Invoke([](HTTPRequest *req) {
-
         std::map<std::string, std::string> empty;
         std::string body(kReleaseError);
         req->OnComplete(
             Status(Code::NOT_FOUND, "Requested entity was not found"),
             std::move(empty), std::move(body));
-
       }));
 
   EXPECT_CALL(*raw_env_,
@@ -721,6 +719,6 @@ INSTANTIATE_TEST_CASE_P(
         std::make_tuple("f1", "ftp://url1", "POST", kDummyBody, kDummyAudience),
         // The audience is not present
         std::make_tuple("f1", "http://url1", "GET", kDummyBody, "")));
-}
+}  // namespace
 }  // namespace api_manager
 }  // namespace google
