@@ -151,7 +151,7 @@ class MockRequest : public Request {
   const std::string client_ip_;
   const std::map<std::string, std::string> header_;
 };
-}
+}  // namespace
 
 class ClientIPExtractionTest : public ::testing::Test {
  protected:

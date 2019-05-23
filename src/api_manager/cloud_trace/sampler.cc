@@ -50,6 +50,6 @@ void Sampler::Refresh() {
   previous_ = std::chrono::system_clock::now();
 }
 
-}  // cloud_trace
+}  // namespace cloud_trace
 }  // namespace api_manager
 }  // namespace google

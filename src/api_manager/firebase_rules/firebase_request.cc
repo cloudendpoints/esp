@@ -20,10 +20,10 @@
 
 #include <algorithm>
 #include <sstream>
-using ::google::api_manager::utils::Status;
 using ::google::api_manager::proto::TestRulesetResponse;
-using ::google::protobuf::util::MessageDifferencer;
+using ::google::api_manager::utils::Status;
 using ::google::protobuf::Map;
+using ::google::protobuf::util::MessageDifferencer;
 using TestRulesetResponse = ::google::api_manager::proto::TestRulesetResponse;
 using FunctionCall = TestRulesetResponse::TestResult::FunctionCall;
 using ::google::protobuf::RepeatedPtrField;
@@ -75,7 +75,7 @@ const std::string &GetOperation(const std::string &httpMethod) {
 
   return kFirebaseUpdateMethod;
 }
-}
+}  // namespace
 
 // Constructor
 FirebaseRequest::FirebaseRequest(

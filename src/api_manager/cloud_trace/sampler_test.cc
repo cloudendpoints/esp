@@ -64,6 +64,6 @@ TEST_F(SamplerTest, TestDisabled) {
 
 }  // namespace
 
-}  // cloud_trace
+}  // namespace cloud_trace
 }  // namespace api_manager
 }  // namespace google

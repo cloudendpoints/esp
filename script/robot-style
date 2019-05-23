@@ -29,7 +29,7 @@
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . ${ROOT}/script/all-utilities || { echo "Cannot load Bash utilities" ; exit 1 ; }
 
-CLANG_FORMAT="$(which clang-format)" || CLANG_FORMAT="${HOME}/clang/bin/clang-format"
+CLANG_FORMAT="$(which clang-format-7)"
 
 pushd ${ROOT} > /dev/null
 

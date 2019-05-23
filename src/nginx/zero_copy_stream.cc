@@ -69,7 +69,7 @@ ngx_chain_t* FindNonEmptyChainLink(ngx_chain_t* cl) {
   return cl;
 }
 
-}  // namesapce
+}  // namespace
 
 NgxRequestZeroCopyInputStream::NgxRequestZeroCopyInputStream(
     ngx_http_request_t* r)

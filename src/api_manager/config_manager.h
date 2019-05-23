@@ -60,7 +60,7 @@ struct ConfigsFetchInfo {
   int finished;
 };
 
-}  // namespace anonymous
+}  // namespace
 
 // Manages configuration downloading
 class ConfigManager {

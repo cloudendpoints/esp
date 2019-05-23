@@ -48,10 +48,10 @@ namespace nginx {
 
 namespace {
 
-using std::chrono::system_clock;
-using proto::ServerStatus;
 using proto::ProcessStatus;
+using proto::ServerStatus;
 using service_control::Statistics;
+using std::chrono::system_clock;
 using utils::Status;
 using ServiceControlStatisticsProto =
     ::google::api_manager::proto::ServiceControlStatistics;

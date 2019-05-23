@@ -20,10 +20,10 @@
 #include <typeinfo>
 #include "src/api_manager/service_control/logs_metrics_loader.h"
 
-using ::google::api::servicecontrol::v1::CheckRequest;
-using ::google::api::servicecontrol::v1::CheckResponse;
 using ::google::api::servicecontrol::v1::AllocateQuotaRequest;
 using ::google::api::servicecontrol::v1::AllocateQuotaResponse;
+using ::google::api::servicecontrol::v1::CheckRequest;
+using ::google::api::servicecontrol::v1::CheckResponse;
 using ::google::api::servicecontrol::v1::ReportRequest;
 using ::google::api::servicecontrol::v1::ReportResponse;
 using ::google::api_manager::proto::ServerConfig;
@@ -269,25 +269,31 @@ Status Aggregated::Init() {
      << ", flush_interval_ms: " << options.report_options.flush_interval_ms;
   env_->LogInfo(ss.str().c_str());
 
-  options.check_transport = [this](
-      const CheckRequest& request, CheckResponse* response,
-      TransportDoneFunc on_done) { Call(request, response, on_done, nullptr); };
+  options.check_transport = [this](const CheckRequest& request,
+                                   CheckResponse* response,
+                                   TransportDoneFunc on_done) {
+    Call(request, response, on_done, nullptr);
+  };
 
-  options.quota_transport = [this](
-      const AllocateQuotaRequest& request, AllocateQuotaResponse* response,
-      TransportDoneFunc on_done) { Call(request, response, on_done, nullptr); };
+  options.quota_transport = [this](const AllocateQuotaRequest& request,
+                                   AllocateQuotaResponse* response,
+                                   TransportDoneFunc on_done) {
+    Call(request, response, on_done, nullptr);
+  };
 
-  options.report_transport = [this](
-      const ReportRequest& request, ReportResponse* response,
-      TransportDoneFunc on_done) { Call(request, response, on_done, nullptr); };
+  options.report_transport = [this](const ReportRequest& request,
+                                    ReportResponse* response,
+                                    TransportDoneFunc on_done) {
+    Call(request, response, on_done, nullptr);
+  };
 
   options.periodic_timer = [this](int interval_ms,
                                   std::function<void()> callback)
       -> std::unique_ptr<::google::service_control_client::PeriodicTimer> {
-        return std::unique_ptr<::google::service_control_client::PeriodicTimer>(
-            new ApiManagerPeriodicTimer(env_->StartPeriodicTimer(
-                std::chrono::milliseconds(interval_ms), callback)));
-      };
+    return std::unique_ptr<::google::service_control_client::PeriodicTimer>(
+        new ApiManagerPeriodicTimer(env_->StartPeriodicTimer(
+            std::chrono::milliseconds(interval_ms), callback)));
+  };
   client_ = ::google::service_control_client::CreateServiceControlClient(
       service_->name(), service_->id(), options);
   return Status::OK;
@@ -347,7 +353,7 @@ void Aggregated::Check(
   CheckResponse* response = new CheckResponse;
 
   auto check_on_done = [this, response, on_done, trace_span](
-      const ::google::protobuf::util::Status& status) {
+                           const ::google::protobuf::util::Status& status) {
     TRACE(trace_span) << "Check returned with status: " << status.ToString();
     CheckResponseInfo response_info;
     if (status.ok()) {
@@ -402,7 +408,7 @@ void Aggregated::Quota(const QuotaRequestInfo& info,
   AllocateQuotaResponse* response = new AllocateQuotaResponse();
 
   auto quota_on_done = [this, response, on_done, trace_span](
-      const ::google::protobuf::util::Status& status) {
+                           const ::google::protobuf::util::Status& status) {
     TRACE(trace_span) << "AllocateQuotaRequst returned with status: "
                       << status.ToString();
 
@@ -571,35 +577,35 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
   const std::string& url = GetApiRequestUrl<RequestType>();
   TRACE(trace_span) << "Http request URL: " << url;
 
-  std::unique_ptr<HTTPRequest> http_request(new HTTPRequest([url, response,
-                                                             on_done,
-                                                             trace_span, this](
-      Status status, std::map<std::string, std::string>&&, std::string&& body) {
-    TRACE(trace_span) << "HTTP response status: " << status.ToString();
-    if (status.ok()) {
-      // Handle 200 response
-      if (!response->ParseFromString(body)) {
-        status =
-            Status(Code::INVALID_ARGUMENT, std::string("Invalid response"));
-      }
-      HandleResponse(*response);
-    } else {
-      env_->LogError(std::string("Failed to call ") + url + ", Error: " +
-                     status.ToString() + ", Response body: " + body);
+  std::unique_ptr<HTTPRequest> http_request(
+      new HTTPRequest([url, response, on_done, trace_span, this](
+                          Status status, std::map<std::string, std::string>&&,
+                          std::string&& body) {
+        TRACE(trace_span) << "HTTP response status: " << status.ToString();
+        if (status.ok()) {
+          // Handle 200 response
+          if (!response->ParseFromString(body)) {
+            status =
+                Status(Code::INVALID_ARGUMENT, std::string("Invalid response"));
+          }
+          HandleResponse(*response);
+        } else {
+          env_->LogError(std::string("Failed to call ") + url + ", Error: " +
+                         status.ToString() + ", Response body: " + body);
 
-      // Handle NGX error as opposed to pass-through error code
-      if (status.code() < 0) {
-        status =
-            Status(Code::UNAVAILABLE, "Failed to connect to service control");
-      } else {
-        status =
-            Status(Code::UNAVAILABLE,
-                   "Service control request failed with HTTP response code " +
-                       std::to_string(status.code()));
-      }
-    }
-    on_done(status.ToProto());
-  }));
+          // Handle NGX error as opposed to pass-through error code
+          if (status.code() < 0) {
+            status = Status(Code::UNAVAILABLE,
+                            "Failed to connect to service control");
+          } else {
+            status = Status(
+                Code::UNAVAILABLE,
+                "Service control request failed with HTTP response code " +
+                    std::to_string(status.code()));
+          }
+        }
+        on_done(status.ToProto());
+      }));
 
   std::string request_body;
   request.SerializeToString(&request_body);

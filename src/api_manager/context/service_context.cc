@@ -25,7 +25,7 @@ namespace {
 
 const char kHTTPHeadMethod[] = "HEAD";
 const char kHTTPGetMethod[] = "GET";
-}
+}  // namespace
 
 ServiceContext::ServiceContext(std::shared_ptr<GlobalContext> global_context,
                                std::unique_ptr<Config> config)

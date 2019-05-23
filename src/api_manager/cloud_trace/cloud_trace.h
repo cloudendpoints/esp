@@ -162,9 +162,9 @@ class TraceMessageVoidify {
   void operator&(const TraceStream &trace_out) {}
 };
 
-}  // cloud_trace
-}  // api_manager
-}  // google
+}  // namespace cloud_trace
+}  // namespace api_manager
+}  // namespace google
 
 // A helper macro to make tracing conditional.
 #define TRACE_ENABLED(trace_span) \

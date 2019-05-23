@@ -19,8 +19,8 @@
 #include "src/api_manager/utils/marshalling.h"
 
 using google::api_manager::utils::Status;
-using google::devtools::cloudtrace::v1::Traces;
 using google::devtools::cloudtrace::v1::Trace;
+using google::devtools::cloudtrace::v1::Traces;
 
 namespace google {
 namespace api_manager {
@@ -112,6 +112,6 @@ void Aggregator::AppendTrace(Trace *trace) {
   }
 }
 
-}  // cloud_trace
+}  // namespace cloud_trace
 }  // namespace api_manager
 }  // namespace google

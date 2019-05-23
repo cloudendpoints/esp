@@ -132,10 +132,14 @@ const std::unordered_set<std::string> kHeadersToSkip = {
 
     // HTTP/2 prohibits connection-specific header fields.
     // The following header fields must not appear
-    "connection", "proxy-connection", "transfer-encoding", "upgrade",
+    "connection",
+    "proxy-connection",
+    "transfer-encoding",
+    "upgrade",
 
     // GRPC lib will add following headers, so removing them.
-    "grpc-encoding", "grpc-accept-encoding",
+    "grpc-encoding",
+    "grpc-accept-encoding",
 };
 
 Status ProcessDownstreamHeaders(

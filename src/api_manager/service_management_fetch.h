@@ -32,7 +32,7 @@ namespace {
 // HTTP request callback
 typedef std::function<void(const utils::Status&, std::string&&)>
     HttpCallbackFunction;
-}
+}  // namespace
 
 class ServiceManagementFetch {
  public:
