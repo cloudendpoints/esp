@@ -36,16 +36,33 @@ fi
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . ${DIR}/all-utilities || { echo "Cannot load Bash utilities" ; exit 1 ; }
 
-CLANG_VERSION='7'
+CLANG_VERSION='3.8'
 
 function install_clang() {
   echo 'Installing clang'
   clear_apt \
-  && ${SUDO} wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - \
-  && ${SUDO} apt-add-repository "deb https://apt.llvm.org/stretch/ llvm-toolchain-stretch-${CLANG_VERSION} main" \
-  && ${SUDO} apt update \
-  && ${SUDO} apt -qqy install clang-format-"${CLANG_VERSION}" \
+  && ${SUDO} apt-get -qqy install {clang,clang-format}-"${CLANG_VERSION}" \
+  && ${SUDO} cp -f "/usr/bin/clang-${CLANG_VERSION}" /usr/bin/clang \
+  && ${SUDO} cp -f "/usr/bin/clang++-${CLANG_VERSION}" /usr/bin/clang++ \
+  && ${SUDO} cp -f "/usr/bin/clang-format-${CLANG_VERSION}" /usr/bin/clang-format \
   && return 0
   return 1
 }
 
+function update_clang() {
+  local version="$(clang --version | grep -oh '[0-9]*\.[0-9]*\.[0-9]*')"
+  if ! [[ "${version}" =~ "${CLANG_VERSION}" ]]; then
+    retry install_clang || error_exit 'Cannot install clang.'
+  fi
+  echo 'Clang is up to date.'
+}
+
+function install_clang_format_7() {
+   echo 'Installing clang'
+  ${SUDO} wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - \
+  && ${SUDO} apt-add-repository "deb https://apt.llvm.org/stretch/ llvm-toolchain-stretch-7 main" \
+  && ${SUDO} apt update \
+  && ${SUDO} apt -qqy install clang-format-7 \
+  && return 0
+  return 1
+}
