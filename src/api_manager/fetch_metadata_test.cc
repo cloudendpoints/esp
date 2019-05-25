@@ -21,10 +21,10 @@
 #include "src/api_manager/mock_api_manager_environment.h"
 #include "src/api_manager/mock_request.h"
 
+using ::testing::_;
 using ::testing::Invoke;
 using ::testing::Mock;
 using ::testing::Return;
-using ::testing::_;
 
 using ::google::api_manager::utils::Status;
 using ::google::protobuf::util::error::Code;

@@ -19,7 +19,6 @@
 #include "google/devtools/cloudtrace/v1/trace.pb.h"
 #include "google/protobuf/stubs/logging.h"
 #include "src/api_manager/auth/service_account_token.h"
-#include "src/api_manager/auth/service_account_token.h"
 #include "src/api_manager/check_auth.h"
 #include "src/api_manager/check_workflow.h"
 #include "src/api_manager/cloud_trace/cloud_trace.h"

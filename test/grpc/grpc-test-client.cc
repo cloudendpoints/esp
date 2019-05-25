@@ -32,9 +32,9 @@
 #include "test/grpc/client-test-lib.h"
 #include "test/grpc/grpc-test.grpc.pb.h"
 
+using ::google::protobuf::TextFormat;
 using ::google::protobuf::io::IstreamInputStream;
 using ::google::protobuf::io::OstreamOutputStream;
-using ::google::protobuf::TextFormat;
 
 std::string ReadInput(std::istream& src) {
   std::string contents;

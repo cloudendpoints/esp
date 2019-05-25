@@ -28,8 +28,8 @@
 
 namespace gasv1 = ::google::api::servicecontrol::v1;
 using ::google::api_manager::utils::Status;
-using ::google::protobuf::util::error::Code;
 using ::google::protobuf::Timestamp;
+using ::google::protobuf::util::error::Code;
 
 namespace google {
 namespace api_manager {

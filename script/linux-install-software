@@ -118,6 +118,7 @@ update_bazel
 install_docker_for_debian9
 update_wrk
 update_node_js
+install_clang_format_7
 clear_apt
 
 echo "Software installation complete."

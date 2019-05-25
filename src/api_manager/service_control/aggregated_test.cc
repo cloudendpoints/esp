@@ -22,10 +22,10 @@
 #include "src/api_manager/mock_api_manager_environment.h"
 #include "src/api_manager/service_control/proto.h"
 
-using ::google::api::servicecontrol::v1::CheckRequest;
-using ::google::api::servicecontrol::v1::CheckResponse;
 using ::google::api::servicecontrol::v1::AllocateQuotaRequest;
 using ::google::api::servicecontrol::v1::AllocateQuotaResponse;
+using ::google::api::servicecontrol::v1::CheckRequest;
+using ::google::api::servicecontrol::v1::CheckResponse;
 using ::google::api::servicecontrol::v1::ReportRequest;
 using ::google::api::servicecontrol::v1::ReportResponse;
 using ::google::api_manager::utils::Status;
@@ -34,9 +34,9 @@ using ::google::service_control_client::ServiceControlClient;
 using ::google::service_control_client::TransportCheckFunc;
 using ::google::service_control_client::TransportQuotaFunc;
 using ::google::service_control_client::TransportReportFunc;
-using ::testing::Return;
-using ::testing::Invoke;
 using ::testing::_;
+using ::testing::Invoke;
+using ::testing::Return;
 
 namespace google {
 namespace api_manager {

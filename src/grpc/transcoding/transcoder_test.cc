@@ -262,9 +262,9 @@ TEST_F(TranscoderTest, SimpleRequestAndResponse) {
 
   EXPECT_EQ(nullptr, reader.NextMessage().get());
   EXPECT_TRUE(reader.Finished());
-  EXPECT_TRUE(t->RequestStatus().ok()) << "Error while translating - "
-                                       << t->RequestStatus().error_message()
-                                       << std::endl;
+  EXPECT_TRUE(t->RequestStatus().ok())
+      << "Error while translating - " << t->RequestStatus().error_message()
+      << std::endl;
 
   // Now test the response translation
   EXPECT_TRUE(ReadAll(t->ResponseOutput()).empty());
@@ -346,9 +346,9 @@ TEST_F(TranscoderTest, RequestBindingsAndPrefix) {
 
   EXPECT_EQ(nullptr, reader.NextMessage().get());
   EXPECT_TRUE(reader.Finished());
-  EXPECT_TRUE(t->RequestStatus().ok()) << "Error while translating - "
-                                       << t->RequestStatus().error_message()
-                                       << std::endl;
+  EXPECT_TRUE(t->RequestStatus().ok())
+      << "Error while translating - " << t->RequestStatus().error_message()
+      << std::endl;
 }
 
 TEST_F(TranscoderTest, StreamingRequestAndResponse) {
@@ -399,9 +399,9 @@ TEST_F(TranscoderTest, StreamingRequestAndResponse) {
 
   EXPECT_EQ(nullptr, reader.NextMessage().get());
   EXPECT_FALSE(reader.Finished());
-  EXPECT_TRUE(t->RequestStatus().ok()) << "Error while translating - "
-                                       << t->RequestStatus().error_message()
-                                       << std::endl;
+  EXPECT_TRUE(t->RequestStatus().ok())
+      << "Error while translating - " << t->RequestStatus().error_message()
+      << std::endl;
 
   // Add the rest of the 3rd message, the 4th message and close the array
   request_in.AddChunk(
@@ -433,9 +433,9 @@ TEST_F(TranscoderTest, StreamingRequestAndResponse) {
 
   EXPECT_EQ(nullptr, reader.NextMessage().get());
   EXPECT_TRUE(reader.Finished());
-  EXPECT_TRUE(t->RequestStatus().ok()) << "Error while translating - "
-                                       << t->RequestStatus().error_message()
-                                       << std::endl;
+  EXPECT_TRUE(t->RequestStatus().ok())
+      << "Error while translating - " << t->RequestStatus().error_message()
+      << std::endl;
 
   // Test the response translation
 
@@ -460,9 +460,9 @@ TEST_F(TranscoderTest, StreamingRequestAndResponse) {
   JsonArrayTester array_tester;
   EXPECT_TRUE(array_tester.TestChunk(expected12, actual12, false));
   EXPECT_FALSE(IsFinished(t->ResponseOutput()));
-  EXPECT_TRUE(t->ResponseStatus().ok()) << "Error while translating - "
-                                        << t->ResponseStatus().error_message()
-                                        << std::endl;
+  EXPECT_TRUE(t->ResponseStatus().ok())
+      << "Error while translating - " << t->ResponseStatus().error_message()
+      << std::endl;
 
   // Add the rest of the third message, the fourth message and finish
   response_in.AddChunk(message3.substr(10));
@@ -481,9 +481,9 @@ TEST_F(TranscoderTest, StreamingRequestAndResponse) {
 
   EXPECT_TRUE(array_tester.TestChunk(expected34, actual34, true));
   EXPECT_TRUE(IsFinished(t->ResponseOutput()));
-  EXPECT_TRUE(t->ResponseStatus().ok()) << "Error while translating - "
-                                        << t->ResponseStatus().error_message()
-                                        << std::endl;
+  EXPECT_TRUE(t->ResponseStatus().ok())
+      << "Error while translating - " << t->ResponseStatus().error_message()
+      << std::endl;
 }
 
 TEST_F(TranscoderTest, ErrorResolvingVariableBinding) {

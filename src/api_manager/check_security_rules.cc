@@ -21,11 +21,11 @@
 #include "src/api_manager/firebase_rules/firebase_request.h"
 #include "src/api_manager/utils/marshalling.h"
 
+using ::google::api_manager::auth::AuthzCache;
+using ::google::api_manager::auth::AuthzValue;
 using ::google::api_manager::auth::GetStringValue;
 using ::google::api_manager::firebase_rules::FirebaseRequest;
 using ::google::api_manager::utils::Status;
-using ::google::api_manager::auth::AuthzCache;
-using ::google::api_manager::auth::AuthzValue;
 using std::chrono::system_clock;
 
 namespace google {
@@ -204,7 +204,6 @@ void AuthzChecker::CallNextRequest(
       http_request.url, http_request.method, http_request.body,
       http_request.token_type, http_request.audience,
       [context, continuation, checker](Status status, std::string &&body) {
-
         checker->env_->LogInfo(std::string("Response Body = ") + body);
         if (status.ok() && !body.empty() && body != "{}") {
           checker->request_handler_->UpdateResponse(body);
@@ -252,9 +251,11 @@ void AuthzChecker::HttpFetch(
   env_->LogDebug(std::string("Issue HTTP Request to url :") + url +
                  " method : " + method + " body: " + request_body);
 
-  std::unique_ptr<HTTPRequest> request(new HTTPRequest([continuation](
-      Status status, std::map<std::string, std::string> &&,
-      std::string &&body) { continuation(status, std::move(body)); }));
+  std::unique_ptr<HTTPRequest> request(new HTTPRequest(
+      [continuation](Status status, std::map<std::string, std::string> &&,
+                     std::string &&body) {
+        continuation(status, std::move(body));
+      }));
 
   if (!request) {
     continuation(Status(Code::INTERNAL, "Out of memory"), "");

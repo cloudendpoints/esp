@@ -65,9 +65,9 @@ TEST(Marshalling, ProtoToJsonStream) {
 
   std::string result;
   ::google::protobuf::io::StringOutputStream json(&result);
-  EXPECT_EQ(Status::OK,
-            ProtoToJson(debug, &json, JsonOptions::PRETTY_PRINT |
-                                          JsonOptions::OUTPUT_DEFAULTS));
+  EXPECT_EQ(Status::OK, ProtoToJson(debug, &json,
+                                    JsonOptions::PRETTY_PRINT |
+                                        JsonOptions::OUTPUT_DEFAULTS));
   EXPECT_EQ(
       "{\n \"stackEntries\": [\n  \"first\",\n  \"second\"\n ],\n \"detail\": "
       "\"Something went wrong.\"\n}\n",

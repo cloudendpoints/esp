@@ -38,13 +38,13 @@
 #include "src/api_manager/service_control/proto.h"
 
 using google::api_manager::service_control::OperationInfo;
-using google::api_manager::service_control::ReportRequestInfo;
 using google::api_manager::service_control::Proto;
+using google::api_manager::service_control::ReportRequestInfo;
 
-using ::google::api::servicecontrol::v1::CheckRequest;
-using ::google::api::servicecontrol::v1::CheckResponse;
 using ::google::api::servicecontrol::v1::AllocateQuotaRequest;
 using ::google::api::servicecontrol::v1::AllocateQuotaResponse;
+using ::google::api::servicecontrol::v1::CheckRequest;
+using ::google::api::servicecontrol::v1::CheckResponse;
 using ::google::api::servicecontrol::v1::ReportRequest;
 using ::google::api::servicecontrol::v1::ReportResponse;
 using ::google::protobuf::Arena;

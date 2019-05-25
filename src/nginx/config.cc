@@ -43,8 +43,8 @@ namespace google {
 namespace api_manager {
 namespace nginx {
 
-using ::google::api_manager::proto::ServerConfig;
 using ::google::api_manager::proto::GrpcSslCredentials;
+using ::google::api_manager::proto::ServerConfig;
 
 namespace {
 

@@ -56,3 +56,13 @@ function update_clang() {
   fi
   echo 'Clang is up to date.'
 }
+
+function install_clang_format_7() {
+   echo 'Installing clang'
+  ${SUDO} wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - \
+  && ${SUDO} apt-add-repository "deb https://apt.llvm.org/stretch/ llvm-toolchain-stretch-7 main" \
+  && ${SUDO} apt update \
+  && ${SUDO} apt -qqy install clang-format-7 \
+  && return 0
+  return 1
+}

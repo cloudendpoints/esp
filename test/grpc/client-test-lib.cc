@@ -474,7 +474,7 @@ class Parallel {
       auto subtest_start_time = std::chrono::steady_clock::now();
 
       auto subtest_done = [p, subtest_type_index, subtest_start_time](
-          bool ok, const TestResult &result) {
+                              bool ok, const TestResult &result) {
         auto subtest_end_time = std::chrono::steady_clock::now();
 
         std::lock_guard<std::mutex> lock(p->mu_);
@@ -695,9 +695,10 @@ class ProbeCallLimit {
   static void StartProbe(std::shared_ptr<ProbeCallLimit> pc) {
     // First, set an alarm.  If this alarm goes off, we're at the call limit.
     pc->alarm_.reset(new Alarm(
-        pc->cq_, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                              gpr_time_from_millis(pc->desc_.timeout_ms(),
-                                                   GPR_TIMESPAN)),
+        pc->cq_,
+        gpr_time_add(
+            gpr_now(GPR_CLOCK_MONOTONIC),
+            gpr_time_from_millis(pc->desc_.timeout_ms(), GPR_TIMESPAN)),
         new Tag([pc](bool ok) {
           if (ok) {
             // The alarm expired (it wasn't cancelled).  So assume
@@ -834,9 +835,10 @@ class ProbeDownstreamMessageLimit {
     // alarm always remains valid until the callback completes.
     std::shared_ptr<Alarm> *alarmp = new std::shared_ptr<Alarm>();
     *alarmp = std::make_shared<Alarm>(
-        pc->cq_, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                              gpr_time_from_millis(pc->desc_.timeout_ms(),
-                                                   GPR_TIMESPAN)),
+        pc->cq_,
+        gpr_time_add(
+            gpr_now(GPR_CLOCK_MONOTONIC),
+            gpr_time_from_millis(pc->desc_.timeout_ms(), GPR_TIMESPAN)),
         new Tag([pc, alarmp](bool ok) {
           if (ok) {
             // The alarm expired (it wasn't cancelled).  So assume
@@ -988,9 +990,10 @@ class ProbeUpstreamMessageLimit {
     // alarm always remains valid until the callback completes.
     std::shared_ptr<Alarm> *alarmp = new std::shared_ptr<Alarm>();
     *alarmp = std::make_shared<Alarm>(
-        pc->cq_, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                              gpr_time_from_millis(pc->desc_.timeout_ms(),
-                                                   GPR_TIMESPAN)),
+        pc->cq_,
+        gpr_time_add(
+            gpr_now(GPR_CLOCK_MONOTONIC),
+            gpr_time_from_millis(pc->desc_.timeout_ms(), GPR_TIMESPAN)),
         new Tag([pc, alarmp](bool ok) {
           if (ok) {
             // The alarm expired (it wasn't cancelled).  So assume

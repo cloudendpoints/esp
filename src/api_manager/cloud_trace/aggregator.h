@@ -85,8 +85,8 @@ class Aggregator final {
   Sampler sampler_;
 };
 
-}  // cloud_trace
-}  // api_manager
-}  // google
+}  // namespace cloud_trace
+}  // namespace api_manager
+}  // namespace google
 
 #endif  // API_MANAGER_CLOUD_TRACE_AGGREGATOR_H_

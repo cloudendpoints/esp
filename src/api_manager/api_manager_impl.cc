@@ -28,7 +28,7 @@ namespace {
 
 const std::string kConfigRolloutManaged("managed");
 
-}  // namespace anonymous
+}  // namespace
 
 ApiManagerImpl::ApiManagerImpl(std::unique_ptr<ApiManagerEnvInterface> env,
                                const std::string &server_config)

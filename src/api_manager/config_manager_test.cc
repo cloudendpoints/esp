@@ -235,7 +235,6 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutSingleServiceConfig) {
       global_context_,
       [this, &sequence](const utils::Status& status,
                         const std::vector<std::pair<std::string, int>>& list) {
-
         EXPECT_EQ(1, list.size());
         EXPECT_EQ(kServiceConfig1, list[0].first);
         EXPECT_EQ(100, list[0].second);
@@ -265,7 +264,6 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
       global_context_,
       [this, &sequence](const utils::Status& status,
                         const std::vector<std::pair<std::string, int>>& list) {
-
         EXPECT_EQ(1, list.size());
         EXPECT_EQ(kServiceConfig1, list[0].first);
         EXPECT_EQ(100, list[0].second);
@@ -289,7 +287,6 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, ResponseRolloutID) {
       global_context_,
       [this, &sequence](const utils::Status& status,
                         const std::vector<std::pair<std::string, int>>& list) {
-
         EXPECT_EQ(1, list.size());
         EXPECT_EQ(kServiceConfig1, list[0].first);
         EXPECT_EQ(100, list[0].second);
@@ -507,7 +504,6 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutSingleServiceConfigUpdate) {
       global_context_,
       [this, &sequence](const utils::Status& status,
                         const std::vector<std::pair<std::string, int>>& list) {
-
         EXPECT_EQ(1, list.size());
 
         // depends on sequence, different service_config will downloaded
@@ -560,7 +556,6 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
       global_context_,
       [this, &sequence](const utils::Status& status,
                         const std::vector<std::pair<std::string, int>>& list) {
-
         EXPECT_EQ(1, list.size());
         EXPECT_EQ(kServiceConfig1, list[0].first);
         EXPECT_EQ(100, list[0].second);

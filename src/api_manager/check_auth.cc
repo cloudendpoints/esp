@@ -30,10 +30,10 @@
 #include "src/api_manager/utils/url_util.h"
 
 using ::google::api_manager::auth::Certs;
-using ::google::api_manager::auth::JwtCache;
-using ::google::api_manager::auth::JwtValue;
 using ::google::api_manager::auth::GetStringValue;
+using ::google::api_manager::auth::JwtCache;
 using ::google::api_manager::auth::JwtValidator;
+using ::google::api_manager::auth::JwtValue;
 using ::google::api_manager::utils::Status;
 using ::google::protobuf::util::error::Code;
 using std::chrono::system_clock;
@@ -421,13 +421,12 @@ void AuthChecker::Unauthorized(const std::string &error) {
 void AuthChecker::FetchFailure(const std::string &error, Status status) {
   // Append HTTP response code for the upstream statuses
   trace_span_.reset();
-  on_done_(
-      Status(Code::UNAUTHENTICATED,
-             std::string("JWT validation failed: ") + error +
-                 (status.code() >= 300
-                      ? ". HTTP response code: " + std::to_string(status.code())
-                      : ""),
-             Status::AUTH));
+  on_done_(Status(Code::UNAUTHENTICATED,
+                  std::string("JWT validation failed: ") + error +
+                      (status.code() >= 300 ? ". HTTP response code: " +
+                                                  std::to_string(status.code())
+                                            : ""),
+                  Status::AUTH));
 }
 
 void AuthChecker::HttpFetch(
@@ -440,8 +439,8 @@ void AuthChecker::HttpFetch(
 
   std::unique_ptr<HTTPRequest> request(
       new HTTPRequest([continuation, fetch_span](
-          Status status, std::map<std::string, std::string> &&,
-          std::string &&body) {
+                          Status status, std::map<std::string, std::string> &&,
+                          std::string &&body) {
         TRACE(fetch_span) << "Http response status: " << status.ToString();
         continuation(status, std::move(body));
       }));

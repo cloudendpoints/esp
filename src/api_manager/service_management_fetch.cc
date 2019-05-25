@@ -31,7 +31,7 @@ const char kServiceManagementHost[] =
     "https://servicemanagement.googleapis.com";
 const char kServiceManagementPath[] =
     "/google.api.servicemanagement.v1.ServiceManager";
-}  // namespace anonymous
+}  // namespace
 
 ServiceManagementFetch::ServiceManagementFetch(
     std::shared_ptr<context::GlobalContext> global_context)
@@ -72,30 +72,30 @@ void ServiceManagementFetch::GetRollouts(HttpCallbackFunction on_done) {
 
 void ServiceManagementFetch::Call(const std::string& url,
                                   HttpCallbackFunction on_done) {
-  std::unique_ptr<HTTPRequest> http_request(new HTTPRequest([this, url,
-                                                             on_done](
-      utils::Status status, std::map<std::string, std::string>&& headers,
-      std::string&& body) {
+  std::unique_ptr<HTTPRequest> http_request(new HTTPRequest(
+      [this, url, on_done](utils::Status status,
+                           std::map<std::string, std::string>&& headers,
+                           std::string&& body) {
+        if (!status.ok()) {
+          global_context_->env()->LogError(
+              std::string("Failed to call ") + url +
+              ", Error: " + status.ToString() + ", Response body: " + body);
 
-    if (!status.ok()) {
-      global_context_->env()->LogError(std::string("Failed to call ") + url +
-                                       ", Error: " + status.ToString() +
-                                       ", Response body: " + body);
+          // Handle NGX error as opposed to pass-through error code
+          if (status.code() < 0) {
+            status =
+                utils::Status(Code::UNAVAILABLE,
+                              "Failed to connect to the service management");
+          } else {
+            status = utils::Status(Code::UNAVAILABLE,
+                                   "Service management request was failed with "
+                                   "HTTP response code " +
+                                       std::to_string(status.code()));
+          }
+        }
 
-      // Handle NGX error as opposed to pass-through error code
-      if (status.code() < 0) {
-        status = utils::Status(Code::UNAVAILABLE,
-                               "Failed to connect to the service management");
-      } else {
-        status = utils::Status(Code::UNAVAILABLE,
-                               "Service management request was failed with "
-                               "HTTP response code " +
-                                   std::to_string(status.code()));
-      }
-    }
-
-    on_done(status, std::move(body));
-  }));
+        on_done(status, std::move(body));
+      }));
 
   http_request->set_url(url)
       .set_method("GET")

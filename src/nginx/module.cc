@@ -271,20 +271,31 @@ ngx_command_t ngx_esp_commands[] = {
         //
         ngx_string("grpc_pass"),
         NGX_HTTP_LOC_CONF | NGX_CONF_NOARGS | NGX_CONF_TAKE12,
-        ConfigureGrpcBackendHandler, NGX_HTTP_LOC_CONF_OFFSET, 0, nullptr,
+        ConfigureGrpcBackendHandler,
+        NGX_HTTP_LOC_CONF_OFFSET,
+        0,
+        nullptr,
     },
     {
-        ngx_string("endpoints_status"), NGX_HTTP_LOC_CONF | NGX_CONF_NOARGS,
-        ngx_esp_configure_status_handler, NGX_HTTP_LOC_CONF_OFFSET, 0, nullptr,
+        ngx_string("endpoints_status"),
+        NGX_HTTP_LOC_CONF | NGX_CONF_NOARGS,
+        ngx_esp_configure_status_handler,
+        NGX_HTTP_LOC_CONF_OFFSET,
+        0,
+        nullptr,
     },
     {
-        ngx_string("endpoints_resolver"), NGX_HTTP_MAIN_CONF | NGX_CONF_TAKE1,
+        ngx_string("endpoints_resolver"),
+        NGX_HTTP_MAIN_CONF | NGX_CONF_TAKE1,
         [](ngx_conf_t *cf, ngx_command_t *cmd, void *conf) -> char * {
           return ngx_conf_set_str_slot(
-              cf, cmd, &reinterpret_cast<ngx_esp_main_conf_t *>(conf)
-                            ->upstream_resolver);
+              cf, cmd,
+              &reinterpret_cast<ngx_esp_main_conf_t *>(conf)
+                   ->upstream_resolver);
         },
-        NGX_HTTP_MAIN_CONF_OFFSET, 0, nullptr,
+        NGX_HTTP_MAIN_CONF_OFFSET,
+        0,
+        nullptr,
     },
     {
         ngx_string("endpoints_certificates"),
@@ -294,7 +305,9 @@ ngx_command_t ngx_esp_commands[] = {
               cf, cmd,
               &reinterpret_cast<ngx_esp_main_conf_t *>(conf)->cert_path);
         },
-        NGX_HTTP_MAIN_CONF_OFFSET, 0, nullptr,
+        NGX_HTTP_MAIN_CONF_OFFSET,
+        0,
+        nullptr,
     },
     ngx_null_command  // last entry
 };
@@ -998,8 +1011,9 @@ ngx_int_t ngx_esp_create_http_configuration(ngx_conf_t *cf,
   ngx_memzero(ssl, sizeof(ngx_ssl_t));
   ssl->log = cf->log;
 
-  if (ngx_ssl_create(ssl, NGX_SSL_SSLv2 | NGX_SSL_SSLv3 | NGX_SSL_TLSv1 |
-                              NGX_SSL_TLSv1_1 | NGX_SSL_TLSv1_2,
+  if (ngx_ssl_create(ssl,
+                     NGX_SSL_SSLv2 | NGX_SSL_SSLv3 | NGX_SSL_TLSv1 |
+                         NGX_SSL_TLSv1_1 | NGX_SSL_TLSv1_2,
                      nullptr) != NGX_OK) {
     return NGX_ERROR;
   }

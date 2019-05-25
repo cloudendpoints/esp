@@ -134,15 +134,15 @@ RewriteRule::RewriteRule(std::string regex, std::string replacement,
   regex_compiled_ = pcre_compile(regex_pattern_.c_str(), 0, &pcre_error_str,
                                  &pcre_error_offset, NULL);
   if (regex_compiled_ == NULL) {
-    env_->LogError("Invalid rewrite rule: \"" + regex_pattern_ + "\", error: " +
-                   std::string(pcre_error_str));
+    env_->LogError("Invalid rewrite rule: \"" + regex_pattern_ +
+                   "\", error: " + std::string(pcre_error_str));
     return;
   }
 
   regex_extra_ = pcre_study(regex_compiled_, 0, &pcre_error_str);
   if (pcre_error_str != NULL) {
-    env_->LogError("Invalid rewrite rule: \"" + regex_pattern_ + "\", error: " +
-                   std::string(pcre_error_str));
+    env_->LogError("Invalid rewrite rule: \"" + regex_pattern_ +
+                   "\", error: " + std::string(pcre_error_str));
 
     pcre_free(regex_compiled_);
     return;
