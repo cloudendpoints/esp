@@ -67,10 +67,8 @@ iap_jwt_verify_nginx_repositories(True)
 
 git_repository(
     name = "com_github_grpc_grpc",
-    commit = "edc506849f3429c6b4a6d90ec604aeb1b7b0eb54",  # v1.21.0
-    # TODO: use forked one with some small changes.
-    # changes is https://github.com/grpc/grpc/pull/19114
-    remote = "https://github.com/qiwzhang/grpc.git",
+    commit = "5110b5702daf7f27d31b0a54d118168d4b468edf",  # May 29, 2019
+    remote = "https://github.com/grpc/grpc.git",
 )
 
 git_repository(
