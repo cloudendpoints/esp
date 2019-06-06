@@ -38,9 +38,9 @@ service_control_config {
   log_response_header: "foo"
   log_jwt_payload: "foo"
   log_jwt_payload: "bar.sub_bar"
+  network_fail_open: true
 }
 experimental {
   disable_log_status: true
 }
 rollout_strategy: "None"
-

@@ -32,6 +32,9 @@ service_config_rollout {
 service_management_config {
   url: "https://servicemanagement.googleapis.com"
 }
+service_control_config {
+  network_fail_open: true
+}
 experimental {
   disable_log_status: true
 }
@@ -41,4 +44,3 @@ cloud_tracing_config {
   }
 }
 rollout_strategy: "None"
-

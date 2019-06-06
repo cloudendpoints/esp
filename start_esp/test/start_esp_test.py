@@ -77,7 +77,7 @@ class TestStartEsp(unittest.TestCase):
             f = open(generated_config_file, "r")
             print(f.read())
             f.close()
-            print("The expected config is:")
+            print("The expected config from %s:" % expected_config_file)
             f = open(expected_config_file, "r")
             print(f.read())
             f.close()

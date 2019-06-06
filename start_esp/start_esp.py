@@ -903,9 +903,9 @@ config file.'''.format(
         help='''The file path for gRPC backend SSL client certificate chain.''')
 
     parser.add_argument('--service_control_network_fail_open',
-        action='store_true', help='''
+        default=True, action='store_true', help='''
         In case of network failures when connecting to Google service control,
-        the requests will be allowed if this flag is on. Default is off.
+        the requests will be allowed if this flag is on. Default is on.
         ''')
 
     parser.add_argument('--jwks_cache_duration_in_s', default=None, type=int, help='''

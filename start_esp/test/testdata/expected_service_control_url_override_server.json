@@ -34,6 +34,7 @@ service_management_config {
 }
 service_control_config {
   url_override: "test_url_override"
+  network_fail_open: true
 }
 experimental {
   disable_log_status: true
