@@ -32,8 +32,10 @@ service_config_rollout {
 service_management_config {
   url: "https://test-management.googleapis.com"
 }
+service_control_config {
+  network_fail_open: true
+}
 experimental {
   disable_log_status: true
 }
 rollout_strategy: "None"
-
