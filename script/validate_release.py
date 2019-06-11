@@ -64,7 +64,6 @@ RUN_TESTS = [
     'long-run-test_gke-tight-http2-interop',
     'long-run-test_gke-tight-https-bookstore',
     'release',
-    'tsan',
 ]
 
 FLAGS = gflags.FLAGS
