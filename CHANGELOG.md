@@ -1,3 +1,9 @@
+# Release 1.36.0 11-06-2019
+
+- Allow nginx config to include other custom configs (#631)
+- Change flag service_control_network_fail_open default to true (#629)
+- Upgrade grpc version to 1.21 (#624)
+
 # Release 1.34.0 20-05-2019
 
 - Set grpc.max_metadata_size to INT_MAX (#620)
