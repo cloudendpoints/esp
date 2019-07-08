@@ -41,7 +41,7 @@ my $NginxPort = ApiManager::pick_port();
 my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(7);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(9);
 
 # Save service name in the service configuration protocol buffer file.
 
@@ -50,6 +50,11 @@ backend {
   rules {
     selector: "ListShelves"
     address: "http://127.0.0.1:$BackendPort"
+    path_translation: APPEND_PATH_TO_ADDRESS
+  }
+  rules {
+    selector: "GetShelf"
+    address: "http://127.0.0.1:$BackendPort/foo"
     path_translation: APPEND_PATH_TO_ADDRESS
   }
   rules {
@@ -97,11 +102,14 @@ $t->run();
 # PathTranslation is set as APPEND_PATH_TO_ADDRESS.
 my $response1 = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key');
 
+# Backend address with a path prefix.
+my $response123 = ApiManager::http_get($NginxPort,'/shelves/123?key=this-is-an-api-key');
+
 # Backend address with an unexpected "/" sufix, should still work.
 my $response2 = ApiManager::http_get($NginxPort,'/shelves/123/books/1234?key=this-is-an-api-key&timezone=EST');
 
-# This one should fail since there is not backend rule specified for this path
-my $response3 = ApiManager::http_get($NginxPort,'/shelves/1?key=this-is-an-api-key');
+# This one should fail since there is not backend rule specified for ListBooks
+my $response3 = ApiManager::http_get($NginxPort,'/shelves/1/books?key=this-is-an-api-key');
 
 $t->stop_daemons();
 
@@ -109,18 +117,21 @@ my ($response_headers1, $response_body1) = split /\r\n\r\n/, $response1, 2;
 
 like($response_headers1, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');
 is($response_body1, <<'EOF', 'Shelves returned in the response body.');
-{ "shelves": [
-    { "name": "shelves/1", "theme": "Fiction" },
-    { "name": "shelves/2", "theme": "Fantasy" }
-  ]
-}
+/shelves
+EOF
+
+my ($response_headers123, $response_body123) = split /\r\n\r\n/, $response123, 2;
+
+like($response_headers123, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');
+is($response_body123, <<'EOF', 'Shelves/111 returned in the response body.');
+/foo/shelves/123
 EOF
 
 my ($response_headers2, $response_body2) = split /\r\n\r\n/, $response2, 2;
 
 like($response_headers2, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');
 is($response_body2, <<'EOF', 'Book returned in the response body.');
-{ "id": "1234", "titie": "Fiction" }
+/books
 EOF
 
 my ($response_headers3, $response_body3) = split /\r\n\r\n/, $response3, 2;
@@ -139,18 +150,21 @@ sub bookstore {
 HTTP/1.1 200 OK
 Connection: close
 
-{ "shelves": [
-    { "name": "shelves/1", "theme": "Fiction" },
-    { "name": "shelves/2", "theme": "Fantasy" }
-  ]
-}
+/shelves
+EOF
+
+  $server->on('GET', '/foo/shelves/123?key=this-is-an-api-key', <<'EOF');
+HTTP/1.1 200 OK
+Connection: close
+
+/foo/shelves/123
 EOF
 
   $server->on('GET', '/shelves/123/books/1234?key=this-is-an-api-key&timezone=EST', <<'EOF');
 HTTP/1.1 200 OK
 Connection: close
 
-{ "id": "1234", "titie": "Fiction" }
+/books
 EOF
   $server->run();
 }
