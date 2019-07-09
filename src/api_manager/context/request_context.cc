@@ -447,7 +447,13 @@ std::string RequestContext::GetBackendPath() const {
 
   if (method_call_.method_info->backend_path_translation() ==
       ::google::api::BackendRule_PathTranslation_APPEND_PATH_TO_ADDRESS) {
-    return "";
+    if (!method_call_.method_info->backend_path().empty()) {
+      return method_call_.method_info->backend_path() +
+             request_->GetUnparsedRequestPath();
+    } else {
+      // Not change to the request path.
+      return "";
+    }
   } else if (method_call_.method_info->backend_path_translation() ==
              ::google::api::BackendRule_PathTranslation_CONSTANT_ADDRESS) {
     std::string parameters;

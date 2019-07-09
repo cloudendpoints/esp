@@ -117,27 +117,22 @@ void MethodInfoImpl::process_backend_rule(
   backend_path_translation_ = rule.path_translation();
   backend_jwt_audience_ = rule.jwt_audience();
 
-  if (backend_path_translation_ ==
-      ::google::api::BackendRule_PathTranslation_CONSTANT_ADDRESS) {
-    // for CONSTANT ADDRESS case, needs to split the rule.address into
-    // address and path for a full URL. If it is not a full URL, leave
-    // backend_address_ same as rule.address.
-    string::size_type i = backend_address_.find("/");
-    int j;
-    for (j = 0; j < 2; ++j) {
-      i = backend_address_.find("/", i + 1);
-    }
-    if (i != string::npos) {
-      backend_path_ = backend_address_.substr(i);
-      backend_address_ = backend_address_.substr(0, i);
-    }
-    return;
-  }
   // Strip the last "/", in case the address is mis-configured.
-  if (backend_path_translation_ ==
-          ::google::api::BackendRule_PathTranslation_APPEND_PATH_TO_ADDRESS &&
-      backend_address_.back() == '/') {
+  if (backend_address_.back() == '/') {
     backend_address_ = backend_address_.substr(0, backend_address_.size() - 1);
+  }
+
+  // Split the rule.address into address and path for a full URL with format
+  // "scheme://host/path". If it is not a full URL, leave backend_address_
+  // same as rule.address.
+  string::size_type i = backend_address_.find("/");
+  int j;
+  for (j = 0; j < 2; ++j) {
+    i = backend_address_.find("/", i + 1);
+  }
+  if (i != string::npos) {
+    backend_path_ = backend_address_.substr(i);
+    backend_address_ = backend_address_.substr(0, i);
   }
 }
 
