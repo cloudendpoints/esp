@@ -160,7 +160,7 @@ function set_api_keys() {
 function get_test_client_key() {
   local key_path=$1
   [[ -e $key_path ]] || $GSUTIL \
-    cp gs://esp-testing-secret-files/esp-load-test-82cfd7979030.json $key_path
+    cp gs://esp-testing-secret-files/esp-test-client-b1289e36f3df.json $key_path
   echo -n $key_path
   return 0
 }
