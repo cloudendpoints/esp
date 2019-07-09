@@ -149,7 +149,7 @@ function retry() {
 # Download api Keys from Cloud storage and source the file.
 function set_api_keys() {
   local api_key_directory="$(mktemp -d)"
-  $GSUTIL cp gs://client-secret-files/api_keys \
+  $GSUTIL cp gs://esp-testing-secret-files/api_keys \
         "${api_key_directory}/api_keys" \
           || error_exit "Failed to download API key file."
 
@@ -160,7 +160,7 @@ function set_api_keys() {
 function get_test_client_key() {
   local key_path=$1
   [[ -e $key_path ]] || $GSUTIL \
-    cp gs://client-secret-files/esp-test-client-434d3cb34a1c.json $key_path
+    cp gs://esp-testing-secret-files/esp-load-test-82cfd7979030.json $key_path
   echo -n $key_path
   return 0
 }
@@ -280,11 +280,11 @@ function activate_service_account() {
   local local_json="$(mktemp /tmp/XXXXXX.secret.json)"
   case "${project}" in
     esp-load-test)
-      remote_json_name='esp-load-test-08fcbb64ace1.json'
+      remote_json_name='esp-load-test-82cfd7979030.json'
       service_account='service-control-in-load-test@esp-load-test.iam.gserviceaccount.com'
       ;;
     esp-long-run)
-      remote_json_name='esp-long-run-f92945d40e0b.json'
+      remote_json_name='esp-long-run-4f1701e6f180.json'
       service_account='deploy-esp-vm@esp-long-run.iam.gserviceaccount.com'
       ;;
     *)
@@ -294,7 +294,7 @@ function activate_service_account() {
   esac
   echo "Downloading ${project} service account"
   retry -n 5 -s 10 gsutil cp \
-    "gs://client-secret-files/${remote_json_name}" "${local_json}" \
+    "gs://esp-testing-secret-files/${remote_json_name}" "${local_json}" \
     || error_exit "Could not download secret keys for ${project}"
   echo "Gcloud auth activate ${project} service account."
   retry -n 2 ${GCLOUD} auth activate-service-account --key-file "${local_json}" \

@@ -58,7 +58,7 @@ fi
 # Download api Keys with restrictions from Cloud storage.
 TEMP_DIR="$(mktemp -d)"
 API_RESTRICTION_KEYS_FILE="${TEMP_DIR}/esp-e2e-key-restriction.json"
-gsutil cp gs://client-secret-files/esp-e2e-key-restriction.json \
+gsutil cp gs://esp-testing-secret-files/esp-e2e-key-restriction.json \
       "${API_RESTRICTION_KEYS_FILE}" \
         || error_exit "Failed to download API key with restrictions file."
 
