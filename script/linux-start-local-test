@@ -66,7 +66,7 @@ ${SUDO} sh -c 'echo "1024 65000" > /proc/sys/net/ipv4/ip_local_port_range'
 
 NGINX=${ROOT}/nginx-esp
 
-gsutil cp gs://client-secret-files/esp-load-test-08fcbb64ace1.json \
+gsutil cp gs://esp-testing-secret-files/esp-load-test-82cfd7979030.json \
     "${ROOT}/test/echo/gce-vm/client-secret.json" \
   || error_exit "Failed to download credentials."
 
