@@ -278,8 +278,8 @@ def fetch_and_save_service_config(management, service, config_dir, token, versio
         sys.exit(err.code)
 
 # config_id might have invalid character for file name.
-def generate_service_config_filename(version):
-    return str(uuid.uuid5(uuid.NAMESPACE_DNS, str(version)))
+def generate_service_config_filename(service, version):
+    return str(uuid.uuid5(uuid.NAMESPACE_DNS, str(service) + str(version)))
 
 # parse xff_trusted_proxy_list
 def handle_xff_trusted_proxies(args):
@@ -392,7 +392,7 @@ def fetch_service_config(args):
                     args.rollout_ids.append(rollout["rolloutId"])
                     args.service_config_sets.append({})
                     for version, percentage in rollout["trafficPercentStrategy"]["percentages"].iteritems():
-                        filename = generate_service_config_filename(version)
+                        filename = generate_service_config_filename(service, version)
                         fetch_and_save_service_config(args.management, service, args.config_dir, token, version, filename)
                         args.service_config_sets[idx][args.config_dir + "/" + filename] = percentage;
             else:
