@@ -1,4 +1,9 @@
-# Release 1.36.0 11-06-2019
+# Release 1.36.0 17-07-2019
+
+- Using a more unique fileanme for service config when using multiple services (#641) (#642)
+- Fix backend address with path (#638)
+
+# Release 1.35.0 11-06-2019
 
 - Allow nginx config to include other custom configs (#631)
 - Change flag service_control_network_fail_open default to true (#629)
@@ -27,7 +32,6 @@
 - Handle API_TARGET_BLOCKED and RESOURCE_EXHAUSTED (#581)
 - Override Compute Platform in serverless docker image (#579)
 
-===============================================
 # Release 1.31.0 01-04-2019
 
 - Support large_client_header_buffers via flag (#571)
