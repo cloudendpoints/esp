@@ -530,12 +530,10 @@ TEST_F(JwtValidatorTest, ParseToken) {
       "Bad JWT format: invalid JWT claims; issuer is mssing but required.")
       << status.message();
 
-  // Token without "sub" field in payload.
+  // Token without "sub" field in payload. It is OK, "sub" is optional.
   validator = JwtValidator::Create(kTokenNoSub, strlen(kTokenNoSub));
   status = validator->Parse(&user_info);
-  EXPECT_FALSE(status.ok());
-  EXPECT_EQ(status.message(), "Bad JWT format: missing subject field.")
-      << status.message();
+  EXPECT_TRUE(status.ok());
 
   // Token without "aud" field in payload.
   validator = JwtValidator::Create(kTokenNoAud, strlen(kTokenNoAud));
