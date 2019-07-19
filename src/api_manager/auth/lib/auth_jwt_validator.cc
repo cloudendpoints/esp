@@ -824,13 +824,11 @@ Status JwtValidatorImpl::FillUserInfoAndSetExp(UserInfo *user_info) {
     return ToStatus("Bad JWT format: missing audience field.");
   }
   const char *subject = grpc_jwt_claims_subject(claims_);
-  if (subject == nullptr) {
-    gpr_log(GPR_ERROR, "Missing subject field.");
-    return ToStatus("Bad JWT format: missing subject field.");
+  if (subject != nullptr) {
+    user_info->id = subject;
   }
   user_info->issuer = issuer;
   user_info->audiences = audiences_;
-  user_info->id = subject;
 
   // Optional field.
   const grpc_json *grpc_json = grpc_jwt_claims_json(claims_);
