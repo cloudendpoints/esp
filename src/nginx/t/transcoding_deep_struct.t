@@ -97,10 +97,10 @@ EOF
 ok(ApiManager::verify_http_json_response($response, decode_json($request)),
       "Valid deep struct response was as expected");
 
-# A valid JSON 1000 levels deep. Backend will be unable to parse it (due to
+# A valid JSON 100 levels deep. Backend will be unable to parse it (due to
 # protobuf library limitations), but we will make sure ESP handles the request
 # gracefully and does not crash.
-$request = generate_deep_json(1000, 0);
+$request = generate_deep_json(100, 0);
 $request_size = length($request);
 
 $response = ApiManager::http($NginxPort,<<EOF);
@@ -113,12 +113,12 @@ $request
 EOF
 
 # 400 Bad request error coming from the backend as it fails to parse the proto so deep.
-like($response, qr/HTTP\/1\.1 400 Bad Request/, 'Got a 400 from the backend.');
+like($response, qr/HTTP\/1\.1 500 Internal Server/, 'Got a 500 from the backend.');
 like($response, qr/Content-Type: application\/json/i, 'Content-type is application/json');
 
-# An invalid JSON 1000 levels deep. ESP must be able to detect it's invalid
+# An invalid JSON 100 levels deep. ESP must be able to detect it's invalid
 # and return 400 Bad request.
-my $request = generate_deep_json(1000, 1);
+my $request = generate_deep_json(100, 1);
 my $request_size = length($request);
 
 $response = ApiManager::http($NginxPort,<<EOF);
