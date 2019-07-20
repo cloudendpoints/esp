@@ -112,7 +112,7 @@ Content-Length: $request_size
 $request
 EOF
 
-# 400 Bad request error coming from the backend as it fails to parse the proto so deep.
+# 500 Bad request error coming from the backend as it fails to parse the proto so deep.
 like($response, qr/HTTP\/1\.1 500 Internal Server/, 'Got a 500 from the backend.');
 like($response, qr/Content-Type: application\/json/i, 'Content-type is application/json');
 
