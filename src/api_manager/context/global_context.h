@@ -28,6 +28,10 @@ namespace api_manager {
 
 namespace context {
 
+// The function prototype to set the latest rollout id
+// from Check and Report response.
+typedef std::function<void(const std::string& rollout_id)> SetRolloutIdFunc;
+
 // A global context shared across all services. It stores
 // * env
 // * server_config
@@ -92,10 +96,10 @@ class GlobalContext {
 
   int jwks_cache_duration_in_s() const { return jwks_cache_duration_in_s_; }
 
-  void set_rollout_id(const std::string &rollout_id) {
-    rollout_id_ = rollout_id;
+  void set_rollout_id_func(SetRolloutIdFunc rollout_id_func) {
+    rollout_id_func_ = rollout_id_func;
   }
-  const std::string &rollout_id() const { return rollout_id_; }
+  SetRolloutIdFunc rollout_id_func() const { return rollout_id_func_; }
 
  private:
   // create cloud trace.
@@ -144,8 +148,8 @@ class GlobalContext {
   // The jwks public key cache duration.
   int jwks_cache_duration_in_s_;
 
-  // The rollout id fetched from Check and Report response.
-  std::string rollout_id_;
+  // The function to set rollout id fetched from Check and Report response.
+  SetRolloutIdFunc rollout_id_func_;
 };
 
 }  // namespace context

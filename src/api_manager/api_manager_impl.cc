@@ -204,6 +204,10 @@ utils::Status ApiManagerImpl::Init() {
                                                   ->service_config_rollout()
                                                   .rollout_id());
     }
+    global_context_->set_rollout_id_func(
+        [this])(const std::string& rollout_id) {
+      config_manager_->set_latest_rollout_id(rollout_id);
+    });
 
     config_manager_->Init();
   }

@@ -82,17 +82,6 @@ class ConfigManager {
     current_rollout_id_ = rollout_id;
   }
 
-  // Count the requests to dynamically disable calling service_management
-  // if there is not any active requests within the last window.
-  void CountRequests(int n) {
-    if (window_request_counter_) {
-      window_request_counter_->Inc(n, std::chrono::system_clock::now());
-    }
-  }
-
-  uint64_t get_remote_rollout_calls() const { return remote_rollout_calls_; }
-  uint64_t get_skipped_rollout_calls() const { return skipped_rollout_calls_; }
-
  private:
   // Fetch the latest rollouts
   void FetchRollouts();
@@ -116,12 +105,7 @@ class ConfigManager {
   std::unique_ptr<PeriodicTimer> rollouts_refresh_timer_;
   // Previous rollouts id
   std::string current_rollout_id_;
-  // Time based window request counter
-  std::unique_ptr<utils::TimeBasedCounter> window_request_counter_;
-  // number of remote calls to check the rollout_id
-  uint64_t remote_rollout_calls_{};
-  // number of skipped calls by using response rollout_id
-  uint64_t skipped_rollout_calls_{};
+
 };
 
 }  // namespace api_manager

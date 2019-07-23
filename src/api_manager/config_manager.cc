@@ -69,37 +69,31 @@ void ConfigManager::Init() {
     window_request_counter_.reset(new utils::TimeBasedCounter(
         kWindowCounterSize, std::chrono::milliseconds(refresh_interval_ms_ * 5),
         std::chrono::system_clock::now()));
-    rollouts_refresh_timer_ = global_context_->env()->StartPeriodicTimer(
-        std::chrono::milliseconds(refresh_interval_ms_),
-        [this]() { OnRolloutsRefreshTimer(); });
   }
 }
 
-void ConfigManager::OnRolloutsRefreshTimer() {
-  global_context_->env()->LogDebug("RolloutsRefreshTimer start");
-  // If there is not any requests in the last window, not to call.
-  if (window_request_counter_ &&
-      window_request_counter_->Count(std::chrono::system_clock::now()) == 0) {
-    global_context_->env()->LogDebug(
-        "RolloutsRefresh skipped due to no traffic.");
+  std::default_random_engine random_generator_;
+  std::uniform_int_distribution<int> distribution(0,window);
+
+void ConfigManager::set_latest_rollout_id(const std::string& latest_rollout_id) {
+  if (latest_rollout_id == current_rollout_id_) {
     return;
   }
 
-  // The rollout id in global_context is from Check/Report response.
-  // It is fresh and should have been fetched since last timeout.
-  if (!global_context_->rollout_id().empty()) {
-    bool bail_out = (global_context_->rollout_id() == current_rollout_id_);
-    // Clear it to make sure it is fresh for the next timeout
-    global_context_->set_rollout_id("");
-    if (bail_out) {
-      skipped_rollout_calls_++;
-      global_context_->env()->LogDebug(
-          "RolloutsRefresh skipped due to response rollout_id.");
-      return;
-    }
-  }
+  // Timer is pending.
+  if (fetch_timer_) return;
 
-  global_context_->env()->LogDebug("RolloutsRefresh makes a remote call.");
+  fetch_timer_ = global_context_->env()->StartPeriodicTimer(
+        std::chrono::milliseconds(refresh_interval_ms_),
+        [this]() { OnRolloutsRefreshTimer(); });
+}
+
+void ConfigManager::OnRolloutsRefreshTimer() {
+  global_context_->env()->LogDebug("Fetch timer start");
+
+  fetch_timer_->Stop();
+  fetch_timer_ = nullptr;
+
   std::string audience;
   GlobalFetchServiceAccountToken(
       global_context_, audience, [this](utils::Status status) {

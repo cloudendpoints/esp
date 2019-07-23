@@ -227,9 +227,15 @@ message ServiceManagementConfig {
   // to "https://servicemanagement.googleapis.com"
   string url = 1;
 
-  // The maximum milliseconds before config manager check updated rollouts,
-  // if not specified defaults to 60000
-  int32 refresh_interval_ms = 2;
+  // The throttle window in minutes to fetch the new service config.
+  // The latest_rollout_id from Check/Report response is used to detect
+  // new service config rollout. If a new rollout is detected, each ESP
+  // instance will start a timer based on this throttle window to call
+  // Google ServiceManagement service to fetch the new service config.
+  // The goal is not to have all ESP instances to call the ServiceManagement
+  // at the same time to exceed its quota.
+  // If not specified, or 0, default to be 5 minutes.
+  int32 fetch_throttle_window_in_m = 2;
 }
 
 // Maps service configuration files to their corresponding traffic percentage.
