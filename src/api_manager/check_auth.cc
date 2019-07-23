@@ -181,8 +181,8 @@ void AuthChecker::GetAuthToken() {
   if (auth_header.size() <= bearer_len ||
       auth_header.compare(0, bearer_len, kBearer) != 0) {
     // Authorization header is not long enough, or authorization header does
-    // not begin with "Bearer ", set auth_token_ to empty string.
-    auth_token_ = std::string();
+    // not begin with "Bearer ", set auth_token_ to the whole string.
+    auth_token_ = auth_header;
     return;
   }
 
