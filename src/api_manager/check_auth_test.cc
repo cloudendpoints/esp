@@ -495,7 +495,7 @@ TEST_F(CheckAuthTest, TestOKAuth) {
       }));
   EXPECT_CALL(*raw_request_, FindHeader(kAuthHeader, _))
       .WillOnce(Invoke([](const std::string &, std::string *token) {
-        *token = std::string(kBearer) + std::string(kToken2);
+        *token = std::string(kToken2);
         return true;
       }));
   EXPECT_CALL(*raw_request_, SetAuthToken(kToken2)).Times(1);
@@ -617,7 +617,7 @@ TEST_F(CheckAuthTest, TestInvalidToken) {
     ASSERT_EQ(status.code(), Code::UNAUTHENTICATED);
     ASSERT_EQ(status.message(),
               "JWT validation failed: "
-              "Missing or invalid credentials");
+              "Bad JWT format: should have 2 dots");
   });
 
   EXPECT_TRUE(Mock::VerifyAndClearExpectations(raw_request_));
