@@ -15,6 +15,9 @@
 #ifndef API_MANAGER_CONFIG_MANAGER_H_
 #define API_MANAGER_CONFIG_MANAGER_H_
 
+#include <chrono>
+#include <random>
+
 #include "src/api_manager/context/global_context.h"
 #include "src/api_manager/service_management_fetch.h"
 #include "src/api_manager/utils/time_based_counter.h"
@@ -73,14 +76,19 @@ class ConfigManager {
   virtual ~ConfigManager();
 
  public:
-  // Initialize the periodic timer task
-  void Init();
+  // Set the latest rollout_id from Check/Report response.
+  // ConfigManager uses it to detect new rollout,
+  void SetLatestRolloutId(
+      const std::string& latest_rollout_id,
+      std::chrono::time_point<std::chrono::system_clock> now);
 
   // Getter and setter of current_rollout_id_
   const std::string current_rollout_id() { return current_rollout_id_; }
   void set_current_rollout_id(const std::string rollout_id) {
     current_rollout_id_ = rollout_id;
   }
+
+  uint64_t get_remote_rollout_calls() const { return remote_rollout_calls_; }
 
  private:
   // Fetch the latest rollouts
@@ -97,15 +105,23 @@ class ConfigManager {
   std::shared_ptr<context::GlobalContext> global_context_;
   // ApiManager updated callback
   RolloutApplyFunction rollout_apply_function_;
-  // Rollouts refresh check interval in ms
-  int refresh_interval_ms_;
+  // Fetch throttle window
+  int fetch_throttle_window_in_s_;
   // ServiceManagement service client instance
   std::unique_ptr<ServiceManagementFetch> service_management_fetch_;
-  // Periodic timer task to refresh rollouts
-  std::unique_ptr<PeriodicTimer> rollouts_refresh_timer_;
+  // Periodic timer task to fetch the latest rollout
+  std::unique_ptr<PeriodicTimer> fetch_timer_;
+
+  // The next timer can be fired in the next throttle window.
+  std::chrono::time_point<std::chrono::system_clock> next_window_time_;
   // Previous rollouts id
   std::string current_rollout_id_;
+  // number of remote calls to check the rollout_id
+  uint64_t remote_rollout_calls_{};
 
+  // The random objects to throttle the timer
+  std::default_random_engine random_generator_;
+  std::unique_ptr<std::uniform_int_distribution<int>> random_dist_;
 };
 
 }  // namespace api_manager

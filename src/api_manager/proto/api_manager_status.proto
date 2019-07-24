@@ -57,9 +57,6 @@ message ServiceConfigRollouts {
 
   // number of remote calls to check the rollout_id
   uint64 remote_rollout_calls = 3;
-
-  // number of skipped calls by using response rollout_id
-  uint64 skipped_rollout_calls = 4;
 }
 
 // Status for ESP instances

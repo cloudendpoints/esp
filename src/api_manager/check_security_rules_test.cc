@@ -185,12 +185,6 @@ const char kAuthToken[] =
 const char kRequestPath[] = "/ListShelves";
 const char kRequestMethod[] = "GET";
 
-::google::protobuf::Value ToValue(const std::string &arg) {
-  ::google::protobuf::Value value;
-  value.set_string_value(arg);
-  return value;
-}
-
 MATCHER_P3(HTTPRequestMatches, url, method, body, "") {
   if (arg->url() != url) {
     return false;
