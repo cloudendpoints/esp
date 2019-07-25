@@ -53,6 +53,9 @@ function cleanup {
 e2e_options "${@}"
 
 TEST_ID="gke-${COUPLING_OPTION}-${TEST_TYPE}-${BACKEND}"
+if [[ "${ESP_ROLLOUT_STRATEGY}" == "managed" ]]; then
+  TEST_ID="${TEST_ID}-managed"
+fi
 
 # Remove this line when the limit on #services is lifted or increased to > 20
 ESP_SERVICE="${TEST_ID}.${PROJECT_ID}.appspot.com"
