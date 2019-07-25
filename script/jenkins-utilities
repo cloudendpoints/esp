@@ -149,6 +149,11 @@ function create_service() {
   retry -n 5 set_esp_service_version "${esp_service}" \
     || error_exit 'Could not fetch the service version.'
 
+  echo 'Activating service'
+  retry -n 3 run ${GCLOUD} services enable \
+    "${esp_service}" --project="${PROJECT_ID}" \
+    || error_exit 'Could not activate the service.'
+
   echo "ESP service version: ${ESP_SERVICE_VERSION}"
 }
 
