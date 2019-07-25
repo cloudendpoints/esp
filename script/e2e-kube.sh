@@ -72,17 +72,22 @@ run cat ${YAML_FILE}
 
 case "${BACKEND}" in
   'bookstore' )
-    SERVICE_IDL="${ESP_ROOT}/test/bookstore/swagger_template.json";;
+    SERVICE_IDL="${ESP_ROOT}/test/bookstore/swagger_template.json"
+    CREATE_SERVICE_ARGS="${SERVICE_IDL}";;
   'echo'      )
     SERVICE_IDL="${ESP_ROOT}/test/grpc/grpc-test.yaml"
-    ARGS="$ARGS -g --config ${ESP_ROOT}/bazel-genfiles/test/grpc/grpc-test.descriptor";;
+    CREATE_SERVICE_ARGS="${SERVICE_IDL} ${ESP_ROOT}/bazel-genfiles/test/grpc/grpc-test.descriptor"
+    ARGS="$ARGS -g";;
   'interop'   )
     SERVICE_IDL="${ESP_ROOT}/test/grpc/grpc-interop.yaml"
-    ARGS="$ARGS -g --config ${ESP_ROOT}/bazel-genfiles/test/grpc/grpc-interop.descriptor";;
+    CREATE_SERVICE_ARGS="${SERVICE_IDL} ${ESP_ROOT}/bazel-genfiles/test/grpc/grpc-interop.descriptor"
+    ARGS="$ARGS -g";;
   *           ) e2e_usage "Invalid backend option";;
 esac
+
 run sed -i "s|\${ENDPOINT_SERVICE}|${ESP_SERVICE}|g" ${SERVICE_IDL}
-ARGS="$ARGS --config ${SERVICE_IDL}"
+create_service "${ESP_SERVICE}" "${CREATE_SERVICE_ARGS}"
+ARGS="$ARGS --version ${ESP_SERVICE_VERSION}"
 
 case "${COUPLING_OPTION}" in
   'loose' ) ARGS="$ARGS -d loose";;
