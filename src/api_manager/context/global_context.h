@@ -30,7 +30,7 @@ namespace context {
 
 // The function prototype to set the latest rollout id
 // from Check and Report response.
-typedef std::function<void(const std::string& rollout_id)> SetRolloutIdFunc;
+typedef std::function<void(const std::string &rollout_id)> SetRolloutIdFunc;
 
 // A global context shared across all services. It stores
 // * env

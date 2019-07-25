@@ -34,7 +34,8 @@ ApiManagerImpl::ApiManagerImpl(std::unique_ptr<ApiManagerEnvInterface> env,
                                const std::string &server_config)
     : global_context_(
           new context::GlobalContext(std::move(env), server_config)) {
-  // This rollout_id_func should be set before the first ServiceContext creation.
+  // This rollout_id_func should be set before the first ServiceContext
+  // creation.
   global_context_->set_rollout_id_func([this](const std::string &rollout_id) {
     if (config_manager_) {
       config_manager_->SetLatestRolloutId(rollout_id,

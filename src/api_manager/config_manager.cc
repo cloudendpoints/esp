@@ -40,8 +40,8 @@ ConfigManager::ConfigManager(
             ->service_management_config()
             .fetch_throttle_window_s() > 0) {
       fetch_throttle_window_in_s_ = global_context_->server_config()
-                                   ->service_management_config()
-                                   .fetch_throttle_window_s();
+                                        ->service_management_config()
+                                        .fetch_throttle_window_s();
     }
   }
   // throttle in milliseconds
