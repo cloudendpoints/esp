@@ -34,6 +34,15 @@ ApiManagerImpl::ApiManagerImpl(std::unique_ptr<ApiManagerEnvInterface> env,
                                const std::string &server_config)
     : global_context_(
           new context::GlobalContext(std::move(env), server_config)) {
+  // This rollout_id_func should be set before the first ServiceContext
+  // creation.
+  global_context_->set_rollout_id_func([this](const std::string &rollout_id) {
+    if (config_manager_) {
+      config_manager_->SetLatestRolloutId(rollout_id,
+                                          std::chrono::system_clock::now());
+    }
+  });
+
   check_workflow_ = std::unique_ptr<CheckWorkflow>(new CheckWorkflow);
   check_workflow_->RegisterAll();
 
@@ -204,8 +213,6 @@ utils::Status ApiManagerImpl::Init() {
                                                   ->service_config_rollout()
                                                   .rollout_id());
     }
-
-    config_manager_->Init();
   }
 
   return utils::Status::OK;
@@ -293,11 +300,8 @@ utils::Status ApiManagerImpl::GetServiceConfigRollouts(
   if (config_manager_) {
     rollouts->remote_rollout_calls =
         config_manager_->get_remote_rollout_calls();
-    rollouts->skipped_rollout_calls =
-        config_manager_->get_skipped_rollout_calls();
   } else {
     rollouts->remote_rollout_calls = 0;
-    rollouts->skipped_rollout_calls = 0;
   }
 
   return utils::Status::OK;
@@ -319,9 +323,6 @@ bool ApiManagerImpl::ReWriteURL(const char *uri, const size_t uri_len,
 
 std::unique_ptr<RequestHandlerInterface> ApiManagerImpl::CreateRequestHandler(
     std::unique_ptr<Request> request_data) {
-  if (config_manager_) {
-    config_manager_->CountRequests(1);
-  }
   return std::unique_ptr<RequestHandlerInterface>(new RequestHandler(
       check_workflow_, SelectService(), std::move(request_data)));
 }

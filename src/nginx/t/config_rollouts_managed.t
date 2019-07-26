@@ -63,7 +63,7 @@ service_control_config {
 }
 service_management_config {
   url: "http://127.0.0.1:${ServiceManagementPort}"
-  refresh_interval_ms: 100
+  fetch_throttle_window_s: 1
 }
 service_config_rollout {
   traffic_percentages { 
@@ -171,11 +171,8 @@ is($endpoints_status->{processes}[0]->{espStatus}[0]->{serviceConfigRollouts}->
 is($endpoints_status->{processes}[0]->{espStatus}[0]->{serviceConfigRollouts}->
     {percentages}->{'2016-08-25r2'}, '20', "Rollout 2016-08-25r2 is 20%" );
 
-# Trigger rollout check response
-$t->write_file("endpoints_status.done", ':endpoints_status done');
-
 # waiting for the first report request is done
-is($t->waitforfile($t->{_testdir}."/".${report_done} . ".0"), 1, 'Report body file ready.');
+is($t->waitforfile($t->{_testdir}."/".${report_done} . ".0"), 1, 'Report1 body file ready.');
 
 # waiting for the rolllout update
 is($t->waitforfile("$t->{_testdir}/${rollout_done}"), 1, 'Rollout body file ready.');
@@ -194,7 +191,7 @@ is( $response_body, <<'EOF', 'Shelves returned in the response body.' );
 EOF
 
 # waiting for the second report request is done
-is($t->waitforfile($t->{_testdir}."/".${report_done} . ".1"), 1, 'Report body file ready.');
+is($t->waitforfile($t->{_testdir}."/".${report_done} . ".1"), 1, 'Report2 body file ready.');
 
 my $max_retry = 5;
 # verify the second /endpoints_status
@@ -344,6 +341,11 @@ sub servicecontrol {
   local $SIG{PIPE} = 'IGNORE';
   
   my $index = 0;
+  my $report_response = ServiceControl::convert_proto(<<'EOF', 'report_response', 'binary');
+{
+  "serviceRolloutId": "2016-08-25r1"
+}
+EOF
 
   $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:check', sub {
     my ($headers, $body, $client) = @_;
@@ -356,7 +358,7 @@ EOF
 
   $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:report', sub {
     my ($headers, $body, $client) = @_;
-    print $client <<'EOF';
+    print $client <<'EOF' . $report_response;
 HTTP/1.1 200 OK
 Connection: close
 
@@ -376,9 +378,6 @@ sub servicemanagement {
 
   $server->on_sub('GET', '/v1/services/endpoints-test.cloudendpointsapis.com/rollouts?filter=status=SUCCESS', sub {
     my ($headers, $body, $client) = @_;
-
-    # Wait for the trigger
-    $t->waitforfile($t->{_testdir}."/endpoints_status.done");
 
     print $client <<'EOF' ;
 HTTP/1.1 200 OK

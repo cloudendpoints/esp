@@ -77,6 +77,10 @@ class ApiManagerImpl : public ApiManager {
   bool ReWriteURL(const char *uri, const size_t uri_len,
                   std::string *destination_url, bool debug_mode) override;
 
+  std::shared_ptr<context::GlobalContext> global_context() {
+    return global_context_;
+  }
+
  private:
   // Use these configs according to the traffic percentage.
   void DeployConfigs(std::vector<std::pair<std::string, int>> &&list);

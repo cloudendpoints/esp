@@ -137,6 +137,16 @@ if [[ ("${ESP_ROLLOUT_STRATEGY}" == "managed") && ("${BACKEND}" == "bookstore") 
   # Deploy new service config
   create_service "${ESP_SERVICE}" "${SERVICE_IDL}"
 
+  # Need to wait for ServiceControl to detect new rollout
+  # Need to run some traffic in order for ServiceControl to send the new rollout.
+  # Here wait for 200 seconds.
+  for l in {1..20}
+  do
+    echo "Wait for the new config to propogate: ${l}"
+    check_http_service "${HOST}/shelves" 200
+    sleep 10
+  done
+
   run retry -n 10 wait_for_service_config_rollouts_update "gke" "${HOST}:8090/endpoints_status" "$ESP_SERVICE_VERSION 100" \
     || error_exit 'Rollouts update was failed'
 fi

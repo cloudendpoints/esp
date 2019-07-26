@@ -72,9 +72,7 @@ std::unique_ptr<service_control::Interface> ServiceContext::CreateInterface() {
       service_control::Aggregated::Create(
           config_->service(), global_context_->server_config().get(), env(),
           global_context_->service_account_token(),
-          [this](const std::string& rollout_id) {
-            global_context_->set_rollout_id(rollout_id);
-          }));
+          global_context_->rollout_id_func()));
 }
 
 }  // namespace context
