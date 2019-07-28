@@ -322,7 +322,7 @@ Congratulations on completing the ESP tutorial! You have successfully:
 - built ESP from source
 - ran all unit and integration tests locally
 - ran ESP locally with a local Bookstore backend
-- integrated your local ESP with Endpoins Service Control to enable Endpoints
+- integrated your local ESP with Endpoints Service Control to enable Endpoints
   features (logging, monitoring, API Key validation).
 
 To learn more about Endpoints, you can visit our
