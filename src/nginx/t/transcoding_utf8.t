@@ -99,6 +99,8 @@ Content-Length: $request_size
 $request
 EOF
 
+print utf8_to_wide("\xC2\xA9\xF0\x9D\x8C\x86\xE2\x98\x83\xC2\xB6");
+print "\n\n";
 ok(ApiManager::verify_http_json_response($response,
     {'id'=>'100', 'theme' => utf8_to_wide("\xC2\xA9\xF0\x9D\x8C\x86\xE2\x98\x83\xC2\xB6")}),
   "The shelf with valid UTF-8 chars was created successfully.");
