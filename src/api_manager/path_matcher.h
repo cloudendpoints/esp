@@ -22,6 +22,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "include/api_manager/utils/status.h"
 #include "src/api_manager/http_template.h"
 #include "src/api_manager/path_matcher_node.h"
 
@@ -100,11 +101,10 @@ class PathMatcherBuilder {
 
   // Registers a method.
   //
-  // Registrations are one-to-one. If this function is called more than once, it
-  // replaces the existing method. Only the last registered method is stored.
-  // Return false if path is an invalid http template.
-  bool Register(std::string http_method, std::string path,
-                std::string body_field_path, Method method);
+  // Registrations are one-to-one. Return error if path is an invalid http
+  // template or the template is duplicated.
+  utils::Status Register(std::string http_method, std::string path,
+                         std::string body_field_path, Method method);
 
   // Returns a unique_ptr to a thread safe PathMatcher that contains all
   // registered path-WrapperGraph pairs. Note the PathMatchBuilder instance
@@ -461,17 +461,21 @@ PathMatcherPtr<Method> PathMatcherBuilder<Method>::Build() {
 // This wrapper converts the |http_rule| into a HttpTemplate. Then, inserts the
 // template into the trie.
 template <class Method>
-bool PathMatcherBuilder<Method>::Register(std::string http_method,
-                                          std::string http_template,
-                                          std::string body_field_path,
-                                          Method method) {
+utils::Status PathMatcherBuilder<Method>::Register(std::string http_method,
+                                                   std::string http_template,
+                                                   std::string body_field_path,
+                                                   Method method) {
   std::unique_ptr<HttpTemplate> ht(HttpTemplate::Parse(http_template));
   if (nullptr == ht) {
-    return false;
+    return utils::Status(
+        ::google::protobuf::util::error::Code::INVALID_ARGUMENT,
+        std::string("Invalid HTTP template: ") + http_template);
   }
   PathMatcherNode::PathInfo path_info = TransformHttpTemplate(*ht);
   if (path_info.path_info().size() == 0) {
-    return false;
+    return utils::Status(
+        ::google::protobuf::util::error::Code::INVALID_ARGUMENT,
+        std::string("Invalid HTTP template: ") + http_template);
   }
   // Create & initialize a MethodData struct. Then insert its pointer
   // into the path matcher trie.
@@ -481,14 +485,16 @@ bool PathMatcherBuilder<Method>::Register(std::string http_method,
   method_data->body_field_path = std::move(body_field_path);
 
   if (!root_ptr_->InsertPath(path_info, http_method, method_data.get(), true)) {
-    return false;
+    return utils::Status(::google::protobuf::util::error::Code::ALREADY_EXISTS,
+                         std::string("Duplicated HTTP template: ") +
+                             http_method + " " + http_template);
   }
   // Add the method_data to the methods_ vector for cleanup
   methods_.emplace_back(std::move(method_data));
   if (!ht->verb().empty()) {
     custom_verbs_.insert(ht->verb());
   }
-  return true;
+  return utils::Status::OK;
 }
 
 }  // namespace api_manager

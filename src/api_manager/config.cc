@@ -188,10 +188,9 @@ bool Config::LoadHttpMethods(ApiManagerEnvInterface *env,
 
     MethodInfoImpl *mi = GetOrCreateMethodInfoImpl(selector, "", "");
 
-    if (!pmb->Register(http_method, *url, rule.body(), mi)) {
-      string error("Invalid HTTP template: ");
-      error += *url;
-      env->LogError(error.c_str());
+    auto status = pmb->Register(http_method, *url, rule.body(), mi);
+    if (!status.ok()) {
+      env->LogError(status.message());
     } else if (allow_cors) {
       all_urls.insert(*url);
       if (strcmp(http_method, http_options) == 0) {
@@ -234,9 +233,10 @@ bool Config::AddOptionsMethodForAllUrls(ApiManagerEnvInterface *env,
   mi->set_allow_unregistered_calls(true);
 
   for (auto url : all_urls) {
-    if (!pmb->Register(http_options, url, std::string(), mi)) {
-      env->LogError(
-          std::string("Failed to add http options template for url: " + url));
+    auto status = pmb->Register(http_options, url, std::string(), mi);
+    if (!status.ok()) {
+      env->LogError(std::string("Failed to add http options template: " +
+                                status.message()));
     }
   }
 
@@ -263,11 +263,10 @@ bool Config::LoadRpcMethods(ApiManagerEnvInterface *env,
       mi->set_response_type_url(method.response_type_url());
       mi->set_response_streaming(method.response_streaming());
 
-      if (!pmb->Register(http_post, mi->rpc_method_full_name(), std::string(),
-                         mi)) {
-        string error("Invalid method: ");
-        error += mi->selector();
-        env->LogError(error.c_str());
+      auto status = pmb->Register(http_post, mi->rpc_method_full_name(),
+                                  std::string(), mi);
+      if (!status.ok()) {
+        env->LogError(status.message());
       }
     }
   }

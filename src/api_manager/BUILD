@@ -149,6 +149,10 @@ cc_library(
     ],
     deps = [
         ":http_template",
+        "//external:protobuf",
+        "//external:servicecontrol",
+        "//include:headers_only",
+        "//src/api_manager/utils",
     ],
 )
 
