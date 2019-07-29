@@ -56,32 +56,6 @@ bool operator==(const Binding& b1, const Binding& b2) {
   return b1.field_path == b2.field_path && b1.value == b2.value;
 }
 
-std::string FieldPathToString(const FieldPath& fp) {
-  std::string s;
-  for (const auto& f : fp) {
-    if (!s.empty()) {
-      s += ".";
-    }
-    s += f;
-  }
-  return s;
-}
-
-}  // namespace
-
-std::ostream& operator<<(std::ostream& os, const Binding& b) {
-  return os << "{ " << FieldPathToString(b.field_path) << "=" << b.value << "}";
-}
-
-std::ostream& operator<<(std::ostream& os, const Bindings& bindings) {
-  for (const auto& b : bindings) {
-    os << b << std::endl;
-  }
-  return os;
-}
-
-namespace {
-
 class PathMatcherTest : public ::testing::Test {
  protected:
   PathMatcherTest() {}
@@ -89,12 +63,17 @@ class PathMatcherTest : public ::testing::Test {
 
   MethodInfo* AddPathWithBodyFieldPath(std::string http_method,
                                        std::string http_template,
-                                       std::string body_field_path) {
+                                       std::string body_field_path,
+                                       std::string expected_error) {
     auto method = new MethodInfo();
     ON_CALL(*method, system_query_parameter_names())
         .WillByDefault(ReturnRef(empty_set_));
-    if (!builder_.Register(http_method, http_template, body_field_path,
-                           method)) {
+    auto status =
+        builder_.Register(http_method, http_template, body_field_path, method);
+    if (!status.ok()) {
+      if (!expected_error.empty()) {
+        EXPECT_EQ(status.message(), expected_error);
+      }
       delete method;
       return nullptr;
     }
@@ -108,7 +87,8 @@ class PathMatcherTest : public ::testing::Test {
     auto method = new MethodInfo();
     ON_CALL(*method, system_query_parameter_names())
         .WillByDefault(ReturnRef(*system_params));
-    if (!builder_.Register(http_method, http_template, std::string(), method)) {
+    if (!builder_.Register(http_method, http_template, std::string(), method)
+             .ok()) {
       delete method;
       return nullptr;
     }
@@ -117,7 +97,8 @@ class PathMatcherTest : public ::testing::Test {
   }
 
   MethodInfo* AddPath(std::string http_method, std::string http_template) {
-    return AddPathWithBodyFieldPath(http_method, http_template, std::string());
+    return AddPathWithBodyFieldPath(http_method, http_template, std::string(),
+                                    "");
   }
 
   MethodInfo* AddGetPath(std::string path) { return AddPath("GET", path); }
@@ -519,6 +500,19 @@ TEST_F(PathMatcherTest, InvalidTemplates) {
   EXPECT_EQ(nullptr, AddGetPath("/a/**/foo/**"));
 }
 
+TEST_F(PathMatcherTest, TestErrorMessage) {
+  // Invalid template error.
+  EXPECT_EQ(nullptr, AddPathWithBodyFieldPath(
+                         "GET", "/a{x=b/**}/{y=*}", "",
+                         "Invalid HTTP template: /a{x=b/**}/{y=*}"));
+
+  // Duplicate error
+  EXPECT_NE(nullptr, AddPathWithBodyFieldPath("POST", "/a/{x=b/**}", "", ""));
+  EXPECT_EQ(nullptr, AddPathWithBodyFieldPath(
+                         "POST", "/a/{y=b/**}", "",
+                         "Duplicated HTTP template: POST /a/{y=b/**}"));
+}
+
 TEST_F(PathMatcherTest, CustomVerbMatches) {
   MethodInfo* some_const_verb = AddGetPath("/some/const:verb");
   MethodInfo* some__verb = AddGetPath("/some/*:verb");
@@ -686,8 +680,8 @@ TEST_F(PathMatcherTest, DifferentHttpMethod) {
 }
 
 TEST_F(PathMatcherTest, BodyFieldPathTest) {
-  auto a = AddPathWithBodyFieldPath("GET", "/a", "b");
-  auto cd = AddPathWithBodyFieldPath("GET", "/c/d", "e.f.g");
+  auto a = AddPathWithBodyFieldPath("GET", "/a", "b", "");
+  auto cd = AddPathWithBodyFieldPath("GET", "/c/d", "e.f.g", "");
   Build();
   EXPECT_NE(nullptr, a);
   EXPECT_NE(nullptr, cd);
