@@ -58,7 +58,7 @@ std::string NgxEspRequest::GetUnparsedRequestPath() {
 }
 
 ::google::api_manager::protocol::Protocol NgxEspRequest::GetFrontendProtocol() {
-  ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
+  ngx_esp_request_ctx_t *ctx = ngx_http_esp_get_module_ctx(r_);
   if (ctx->grpc_pass_through) {
     return ::google::api_manager::protocol::GRPC;
   }
@@ -75,7 +75,7 @@ std::string NgxEspRequest::GetUnparsedRequestPath() {
 }
 
 ::google::api_manager::protocol::Protocol NgxEspRequest::GetBackendProtocol() {
-  ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
+  ngx_esp_request_ctx_t *ctx = ngx_http_esp_get_module_ctx(r_);
   if (ctx->grpc_backend) {
     return ::google::api_manager::protocol::GRPC;
   } else {
@@ -99,22 +99,22 @@ std::string NgxEspRequest::GetClientIP() {
 }
 
 int64_t NgxEspRequest::GetGrpcRequestMessageCounts() {
-  ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
+  ngx_esp_request_ctx_t *ctx = ngx_http_esp_get_module_ctx(r_);
   return ctx->grpc_request_message_counts;
 }
 
 int64_t NgxEspRequest::GetGrpcResponseMessageCounts() {
-  ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
+  ngx_esp_request_ctx_t *ctx = ngx_http_esp_get_module_ctx(r_);
   return ctx->grpc_response_message_counts;
 }
 
 int64_t NgxEspRequest::GetGrpcRequestBytes() {
-  ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
+  ngx_esp_request_ctx_t *ctx = ngx_http_esp_get_module_ctx(r_);
   return ctx->grpc_request_bytes;
 }
 
 int64_t NgxEspRequest::GetGrpcResponseBytes() {
-  ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
+  ngx_esp_request_ctx_t *ctx = ngx_http_esp_get_module_ctx(r_);
   return ctx->grpc_response_bytes;
 }
 
@@ -141,7 +141,7 @@ bool NgxEspRequest::FindHeader(const std::string &name, std::string *header) {
 }
 
 void NgxEspRequest::SetAuthToken(const std::string &auth_token) {
-  ngx_esp_request_ctx_t *ctx = ngx_http_esp_ensure_module_ctx(r_);
+  ngx_esp_request_ctx_t *ctx = ngx_http_esp_get_module_ctx(r_);
   ngx_str_copy_from_std(r_->pool, auth_token, &ctx->auth_token);
 }
 

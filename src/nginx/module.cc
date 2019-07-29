@@ -1276,6 +1276,16 @@ ngx_esp_request_ctx_t *ngx_http_esp_ensure_module_ctx(ngx_http_request_t *r) {
   return ctx;
 }
 
+ngx_esp_request_ctx_t *ngx_http_esp_get_module_ctx(ngx_http_request_t *r) {
+  // Create per-request context if one doesn't exist already.
+  ngx_esp_request_ctx_t *ctx = reinterpret_cast<ngx_esp_request_ctx_t *>(
+      ngx_http_get_module_ctx(r, ngx_esp_module));
+  if (ctx == nullptr) {
+    ngx_log_error(NGX_LOG_EMERG, r->connection->log, 0,
+                  "ctx = nullptr in ngx_http_esp_get_module_ctx");
+  }
+  return ctx;
+}
 }  // namespace nginx
 }  // namespace api_manager
 }  // namespace google
