@@ -273,6 +273,9 @@ static_assert(std::is_standard_layout<ngx_esp_request_ctx_t>::value,
 // Get or create the ESP per-request context.
 ngx_esp_request_ctx_t *ngx_http_esp_ensure_module_ctx(ngx_http_request_t *r);
 
+// Get the ESP per-request context.
+ngx_esp_request_ctx_t *ngx_http_esp_get_module_ctx(ngx_http_request_t *r);
+
 }  // namespace nginx
 }  // namespace api_manager
 }  // namespace google
