@@ -46,7 +46,7 @@ my $ServiceControlPort = ApiManager::pick_port();
 my $GrpcServerPort = ApiManager::pick_port();
 my $PubkeyPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(13);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(14);
 
 $t->write_file('service.pb.txt',
         ApiManager::get_grpc_test_service_config($GrpcServerPort) .
@@ -134,7 +134,6 @@ $t->stop_daemons();
 my ($headers, $actual_body) = split /\r\n\r\n/, $response, 2;
 
 my $json_response = decode_json($actual_body);
-my $expected_userinfo = "ZXlKcGMzTjFaWElpT2lJMk1qZzJORFUzTkRFNE9ERXRibTloWW1sMU1qTm1OV0U0YlRodmRtUTRkV04yTmprNGJHbzNPSFoyTUd4QVpHVjJaV3h2Y0dWeUxtZHpaWEoyYVdObFlXTmpiM1Z1ZEM1amIyMGlMQ0pwWkNJNklqWXlPRFkwTlRjME1UZzRNUzF1YjJGaWFYVXlNMlkxWVRodE9HOTJaRGgxWTNZMk9UaHNhamM0ZG5Zd2JFQmtaWFpsYkc5d1pYSXVaM05sY25acFkyVmhZMk52ZFc1MExtTnZiU0o5";
 
 is('dGV4dA==', $json_response->{receivedMetadata}->{'client-text'}, "Received client-text metadata");
 is('YmluYXJ5', $json_response->{receivedMetadata}->{'client-binary-bin'}, "Received client-binary metadata");
@@ -151,6 +150,10 @@ my $claims =  decode_json($user_info_json->{'claims'});
 is($claims->{iss}, '628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com', 'iss field in the claims was as expected');
 is($claims->{sub}, '628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com', 'sub field in the claims was as expected');
 is($claims->{aud}, 'ok_audience_1', 'aud field in the claims was as expected');
+
+
+my $api_key = decode_base64($json_response->{receivedMetadata}->{'x-api-key'});
+is($api_key, 'api-key', 'api-key passed by query param is set in header');
 
 like($headers, qr/initial-text: text/, "Server returns initial text metadata");
 like($headers, qr/initial-binary-bin: YmluYXJ5/, "Server returns initial binary metadata");

@@ -164,6 +164,12 @@ std::string RequestHandler::GetRpcMethodFullName() const {
   }
 }
 
+void RequestHandler::TryAddApiKeyHeaderFromQuery() {
+  if (context_->is_api_key_in_query()) {
+    context_->SetApiKeyHeader();
+  }
+}
+
 std::string RequestHandler::GetAuthorizationUrl() const {
   return context_->GetAuthorizationUrl();
 }
