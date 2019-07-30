@@ -30,7 +30,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . ${ROOT}/script/all-utilities || { echo "Cannot load Bash utilities" ; exit 1 ; }
 
 
-. ${ROOT}/tools/check_spelling.sh check || { echo "Find spelling error" ; exit 1 ; }
+. ${ROOT}/tools/spelling/check_spelling.sh check || { echo "Find spelling error" ; exit 1 ; }
 
 CLANG_FORMAT="$(which clang-format-7)"
 
