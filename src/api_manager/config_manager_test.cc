@@ -388,7 +388,7 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RepeatedTrigger) {
 }
 
 TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutMultipleServiceConfig) {
-  std::function<void(HTTPRequest * req)> hanlder = [this](HTTPRequest* req) {
+  std::function<void(HTTPRequest * req)> handler = [this](HTTPRequest* req) {
     std::map<std::string, std::string> data = {
         {"https://servicemanagement.googleapis.com/v1/services/"
          "service_name_from_metadata/configs/2017-05-01r0",
@@ -412,8 +412,8 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutMultipleServiceConfig) {
             req->url());
         req->OnComplete(Status::OK, {}, kRolloutsResponseMultipleServiceConfig);
       }))
-      .WillOnce(Invoke(hanlder))
-      .WillOnce(Invoke(hanlder));
+      .WillOnce(Invoke(handler))
+      .WillOnce(Invoke(handler));
 
   int sequence = 0;
 
@@ -442,7 +442,7 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutMultipleServiceConfig) {
 
 TEST_F(ConfigManagerServiceNameConfigIdTest,
        RolloutMultipleServiceConfigPartiallyFailedThenSucceededNextTimerEvent) {
-  std::function<void(HTTPRequest * req)> first_hanlder =
+  std::function<void(HTTPRequest * req)> first_handler =
       [this](HTTPRequest* req) {
         std::map<std::string, std::string> data = {
             {"https://servicemanagement.googleapis.com/v1/services/"
@@ -456,7 +456,7 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
         }
       };
 
-  std::function<void(HTTPRequest * req)> second_hanlder =
+  std::function<void(HTTPRequest * req)> second_handler =
       [this](HTTPRequest* req) {
         std::map<std::string, std::string> data = {
             {"https://servicemanagement.googleapis.com/v1/services/"
@@ -481,8 +481,8 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
             req->url());
         req->OnComplete(Status::OK, {}, kRolloutsResponseMultipleServiceConfig);
       }))
-      .WillOnce(Invoke(first_hanlder))
-      .WillOnce(Invoke(first_hanlder))
+      .WillOnce(Invoke(first_handler))
+      .WillOnce(Invoke(first_handler))
       .WillOnce(Invoke([this](HTTPRequest* req) {
         EXPECT_EQ(
             "https://servicemanagement.googleapis.com/v1/services/"
@@ -490,8 +490,8 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
             req->url());
         req->OnComplete(Status::OK, {}, kRolloutsResponseMultipleServiceConfig);
       }))
-      .WillOnce(Invoke(second_hanlder))
-      .WillOnce(Invoke(second_hanlder));
+      .WillOnce(Invoke(second_handler))
+      .WillOnce(Invoke(second_handler));
 
   int sequence = 0;
 

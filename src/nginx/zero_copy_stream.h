@@ -63,7 +63,7 @@ class NgxRequestZeroCopyInputStream
 
  private:
   // Advances to the next buffer. Returns true if successful; otherwise returns
-  // false (if no buffer is available or if an error occured).
+  // false (if no buffer is available or if an error occurred).
   bool NextBuffer();
 
   // The request

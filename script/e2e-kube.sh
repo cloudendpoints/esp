@@ -142,7 +142,7 @@ if [[ ("${ESP_ROLLOUT_STRATEGY}" == "managed") && ("${BACKEND}" == "bookstore") 
   # Here wait for 200 seconds.
   for l in {1..20}
   do
-    echo "Wait for the new config to propogate: ${l}"
+    echo "Wait for the new config to propagate: ${l}"
     check_http_service "${HOST}/shelves" 200
     sleep 10
   done

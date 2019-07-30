@@ -1116,7 +1116,7 @@ ngx_uint_t ngx_esp_count_active_connections(ngx_cycle_t *cycle) {
 
 // Attempts to shut down ESP, returns true if ESP is ready to exit.
 bool ngx_esp_attempt_shutdown(ngx_cycle_t *cycle) {
-  // The states ESP needs to go throught before it is ready to exit:
+  // The states ESP needs to go thought before it is ready to exit:
   // 1) Waits all current requests to be done before closing ESP service
   //    control. This wait should not be long since when exit_handler
   //    is called, all listen ports have been closed.

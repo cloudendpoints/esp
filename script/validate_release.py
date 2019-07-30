@@ -81,7 +81,7 @@ gflags.DEFINE_string(
 gflags.DEFINE_boolean(
     'detail',
     False,
-    'Prints detailled output.'
+    'Prints detailed output.'
 )
 
 class Error(Exception):
