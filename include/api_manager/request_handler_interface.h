@@ -68,6 +68,9 @@ class RequestHandlerInterface {
 
   // Return the authorization url if authentication fails.
   virtual std::string GetAuthorizationUrl() const = 0;
+
+  // Try to add api-key from url query to header.
+  virtual void TryAddApiKeyHeaderFromQuery() = 0;
 };
 
 }  // namespace api_manager
