@@ -150,8 +150,8 @@ class RequestContext {
   // Get auth token from RequestContext.
   const std::string &AuthToken() const { return auth_token_; }
 
-  // Get is_api_key_in_query_ from RequestContext.
-  bool is_api_key_in_query() const { return is_api_key_in_query_; }
+  // Get api_key_from_query_ from RequestContext.
+  bool api_key_from_query() const { return api_key_from_query_; }
 
   // Set apikey in request headers.
   void SetApiKeyHeader();
@@ -244,7 +244,7 @@ class RequestContext {
   std::string auth_token_;
 
   // Whether the api key appears in the url query.
-  bool is_api_key_in_query_;
+  bool api_key_from_query_;
 };
 
 }  // namespace context

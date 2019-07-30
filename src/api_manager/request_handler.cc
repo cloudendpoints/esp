@@ -165,7 +165,7 @@ std::string RequestHandler::GetRpcMethodFullName() const {
 }
 
 void RequestHandler::TryAddApiKeyHeaderFromQuery() {
-  if (context_->is_api_key_in_query()) {
+  if (context_->api_key_from_query()) {
     context_->SetApiKeyHeader();
   }
 }
