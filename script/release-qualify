@@ -167,7 +167,7 @@ function count_stress_failures() {
 
     RQ_TESTS+=(${DIR})
 
-  # the ! -path ... exludes the root directory which is otherwise
+  # the ! -path ... excludes the root directory which is otherwise
   # included in the result
   done 3< <(find "${LOGS}/${SHA}" ! -path "${LOGS}/${SHA}" -type f -name 'long-run-test*.log')
 

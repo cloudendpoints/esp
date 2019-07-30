@@ -681,11 +681,11 @@ TEST(Config, RpcMethodsWithHttpRulesAndVariableBindings) {
         rules {
           selector: "Bookstore.CreateBook"
           parameters {
-            name: "system_paramter"
+            name: "system_parameter"
             url_query_parameter: "sys"
           }
           parameters {
-            name: "system_paramter"
+            name: "system_parameter"
             url_query_parameter: "system"
           }
         }

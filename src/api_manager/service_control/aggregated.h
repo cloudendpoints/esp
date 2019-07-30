@@ -144,7 +144,7 @@ class Aggregated : public Interface {
   template <class ResponseType>
   void HandleResponse(const ResponseType& response);
 
-  // the sevice config.
+  // the service config.
   const ::google::api::Service* service_;
   // the server config.
   const proto::ServerConfig* server_config_;

@@ -1,7 +1,7 @@
 -- WRK script template
 -- Parameters:
 --   OUT: output file for JSON summary
---   ERR: error reponse file prefix per thread
+--   ERR: error response file prefix per thread
 --   HTTP_METHOD: request method
 --   REQUEST_BODY_FILE: request body file name
 

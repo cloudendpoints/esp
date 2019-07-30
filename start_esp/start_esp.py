@@ -694,7 +694,7 @@ config file.'''.format(
     # The server_config dir to save server configs
     parser.add_argument('--server_config_dir',
         default=SERVER_CONF_DIR,
-        help='''Sets the folder for writting server config file.
+        help='''Sets the folder for writing server config file.
         The server config file is passed to ESP in Nginx config.
         If you are using your own nginx config,
         please be sure its server_config path matches this one.

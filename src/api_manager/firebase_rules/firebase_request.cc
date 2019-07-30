@@ -370,7 +370,7 @@ Status FirebaseRequest::CheckFuncCallArgs(const FunctionCall &func) {
   if (std::string(func.args(1).string_value()).empty()) {
     return Status(
         Code::INVALID_ARGUMENT,
-        func.function() + " argument 2 [HTTP METHOD] cannot be emtpy");
+        func.function() + " argument 2 [HTTP METHOD] cannot be empty");
   }
 
   return Status::OK;

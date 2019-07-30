@@ -917,7 +917,7 @@ Status initialize_request(ngx_pool_t *request_pool,
 
   // The main and server configuration contexts we use are from the HTTP module.
   // The local configuration context is built from scratch at our module
-  // initialization and is roughly equivelent in function to an empty location
+  // initialization and is roughly equivalent in function to an empty location
   // configuration block.
   r->main_conf = http_cctx->main_conf;
   r->srv_conf = http_cctx->srv_conf;

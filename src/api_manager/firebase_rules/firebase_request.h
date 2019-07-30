@@ -79,7 +79,7 @@ struct HttpRequest {
 
 // A FirebaseRequest object understands the various http requests that need
 // to be generated as a part of the TestRuleset request and response cycle.
-// Here is the intented use of this code:
+// Here is the intended use of this code:
 // FirebaseRequest request(...);
 // while(!request.is_done()) {
 //  std::string url, method, body;
@@ -179,7 +179,7 @@ class FirebaseRequest {
   // defined HTTP endpoint. If next_request points to firebase_http_request_,
   // upon receiving a response, UpdateResponse will convert the response to
   // TestRulesetResponse and process the response. If next_request_ points
-  // to external_http_request_, then the reponse provided via UpdateResponse
+  // to external_http_request_, then the response provided via UpdateResponse
   // is converted into a protobuf::Value. This value is initialized to nullptr
   // and will be nullptr once is_done_ is set to true.
   HttpRequest *next_request_;

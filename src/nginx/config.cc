@@ -486,7 +486,7 @@ bool ngx_esp_parse_message_from_json(const std::string &json,
 
 // Reads server config from a string. Returns true if successful, otherwise
 // returns false.
-// NOTE: This is similiar to ReadConfigFromString() in
+// NOTE: This is similar to ReadConfigFromString() in
 //       src/api_manager/config.cc. We are repeating it here to avoid additional
 //       dependencies. If there are more utilities like this to be duplicated,
 //       we should think of a place for utilities that are common for

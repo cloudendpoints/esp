@@ -68,7 +68,7 @@ class ServiceAccountToken {
     return access_token_.is_valid(duration);
   }
 
-  // JWT token calcualted from client auth secret are audience dependent.
+  // JWT token calculated from client auth secret are audience dependent.
   enum JWT_TOKEN_TYPE {
     JWT_TOKEN_FOR_SERVICE_CONTROL = 0,
     JWT_TOKEN_FOR_CLOUD_TRACING,
@@ -87,13 +87,13 @@ class ServiceAccountToken {
   const std::string& GetAuthToken() const { return access_token_.token(); }
 
   // Gets the auth token to access Google services.
-  // If client auth secret is specified, use it to calcualte JWT token.
+  // If client auth secret is specified, use it to calculate JWT token.
   // Otherwise, use the access token fetched from metadata server.
   const std::string& GetAuthToken(JWT_TOKEN_TYPE type);
 
   // Gets the auth token to access Google services. This method accepts an
   // audience parameter to set when generating JWT token.
-  // If client auth secret is specified, use it to calcualte JWT token.
+  // If client auth secret is specified, use it to calculate JWT token.
   // Otherwise, use the access token fetched from metadata server.
   const std::string& GetAuthToken(JWT_TOKEN_TYPE type,
                                   const std::string& audience);
@@ -146,7 +146,7 @@ class ServiceAccountToken {
   // The client auth secret which can be used to generate JWT auth token.
   std::string client_auth_secret_;
 
-  // JWT tokens calcualted from client auth secrect.
+  // JWT tokens calculated from client auth secrect.
   JwtTokenInfo jwt_tokens_[JWT_TOKEN_TYPE_MAX];
 
   // GCE service account access token fetched from GCE metadata server.
