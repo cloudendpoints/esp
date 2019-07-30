@@ -1,3 +1,1 @@
-OWNERS.md
-third_party/nginx-tests/proxy_bind_transparent_capability.t
-third_party/nginx-tests/proxy_cache_use_stale.t
+third_party
