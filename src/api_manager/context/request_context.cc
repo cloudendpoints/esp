@@ -100,7 +100,8 @@ RequestContext::RequestContext(std::shared_ptr<ServiceContext> service_context,
       request_(std::move(request)),
       is_first_report_(true),
       last_request_bytes_(0),
-      last_response_bytes_(0) {
+      last_response_bytes_(0),
+      is_api_key_in_query_(false) {
   start_time_ = std::chrono::system_clock::now();
   last_report_time_ = std::chrono::steady_clock::now();
   operation_id_ = GenerateUUID();
