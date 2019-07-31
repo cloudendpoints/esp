@@ -100,7 +100,8 @@ RequestContext::RequestContext(std::shared_ptr<ServiceContext> service_context,
       request_(std::move(request)),
       is_first_report_(true),
       last_request_bytes_(0),
-      last_response_bytes_(0) {
+      last_response_bytes_(0),
+      api_key_from_query_(false) {
   start_time_ = std::chrono::system_clock::now();
   last_report_time_ = std::chrono::steady_clock::now();
   operation_id_ = GenerateUUID();
@@ -173,6 +174,7 @@ void RequestContext::ExtractApiKey() {
     api_key_defined = true;
     for (const auto &url_query : *url_queries) {
       if (request_->FindQuery(url_query, &api_key_)) {
+        api_key_from_query_ = true;
         return;
       }
     }
@@ -191,12 +193,21 @@ void RequestContext::ExtractApiKey() {
   if (!api_key_defined) {
     // If api_key is not specified for a method,
     // check "key" first, if not, check "api_key" in query parameter.
-    if (!request_->FindQuery(kDefaultApiKeyQueryName1, &api_key_)) {
-      if (!request_->FindQuery(kDefaultApiKeyQueryName2, &api_key_)) {
-        request_->FindHeader(kDefaultApiKeyHeaderName, &api_key_);
-      }
+    if (request_->FindQuery(kDefaultApiKeyQueryName1, &api_key_)) {
+      api_key_from_query_ = true;
+      return;
     }
+
+    if (request_->FindQuery(kDefaultApiKeyQueryName2, &api_key_)) {
+      api_key_from_query_ = true;
+      return;
+    }
+    request_->FindHeader(kDefaultApiKeyHeaderName, &api_key_);
   }
+}
+
+void RequestContext::SetApiKeyHeader() {
+  request_->AddHeaderToBackend(kDefaultApiKeyHeaderName, api_key_);
 }
 
 void RequestContext::CompleteCheck(Status status) {
