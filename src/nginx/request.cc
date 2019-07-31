@@ -85,7 +85,7 @@ std::string NgxEspRequest::GetUnparsedRequestPath() {
 }
 
 std::string NgxEspRequest::GetClientIP() {
-  // use remote_addr varaible to get client_ip.
+  // use remote_addr variable to get client_ip.
   ngx_esp_main_conf_t *mc = reinterpret_cast<ngx_esp_main_conf_t *>(
       ngx_http_get_module_main_conf(r_, ngx_esp_module));
   if (mc->remote_addr_variable_index != NGX_ERROR) {

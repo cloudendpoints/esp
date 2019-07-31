@@ -387,7 +387,7 @@ class CheckSecurityRulesTest : public ::testing::Test {
   std::string ruleset_test_url_;
 };
 
-// Cache first miss then hit. In this case, "yes" is cached on miss and returnd
+// Cache first miss then hit. In this case, "yes" is cached on miss and returned
 // on hit.
 TEST_F(CheckSecurityRulesTest, CheckAuthzCacheMissThenHitPositive) {
   std::string service_config = std::string(kServiceName) + kProducerProjectId +
@@ -419,7 +419,7 @@ TEST_F(CheckSecurityRulesTest, CheckAuthzCacheMissThenHitPositive) {
   });
 }
 
-// Cache first miss then hit. In this case, "no" is cached on miss and returnd
+// Cache first miss then hit. In this case, "no" is cached on miss and returned
 // on hit.
 TEST_F(CheckSecurityRulesTest, CheckAuthzCacheMissThenHitNegative) {
   std::string service_config = std::string(kServiceName) + kProducerProjectId +

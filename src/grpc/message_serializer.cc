@@ -74,7 +74,7 @@ bool GrpcMessageSerializer::NextInternal(const unsigned char** data,
           messages_.front().first->data.raw.slice_buffer.count) {
     // The current buffer has been consumed, destroy it if needed
     if (messages_.front().second) {
-      // Destroy it if the ownership was transfered to GrpcMessageSerializer
+      // Destroy it if the ownership was transferred to GrpcMessageSerializer
       grpc_byte_buffer_destroy(messages_.front().first);
     }
     messages_.pop_front();
