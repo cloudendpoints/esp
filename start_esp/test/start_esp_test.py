@@ -74,7 +74,6 @@ class TestStartEsp(unittest.TestCase):
         if not is_equal :
             log = "The generated config does not match the expected config\n"
             log += "The generated config is:\n{}\n".format("\n".join(generated_config_file_content))
-            log += "\n".join(generated_config_file_content)
             log += "The expected config from {}:\n{}\n".format(expected_config_file, "\n".join(expected_config_file_content))
             self.assertTrue(is_equal, log)
 
