@@ -604,7 +604,7 @@ config file.'''.format(
         help='''Enable HSTS (HTTP Strict Transport Security).
         ''')
 
-    parser.add_argument('--enable_debug', action='store_true',
+    parser.add_argument('--enable_debug', default=True, action='store_true',
         help='''Run debug Nginx binary with debug trace.
         ''')
 
