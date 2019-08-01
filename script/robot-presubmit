@@ -42,10 +42,10 @@ done
 
 ) || error_exit "License headers check failed."
 
-( echo "Checking coding styles."
-  "${ROOT}/script/robot-style"
+#( echo "Checking coding styles."
+  #"${ROOT}/script/robot-style"
 
-) || error_exit "Code style check failed."
+#) || error_exit "Code style check failed."
 
 ( echo "Bazel test third_party/service-control-client-cxx."
   cd ${ROOT}/third_party/service-control-client-cxx
