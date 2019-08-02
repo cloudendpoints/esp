@@ -93,6 +93,8 @@ void NgxEspTimer::OnExpiration(ngx_event_t *ev) {
   }
   NgxEspTimer *t = reinterpret_cast<NgxEspTimer *>(ev->data);
   t->callback_();
+  // Warning: the timer object should not be freed in the above
+  // callback function. Otherwise the next line will use freed memory.
   if (!t->stopped_) {
     t->AddTimer();
   }
