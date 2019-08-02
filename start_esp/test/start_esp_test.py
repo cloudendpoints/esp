@@ -60,7 +60,7 @@ class TestStartEsp(unittest.TestCase):
         # Strip blank chars
         c1 = map(str.strip, c1)
         c2 = map(str.strip, c2)
-        return c1 == c2
+        return c1 == c2, c1, c2
 
     # Run the test and check that the generated file is as expected
     def run_test_with_expectation(self, expected_config_file, generated_config_file, config_generator):
@@ -70,18 +70,12 @@ class TestStartEsp(unittest.TestCase):
         self.assertTrue((os.system(self.read_server_config + self.generated_server_config_file) == 0),
                         "generate invalid server config format.")
         self.assertTrue(os.path.isfile(generated_config_file), "the config file is not generated")
-        is_equal = TestStartEsp.file_equal(generated_config_file, expected_config_file)
+        is_equal, generated_config_file_content, expected_config_file_content = TestStartEsp.file_equal(generated_config_file, expected_config_file)
         if not is_equal :
-            print("The generated config does not match the expected config")
-            print("The generated config is:")
-            f = open(generated_config_file, "r")
-            print(f.read())
-            f.close()
-            print("The expected config from %s:" % expected_config_file)
-            f = open(expected_config_file, "r")
-            print(f.read())
-            f.close()
-        self.assertTrue(is_equal, "the generated config file is as not as expected")
+            log = "The generated config does not match the expected config\n"
+            log += "The generated config is:\n{}\n".format("\n".join(generated_config_file_content))
+            log += "The expected config from {}:\n{}\n".format(expected_config_file, "\n".join(expected_config_file_content))
+            self.assertTrue(is_equal, log)
 
     ########## The tests for generating the nginx configuration file start from here ##########
 
