@@ -22,9 +22,9 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-//#include "src/api_manager/mock_api_manager_environment.h"
 #include "src/api_manager/context/request_context.h"
 #include "src/api_manager/context/service_context.h"
+#include "src/api_manager/mock_api_manager_environment.h"
 //#include "src/api_manager/mock_request.h"
 //#include "src/api_manager/api_manager_impl.h"
 #include "include/api_manager/request.h"
@@ -69,22 +69,6 @@ const char kServiceConfig1[] =
   "id": "2017-05-01r0"
 }
 )";
-
-// Simulate periodic timer event on creation
-class MockPeriodicTimer : public PeriodicTimer {
- public:
-  MockPeriodicTimer() {}
-  MockPeriodicTimer(std::function<void()> continuation)
-      : continuation_(continuation) {
-    continuation_();
-  }
-
-  virtual ~MockPeriodicTimer() {}
-  void Stop() {}
-
- private:
-  std::function<void()> continuation_;
-};
 
 class MockApiManagerEnvironment : public ApiManagerEnvInterface {
  public:

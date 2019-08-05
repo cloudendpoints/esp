@@ -67,7 +67,9 @@ class NgxEspTimer : public PeriodicTimer {
 
   virtual ~NgxEspTimer();
 
-  virtual void Stop();
+  void Stop() override;
+
+  bool IsStopped() const override { return stopped_; }
 
  private:
   void AddTimer();

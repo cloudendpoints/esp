@@ -157,25 +157,8 @@ const char kRolloutsResponseMultipleServiceConfig[] = R"(
 }
 )";
 
-// Represents a periodic timer created by API Manager's environment.
-class MockPeriodicTimer : public PeriodicTimer {
+class MockTimerApiManagerEnvironment : public MockApiManagerEnvironmentWithLog {
  public:
-  MockPeriodicTimer() {}
-  MockPeriodicTimer(std::function<void()> continuation)
-      : continuation_(continuation) {}
-
-  virtual ~MockPeriodicTimer() {}
-  void Stop(){};
-
-  void Run() { continuation_(); }
-
- private:
-  std::function<void()> continuation_;
-};
-
-class MockTimerApiManagerEnvironment : public MockApiManagerEnvironment {
- public:
-  MOCK_METHOD2(Log, void(LogLevel, const char*));
   MOCK_METHOD1(MakeTag, void*(std::function<void(bool)>));
 
   virtual std::unique_ptr<PeriodicTimer> StartPeriodicTimer(
@@ -249,7 +232,7 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, VerifyTimerIntervalDistribution) {
   int timer_dist[5];
   memset(timer_dist, 0, sizeof(timer_dist));
 
-  for (int i = 0; i < 10; ++i) {
+  for (int i = 0; i < 100; ++i) {
     config_manager->SetLatestRolloutId(
         "2017-05-01r111", std::chrono::system_clock::now() +
                               std::chrono::seconds(i * kNextFetchWindowInS));
@@ -259,6 +242,7 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, VerifyTimerIntervalDistribution) {
 
     // Slot index in minute
     int dx = raw_env_->timer_last_interval().count() / (1000 * 60);
+    std::cout << "bucket index: " << dx << std::endl;
     if (dx >= 0 && dx < 5) {
       timer_dist[dx]++;
     }
@@ -267,6 +251,8 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, VerifyTimerIntervalDistribution) {
   // 10 requests should be distributed into 5 slots almost evently.
   // For each minute slot, the count should be bigger than 1.
   for (int i = 0; i < 5; ++i) {
+    std::cout << "bucket index: " << i << ", count: " << timer_dist[i]
+              << std::endl;
     EXPECT_TRUE(timer_dist[i] >= 1);
   }
 }
@@ -344,18 +330,18 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RepeatedTrigger) {
       }));
   config_manager->set_current_rollout_id("2017-05-01r0");
 
+  auto now = std::chrono::system_clock::now();
   // Use a different ID to trigger
-  config_manager->SetLatestRolloutId("2017-05-01r111",
-                                     std::chrono::system_clock::now());
+  config_manager->SetLatestRolloutId("2017-05-01r111", now);
   EXPECT_EQ(raw_env_->timer_count(), 1);
 
   // So no need to make rollout HTTP call.
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_)).Times(0);
 
   // Trigger it again, a new timer call should not be called.
+  // Since last timer is not fired regardless now late it is now.
   config_manager->SetLatestRolloutId(
-      "2017-05-01r111",
-      std::chrono::system_clock::now() + std::chrono::seconds(1));
+      "2017-05-01r111", now + std::chrono::seconds(kNextFetchWindowInS));
   EXPECT_EQ(raw_env_->timer_count(), 1);
 
   // But the replied rollout ID is the same as the old one.
@@ -368,14 +354,15 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RepeatedTrigger) {
         req->OnComplete(Status::OK, {}, kRolloutsResponse1);
       }));
 
+  // Fire the first timer.
   raw_env_->RunTimer();
   // callback should not be called
   EXPECT_EQ(0, sequence);
 
   // Trigger it again, default window is 5 minute, not next window yet.
-  config_manager->SetLatestRolloutId(
-      "2017-05-01r111",
-      std::chrono::system_clock::now() + std::chrono::seconds(2));
+  // So not to fire the timer.
+  config_manager->SetLatestRolloutId("2017-05-01r111",
+                                     now + std::chrono::seconds(10));
   EXPECT_EQ(raw_env_->timer_count(), 1);
   // callback should not be called
   EXPECT_EQ(0, sequence);

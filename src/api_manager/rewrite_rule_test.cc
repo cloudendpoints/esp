@@ -46,22 +46,6 @@ std::string kExpectedRewriteErrorLog =
 std::string kExpectedNotInitializedLog =
     "INFO Rewrite rule was not initialized";
 
-// Simulate periodic timer event on creation
-class MockPeriodicTimer : public PeriodicTimer {
- public:
-  MockPeriodicTimer() {}
-  MockPeriodicTimer(std::function<void()> continuation)
-      : continuation_(continuation) {
-    continuation_();
-  }
-
-  virtual ~MockPeriodicTimer() {}
-  void Stop(){};
-
- private:
-  std::function<void()> continuation_;
-};
-
 class MockTimerApiManagerEnvironment : public MockApiManagerEnvironmentWithLog {
  public:
   void Log(LogLevel level, const char *message) {
