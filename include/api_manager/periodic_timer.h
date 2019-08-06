@@ -34,9 +34,6 @@ class PeriodicTimer {
   // synchronize with outstanding invocations of the timer's callback
   // function; it may be invoked from within the callback.
   virtual void Stop() = 0;
-
-  // The timer is stopped
-  virtual bool IsStopped() const = 0;
 };
 
 }  // namespace api_manager

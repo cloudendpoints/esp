@@ -21,24 +21,6 @@
 namespace google {
 namespace api_manager {
 
-// Represents a periodic timer created by API Manager's environment.
-class MockPeriodicTimer : public PeriodicTimer {
- public:
-  MockPeriodicTimer() {}
-  MockPeriodicTimer(std::function<void()> continuation)
-      : continuation_(continuation) {}
-
-  virtual ~MockPeriodicTimer() {}
-  void Stop() override { stopped_ = true; };
-  bool IsStopped() const override { return stopped_; }
-
-  void Run() { continuation_(); }
-
- private:
-  bool stopped_{};
-  std::function<void()> continuation_;
-};
-
 class MockApiManagerEnvironment : public ApiManagerEnvInterface {
  public:
   MOCK_METHOD2(Log, void(LogLevel, const char *));

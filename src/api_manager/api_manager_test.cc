@@ -201,6 +201,22 @@ const char kServiceForStatistics[] =
     "  environment: \"http://127.0.0.1:8081\"\n"
     "}\n";
 
+// Simulate periodic timer event on creation
+class MockPeriodicTimer : public PeriodicTimer {
+ public:
+  MockPeriodicTimer() {}
+  MockPeriodicTimer(std::function<void()> continuation)
+      : continuation_(continuation) {}
+
+  virtual ~MockPeriodicTimer() {}
+  void Stop(){};
+
+  void Run() { continuation_(); }
+
+ private:
+  std::function<void()> continuation_;
+};
+
 class MockTimerApiManagerEnvironment : public MockApiManagerEnvironment {
  public:
   MOCK_METHOD2(Log, void(LogLevel, const char *));

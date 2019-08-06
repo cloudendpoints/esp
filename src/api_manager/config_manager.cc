@@ -44,9 +44,6 @@ ConfigManager::ConfigManager(
                                         .fetch_throttle_window_s();
     }
   }
-  static std::random_device random_device;
-  random_generator_.seed(random_device());
-
   // throttle in milliseconds
   random_dist_.reset(new std::uniform_int_distribution<int>(
       0, fetch_throttle_window_in_s_ * 1000));
@@ -67,8 +64,8 @@ void ConfigManager::SetLatestRolloutId(
     return;
   }
 
-  // Last timer is not fired yet,  or is too close to last fetch time
-  if ((fetch_timer_ && !fetch_timer_->IsStopped()) || now < next_window_time_) {
+  // Timer is pending, or too close to last fetch time
+  if (fetch_timer_ || now < next_window_time_) {
     return;
   }
 
@@ -82,7 +79,9 @@ void ConfigManager::SetLatestRolloutId(
 
 void ConfigManager::OnRolloutsRefreshTimer() {
   global_context_->env()->LogInfo("Fetch timer starts");
+
   fetch_timer_->Stop();
+  fetch_timer_ = nullptr;
   next_window_time_ = std::chrono::system_clock::now() +
                       std::chrono::seconds(fetch_throttle_window_in_s_);
 

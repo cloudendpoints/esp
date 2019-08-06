@@ -49,9 +49,6 @@ class ApiManagerEnvInterface {
 
   // Simple periodic timer support. API Manager uses this method to get
   // called at regular intervals of wall-clock time.
-  // Warning: the returned timer object should NOT be destroyed at callback
-  // function. Otherwise it will cause segfault since Nginx is reading its
-  // data after the callback.
   virtual std::unique_ptr<PeriodicTimer> StartPeriodicTimer(
       std::chrono::milliseconds interval,
       std::function<void()> continuation) = 0;
