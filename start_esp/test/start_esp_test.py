@@ -307,11 +307,6 @@ class TestStartEsp(unittest.TestCase):
         config_generator = self.basic_config_generator + " --jwks_cache_duration_in_s 1000"
         self.run_test_with_expectation(expected_config_file, self.generated_server_config_file, config_generator)
 
-    def test_rollout_fetch_throttle_window_is_as_expected(self):
-        expected_config_file = "./start_esp/test/testdata/expected_rollout_fetch_throttle_window.json"
-        config_generator = self.basic_config_generator + " --rollout_fetch_throttle_window_in_s 1000"
-        self.run_test_with_expectation(expected_config_file, self.generated_server_config_file, config_generator)
-
     ########## The tests for validating it should generate failure on conflict flags ##########
 
     def test_enable_backend_routing_conflicts_with_string_flag(self):

@@ -240,6 +240,7 @@ class MockTimerApiManagerEnvironment : public MockApiManagerEnvironment {
   void RunTimer() { mock_periodic_timer_->Run(); }
 
  private:
+  std::unique_ptr<PeriodicTimer> periodic_timer_;
   MockPeriodicTimer *mock_periodic_timer_;
 };
 
@@ -412,10 +413,11 @@ TEST_F(ApiManagerTest, ManagedRolloutStrategy) {
   EXPECT_TRUE(api_manager->Enabled());
   EXPECT_EQ("2017-05-01r0", api_manager->service("2017-05-01r0").id());
 
-  // Trigger a new fetch, timer should be called.
-  api_manager->global_context()->rollout_id_func()("2017-05-01r111");
-  raw_env->RunTimer();
+  // Send a request, otherwise, rollout is not checked.
+  std::unique_ptr<Request> mock_request(new ::testing::NiceMock<MockRequest>);
+  auto handler = api_manager->CreateRequestHandler(std::move(mock_request));
 
+  raw_env->RunTimer();
   auto service = api_manager->SelectService();
 
   EXPECT_TRUE(service);

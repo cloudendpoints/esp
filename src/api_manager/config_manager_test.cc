@@ -47,19 +47,10 @@ const char kServerConfigWithServiceName[] = R"(
       "refresh_interval_ms": 1000
     }
   },
-  "service_management_config": {
-    "fetch_throttle_window_s": 300
-  },
   "service_name": "service_name_from_server_config",
   "rollout_strategy": "managed"
 }
 )";
-
-// The number of minutes to jump to next fetch throttle window.
-// In order to trigger a new fetch timer.
-// It should be bigger than "fetch_throttle_window_s" field
-// in kServerConfigWithServiceName
-const int kNextFetchWindowInS = 330;
 
 const char kGceMetadataWithServiceNameAndConfigId[] = R"(
 {
@@ -180,8 +171,6 @@ class MockTimerApiManagerEnvironment : public MockApiManagerEnvironment {
 
   virtual std::unique_ptr<PeriodicTimer> StartPeriodicTimer(
       std::chrono::milliseconds interval, std::function<void()> continuation) {
-    timer_count_++;
-    timer_last_interval_ = interval;
     mock_periodic_timer_ = new MockPeriodicTimer(continuation);
     return std::unique_ptr<PeriodicTimer>(mock_periodic_timer_);
   }
@@ -196,15 +185,10 @@ class MockTimerApiManagerEnvironment : public MockApiManagerEnvironment {
   }
 
   void RunTimer() { mock_periodic_timer_->Run(); }
-  int timer_count() const { return timer_count_; }
-  std::chrono::milliseconds timer_last_interval() const {
-    return timer_last_interval_;
-  }
 
  private:
-  int timer_count_{};
-  std::chrono::milliseconds timer_last_interval_;
-  MockPeriodicTimer* mock_periodic_timer_{};
+  std::unique_ptr<PeriodicTimer> periodic_timer_;
+  MockPeriodicTimer* mock_periodic_timer_;
 };
 
 // Both service_name, config_id in server config
@@ -219,57 +203,15 @@ class ConfigManagerServiceNameConfigIdTest : public ::testing::Test {
         std::move(env_), kServerConfigWithServiceName);
 
     global_context_->set_service_name("service_name_from_metadata");
+
+    history_.clear();
   }
 
   std::unique_ptr<MockTimerApiManagerEnvironment> env_;
   MockTimerApiManagerEnvironment* raw_env_;
   std::shared_ptr<context::GlobalContext> global_context_;
+  std::vector<std::string> history_;
 };
-
-TEST_F(ConfigManagerServiceNameConfigIdTest, VerifyTimerIntervalDistribution) {
-  ON_CALL(*raw_env_, DoRunHTTPRequest(_))
-      .WillByDefault(Invoke([this](HTTPRequest* req) {
-        EXPECT_EQ(
-            "https://servicemanagement.googleapis.com/v1/services/"
-            "service_name_from_metadata/rollouts?filter=status=SUCCESS",
-            req->url());
-        req->OnComplete(Status::OK, {}, kRolloutsResponse1);
-      }));
-
-  int sequence = 0;
-  std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
-      global_context_,
-      [this, &sequence](const utils::Status&,
-                        const std::vector<std::pair<std::string, int>>&) {
-        sequence++;
-      }));
-  config_manager->set_current_rollout_id("2017-05-01r0");
-
-  // Default is 5 minute interval. Use 5 slot for each minute.
-  int timer_dist[5];
-  memset(timer_dist, 0, sizeof(timer_dist));
-
-  for (int i = 0; i < 10; ++i) {
-    config_manager->SetLatestRolloutId(
-        "2017-05-01r111", std::chrono::system_clock::now() +
-                              std::chrono::seconds(i * kNextFetchWindowInS));
-    EXPECT_EQ(raw_env_->timer_count(), i + 1);
-    raw_env_->RunTimer();
-    EXPECT_EQ(0, sequence);
-
-    // Slot index in minute
-    int dx = raw_env_->timer_last_interval().count() / (1000 * 60);
-    if (dx >= 0 && dx < 5) {
-      timer_dist[dx]++;
-    }
-  }
-
-  // 10 requests should be distributed into 5 slots almost evently.
-  // For each minute slot, the count should be bigger than 1.
-  for (int i = 0; i < 5; ++i) {
-    EXPECT_TRUE(timer_dist[i] >= 1);
-  }
-}
 
 TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutSingleServiceConfig) {
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
@@ -299,39 +241,24 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutSingleServiceConfig) {
         sequence++;
       }));
 
-  config_manager->SetLatestRolloutId("2017-05-01r0",
-                                     std::chrono::system_clock::now());
+  config_manager->Init();
   EXPECT_EQ(0, sequence);
-  EXPECT_EQ(raw_env_->timer_count(), 1);
+  config_manager->CountRequests(1);
   raw_env_->RunTimer();
   EXPECT_EQ(1, sequence);
-
-  config_manager->SetLatestRolloutId(
-      "2017-05-01r0", std::chrono::system_clock::now() +
-                          std::chrono::seconds(kNextFetchWindowInS));
-  // Timer is not called.
-  EXPECT_EQ(raw_env_->timer_count(), 1);
 }
 
-TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutIDNotChanged) {
-  int sequence = 0;
-  std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
-      global_context_,
-      [this, &sequence](const utils::Status& status,
-                        const std::vector<std::pair<std::string, int>>& list) {
-        sequence++;
+TEST_F(ConfigManagerServiceNameConfigIdTest,
+       RemoteRolloutIDIsSameAsRolloutIDInServerConfig) {
+  EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
+      .WillOnce(Invoke([this](HTTPRequest* req) {
+        EXPECT_EQ(
+            "https://servicemanagement.googleapis.com/v1/services/"
+            "service_name_from_metadata/rollouts?filter=status=SUCCESS",
+            req->url());
+        req->OnComplete(Status::OK, {}, kRolloutsResponse1);
       }));
 
-  // set rollout_id to 2017-05-01r0 which is same as kRolloutsResponse1
-  config_manager->set_current_rollout_id("2017-05-01r0");
-
-  config_manager->SetLatestRolloutId("2017-05-01r0",
-                                     std::chrono::system_clock::now());
-  EXPECT_EQ(raw_env_->timer_count(), 0);
-  EXPECT_EQ(0, sequence);
-}
-
-TEST_F(ConfigManagerServiceNameConfigIdTest, RepeatedTrigger) {
   int sequence = 0;
   std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
       global_context_,
@@ -342,23 +269,48 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RepeatedTrigger) {
         EXPECT_EQ(100, list[0].second);
         sequence++;
       }));
+
+  // set rollout_id to 2017-05-01r0 which is same as kRolloutsResponse1
   config_manager->set_current_rollout_id("2017-05-01r0");
 
-  // Use a different ID to trigger
-  config_manager->SetLatestRolloutId("2017-05-01r111",
-                                     std::chrono::system_clock::now());
-  EXPECT_EQ(raw_env_->timer_count(), 1);
+  config_manager->Init();
+  EXPECT_EQ(0, sequence);
+  config_manager->CountRequests(1);
+  raw_env_->RunTimer();
+  // callback should not be called
+  EXPECT_EQ(0, sequence);
+}
+
+TEST_F(ConfigManagerServiceNameConfigIdTest, ResponseRolloutID) {
+  int sequence = 0;
+  std::shared_ptr<ConfigManager> config_manager(new ConfigManager(
+      global_context_,
+      [this, &sequence](const utils::Status& status,
+                        const std::vector<std::pair<std::string, int>>& list) {
+        EXPECT_EQ(1, list.size());
+        EXPECT_EQ(kServiceConfig1, list[0].first);
+        EXPECT_EQ(100, list[0].second);
+        sequence++;
+      }));
+
+  config_manager->Init();
+  EXPECT_EQ(0, sequence);
+
+  // Set the same rollout_id to config_manager and global_context
+  config_manager->set_current_rollout_id("2017-05-01r0");
+  global_context_->set_rollout_id("2017-05-01r0");
+  config_manager->CountRequests(1);
 
   // So no need to make rollout HTTP call.
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_)).Times(0);
 
-  // Trigger it again, a new timer call should not be called.
-  config_manager->SetLatestRolloutId(
-      "2017-05-01r111",
-      std::chrono::system_clock::now() + std::chrono::seconds(1));
-  EXPECT_EQ(raw_env_->timer_count(), 1);
+  raw_env_->RunTimer();
+  // callback should not be called
+  EXPECT_EQ(0, sequence);
 
-  // But the replied rollout ID is the same as the old one.
+  // Not calling global_context_->set_rollout_id() means there
+  // is not Check or Report called since last timeout.
+  // So Http request to get rollout is called, but ID did not changed
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
       .WillOnce(Invoke([this](HTTPRequest* req) {
         EXPECT_EQ(
@@ -372,19 +324,22 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RepeatedTrigger) {
   // callback should not be called
   EXPECT_EQ(0, sequence);
 
-  // Trigger it again, default window is 5 minute, not next window yet.
-  config_manager->SetLatestRolloutId(
-      "2017-05-01r111",
-      std::chrono::system_clock::now() + std::chrono::seconds(2));
-  EXPECT_EQ(raw_env_->timer_count(), 1);
+  // Call global_context_->set_rollout_id() with different id
+  // to simulate Report/Check response get a new rollout id,
+  global_context_->set_rollout_id("2017-05-01r111");
+  // So Http request to inception rollout is called, but ID did not changed
+  EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_))
+      .WillOnce(Invoke([this](HTTPRequest* req) {
+        EXPECT_EQ(
+            "https://servicemanagement.googleapis.com/v1/services/"
+            "service_name_from_metadata/rollouts?filter=status=SUCCESS",
+            req->url());
+        req->OnComplete(Status::OK, {}, kRolloutsResponse1);
+      }));
+
+  raw_env_->RunTimer();
   // callback should not be called
   EXPECT_EQ(0, sequence);
-
-  // Trigger it again, at next window. Timer should be called.
-  config_manager->SetLatestRolloutId(
-      "2017-05-01r111", std::chrono::system_clock::now() +
-                            std::chrono::seconds(kNextFetchWindowInS));
-  EXPECT_EQ(raw_env_->timer_count(), 2);
 }
 
 TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutMultipleServiceConfig) {
@@ -431,11 +386,9 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutMultipleServiceConfig) {
         sequence++;
       }));
 
-  config_manager->SetLatestRolloutId("2017-05-01r0",
-                                     std::chrono::system_clock::now());
+  config_manager->Init();
   EXPECT_EQ(0, sequence);
-
-  EXPECT_EQ(raw_env_->timer_count(), 1);
+  config_manager->CountRequests(1);
   raw_env_->RunTimer();
   EXPECT_EQ(1, sequence);
 }
@@ -502,20 +455,14 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
         sequence++;
       }));
 
-  config_manager->SetLatestRolloutId("2017-05-01r0",
-                                     std::chrono::system_clock::now());
+  config_manager->Init();
   EXPECT_EQ(0, sequence);
-  EXPECT_EQ(raw_env_->timer_count(), 1);
+  config_manager->CountRequests(1);
   raw_env_->RunTimer();
   // One of ServiceConfig download was failed. The callback should not be
   // invoked
   EXPECT_EQ(0, sequence);
-
   // Succeeded on the next timer event. Invoke the callback function
-  config_manager->SetLatestRolloutId(
-      "2017-05-01r0", std::chrono::system_clock::now() +
-                          std::chrono::seconds(kNextFetchWindowInS));
-  EXPECT_EQ(raw_env_->timer_count(), 2);
   raw_env_->RunTimer();
   EXPECT_EQ(1, sequence);
 }
@@ -568,19 +515,13 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutSingleServiceConfigUpdate) {
         sequence++;
       }));
 
-  config_manager->SetLatestRolloutId("2017-05-01r0",
-                                     std::chrono::system_clock::now());
-  EXPECT_EQ(0, sequence);
-
+  config_manager->Init();
   // run first periodic timer
-  EXPECT_EQ(raw_env_->timer_count(), 1);
+  EXPECT_EQ(0, sequence);
+  config_manager->CountRequests(1);
   raw_env_->RunTimer();
+  // run second periodic timer
   EXPECT_EQ(1, sequence);
-
-  config_manager->SetLatestRolloutId(
-      "2017-05-01r1", std::chrono::system_clock::now() +
-                          std::chrono::seconds(kNextFetchWindowInS));
-  EXPECT_EQ(raw_env_->timer_count(), 2);
   raw_env_->RunTimer();
   EXPECT_EQ(2, sequence);
 }
@@ -601,6 +542,13 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
             "service_name_from_metadata/configs/2017-05-01r0",
             req->url());
         req->OnComplete(Status::OK, {}, kServiceConfig1);
+      }))
+      .WillOnce(Invoke([this](HTTPRequest* req) {
+        EXPECT_EQ(
+            "https://servicemanagement.googleapis.com/v1/services/"
+            "service_name_from_metadata/rollouts?filter=status=SUCCESS",
+            req->url());
+        req->OnComplete(Status::OK, {}, kRolloutsResponse1);
       }));
 
   int sequence = 0;
@@ -615,20 +563,16 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
         sequence++;
       }));
 
-  config_manager->SetLatestRolloutId("2017-05-01r0",
-                                     std::chrono::system_clock::now());
-  EXPECT_EQ(0, sequence);
-
+  config_manager->Init();
   // run first periodic timer
-  EXPECT_EQ(raw_env_->timer_count(), 1);
+  EXPECT_EQ(0, sequence);
+  config_manager->CountRequests(1);
   raw_env_->RunTimer();
+  // run second periodic timer
   EXPECT_EQ(1, sequence);
-
-  config_manager->SetLatestRolloutId(
-      "2017-05-01r0", std::chrono::system_clock::now() +
-                          std::chrono::seconds(kNextFetchWindowInS));
+  raw_env_->RunTimer();
   // Same rollout_id, no update
-  EXPECT_EQ(raw_env_->timer_count(), 1);
+  EXPECT_EQ(1, sequence);
 }
 
 }  // namespace

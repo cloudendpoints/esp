@@ -37,9 +37,6 @@ service_config_rollout {
 % if management:
 service_management_config {
   url: "${management}"
-  % if rollout_fetch_throttle_window_in_s:
-  fetch_throttle_window_s: ${rollout_fetch_throttle_window_in_s}
-  % endif
 }
 % endif
 % if service_control_url_override or log_request_headers or log_response_headers or log_jwt_payloads or service_control_network_fail_open:

@@ -202,8 +202,7 @@ def write_server_config_template(server_config_path, args):
                 metadata_attributes=args.metadata_attributes,
                 compute_platform_override=args.compute_platform_override,
                 grpc_backend_ssl_credentials=args.grpc_backend_ssl_credentials,
-                jwks_cache_duration_in_s=args.jwks_cache_duration_in_s,
-                rollout_fetch_throttle_window_in_s=args.rollout_fetch_throttle_window_in_s)
+                jwks_cache_duration_in_s=args.jwks_cache_duration_in_s)
 
         server_config_file = server_config_path
         if server_config_file.endswith('/'):
@@ -911,13 +910,6 @@ config file.'''.format(
 
     parser.add_argument('--jwks_cache_duration_in_s', default=None, type=int, help='''
         Specify JWT public key cache duration in seconds. Default is 5 minutes.''')
-
-    parser.add_argument('--rollout_fetch_throttle_window_in_s', default=None, type=int, help='''
-        When a new rollout is detected, ESP will call ServiceManagement to get the
-        new service configs. ServiceManagement API has a low calling quota, in order not
-        to call at the same time to exceed the quota, the calling time is throttled within
-        a window. This flag specifies the throttle window in seconds. Default is 5 minutes.
-        If number of ESP instances for a service is big, please increase this number.''')
 
     return parser
 

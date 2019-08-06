@@ -20,11 +20,17 @@ namespace google {
 namespace api_manager {
 
 namespace {
-// Default fetch throttle window in seconds
-const int kFetchThrottleWindowInS = 300;
+// Default rollouts refresh interval in ms
+const int kCheckNewRolloutInterval = 60000;
 
 const char kRolloutStrategyManaged[] = "managed";
 
+// This is for the precision of time based counter;
+// the higher the value is, the more precise.
+const int kWindowCounterSize = 10;
+
+// static configs for error handling
+static std::vector<std::pair<std::string, int>> kEmptyConfigs;
 }  // namespace
 
 ConfigManager::ConfigManager(
@@ -32,59 +38,68 @@ ConfigManager::ConfigManager(
     RolloutApplyFunction rollout_apply_function)
     : global_context_(global_context),
       rollout_apply_function_(rollout_apply_function),
-      fetch_throttle_window_in_s_(kFetchThrottleWindowInS) {
+      refresh_interval_ms_(kCheckNewRolloutInterval) {
   if (global_context_->server_config() &&
       global_context_->server_config()->has_service_management_config()) {
-    // update fetch_throttle_window
+    // update refresh interval in ms
     if (global_context_->server_config()
             ->service_management_config()
-            .fetch_throttle_window_s() > 0) {
-      fetch_throttle_window_in_s_ = global_context_->server_config()
-                                        ->service_management_config()
-                                        .fetch_throttle_window_s();
+            .refresh_interval_ms() > 0) {
+      refresh_interval_ms_ = global_context_->server_config()
+                                 ->service_management_config()
+                                 .refresh_interval_ms();
     }
   }
-  // throttle in milliseconds
-  random_dist_.reset(new std::uniform_int_distribution<int>(
-      0, fetch_throttle_window_in_s_ * 1000));
 
   service_management_fetch_.reset(new ServiceManagementFetch(global_context));
 }
 
 ConfigManager::~ConfigManager() {
-  if (fetch_timer_) {
-    fetch_timer_->Stop();
+  if (rollouts_refresh_timer_) {
+    rollouts_refresh_timer_->Stop();
   }
 };
 
-void ConfigManager::SetLatestRolloutId(
-    const std::string& latest_rollout_id,
-    std::chrono::time_point<std::chrono::system_clock> now) {
-  if (latest_rollout_id == current_rollout_id_) {
-    return;
+void ConfigManager::Init() {
+  if (global_context_->rollout_strategy() == kRolloutStrategyManaged &&
+      refresh_interval_ms_ > 0) {
+    // Counter window is 5 time of refresh_interval. It means
+    // only there is not any requests in the last 5 intervals,
+    // stop checking rollout.
+    window_request_counter_.reset(new utils::TimeBasedCounter(
+        kWindowCounterSize, std::chrono::milliseconds(refresh_interval_ms_ * 5),
+        std::chrono::system_clock::now()));
+    rollouts_refresh_timer_ = global_context_->env()->StartPeriodicTimer(
+        std::chrono::milliseconds(refresh_interval_ms_),
+        [this]() { OnRolloutsRefreshTimer(); });
   }
-
-  // Timer is pending, or too close to last fetch time
-  if (fetch_timer_ || now < next_window_time_) {
-    return;
-  }
-
-  auto throttled_time_in_ms = (*random_dist_)(random_generator_);
-  global_context_->env()->LogInfo("Schedule a fetch timer in ms: " +
-                                  std::to_string(throttled_time_in_ms));
-  fetch_timer_ = global_context_->env()->StartPeriodicTimer(
-      std::chrono::milliseconds(throttled_time_in_ms),
-      [this]() { OnRolloutsRefreshTimer(); });
 }
 
 void ConfigManager::OnRolloutsRefreshTimer() {
-  global_context_->env()->LogInfo("Fetch timer starts");
+  global_context_->env()->LogDebug("RolloutsRefreshTimer start");
+  // If there is not any requests in the last window, not to call.
+  if (window_request_counter_ &&
+      window_request_counter_->Count(std::chrono::system_clock::now()) == 0) {
+    global_context_->env()->LogDebug(
+        "RolloutsRefresh skipped due to no traffic.");
+    return;
+  }
 
-  fetch_timer_->Stop();
-  fetch_timer_ = nullptr;
-  next_window_time_ = std::chrono::system_clock::now() +
-                      std::chrono::seconds(fetch_throttle_window_in_s_);
+  // The rollout id in global_context is from Check/Report response.
+  // It is fresh and should have been fetched since last timeout.
+  if (!global_context_->rollout_id().empty()) {
+    bool bail_out = (global_context_->rollout_id() == current_rollout_id_);
+    // Clear it to make sure it is fresh for the next timeout
+    global_context_->set_rollout_id("");
+    if (bail_out) {
+      skipped_rollout_calls_++;
+      global_context_->env()->LogDebug(
+          "RolloutsRefresh skipped due to response rollout_id.");
+      return;
+    }
+  }
 
+  global_context_->env()->LogDebug("RolloutsRefresh makes a remote call.");
   std::string audience;
   GlobalFetchServiceAccountToken(
       global_context_, audience, [this](utils::Status status) {
