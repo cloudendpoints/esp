@@ -193,6 +193,7 @@ Aggregated::Aggregated(
         auth::ServiceAccountToken::JWT_TOKEN_FOR_QUOTA_CONTROL,
         url_.service_control() + quotacontrol_service);
   }
+  this_str_ = std::to_string(reinterpret_cast<unsigned long long>(this));
 }
 
 Aggregated::Aggregated(const std::set<std::string>& logs,
@@ -301,6 +302,7 @@ Status Aggregated::Init() {
 
 Status Aggregated::Close() {
   // Just destroy the client to flush all its cache.
+  env_->LogInfo("Aggregated::Close() is called");
   client_.reset();
   return Status::OK;
 }
@@ -309,6 +311,7 @@ Status Aggregated::Report(const ReportRequestInfo& info) {
   if (!client_) {
     return Status(Code::INTERNAL, "Missing service control client");
   }
+  env_->LogDebug(this_str_ + ": aggregated::Report is called");
   auto request = report_pool_.Alloc();
   Status status = service_control_proto_.FillReportRequest(info, request.get());
   if (!status.ok()) {
@@ -342,6 +345,7 @@ void Aggregated::Check(
             dummy_response_info);
     return;
   }
+  env_->LogDebug(this_str_ + ": aggregated::Check is called");
   auto request = check_pool_.Alloc();
   Status status = service_control_proto_.FillCheckRequest(info, request.get());
   if (!status.ok()) {
@@ -528,6 +532,7 @@ const std::string& Aggregated::GetAuthToken<AllocateQuotaRequest>() {
 
 template <>
 void Aggregated::HandleResponse(const CheckResponse& response) {
+  env_->LogDebug(this_str_ + ": aggregated::HandleCheckResponse is called");
   if (set_rollout_id_func_ && !response.service_rollout_id().empty()) {
     set_rollout_id_func_(response.service_rollout_id());
   }
@@ -547,6 +552,7 @@ void Aggregated::HandleResponse(const CheckResponse& response) {
 
 template <>
 void Aggregated::HandleResponse(const ReportResponse& response) {
+  env_->LogDebug(this_str_ + ": aggregated::HandleReportResponse is called");
   if (set_rollout_id_func_ && !response.service_rollout_id().empty()) {
     set_rollout_id_func_(response.service_rollout_id());
   }

@@ -199,6 +199,8 @@ class Aggregated : public Interface {
   // The callback function to set the latest rollout id
   // from Check and Report response
   SetRolloutIdFunc set_rollout_id_func_;
+
+  std::string this_str_;
 };
 
 }  // namespace service_control
