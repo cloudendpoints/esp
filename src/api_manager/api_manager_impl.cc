@@ -166,6 +166,11 @@ utils::Status ApiManagerImpl::AddConfig(const std::string &service_config,
 
   *config_id = config->service().id();
 
+  // If the config_id is already created, not to over-write, just use it.
+  if (service_context_map_.find(*config_id) != service_context_map_.end()) {
+    return utils::Status::OK;
+  }
+
   auto context_service = std::make_shared<context::ServiceContext>(
       global_context_, std::move(config));
   if (initialize == true && context_service->service_control()) {
