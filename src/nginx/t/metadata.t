@@ -44,7 +44,7 @@ my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $MetadataPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(26);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(30);
 
 my $config = ApiManager::get_bookstore_service_config . <<"EOF";
 control {
@@ -54,7 +54,7 @@ EOF
 
 $t->write_file('service.pb.txt', $config);
 
-$t->write_file('server_config.pb.txt', <<"EOF");
+$t->write_file('server_config.pb.txt', <<"EOF" . ApiManager::disable_service_control_cache);
 metadata_attributes {
   zone: "us-west1-d"
 }
@@ -131,36 +131,45 @@ is($r->{headers}->{host}, "127.0.0.1:${MetadataPort}", 'Host header was set on r
 # Check service control log for correct authorization bearer token.
 
 my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
-is(scalar @servicecontrol_requests, 3, 'Service control received 3 requests.');
+is(scalar @servicecontrol_requests, 4, 'Service control received 4 requests.');
 
-# Request 1 :check
+# Request 1 :check 1
 $r = shift @servicecontrol_requests;
 is($r->{verb}, 'POST', ':check 1 was POST');
 is($r->{path}, '/v1/services/endpoints-test.cloudendpointsapis.com:check', ':check 1 path');
 is($r->{headers}->{authorization}, 'Bearer ya29.7gFRTEGmovWacYDnQIpC9X9Qp8cH0sgQyWVrZaB1Eg1WoAhQMSG4L2rtaHk1',
    ':check 1 was authenticated');
 
-# Request 2
+# Request 2 : report 1
+$r = shift @servicecontrol_requests;
+is($r->{verb}, 'POST', ':report 1 was POST');
+is($r->{path}, '/v1/services/endpoints-test.cloudendpointsapis.com:report', ':report 1 path');
+is($r->{headers}->{authorization}, 'Bearer ya29.7gFRTEGmovWacYDnQIpC9X9Qp8cH0sgQyWVrZaB1Eg1WoAhQMSG4L2rtaHk1',
+   ':report 1 was authenticated');
+
+my $report_json = decode_json(ServiceControl::convert_proto($r->{body}, 'report_request', 'json'));
+my $operations = $report_json->{operations};
+is(@{$operations}, 1, 'There are 1 operations total');
+is('us-west1-d', $operations->[0]->{labels}->{'cloud.googleapis.com/location'}, 'Operation 1 has correct zone');
+
+# Request 3: check 2
 $r = shift @servicecontrol_requests;
 is($r->{verb}, 'POST', ':check 2 was POST');
 is($r->{path}, '/v1/services/endpoints-test.cloudendpointsapis.com:check', ':check 2 path');
 is($r->{headers}->{authorization}, 'Bearer ya29.7gFRTEGmovWacYDnQIpC9X9Qp8cH0sgQyWVrZaB1Eg1WoAhQMSG4L2rtaHk1',
    ':check 2 was authenticated');
 
-# Request 3
+# Request 4 : report 2
 $r = shift @servicecontrol_requests;
-is($r->{verb}, 'POST', ':report was POST');
-is($r->{path}, '/v1/services/endpoints-test.cloudendpointsapis.com:report', ':report path');
+is($r->{verb}, 'POST', ':report 2 was POST');
+is($r->{path}, '/v1/services/endpoints-test.cloudendpointsapis.com:report', ':report 2 path');
 is($r->{headers}->{authorization}, 'Bearer ya29.7gFRTEGmovWacYDnQIpC9X9Qp8cH0sgQyWVrZaB1Eg1WoAhQMSG4L2rtaHk1',
-   ':report was authenticated');
+   ':report 2 was authenticated');
 
-# Check that :report contains zone obtained from metadata server.
-
-my $report_json = decode_json(ServiceControl::convert_proto($r->{body}, 'report_request', 'json'));
-my $operations = $report_json->{operations};
-is(2, @{$operations}, 'There are 2 operations total');
+$report_json = decode_json(ServiceControl::convert_proto($r->{body}, 'report_request', 'json'));
+$operations = $report_json->{operations};
+is(@{$operations}, 1, 'There are 1 operations total');
 is('us-west1-d', $operations->[0]->{labels}->{'cloud.googleapis.com/location'}, 'Operation 1 has correct zone');
-is('us-west1-d', $operations->[1]->{labels}->{'cloud.googleapis.com/location'}, 'Operation 2 has correct zone');
 
 ################################################################################
 

@@ -54,8 +54,7 @@ my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(22);
 $t->write_file('server.pb.txt', <<"EOF");
 service_control_config {
   report_aggregator_config {
-    cache_entries: 10
-    flush_interval_ms: 100
+    cache_entries: 0
   }
 }
 EOF
@@ -135,7 +134,7 @@ is($t->waitforfile("$t->{_testdir}/${quota_done}"), 1,
 my $error_response =
   ApiManager::http_get( $NginxPort, '/shelves?key=this-is-an-api-key' );
 
-is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');
+is($t->waitforfile("$t->{_testdir}/${report_done}1"), 1, 'Report body file ready.');
 
 $t->stop_daemons();
 
@@ -174,7 +173,7 @@ my @requests = ApiManager::read_http_stream( $t, 'bookstore.log' );
 is( scalar @requests, 1, 'Backend received empty request' );
 
 @requests = ApiManager::read_http_stream( $t, 'servicecontrol.log' );
-is( scalar @requests, 3, 'Service control received four requests' );
+is( scalar @requests, 4, 'Service control received four requests' );
 
 # :check triggered by the first request and cached, the second request read from
 # cache
@@ -240,6 +239,8 @@ sub servicecontrol {
       or die "Can't create test server socket: $!\n";
     local $SIG{PIPE} = 'IGNORE';
 
+    my $report_cnt = 0;
+
     my $quota_response_exhausted =
       ServiceControl::convert_proto( <<'EOF', 'quota_response', 'binary' );
 operation_id: "006eaa26-5c2f-41bc-b6d8-0972eff8bdf6"
@@ -277,7 +278,8 @@ HTTP/1.1 200 OK
 Connection: close
 
 EOF
-     $t->write_file($report_done, ':report done');
+     $t->write_file($report_done.$report_cnt, ':report done');
+     $report_cnt++;
   });
 
     $server->run();
