@@ -1,3 +1,12 @@
+# Release 1.37.0 08-08-2019
+
+- Fix a rare crash: not to overwrite same config_id (#669)
+- Add api-key to Header when doing json-grpc transcoding (#661)
+- Log message clearly for invalid http template errors (#657)
+- Throttle the time to call ServiceManagement for new rollout (#654)
+- Allow JWT from authorization without Bearer prefix (#653)
+- Make JWT sub field optional (#647)
+
 # Release 1.36.0 17-07-2019
 
 - Using a more unique fileanme for service config when using multiple services (#641) (#642)
