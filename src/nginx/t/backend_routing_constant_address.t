@@ -316,7 +316,7 @@ Content-Type: application/json
 }
 EOF
 
-  $server->on('GET', '/computeMetadata/v1/instance/service-accounts/default/identity?audience=test-audience',  <<"EOF");
+  $server->on('GET', '/computeMetadata/v1/instance/service-accounts/default/identity?format=full&audience=test-audience',  <<"EOF");
 HTTP/1.1 200 OK
 Metadata-Flavor: Google
 Content-Type: application/json
