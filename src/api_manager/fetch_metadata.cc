@@ -33,7 +33,8 @@ const char kMetadataServiceAccountToken[] =
 
 // URL path for fetch instance identity token
 const char kMetadataInstanceIdentityToken[] =
-    "/computeMetadata/v1/instance/service-accounts/default/identity?format=full&audience=";
+    "/computeMetadata/v1/instance/service-accounts/default/"
+    "identity?format=full&audience=";
 
 // The maximum lifetime of a cache token. Unit: seconds.
 // Token expired in 1 hour, reduce 100 seconds for grace buffer.
@@ -66,7 +67,7 @@ void FetchMetadata(
       .set_max_retries(retry);
   context->env()->RunHTTPRequest(std::move(request));
 }
-}  // namespace
+} // namespace
 
 void GlobalFetchServiceAccountToken(
     std::shared_ptr<context::GlobalContext> context,
@@ -92,43 +93,43 @@ void GlobalFetchServiceAccountToken(
   }
 
   switch (token->state()) {
-    case auth::ServiceAccountToken::FETCHED:
-      // If token is going to last longer than the window, continue
-      if (token->is_access_token_valid(kTokenRefetchWindow)) {
-        continuation(Status::OK);
-        return;
-      }
-
-      // If token is about to expire, initiate fetching a fresh token
-      // Expects token to last significantly longer than time lookahead
-      token->set_state(auth::ServiceAccountToken::NONE);
-
-      // The first request within the token re-fetch window will carry on
-      // the token fetch, while subsequent requests in the window reuse
-      // the old token.
-      break;
-    case auth::ServiceAccountToken::FETCHING:
-      env->LogDebug("Service account token fetch in progress");
-      // If token is still valid, continue
-      if (token->is_access_token_valid(0)) {
-        continuation(Status::OK);
-        return;
-      }
-      break;
-    case auth::ServiceAccountToken::FAILED:
-      // permanent failure
-      continuation(Status(Code::INTERNAL, kFailedTokenFetch));
+  case auth::ServiceAccountToken::FETCHED:
+    // If token is going to last longer than the window, continue
+    if (token->is_access_token_valid(kTokenRefetchWindow)) {
+      continuation(Status::OK);
       return;
-    case auth::ServiceAccountToken::NONE:
-    default:
-      env->LogDebug("Need to fetch service account token");
+    }
+
+    // If token is about to expire, initiate fetching a fresh token
+    // Expects token to last significantly longer than time lookahead
+    token->set_state(auth::ServiceAccountToken::NONE);
+
+    // The first request within the token re-fetch window will carry on
+    // the token fetch, while subsequent requests in the window reuse
+    // the old token.
+    break;
+  case auth::ServiceAccountToken::FETCHING:
+    env->LogDebug("Service account token fetch in progress");
+    // If token is still valid, continue
+    if (token->is_access_token_valid(0)) {
+      continuation(Status::OK);
+      return;
+    }
+    break;
+  case auth::ServiceAccountToken::FAILED:
+    // permanent failure
+    continuation(Status(Code::INTERNAL, kFailedTokenFetch));
+    return;
+  case auth::ServiceAccountToken::NONE:
+  default:
+    env->LogDebug("Need to fetch service account token");
   }
 
   token->set_state(auth::ServiceAccountToken::FETCHING);
   FetchMetadata(context.get(), path, kMetadataTokenFetchRetries,
-                [env, token, continuation, audience](
-                    Status status, std::map<std::string, std::string> &&,
-                    std::string &&body) {
+                [env, token, continuation,
+                 audience](Status status, std::map<std::string, std::string> &&,
+                           std::string &&body) {
                   // fetch failed
                   if (!status.ok()) {
                     env->LogDebug("Failed to fetch service account token");
@@ -178,5 +179,5 @@ void FetchInstanceIdentityToken(
       request_context->service_context()->global_context(), audience, on_done);
 }
 
-}  // namespace api_manager
-}  // namespace google
+} // namespace api_manager
+} // namespace google
