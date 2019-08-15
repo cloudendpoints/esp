@@ -33,7 +33,8 @@ const char kMetadataServiceAccountToken[] =
 
 // URL path for fetch instance identity token
 const char kMetadataInstanceIdentityToken[] =
-    "/computeMetadata/v1/instance/service-accounts/default/identity?audience=";
+    "/computeMetadata/v1/instance/service-accounts/default/"
+    "identity?format=full&audience=";
 
 // The maximum lifetime of a cache token. Unit: seconds.
 // Token expired in 1 hour, reduce 100 seconds for grace buffer.
