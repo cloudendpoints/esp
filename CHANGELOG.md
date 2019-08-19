@@ -1,3 +1,7 @@
+# Release 1.38.0 19-08-2019
+
+- Change metadata token request url for getting full JWT (#676)
+
 # Release 1.37.0 08-08-2019
 
 - Fix a rare crash: not to overwrite same config_id (#669)
