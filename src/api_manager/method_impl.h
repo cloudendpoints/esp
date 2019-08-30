@@ -154,6 +154,16 @@ class MethodInfoImpl : public MethodInfo {
 
   void ProcessSystemQueryParameterNames();
 
+  bool escape_binding() const override {
+    // Variable bindings normaly are used for grpc transcoding.
+    // Their values should be un-escaped.
+    // But for CONSTANT_ADDRESS bakend path translation,
+    // they are used to re-format the URL path: from path segments
+    // to query parameters. They should remain escaped.
+    return backend_path_translation() ==
+           ::google::api::BackendRule_PathTranslation_CONSTANT_ADDRESS;
+  }
+
  private:
   struct AuthProvider {
     std::set<std::string> audiences;

@@ -103,7 +103,7 @@ $t->run();
 my $response1 = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key');
 
 # Backend address with a path prefix.
-my $response123 = ApiManager::http_get($NginxPort,'/shelves/123?key=this-is-an-api-key');
+my $response123 = ApiManager::http_get($NginxPort,'/shelves/123?key=this-is-an-api-key&site=space%20plus%2B2U%3D');
 
 # Backend address with an unexpected "/" sufix, should still work.
 my $response2 = ApiManager::http_get($NginxPort,'/shelves/123/books/1234?key=this-is-an-api-key&timezone=EST');
@@ -153,7 +153,7 @@ Connection: close
 /shelves
 EOF
 
-  $server->on('GET', '/foo/shelves/123?key=this-is-an-api-key', <<'EOF');
+  $server->on('GET', '/foo/shelves/123?key=this-is-an-api-key&site=space%20plus%2B2U%3D', <<'EOF');
 HTTP/1.1 200 OK
 Connection: close
 

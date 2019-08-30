@@ -249,7 +249,8 @@ std::string UrlUnescapeString(const std::string& part,
 template <class VariableBinding>
 void ExtractBindingsFromPath(const std::vector<HttpTemplate::Variable>& vars,
                              const std::vector<std::string>& parts,
-                             std::vector<VariableBinding>* bindings) {
+                             std::vector<VariableBinding>* bindings,
+                             bool escape_binding) {
   for (const auto& var : vars) {
     // Determine the subpath bound to the variable based on the
     // [start_segment, end_segment) segment range of the variable.
@@ -269,8 +270,12 @@ void ExtractBindingsFromPath(const std::vector<HttpTemplate::Variable>& vars,
         (end_segment - var.start_segment) > 1 || var.end_segment < 0;
     // Joins parts with "/"  to form a path string.
     for (size_t i = var.start_segment; i < end_segment; ++i) {
-      // For multipart matches only unescape non-reserved characters.
-      binding.value += UrlUnescapeString(parts[i], !is_multipart);
+      if (escape_binding) {
+        binding.value += parts[i];
+      } else {
+        // For multipart matches only unescape non-reserved characters.
+        binding.value += UrlUnescapeString(parts[i], !is_multipart);
+      }
       if (i < end_segment - 1) {
         binding.value += "/";
       }
@@ -282,7 +287,7 @@ void ExtractBindingsFromPath(const std::vector<HttpTemplate::Variable>& vars,
 template <class VariableBinding>
 void ExtractBindingsFromQueryParameters(
     const std::string& query_params, const std::set<std::string>& system_params,
-    std::vector<VariableBinding>* bindings) {
+    std::vector<VariableBinding>* bindings, bool escape_binding) {
   // The bindings in URL the query parameters have the following form:
   //      <field_path1>=value1&<field_path2>=value2&...&<field_pathN>=valueN
   // Query parameters may also contain system parameters such as `api_key`.
@@ -302,7 +307,11 @@ void ExtractBindingsFromQueryParameters(
         // in the request, e.g. `book.author.name`.
         VariableBinding binding;
         split(name, '.', binding.field_path);
-        binding.value = UrlUnescapeString(param.substr(pos + 1), true);
+        if (escape_binding) {
+          binding.value = param.substr(pos + 1);
+        } else {
+          binding.value = UrlUnescapeString(param.substr(pos + 1), true);
+        }
         bindings->emplace_back(std::move(binding));
       }
     }
@@ -413,10 +422,12 @@ Method PathMatcher<Method>::Lookup(
   MethodData* method_data = reinterpret_cast<MethodData*>(lookup_result.data);
   if (variable_bindings != nullptr) {
     variable_bindings->clear();
-    ExtractBindingsFromPath(method_data->variables, parts, variable_bindings);
+    bool escape_binding = method_data->method->escape_binding();
+    ExtractBindingsFromPath(method_data->variables, parts, variable_bindings,
+                            escape_binding);
     ExtractBindingsFromQueryParameters(
         query_params, method_data->method->system_query_parameter_names(),
-        variable_bindings);
+        variable_bindings, escape_binding);
   }
   if (body_field_path != nullptr) {
     *body_field_path = method_data->body_field_path;
