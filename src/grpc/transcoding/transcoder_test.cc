@@ -108,7 +108,7 @@ class TestMethodInfo : public MethodInfo {
     static std::set<std::string> dummy;
     return dummy;
   };
-  bool escape_binding() const { return false; }
+  bool keep_binding_escaped() const { return false; }
 
   const std::vector<std::pair<std::string, int>> &metric_cost_vector() const {
     return metric_cost_vector_;

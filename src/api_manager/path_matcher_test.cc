@@ -52,7 +52,7 @@ class MethodInfo {
  public:
   MOCK_CONST_METHOD0(system_query_parameter_names,
                      const std::set<std::string>&());
-  MOCK_CONST_METHOD0(escape_binding, bool());
+  MOCK_CONST_METHOD0(keep_binding_escaped, bool());
 };
 
 bool operator==(const Binding& b1, const Binding& b2) {
@@ -76,11 +76,12 @@ class PathMatcherTest : public ::testing::Test {
                                              std::string http_template,
                                              std::string body_field_path,
                                              std::string expected_error,
-                                             bool escape_binding) {
+                                             bool keep_binding_escaped) {
     auto method = new NiceMock<MethodInfo>();
     ON_CALL(*method, system_query_parameter_names())
         .WillByDefault(ReturnRef(empty_set_));
-    ON_CALL(*method, escape_binding()).WillByDefault(Return(escape_binding));
+    ON_CALL(*method, keep_binding_escaped())
+        .WillByDefault(Return(keep_binding_escaped));
     auto status =
         builder_.Register(http_method, http_template, body_field_path, method);
     if (!status.ok()) {
@@ -100,7 +101,7 @@ class PathMatcherTest : public ::testing::Test {
     auto method = new NiceMock<MethodInfo>();
     ON_CALL(*method, system_query_parameter_names())
         .WillByDefault(ReturnRef(*system_params));
-    ON_CALL(*method, escape_binding()).WillByDefault(Return(false));
+    ON_CALL(*method, keep_binding_escaped()).WillByDefault(Return(false));
     if (!builder_.Register(http_method, http_template, std::string(), method)
              .ok()) {
       delete method;

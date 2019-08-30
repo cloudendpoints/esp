@@ -113,8 +113,8 @@ class MethodInfo {
   virtual const std::vector<std::pair<std::string, int>> &metric_cost_vector()
       const = 0;
 
-  // If true, binding value should be url escaped.
-  virtual bool escape_binding() const = 0;
+  // If true, binding should remain url escaped.
+  virtual bool keep_binding_escaped() const = 0;
 };
 
 }  // namespace api_manager
