@@ -155,7 +155,7 @@ class MethodInfoImpl : public MethodInfo {
   void ProcessSystemQueryParameterNames();
 
   bool escape_binding() const override {
-    // Variable bindings normaly are used for grpc transcoding.
+    // Variable bindings normally are used for grpc transcoding.
     // Their values should be un-escaped.
     // But for CONSTANT_ADDRESS bakend path translation,
     // they are used to re-format the URL path: from path segments
