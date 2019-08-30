@@ -157,7 +157,7 @@ class MethodInfoImpl : public MethodInfo {
   bool escape_binding() const override {
     // Variable bindings normally are used for grpc transcoding.
     // Their values should be un-escaped.
-    // But for CONSTANT_ADDRESS bakend path translation,
+    // But for CONSTANT_ADDRESS backend path translation,
     // they are used to re-format the URL path: from path segments
     // to query parameters. They should remain escaped.
     return backend_path_translation() ==
