@@ -291,6 +291,8 @@ message Experimental {
   bool disable_log_status = 1;
   // Configure response to JSON translator option for JsonPrintOptions:
   bool always_print_primitive_fields = 2;
+  // Whether to preserve proto field names
+  bool preserve_proto_field_names = 3;
 }
 
 message AccessToken {

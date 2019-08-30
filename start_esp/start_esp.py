@@ -191,6 +191,7 @@ def write_server_config_template(server_config_path, args):
                 rollout_id=args.rollout_ids[idx],
                 rollout_strategy=args.rollout_strategy,
                 always_print_primitive_fields=args.transcoding_always_print_primitive_fields,
+                preserve_proto_field_names=args.transcoding_preserve_proto_field_names,
                 client_ip_header=args.client_ip_header,
                 client_ip_position=args.client_ip_position,
                 rewrite_rules=args.rewrite,
@@ -738,6 +739,11 @@ config file.'''.format(
 
     # always_print_primitive_fields.
     parser.add_argument('--transcoding_always_print_primitive_fields',
+        action='store_true',
+        help=argparse.SUPPRESS)
+
+    # preesrve the proto field names
+    parser.add_argument('--transcoding_preserve_proto_field_names',
         action='store_true',
         help=argparse.SUPPRESS)
 

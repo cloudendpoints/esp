@@ -85,6 +85,9 @@ experimental {
 % if always_print_primitive_fields:
   always_print_primitive_fields: true
 % endif
+% if preserve_proto_field_names:
+  preserve_proto_field_names: true
+% endif
 }
 % if disable_cloud_trace_auto_sampling or cloud_trace_url_override:
 cloud_tracing_config {
