@@ -1,9 +1,6 @@
 producer_project_id: "<YOUR_PROJECT_ID>"
 name: "<YOUR_PROJECT_ID>.appspot.com"
 id: "2016-08-25r1"
-control {
-  environment: "servicecontrol.googleapis.com"
-}
 title: "Bookstore API"
 apis {
   name: "endpoints.examples.bookstore.Bookstore"
@@ -11,23 +8,11 @@ apis {
     name: "ListShelves"
     request_type_url: "type.googleapis.com/google.protobuf.Empty"
     response_type_url: "type.googleapis.com/endpoints.examples.bookstore.ListShelvesResponse"
-    options {
-      name: "google.protobuf.MethodOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
   }
   methods {
     name: "CreateShelf"
     request_type_url: "type.googleapis.com/endpoints.examples.bookstore.CreateShelfRequest"
     response_type_url: "type.googleapis.com/endpoints.examples.bookstore.Shelf"
-    options {
-      name: "google.protobuf.MethodOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
   }
   methods {
     name: "BulkCreateShelf"
@@ -35,117 +20,56 @@ apis {
     request_streaming: true
     response_type_url: "type.googleapis.com/endpoints.examples.bookstore.Shelf"
     response_streaming: true
-    options {
-      name: "google.protobuf.MethodOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
   }
   methods {
     name: "GetShelf"
     request_type_url: "type.googleapis.com/endpoints.examples.bookstore.GetShelfRequest"
     response_type_url: "type.googleapis.com/endpoints.examples.bookstore.Shelf"
-    options {
-      name: "google.protobuf.MethodOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
   }
   methods {
     name: "DeleteShelf"
     request_type_url: "type.googleapis.com/endpoints.examples.bookstore.DeleteShelfRequest"
     response_type_url: "type.googleapis.com/google.protobuf.Empty"
-    options {
-      name: "google.protobuf.MethodOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
   }
   methods {
     name: "ListBooks"
     request_type_url: "type.googleapis.com/endpoints.examples.bookstore.ListBooksRequest"
     response_type_url: "type.googleapis.com/endpoints.examples.bookstore.ListBooksResponse"
-    options {
-      name: "google.protobuf.MethodOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
   }
   methods {
     name: "CreateBook"
     request_type_url: "type.googleapis.com/endpoints.examples.bookstore.CreateBookRequest"
     response_type_url: "type.googleapis.com/endpoints.examples.bookstore.Book"
-    options {
-      name: "google.protobuf.MethodOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
   }
   methods {
     name: "GetBook"
     request_type_url: "type.googleapis.com/endpoints.examples.bookstore.GetBookRequest"
     response_type_url: "type.googleapis.com/endpoints.examples.bookstore.Book"
-    options {
-      name: "google.protobuf.MethodOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
   }
   methods {
     name: "DeleteBook"
     request_type_url: "type.googleapis.com/endpoints.examples.bookstore.DeleteBookRequest"
     response_type_url: "type.googleapis.com/google.protobuf.Empty"
-    options {
-      name: "google.protobuf.MethodOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
   }
   methods {
     name: "QueryShelves"
     request_type_url: "type.googleapis.com/endpoints.examples.bookstore.QueryShelvesRequest"
     response_type_url: "type.googleapis.com/endpoints.examples.bookstore.ListShelvesResponse"
-    options {
-      name: "google.protobuf.MethodOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
   }
   methods {
     name: "QueryBooks"
     request_type_url: "type.googleapis.com/endpoints.examples.bookstore.QueryBooksRequest"
     response_type_url: "type.googleapis.com/endpoints.examples.bookstore.ListBooksResponse"
-    options {
-      name: "google.protobuf.MethodOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
   }
   methods {
     name: "EchoStruct"
     request_type_url: "type.googleapis.com/google.protobuf.Struct"
     response_type_url: "type.googleapis.com/google.protobuf.Struct"
-    options {
-      name: "google.protobuf.MethodOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
   }
-  options {
-    name: "google.protobuf.ServiceOptions.deprecated"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
+  methods {
+    name: "EchoShelfId"
+    request_type_url: "type.googleapis.com/endpoints.examples.bookstore.ShelfId"
+    response_type_url: "type.googleapis.com/endpoints.examples.bookstore.ShelfId"
   }
   version: "v1"
   source_context {
@@ -155,24 +79,6 @@ apis {
 }
 types {
   name: "google.protobuf.Empty"
-  options {
-    name: "google.protobuf.MessageOptions.message_set_wire_format"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.deprecated"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
   source_context {
     file_name: "google/protobuf/empty.proto"
   }
@@ -186,57 +92,7 @@ types {
     number: 1
     name: "fields"
     type_url: "type.googleapis.com/google.protobuf.Struct.FieldsEntry"
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "fields"
-  }
-  options {
-    name: "google.protobuf.MessageOptions.message_set_wire_format"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.deprecated"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
   }
   source_context {
     file_name: "google/protobuf/struct.proto"
@@ -250,38 +106,6 @@ types {
     cardinality: CARDINALITY_OPTIONAL
     number: 1
     name: "key"
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "key"
   }
   fields {
@@ -290,63 +114,13 @@ types {
     number: 2
     name: "value"
     type_url: "type.googleapis.com/google.protobuf.Value"
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "value"
   }
   options {
-    name: "google.protobuf.MessageOptions.message_set_wire_format"
+    name: "proto2.MessageOptions.map_entry"
     value {
       type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.deprecated"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.map_entry"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      value: "\b\001"
+      value: "\010\001"
     }
   }
   source_context {
@@ -363,38 +137,6 @@ types {
     name: "null_value"
     type_url: "type.googleapis.com/google.protobuf.NullValue"
     oneof_index: 1
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "nullValue"
   }
   fields {
@@ -403,38 +145,6 @@ types {
     number: 2
     name: "number_value"
     oneof_index: 1
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "numberValue"
   }
   fields {
@@ -443,38 +153,6 @@ types {
     number: 3
     name: "string_value"
     oneof_index: 1
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "stringValue"
   }
   fields {
@@ -483,38 +161,6 @@ types {
     number: 4
     name: "bool_value"
     oneof_index: 1
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "boolValue"
   }
   fields {
@@ -524,38 +170,6 @@ types {
     name: "struct_value"
     type_url: "type.googleapis.com/google.protobuf.Struct"
     oneof_index: 1
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "structValue"
   }
   fields {
@@ -565,59 +179,9 @@ types {
     name: "list_value"
     type_url: "type.googleapis.com/google.protobuf.ListValue"
     oneof_index: 1
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "listValue"
   }
   oneofs: "kind"
-  options {
-    name: "google.protobuf.MessageOptions.message_set_wire_format"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.deprecated"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
   source_context {
     file_name: "google/protobuf/struct.proto"
   }
@@ -631,57 +195,7 @@ types {
     number: 1
     name: "values"
     type_url: "type.googleapis.com/google.protobuf.Value"
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "values"
-  }
-  options {
-    name: "google.protobuf.MessageOptions.message_set_wire_format"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.deprecated"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
   }
   source_context {
     file_name: "google/protobuf/struct.proto"
@@ -695,38 +209,6 @@ types {
     cardinality: CARDINALITY_OPTIONAL
     number: 1
     name: "id"
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "id"
   }
   fields {
@@ -734,57 +216,7 @@ types {
     cardinality: CARDINALITY_OPTIONAL
     number: 2
     name: "theme"
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "theme"
-  }
-  options {
-    name: "google.protobuf.MessageOptions.message_set_wire_format"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.deprecated"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
   }
   source_context {
     file_name: "bookstore.proto"
@@ -798,38 +230,6 @@ types {
     cardinality: CARDINALITY_OPTIONAL
     number: 1
     name: "id"
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "id"
   }
   fields {
@@ -837,38 +237,6 @@ types {
     cardinality: CARDINALITY_OPTIONAL
     number: 2
     name: "author"
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "author"
   }
   fields {
@@ -876,38 +244,6 @@ types {
     cardinality: CARDINALITY_OPTIONAL
     number: 3
     name: "title"
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "title"
   }
   fields {
@@ -915,57 +251,7 @@ types {
     cardinality: CARDINALITY_REPEATED
     number: 4
     name: "quotes"
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "quotes"
-  }
-  options {
-    name: "google.protobuf.MessageOptions.message_set_wire_format"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.deprecated"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
   }
   source_context {
     file_name: "bookstore.proto"
@@ -980,57 +266,7 @@ types {
     number: 1
     name: "shelves"
     type_url: "type.googleapis.com/endpoints.examples.bookstore.Shelf"
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "shelves"
-  }
-  options {
-    name: "google.protobuf.MessageOptions.message_set_wire_format"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.deprecated"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
   }
   source_context {
     file_name: "bookstore.proto"
@@ -1045,57 +281,7 @@ types {
     number: 1
     name: "shelf"
     type_url: "type.googleapis.com/endpoints.examples.bookstore.Shelf"
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "shelf"
-  }
-  options {
-    name: "google.protobuf.MessageOptions.message_set_wire_format"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.deprecated"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
   }
   source_context {
     file_name: "bookstore.proto"
@@ -1109,57 +295,7 @@ types {
     cardinality: CARDINALITY_OPTIONAL
     number: 1
     name: "shelf"
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "shelf"
-  }
-  options {
-    name: "google.protobuf.MessageOptions.message_set_wire_format"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.deprecated"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
   }
   source_context {
     file_name: "bookstore.proto"
@@ -1173,57 +309,7 @@ types {
     cardinality: CARDINALITY_OPTIONAL
     number: 1
     name: "shelf"
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "shelf"
-  }
-  options {
-    name: "google.protobuf.MessageOptions.message_set_wire_format"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.deprecated"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
   }
   source_context {
     file_name: "bookstore.proto"
@@ -1237,57 +323,7 @@ types {
     cardinality: CARDINALITY_OPTIONAL
     number: 1
     name: "shelf"
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "shelf"
-  }
-  options {
-    name: "google.protobuf.MessageOptions.message_set_wire_format"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.deprecated"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
   }
   source_context {
     file_name: "bookstore.proto"
@@ -1302,57 +338,7 @@ types {
     number: 1
     name: "books"
     type_url: "type.googleapis.com/endpoints.examples.bookstore.Book"
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "books"
-  }
-  options {
-    name: "google.protobuf.MessageOptions.message_set_wire_format"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.deprecated"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
   }
   source_context {
     file_name: "bookstore.proto"
@@ -1366,38 +352,6 @@ types {
     cardinality: CARDINALITY_OPTIONAL
     number: 1
     name: "shelf"
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "shelf"
   }
   fields {
@@ -1406,57 +360,7 @@ types {
     number: 2
     name: "book"
     type_url: "type.googleapis.com/endpoints.examples.bookstore.Book"
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "book"
-  }
-  options {
-    name: "google.protobuf.MessageOptions.message_set_wire_format"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.deprecated"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
   }
   source_context {
     file_name: "bookstore.proto"
@@ -1470,38 +374,6 @@ types {
     cardinality: CARDINALITY_OPTIONAL
     number: 1
     name: "shelf"
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "shelf"
   }
   fields {
@@ -1509,57 +381,7 @@ types {
     cardinality: CARDINALITY_OPTIONAL
     number: 2
     name: "book"
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "book"
-  }
-  options {
-    name: "google.protobuf.MessageOptions.message_set_wire_format"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.deprecated"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
   }
   source_context {
     file_name: "bookstore.proto"
@@ -1573,38 +395,6 @@ types {
     cardinality: CARDINALITY_OPTIONAL
     number: 1
     name: "shelf"
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "shelf"
   }
   fields {
@@ -1612,57 +402,7 @@ types {
     cardinality: CARDINALITY_OPTIONAL
     number: 2
     name: "book"
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "book"
-  }
-  options {
-    name: "google.protobuf.MessageOptions.message_set_wire_format"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.deprecated"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
   }
   source_context {
     file_name: "bookstore.proto"
@@ -1677,57 +417,7 @@ types {
     number: 1
     name: "shelf"
     type_url: "type.googleapis.com/endpoints.examples.bookstore.Shelf"
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "shelf"
-  }
-  options {
-    name: "google.protobuf.MessageOptions.message_set_wire_format"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.deprecated"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
   }
   source_context {
     file_name: "bookstore.proto"
@@ -1741,38 +431,6 @@ types {
     cardinality: CARDINALITY_OPTIONAL
     number: 1
     name: "shelf"
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "shelf"
   }
   fields {
@@ -1781,57 +439,7 @@ types {
     number: 2
     name: "book"
     type_url: "type.googleapis.com/endpoints.examples.bookstore.Book"
-    options {
-      name: "google.protobuf.FieldOptions.ctype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\006STRING"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.jstype"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.StringValue"
-        value: "\n\tJS_NORMAL"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.lazy"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-    options {
-      name: "google.protobuf.FieldOptions.weak"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
     json_name: "book"
-  }
-  options {
-    name: "google.protobuf.MessageOptions.message_set_wire_format"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.no_standard_descriptor_accessor"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
-  }
-  options {
-    name: "google.protobuf.MessageOptions.deprecated"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
   }
   source_context {
     file_name: "bookstore.proto"
@@ -1841,18 +449,32 @@ types {
 types {
   name: "endpoints.examples.bookstore.ShelfNotFoundDetail"
   fields {
-    cardinality: CARDINALITY_OPTIONAL
-    name: "for_shelf_id"
-    json_name: "forShelfI"
     kind: TYPE_INT64
+    cardinality: CARDINALITY_OPTIONAL
     number: 1
+    name: "for_shelf_id"
+    json_name: "forShelfId"
   }
   fields {
-    cardinality: CARDINALITY_OPTIONAL
     kind: TYPE_STRING
+    cardinality: CARDINALITY_OPTIONAL
+    number: 2
     name: "why"
     json_name: "why"
-    number: 2
+  }
+  source_context {
+    file_name: "bookstore.proto"
+  }
+  syntax: SYNTAX_PROTO3
+}
+types {
+  name: "endpoints.examples.bookstore.ShelfId"
+  fields {
+    kind: TYPE_INT64
+    cardinality: CARDINALITY_OPTIONAL
+    number: 1
+    name: "shelf_id"
+    json_name: "shelfId"
   }
   source_context {
     file_name: "bookstore.proto"
@@ -1863,18 +485,6 @@ enums {
   name: "google.protobuf.NullValue"
   enumvalue {
     name: "NULL_VALUE"
-    options {
-      name: "google.protobuf.EnumValueOptions.deprecated"
-      value {
-        type_url: "type.googleapis.com/google.protobuf.BoolValue"
-      }
-    }
-  }
-  options {
-    name: "google.protobuf.EnumOptions.deprecated"
-    value {
-      type_url: "type.googleapis.com/google.protobuf.BoolValue"
-    }
   }
   source_context {
     file_name: "google/protobuf/struct.proto"
@@ -2083,6 +693,22 @@ documentation {
     description: "The book to match"
   }
   rules {
+    selector: "endpoints.examples.bookstore.ShelfNotFoundDetail"
+    description: "The custom error message returned in status \"details\""
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.ShelfNotFoundDetail.for_shelf_id"
+    description: "the sheld ID that trying to find."
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.ShelfNotFoundDetail.why"
+    description: "the why message."
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.ShelfId"
+    description: "This message is used to test preserve_proto_field_name flag\nNormally, shelf_id is converted to ShelfId in proto field name\nBut if preserve_proto_field_name is set, it will keep the\noriginal name"
+  }
+  rules {
     selector: "endpoints.examples.bookstore.Bookstore"
     description: "A simple Bookstore API.\n\nThe API manages shelves and books resources. Shelves contain books."
   }
@@ -2134,6 +760,51 @@ documentation {
     selector: "endpoints.examples.bookstore.Bookstore.EchoStruct"
     description: "Echo with a struct"
   }
+  rules {
+    selector: "endpoints.examples.bookstore.Bookstore.EchoShelfId"
+    description: "EchoShelfId"
+  }
+}
+backend {
+  rules {
+    selector: "endpoints.examples.bookstore.Bookstore.ListShelves"
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.Bookstore.CreateShelf"
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.Bookstore.BulkCreateShelf"
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.Bookstore.GetShelf"
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.Bookstore.DeleteShelf"
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.Bookstore.ListBooks"
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.Bookstore.CreateBook"
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.Bookstore.GetBook"
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.Bookstore.DeleteBook"
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.Bookstore.QueryShelves"
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.Bookstore.QueryBooks"
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.Bookstore.EchoStruct"
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.Bookstore.EchoShelfId"
+  }
 }
 http {
   rules {
@@ -2144,11 +815,6 @@ http {
     selector: "endpoints.examples.bookstore.Bookstore.CreateShelf"
     post: "/shelves"
     body: "shelf"
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.Bookstore.CreateBook"
-    post: "/shelves/{shelf}/books/{book.id}/{book.author}"
-    body: "book.title"
   }
   rules {
     selector: "endpoints.examples.bookstore.Bookstore.BulkCreateShelf"
@@ -2173,6 +839,11 @@ http {
     body: "book"
   }
   rules {
+    selector: "endpoints.examples.bookstore.Bookstore.CreateBook"
+    post: "/shelves/{shelf}/books/{book.id}/{book.author}"
+    body: "book.title"
+  }
+  rules {
     selector: "endpoints.examples.bookstore.Bookstore.GetBook"
     get: "/shelves/{shelf}/books/{book}"
   }
@@ -2193,13 +864,21 @@ http {
     post: "/echostruct"
     body: "*"
   }
+  rules {
+    selector: "endpoints.examples.bookstore.Bookstore.EchoShelfId"
+    post: "/echoshelfid"
+    body: "*"
+  }
 }
-context {
-}
-usage {
+endpoints {
+  name: "bookstore.endpoints.qiwzhang-authz.cloud.goog"
+  features: "googleapis.com/endpoint/grpc-autobahn"
 }
 config_version {
   value: 3
+}
+control {
+  environment: "servicecontrol.googleapis.com"
 }
 system_parameters {
   rules {
@@ -2369,6 +1048,21 @@ system_parameters {
   }
   rules {
     selector: "endpoints.examples.bookstore.Bookstore.EchoStruct"
+    parameters {
+      name: "api_key"
+      http_header: "x-api-key"
+    }
+    parameters {
+      name: "api_key"
+      url_query_parameter: "key"
+    }
+    parameters {
+      name: "api_key"
+      url_query_parameter: "api_key"
+    }
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.Bookstore.EchoShelfId"
     parameters {
       name: "api_key"
       http_header: "x-api-key"

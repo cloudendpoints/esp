@@ -34,7 +34,7 @@ TEST(GlobalContextTest, TestEmptyExperimentalFlags) {
   GlobalContext ctx(std::move(env), kServerConfig);
 
   EXPECT_FALSE(ctx.DisableLogStatus());
-  EXPECT_FALSE(ctx.AlwaysPrintPrimitiveFields());
+  EXPECT_FALSE(ctx.always_print_primitive_fields());
   EXPECT_EQ(ctx.rollout_strategy(), "");
 
   EXPECT_EQ(ctx.platform(), ComputePlatform::kUnknown);
@@ -58,7 +58,7 @@ rollout_strategy: "fixed"
       new testing::NiceMock<MockApiManagerEnvironment>());
   GlobalContext ctx(std::move(env), kServerConfig);
   EXPECT_TRUE(ctx.DisableLogStatus());
-  EXPECT_TRUE(ctx.AlwaysPrintPrimitiveFields());
+  EXPECT_TRUE(ctx.always_print_primitive_fields());
   EXPECT_EQ(ctx.rollout_strategy(), "fixed");
 }
 

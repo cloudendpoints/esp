@@ -177,6 +177,9 @@ ngx_esp_request_ctx_s::ngx_esp_request_ctx_s(ngx_http_request_t *r,
       if (lc->esp->get_always_print_primitive_fields()) {
         json_print_options.always_print_primitive_fields = true;
       }
+      if (lc->esp->get_preserve_proto_field_names()) {
+        json_print_options.preserve_proto_field_names = true;
+      }
       transcoder_factory = std::make_shared<transcoding::TranscoderFactory>(
           lc->esp->service(config_id), json_print_options);
       lc->transcoder_factory_map[config_id] = transcoder_factory;

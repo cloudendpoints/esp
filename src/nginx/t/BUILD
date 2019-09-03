@@ -329,6 +329,7 @@ nginx_suite(
         "transcoding_h2.t",
         "transcoding_head.t",
         "transcoding_ignore_unknown_fields.t",
+        "transcoding_proto_field_name.t",
         "grpc_skip_host_header_in_metadata.t",
         "transcoding_large.t",
         "transcoding_metadata.t",

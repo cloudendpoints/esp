@@ -51,7 +51,11 @@ class ApiManagerImpl : public ApiManager {
   };
 
   bool get_always_print_primitive_fields() override {
-    return global_context_->AlwaysPrintPrimitiveFields();
+    return global_context_->always_print_primitive_fields();
+  };
+
+  bool get_preserve_proto_field_names() override {
+    return global_context_->preserve_proto_field_names();
   };
 
   utils::Status GetStatistics(ApiManagerStatistics *statistics) const override;

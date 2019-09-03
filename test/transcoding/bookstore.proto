@@ -75,6 +75,9 @@ service Bookstore {
   // Echo with a struct
   rpc EchoStruct(google.protobuf.Struct) returns (google.protobuf.Struct) {
   }
+  // EchoShelfId
+  rpc EchoShelfId(ShelfId) returns (ShelfId) {
+  }
 }
 
 // A shelf resource.
@@ -177,4 +180,12 @@ message ShelfNotFoundDetail {
   int64 for_shelf_id = 1;
   // the why message.
   string why = 2;
+}
+
+// This message is used to test preserve_proto_field_name flag
+// Normally, shelf_id is converted to ShelfId in proto field name
+// But if preserve_proto_field_name is set, it will keep the
+// original name
+message ShelfId {
+  int64 shelf_id = 1;
 }

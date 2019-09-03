@@ -53,6 +53,7 @@ GlobalContext::GlobalContext(std::unique_ptr<ApiManagerEnvInterface> env,
       is_auth_force_disabled_(false),
       disable_log_status_(false),
       always_print_primitive_fields_(false),
+      preserve_proto_field_names_(false),
       intermediate_report_interval_(kIntermediateReportInterval),
       platform_(ComputePlatform::kUnknown),
       jwks_cache_duration_in_s_(kPubKeyCacheDurationInSecond) {
@@ -117,6 +118,7 @@ GlobalContext::GlobalContext(std::unique_ptr<ApiManagerEnvInterface> env,
       disable_log_status_ = experimental.disable_log_status();
       always_print_primitive_fields_ =
           experimental.always_print_primitive_fields();
+      preserve_proto_field_names_ = experimental.preserve_proto_field_names();
     }
   }
 }
