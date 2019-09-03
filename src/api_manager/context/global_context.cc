@@ -118,8 +118,7 @@ GlobalContext::GlobalContext(std::unique_ptr<ApiManagerEnvInterface> env,
       disable_log_status_ = experimental.disable_log_status();
       always_print_primitive_fields_ =
           experimental.always_print_primitive_fields();
-      preserve_proto_field_names_ =
-          experimental.preserve_proto_field_names();
+      preserve_proto_field_names_ = experimental.preserve_proto_field_names();
     }
   }
 }

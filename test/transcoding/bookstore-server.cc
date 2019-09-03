@@ -351,9 +351,8 @@ class BookstoreServiceImpl : public Bookstore::Service {
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status EchoShelfId(::grpc::ServerContext* ctx,
-                             const ShelfId* request,
-                            ShelfId* reply) {
+  ::grpc::Status EchoShelfId(::grpc::ServerContext* ctx, const ShelfId* request,
+                             ShelfId* reply) {
     std::cerr << "GRPC-BACKEND: EchoShelfId" << std::endl;
     PrintRequest(*request, *ctx, printmetadata_);
 
