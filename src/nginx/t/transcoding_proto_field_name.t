@@ -106,9 +106,9 @@ Content-Length: 20
 EOF
 
 ok(ApiManager::verify_http_json_response($response1,
-    {'shelfId'=>'100', }), "The shelf_id 1 was echoed successfully.");
+    {'shelfId'=>'100', }), "The shelfId was echoed from shelf_id successfully.");
 ok(ApiManager::verify_http_json_response($response2,
-    {'shelfId'=>'100', }), "The shelfId 2 was echoed successfully.");
+    {'shelfId'=>'100', }), "The shelfId was echoed from shelfId successfully.");
 
 $t->stop();
 $t->stop_daemons();
@@ -147,9 +147,9 @@ Content-Length: 20
 EOF
 
 ok(ApiManager::verify_http_json_response($response3,
-    {'shelf_id'=>'100', }), "The shelf_id 3 was echoed successfully.");
+    {'shelf_id'=>'100', }), "The shelf_id was echoed from shelf_id successfully.");
 ok(ApiManager::verify_http_json_response($response4,
-    {'shelf_id'=>'100', }), "The shelfId 4 was echoed successfully.");
+    {'shelf_id'=>'100', }), "The shelf_id was echoed from shelfId successfully.");
 
 
 ################################################################################
