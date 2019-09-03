@@ -30,7 +30,7 @@ gcloud endpoints services deploy api_descriptor.pb bookstore-api.yaml
  - Download the config from Inception
 ```
 gcloud endpoints configs list --servicve=YOUR_SERVICE_NAME
-LAST_CONFIG_ID=$(THE TOP ONE FROM ABOVE OUPUT)
+LAST_CONFIG_ID=$(THE TOP ONE FROM ABOVE OUTPUT)
 gcloud endpoints configs describe LAST_CONFIG_ID --servicve=YOUR_SERVICE_NAME --format=json > /tmp/out.json
 ```
 
