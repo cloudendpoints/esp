@@ -69,8 +69,11 @@ class GlobalContext {
   }
 
   bool DisableLogStatus() const { return disable_log_status_; }
-  bool AlwaysPrintPrimitiveFields() const {
+  bool always_print_primitive_fields() const {
     return always_print_primitive_fields_;
+  }
+  bool preserve_proto_field_names() const {
+    return preserve_proto_field_names_;
   }
 
   // report interval can be override by server_config.
@@ -135,6 +138,7 @@ class GlobalContext {
   bool disable_log_status_;
   // For gRPC transcoding
   bool always_print_primitive_fields_;
+  bool preserve_proto_field_names_;
 
   // The time interval for grpc intermediate report.
   int64_t intermediate_report_interval_;

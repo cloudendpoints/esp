@@ -250,6 +250,11 @@ class TestStartEsp(unittest.TestCase):
         config_generator = self.basic_config_generator + " --transcoding_always_print_primitive_fields"
         self.run_test_with_expectation(expected_config_file, self.generated_server_config_file, config_generator)
 
+    def test_transcoding_preserve_proto_field_names_output_is_as_expected(self):
+        expected_config_file = "./start_esp/test/testdata/expected_transcoding_preserve_proto_field_names_server.json"
+        config_generator = self.basic_config_generator + " --transcoding_preserve_proto_field_names"
+        self.run_test_with_expectation(expected_config_file, self.generated_server_config_file, config_generator)
+
     def test_rewrite_arg_output_is_as_expected(self):
         expected_config_file = "./start_esp/test/testdata/expected_rewrite_server.json"
         config_generator = self.basic_config_generator + " --rewrite test_rewrite_rule_1 --rewrite test_rewrite_rule_2"

@@ -79,6 +79,9 @@ class ApiManager {
   // server_config experimental option to print primitive fields in JSON output
   virtual bool get_always_print_primitive_fields() = 0;
 
+  // server_config experimental option to preserve proto field names in JSON output
+  virtual bool get_preserve_proto_field_names() = 0;
+
   // Creates a RequestHandler to handle check and report for each request.
   // Its usage:
   //  1) Creates a RequestHandler object for each request,
