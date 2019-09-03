@@ -24,6 +24,8 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+using ::testing::NiceMock;
+using ::testing::Return;
 using ::testing::ReturnRef;
 
 namespace google {
@@ -50,6 +52,7 @@ class MethodInfo {
  public:
   MOCK_CONST_METHOD0(system_query_parameter_names,
                      const std::set<std::string>&());
+  MOCK_CONST_METHOD0(keep_binding_escaped, bool());
 };
 
 bool operator==(const Binding& b1, const Binding& b2) {
@@ -65,9 +68,20 @@ class PathMatcherTest : public ::testing::Test {
                                        std::string http_template,
                                        std::string body_field_path,
                                        std::string expected_error) {
-    auto method = new MethodInfo();
+    return AddPathWithBodyFieldPathEscape(
+        http_method, http_template, body_field_path, expected_error, false);
+  }
+
+  MethodInfo* AddPathWithBodyFieldPathEscape(std::string http_method,
+                                             std::string http_template,
+                                             std::string body_field_path,
+                                             std::string expected_error,
+                                             bool keep_binding_escaped) {
+    auto method = new NiceMock<MethodInfo>();
     ON_CALL(*method, system_query_parameter_names())
         .WillByDefault(ReturnRef(empty_set_));
+    ON_CALL(*method, keep_binding_escaped())
+        .WillByDefault(Return(keep_binding_escaped));
     auto status =
         builder_.Register(http_method, http_template, body_field_path, method);
     if (!status.ok()) {
@@ -84,9 +98,10 @@ class PathMatcherTest : public ::testing::Test {
   MethodInfo* AddPathWithSystemParams(
       std::string http_method, std::string http_template,
       const std::set<std::string>* system_params) {
-    auto method = new MethodInfo();
+    auto method = new NiceMock<MethodInfo>();
     ON_CALL(*method, system_query_parameter_names())
         .WillByDefault(ReturnRef(*system_params));
+    ON_CALL(*method, keep_binding_escaped()).WillByDefault(Return(false));
     if (!builder_.Register(http_method, http_template, std::string(), method)
              .ok()) {
       delete method;
@@ -136,7 +151,7 @@ class PathMatcherTest : public ::testing::Test {
  private:
   PathMatcherBuilder<MethodInfo*> builder_;
   PathMatcherPtr<MethodInfo*> matcher_;
-  std::vector<std::unique_ptr<MethodInfo>> stored_methods_;
+  std::vector<std::unique_ptr<NiceMock<MethodInfo>>> stored_methods_;
   std::set<std::string> empty_set_;
 };
 
@@ -291,6 +306,21 @@ TEST_F(PathMatcherTest, PercentEscapesUnescapedForSingleSegment) {
   EXPECT_EQ(Lookup("GET", "/a/p%20q%2Fr/c", &bindings), a_c);
   EXPECT_EQ(Bindings({
                 Binding{FieldPath{"x"}, "p q/r"},
+            }),
+            bindings);
+}
+
+TEST_F(PathMatcherTest, PercentEscapedForSingleSegment) {
+  MethodInfo* a_c =
+      AddPathWithBodyFieldPathEscape("GET", "/a/{x}/c", "", "", true);
+  Build();
+
+  EXPECT_NE(nullptr, a_c);
+
+  Bindings bindings;
+  EXPECT_EQ(Lookup("GET", "/a/p%20q%2Fr/c", &bindings), a_c);
+  EXPECT_EQ(Bindings({
+                Binding{FieldPath{"x"}, "p%20q%2Fr"},
             }),
             bindings);
 }
@@ -731,7 +761,7 @@ TEST_F(PathMatcherTest, VariableBindingsWithQueryParams) {
             bindings);
 }
 
-TEST_F(PathMatcherTest, VariableBindingsWithQueryParamsEncoding) {
+TEST_F(PathMatcherTest, VariableBindingsWithQueryParamsEncodingNoEscape) {
   MethodInfo* a = AddGetPath("/a");
   Build();
 
@@ -747,6 +777,26 @@ TEST_F(PathMatcherTest, VariableBindingsWithQueryParamsEncoding) {
   EXPECT_EQ(LookupWithParams("GET", "/a", "x=%24%25%2F%20%0A", &bindings), a);
   EXPECT_EQ(Bindings({
                 Binding{FieldPath{"x"}, "$%/ \n"},
+            }),
+            bindings);
+}
+
+TEST_F(PathMatcherTest, VariableBindingsWithQueryParamsEncodingEscape) {
+  MethodInfo* a = AddPathWithBodyFieldPathEscape("GET", "/a", "", "", true);
+  Build();
+
+  EXPECT_NE(nullptr, a);
+
+  Bindings bindings;
+  EXPECT_EQ(LookupWithParams("GET", "/a", "x=Hello%20world", &bindings), a);
+  EXPECT_EQ(Bindings({
+                Binding{FieldPath{"x"}, "Hello%20world"},
+            }),
+            bindings);
+
+  EXPECT_EQ(LookupWithParams("GET", "/a", "x=%24%25%2F%20%0A", &bindings), a);
+  EXPECT_EQ(Bindings({
+                Binding{FieldPath{"x"}, "%24%25%2F%20%0A"},
             }),
             bindings);
 }

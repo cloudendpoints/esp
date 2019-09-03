@@ -133,12 +133,10 @@ void ngx_esp_override_backend_path(ngx_http_request_t *r,
                               " " + ngx_str_to_std(r->http_protocol),
                           &r->request_line);
 
-    std::size_t found = backend_path.find_first_of('?');
-    if (found != std::string::npos) {
-      std::string uri;
-      url_decode(backend_path.substr(0, backend_path.find_first_of('?')), uri);
-      ngx_str_copy_from_std(r->pool, uri, &r->uri);
-    }
+    std::string decoded_uri;
+    std::string uri = backend_path.substr(0, backend_path.find_first_of('?'));
+    url_decode(uri, decoded_uri);
+    ngx_str_copy_from_std(r->pool, decoded_uri, &r->uri);
   }
 }
 

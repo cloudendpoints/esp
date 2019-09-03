@@ -139,7 +139,7 @@ $t->run();
 
 # PathTranslation is set as CONSTANT_ADDRESS. Authorization header is added
 # from freshing token, with audience override.
-my $response1 = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key');
+my $response1 = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key&site=space%20plus%2B2U%3D');
 
 # PathTranslation is set as CONSTANT_ADDRESS, with binding variables.
 # no Authorization header is added.
@@ -223,7 +223,7 @@ sub bookstore {
     or die "Can't create test server socket: $!\n";
   local $SIG{PIPE} = 'IGNORE';
 
-  $server->on('GET', '/listShelves', <<'EOF');
+  $server->on('GET', '/listShelves?site=space%20plus%2B2U%3D', <<'EOF');
 HTTP/1.1 200 OK
 Connection: close
 
