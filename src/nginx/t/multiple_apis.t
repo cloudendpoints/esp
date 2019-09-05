@@ -233,6 +233,7 @@ my $expected_report_body = {
       'request_size_in_bytes' => 55,
       'response_size_in_bytes' =>  90,
       'http_method' => 'GET',
+      'client_ip' => '127.0.0.1',
       'service_agent' => ServiceControl::service_agent(),
       'service_config_id' => '2016-08-25r1'
      },
