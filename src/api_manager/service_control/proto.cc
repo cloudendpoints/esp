@@ -964,6 +964,7 @@ const char kLogFieldNameLogMessage[] = "log_message";
 const char kLogFieldNameRequestLatency[] = "request_latency_in_ms";
 const char kLogFieldNameUrl[] = "url";
 const char kLogFieldNameErrorCause[] = "error_cause";
+const char kLogFieldNameClientIp[] = "client_ip";
 
 // Convert timestamp from time_point to Timestamp
 Timestamp CreateTimestamp(std::chrono::system_clock::time_point tp) {
@@ -1082,6 +1083,9 @@ void FillLogEntry(const ReportRequestInfo& info, const std::string& name,
   }
   if (!info.method.empty()) {
     (*fields)[kLogFieldNameHttpMethod].set_string_value(info.method);
+  }
+  if (!info.client_ip.empty()) {
+    (*fields)[kLogFieldNameClientIp].set_string_value(info.client_ip);
   }
   if (info.response_code >= 400) {
     (*fields)[kLogFieldNameErrorCause].set_string_value(
