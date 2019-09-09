@@ -180,6 +180,7 @@ sub gen_log_entry {
   $payload->{url} = $in->{url} if exists $in->{url};
   $payload->{http_method} = $in->{http_method} if exists $in->{http_method};
   $payload->{error_cause} = $in->{error_cause} if exists $in->{error_cause};
+  $payload->{client_ip} = "127.0.0.1";
 
   my $severity = 'INFO';
   if ($in->{response_code} >= 400) {
