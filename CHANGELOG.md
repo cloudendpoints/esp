@@ -1,3 +1,8 @@
+# Release 1.39.0 04-09-2019
+
+- Grpc transcoding supports preserve proto name (#685)
+- Escape query parameters in backend_routing (#683)
+
 # Release 1.38.0 19-08-2019
 
 - Change metadata token request url for getting full JWT (#676)
