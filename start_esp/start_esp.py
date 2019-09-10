@@ -164,6 +164,7 @@ def write_nginx_conf(ingress, nginx_conf, args):
             experimental_proxy_backend_host_header=args.experimental_proxy_backend_host_header,
             enable_strict_transport_security=args.enable_strict_transport_security,
             google_cloud_platform=(args.non_gcp==False),
+            server_config_dir=args.server_config_dir,
             services=args.services)
 
     # Save nginx conf
