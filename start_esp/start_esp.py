@@ -163,7 +163,9 @@ def write_nginx_conf(ingress, nginx_conf, args):
             server_config_path=args.server_config_path,
             experimental_proxy_backend_host_header=args.experimental_proxy_backend_host_header,
             enable_strict_transport_security=args.enable_strict_transport_security,
-            google_cloud_platform=(args.non_gcp==False))
+            google_cloud_platform=(args.non_gcp==False),
+            server_config_dir=args.server_config_dir,
+            services=args.services)
 
     # Save nginx conf
     try:
@@ -366,6 +368,8 @@ def fetch_service_config(args):
                     logging.error("[ESP] Service name is not specified");
                 sys.exit(3)
 
+            args.services = args.service.split('|')
+
             # fetch service config rollout strategy from metadata, if not specified
             if (args.rollout_strategy is None or not args.rollout_strategy.strip()) and args.check_metadata:
                 logging.info(
@@ -384,9 +388,7 @@ def fetch_service_config(args):
 
             # Fetch api version from latest successful rollouts
             if args.version is None or not args.version.strip():
-                services = args.service.split('|')
-                args.services = services
-                for idx, service in enumerate(services):
+                for idx, service in enumerate(args.services):
                     logging.info(
                         "Fetching the service config ID from the rollouts service")
                     rollout = fetch.fetch_latest_rollout(args.management,
@@ -1035,16 +1037,23 @@ if __name__ == '__main__':
         logging.error(check_conflict_result)
         sys.exit(3)
 
-    if args.service and '|' in args.service:
-        if args.experimental_enable_multiple_api_configs == False:
-            logging.error("[ESP] The flag --experimental_enable_multiple_api_configs must be enabled when --service specifies multiple services")
-            sys.exit(3)
-        if args.version:
-            logging.error("[ESP] --version is not allowed when --service specifies multiple services")
-            sys.exit(3)
-        if args.server_config_generation_path and not args.server_config_generation_path.endswith('/'):
-            logging.error("[ESP] --server_config_generation_path must end with / when --service specifies multiple services")
-            sys.exit(3)
+    if args.service:
+        if '|' in args.service:
+            if not args.experimental_enable_multiple_api_configs:
+                logging.error("[ESP] The flag --experimental_enable_multiple_api_configs must be enabled when --service specifies multiple services")
+                sys.exit(3)
+            if args.version:
+                logging.error("[ESP] --version is not allowed when --service specifies multiple services")
+                sys.exit(3)
+            if args.server_config_generation_path and not args.server_config_generation_path.endswith('/'):
+                logging.error("[ESP] --server_config_generation_path must end with / when --service specifies multiple services")
+                sys.exit(3)
+
+            args.services = args.service.split('|')
+        else:
+            args.services = [args.service]
+    else:
+        args.services = []
 
     # Set credentials file from the environment variable
     if args.service_account_key is None:
