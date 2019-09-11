@@ -386,6 +386,7 @@ def fetch_service_config(args):
 
             # Fetch api version from latest successful rollouts
             if args.version is None or not args.version.strip():
+                args.services = args.service.split('|')
                 for idx, service in enumerate(args.services):
                     logging.info(
                         "Fetching the service config ID from the rollouts service")
@@ -1049,7 +1050,7 @@ if __name__ == '__main__':
         services = args.service.split('|')
         args.services = services
     else:
-        args.services = [args.service]
+        args.services = []
 
     # Set credentials file from the environment variable
     if args.service_account_key is None:
