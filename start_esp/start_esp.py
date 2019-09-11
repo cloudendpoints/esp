@@ -368,6 +368,8 @@ def fetch_service_config(args):
                     logging.error("[ESP] Service name is not specified");
                 sys.exit(3)
 
+            args.services = args.service.split('|')
+
             # fetch service config rollout strategy from metadata, if not specified
             if (args.rollout_strategy is None or not args.rollout_strategy.strip()) and args.check_metadata:
                 logging.info(
@@ -386,7 +388,6 @@ def fetch_service_config(args):
 
             # Fetch api version from latest successful rollouts
             if args.version is None or not args.version.strip():
-                args.services = args.service.split('|')
                 for idx, service in enumerate(args.services):
                     logging.info(
                         "Fetching the service config ID from the rollouts service")
