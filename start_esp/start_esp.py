@@ -386,9 +386,7 @@ def fetch_service_config(args):
 
             # Fetch api version from latest successful rollouts
             if args.version is None or not args.version.strip():
-                services = args.service.split('|')
-                args.services = services
-                for idx, service in enumerate(services):
+                for idx, service in enumerate(args.services):
                     logging.info(
                         "Fetching the service config ID from the rollouts service")
                     rollout = fetch.fetch_latest_rollout(args.management,
@@ -1047,6 +1045,11 @@ if __name__ == '__main__':
         if args.server_config_generation_path and not args.server_config_generation_path.endswith('/'):
             logging.error("[ESP] --server_config_generation_path must end with / when --service specifies multiple services")
             sys.exit(3)
+
+        services = args.service.split('|')
+        args.services = services
+    else:
+        args.services = [args.service]
 
     # Set credentials file from the environment variable
     if args.service_account_key is None:
