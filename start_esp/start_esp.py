@@ -1036,19 +1036,21 @@ if __name__ == '__main__':
         logging.error(check_conflict_result)
         sys.exit(3)
 
-    if args.service and '|' in args.service:
-        if args.experimental_enable_multiple_api_configs == False:
-            logging.error("[ESP] The flag --experimental_enable_multiple_api_configs must be enabled when --service specifies multiple services")
-            sys.exit(3)
-        if args.version:
-            logging.error("[ESP] --version is not allowed when --service specifies multiple services")
-            sys.exit(3)
-        if args.server_config_generation_path and not args.server_config_generation_path.endswith('/'):
-            logging.error("[ESP] --server_config_generation_path must end with / when --service specifies multiple services")
-            sys.exit(3)
+    if args.service:
+        if '|' in args.service:
+            if not args.experimental_enable_multiple_api_configs:
+                logging.error("[ESP] The flag --experimental_enable_multiple_api_configs must be enabled when --service specifies multiple services")
+                sys.exit(3)
+            if args.version:
+                logging.error("[ESP] --version is not allowed when --service specifies multiple services")
+                sys.exit(3)
+            if args.server_config_generation_path and not args.server_config_generation_path.endswith('/'):
+                logging.error("[ESP] --server_config_generation_path must end with / when --service specifies multiple services")
+                sys.exit(3)
 
-        services = args.service.split('|')
-        args.services = services
+            args.services = args.service.split('|')
+        else:
+            args.services = [args.service]
     else:
         args.services = []
 
