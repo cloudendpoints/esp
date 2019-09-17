@@ -1,3 +1,8 @@
+# Release 1.40.0 16-09-2019
+
+- start_esp adds 2 more values to nginx config template(#694)
+- Add client_ip to the log entries (#690)
+
 # Release 1.39.0 04-09-2019
 
 - Grpc transcoding supports preserve proto name (#685)
