@@ -54,6 +54,16 @@ class ServiceAccountToken {
     access_token_.set_token(token, expiration);
   }
 
+  //  Set the last failed fetch time
+  void set_last_failed_fetch_time(std::chrono::system_clock::time_point time) {
+    last_failed_fetch_time_ = time;
+  }
+
+  // Get the last failed fetch time
+  std::chrono::system_clock::time_point last_failed_fetch_time() const {
+    return last_failed_fetch_time_;
+  }
+
   // The access token from metadata server response in JSON format:
   // {
   //   "access_token":" ... ",
@@ -154,6 +164,9 @@ class ServiceAccountToken {
 
   // Fetching state
   FetchState state_;
+
+  // The time of last failed fetch
+  std::chrono::system_clock::time_point last_failed_fetch_time_;
 };
 
 }  // namespace auth
