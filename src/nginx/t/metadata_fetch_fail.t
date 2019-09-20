@@ -111,12 +111,12 @@ sub test_metadata {
     like($shelves_headers2, $wantReqHeader, '/shelves returned HTTP 500.');
     like($shelves_body2, $wantReqBody, 'Returned Failure Status');
 }
-# Fail the first request by failed fetch and do the second request right away, which
+# Fail the first request by failed fetch and do the second request after 2s, which
 # also get failed since the failed fetch status doesn't expire.
 test_metadata(2, qr/HTTP\/1\.1 500 Internal Server Error/, qr/Failed to fetch service account token/);
 # Fail the first request by failed fetch and do the second request after sleeping
-# 5s , which will get the token.
-test_metadata(7, qr/HTTP\/1.1 401 Unauthorized/, qr/Method doesn't allow unregistered callers/);
+# 6s , which will get the token.
+test_metadata(6, qr/HTTP\/1.1 401 Unauthorized/, qr/Method doesn't allow unregistered callers/);
 
 ################################################################################
 
