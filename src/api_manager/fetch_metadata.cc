@@ -21,6 +21,7 @@
 
 using ::google::api_manager::utils::Status;
 using ::google::protobuf::util::error::Code;
+using std::chrono::system_clock;
 
 namespace google {
 namespace api_manager {
@@ -39,7 +40,8 @@ const char kMetadataInstanceIdentityToken[] =
 // The maximum lifetime of a cache token. Unit: seconds.
 // Token expired in 1 hour, reduce 100 seconds for grace buffer.
 const int kInstanceIdentityTokenExpiration = 3500;
-
+// Time window (in seconds) of failure status after a failed fetch.
+const int kFailureStatusWindow = 5;
 // Initial metadata fetch timeout (1s)
 const int kMetadataFetchTimeout = 1000;
 // Maximum number of retries to fetch token from metadata
@@ -117,9 +119,14 @@ void GlobalFetchServiceAccountToken(
       }
       break;
     case auth::ServiceAccountToken::FAILED:
-      // permanent failure
-      continuation(Status(Code::INTERNAL, kFailedTokenFetch));
-      return;
+      // If the current time doesn't get out of the time window of failure
+      // status, it will return kFailedTokenFetch directly.
+      if (system_clock::now() - token->last_failed_fetch_time() <
+          std::chrono::seconds(kFailureStatusWindow)) {
+        continuation(Status(Code::INTERNAL, kFailedTokenFetch));
+        return;
+      }
+      break;
     case auth::ServiceAccountToken::NONE:
     default:
       env->LogDebug("Need to fetch service account token");
@@ -133,6 +140,7 @@ void GlobalFetchServiceAccountToken(
                   // fetch failed
                   if (!status.ok()) {
                     env->LogDebug("Failed to fetch service account token");
+                    token->set_last_failed_fetch_time(system_clock::now());
                     token->set_state(auth::ServiceAccountToken::FAILED);
                     continuation(Status(Code::INTERNAL, kFailedTokenFetch));
                     return;

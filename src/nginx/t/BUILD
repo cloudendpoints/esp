@@ -220,6 +220,7 @@ nginx_suite(
         "init_service_configs_single.t",
         "metadata.t",
         "metadata_fail.t",
+        "metadata_fetch_fail.t",
         "metadata_timeout.t",
         "metadata_token.t",
         "multiple_apis.t",
