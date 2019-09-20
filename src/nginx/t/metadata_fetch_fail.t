@@ -43,7 +43,7 @@ my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $MetadataPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(16);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(8);
 
 my $config = ApiManager::get_bookstore_service_config . <<"EOF";
 control {
@@ -77,28 +77,14 @@ http {
 }
 EOF
 
-sub no_check_call {
-    my (@requests) = @_;
-    foreach my $r (@requests) {
-        if ($r->{path} =~ qr/:check$/) {
-            return 0;
-        }
-    }
-    return 1;
-}
 
 sub test_metadata {
-    my ($sleep, $wantReqHeader, $wantReqBody) = @_;
-    my $report_done = 'report_done';
+    my ($sleepLength, $wantReqHeader, $wantReqBody) = @_;
     my $backend_log = 'backend.log';
-    my $servicecontrol_log = 'servicecontrol.log';
 
     $t->run_daemon(\&backends, $t, $BackendPort, $backend_log);
-    $t->run_daemon(\&servicecontrol, $t, $ServiceControlPort, $servicecontrol_log, $report_done);
     $t->run_daemon(\&metadata, $t, $MetadataPort, 'metadata.log');
 
-    is($t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'bookstore socket ready.');
-    is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control socket ready.');
     is($t->waitforsocket("127.0.0.1:${MetadataPort}"), 1, 'Metadata socket ready.');
 
     $t->run();
@@ -106,49 +92,33 @@ sub test_metadata {
     ################################################################################
 
     my $shelves1 = ApiManager::http_get($NginxPort, '/shelves');
-    is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report succeeded');
 
     my ($shelves_headers1, $shelves_body1) = split /\r\n\r\n/, $shelves1, 2;
     like($shelves_headers1, qr/HTTP\/1\.1 500 Internal Server Error/, '/shelves returned HTTP 500.');
-    like($shelves_body1, qr/Failed to fetch service account token/, 'Proxy failed in fetch service account token');
+    like($shelves_body1, qr/Failed to fetch service account token/, 'Returned Failure Status');
 
     ################################################################################
     # if no sleep, the service account token still doesn't get out of last failed
     # fetch so it will fail.
-    if ($sleep) {
-        sleep 5;
-    }
+    sleep $sleepLength;
+
     my $shelves2 = ApiManager::http_get($NginxPort, '/shelves');
-    is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report succeeded');
 
     $t->stop();
     $t->stop_daemons();
 
     my ($shelves_headers2, $shelves_body2) = split /\r\n\r\n/, $shelves2, 2;
     like($shelves_headers2, $wantReqHeader, '/shelves returned HTTP 500.');
-    like($shelves_body2, $wantReqBody, 'Proxy failed in fetch service account token');
+    like($shelves_body2, $wantReqBody, 'Returned Failure Status');
 }
 # Fail the first request by failed fetch and do the second request right away, which
 # also get failed since the failed fetch status doesn't expire.
-test_metadata(0, qr/HTTP\/1\.1 500 Internal Server Error/, qr/Failed to fetch service account token/);
+test_metadata(2, qr/HTTP\/1\.1 500 Internal Server Error/, qr/Failed to fetch service account token/);
 # Fail the first request by failed fetch and do the second request after sleeping
 # 5s , which will get the token and.
-test_metadata(1, qr/HTTP\/1.1 401 Unauthorized/, qr/Method doesn't allow unregistered callers/);
+test_metadata(7, qr/HTTP\/1.1 401 Unauthorized/, qr/Method doesn't allow unregistered callers/);
 
 ################################################################################
-
-sub checkfile {
-    if (-e $_[0]) {return 1;}
-    else {return 0;}
-}
-
-sub backends {
-    my ($t, $port, $file) = @_;
-    my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
-        or die "Can't create test server socket: $!\n";
-    local $SIG{PIPE} = 'IGNORE';
-    $server->run();
-}
 
 sub metadata {
     my ($t, $port, $file) = @_;
@@ -177,40 +147,6 @@ Content-Type: application/json
 }
 EOF
 
-    });
-
-    $server->run();
-}
-
-################################################################################
-
-sub servicecontrol {
-    my ($t, $port, $file, $done) = @_;
-
-    # Save requests (last argument).
-    my $server = HttpServer->new($ServiceControlPort, $t->testdir() . '/' . $file)
-        or die "Can't create test server socket: $!\n";
-    local $SIG{PIPE} = 'IGNORE';
-
-    $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:check', sub {
-        my ($headers, $body, $client) = @_;
-        print $client <<'EOF';
-HTTP/1.1 200 OK
-Content-Type: application/json
-Connection: close
-
-EOF
-    });
-
-    $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:report', sub {
-        my ($headers, $body, $client) = @_;
-        print $client <<'EOF';
-HTTP/1.1 200 OK
-Content-Type: application/json
-Connection: close
-
-EOF
-        $t->write_file($done, ':report done');
     });
 
     $server->run();

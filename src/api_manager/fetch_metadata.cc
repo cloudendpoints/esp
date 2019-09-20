@@ -19,9 +19,9 @@
 #include "include/api_manager/http_request.h"
 #include "src/api_manager/auth/lib/auth_token.h"
 
-using std::chrono::system_clock;
 using ::google::api_manager::utils::Status;
 using ::google::protobuf::util::error::Code;
+using std::chrono::system_clock;
 
 namespace google {
 namespace api_manager {
@@ -121,7 +121,8 @@ void GlobalFetchServiceAccountToken(
     case auth::ServiceAccountToken::FAILED:
       // If the current time doesn't get the time window of failure status,
       // it will return kFailedTokenFetch directly.
-      if (system_clock::now() - token->last_failed_fetch_time() < std::chrono::seconds(kFailureStatusWindow)) {
+      if (system_clock::now() - token->last_failed_fetch_time() <
+          std::chrono::seconds(kFailureStatusWindow)) {
         continuation(Status(Code::INTERNAL, kFailedTokenFetch));
         return;
       }
