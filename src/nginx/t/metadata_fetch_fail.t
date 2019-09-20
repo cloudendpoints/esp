@@ -84,7 +84,6 @@ sub test_metadata {
 
     $t->run_daemon(\&backends, $t, $BackendPort, $backend_log);
     $t->run_daemon(\&metadata, $t, $MetadataPort, 'metadata.log');
-
     is($t->waitforsocket("127.0.0.1:${MetadataPort}"), 1, 'Metadata socket ready.');
 
     $t->run();
@@ -108,8 +107,8 @@ sub test_metadata {
     $t->stop_daemons();
 
     my ($shelves_headers2, $shelves_body2) = split /\r\n\r\n/, $shelves2, 2;
-    like($shelves_headers2, $wantReqHeader, '/shelves returned HTTP 500.');
-    like($shelves_body2, $wantReqBody, 'Returned Failure Status');
+    like($shelves_headers2, $wantReqHeader, 'Got expected request header');
+    like($shelves_body2, $wantReqBody, 'Got expected request body');
 }
 # Fail the first request by failed fetch and do the second request after 2s, which
 # also get failed since the failed fetch status doesn't expire.
@@ -130,22 +129,24 @@ sub metadata {
     $server->on_sub('GET', '/computeMetadata/v1/instance/service-accounts/default/token', sub {
         my ($headers, $body, $client) = @_;
         $request_count++;
+
         # The retry time is 5 and it would be 6 times for the first failed fetch.
         if ($request_count < 7) {
             return;
         }
+
         # Only the 7th request will get the token.
         print $client <<'EOF';
 HTTP/1.1 200 OK
 Metadata-Flavor: Google
 Content-Type: application/json
+
 {
  "access_token":"ya29.7gFRTEGmovWacYDnQIpC9X9Qp8cH0sgQyWVrZaB1Eg1WoAhQMSG4L2rtaHk1",
  "expires_in":200,
  "token_type":"Bearer"
 }
 EOF
-
     });
 
     $server->run();
