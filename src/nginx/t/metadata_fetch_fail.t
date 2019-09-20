@@ -115,7 +115,7 @@ sub test_metadata {
 # also get failed since the failed fetch status doesn't expire.
 test_metadata(2, qr/HTTP\/1\.1 500 Internal Server Error/, qr/Failed to fetch service account token/);
 # Fail the first request by failed fetch and do the second request after sleeping
-# 5s , which will get the token and.
+# 5s , which will get the token.
 test_metadata(7, qr/HTTP\/1.1 401 Unauthorized/, qr/Method doesn't allow unregistered callers/);
 
 ################################################################################
