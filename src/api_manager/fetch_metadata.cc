@@ -119,8 +119,8 @@ void GlobalFetchServiceAccountToken(
       }
       break;
     case auth::ServiceAccountToken::FAILED:
-      // If the current time doesn't get the time window of failure status,
-      // it will return kFailedTokenFetch directly.
+      // If the current time doesn't get out of the time window of failure
+      // status, it will return kFailedTokenFetch directly.
       if (system_clock::now() - token->last_failed_fetch_time() <
           std::chrono::seconds(kFailureStatusWindow)) {
         continuation(Status(Code::INTERNAL, kFailedTokenFetch));

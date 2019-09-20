@@ -139,7 +139,6 @@ sub metadata {
 HTTP/1.1 200 OK
 Metadata-Flavor: Google
 Content-Type: application/json
-
 {
  "access_token":"ya29.7gFRTEGmovWacYDnQIpC9X9Qp8cH0sgQyWVrZaB1Eg1WoAhQMSG4L2rtaHk1",
  "expires_in":200,
