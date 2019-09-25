@@ -59,7 +59,7 @@ Normally ESP container runs as root, it is deemed as not secure. To make ESP con
 
 You can switch to use the **secure images** if the followings are satisfied:
 * Nginx is not listening on ports requiring root privilege (ports < 1024).
-* If a custom nginx config is used and it has the server_config path in "/etc/nginx" folder, secure image will not work. The secure image moved the server_config to "/home/nginx" folder. Please replace "/etc/nginx" with "/home/nginx" before using the secure image.
+* If a custom nginx config is used and it has the *server_config* path set to "/etc/nginx", the secure image will not work. The *server_config* is moved to the "/home/nginx" folder in the secure image. Please replace "/etc/nginx" with "/home/nginx" for *sever_config" in your custom nginx config before using the secure image.
 
 If some folders can be mounted externally, the root system can be made read-only. Please see this GKE deployment [yaml](/test/bookstore/gke/deploy_secure_template.yaml) file as example on how to make root system read-only.
 
