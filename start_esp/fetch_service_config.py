@@ -29,7 +29,7 @@ import certifi
 import json
 import logging
 import urllib3
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2.service_account import Credentials
 
 # Service management service
 SERVICE_MGMT_ROLLOUTS_URL_TEMPLATE = (
@@ -144,7 +144,7 @@ def fetch_metadata_attributes(metadata):
 def make_access_token(secret_token_json):
     """Construct an access token from service account token."""
     logging.info("Constructing an access token with scope " + _GOOGLE_API_SCOPE)
-    credentials = ServiceAccountCredentials.from_json_keyfile_name(
+    credentials = Credentials.from_service_account_info(
         secret_token_json,
         scopes=[_GOOGLE_API_SCOPE])
     logging.info("Service account email: " + credentials.service_account_email)
