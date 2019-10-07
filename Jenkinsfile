@@ -221,7 +221,6 @@ def presubmit() {
       'release': {
         BuildNode {
           presubmitTests('release')
-          presubmitTests('docker-tests', false)
         }
       },
       'tsan': {
