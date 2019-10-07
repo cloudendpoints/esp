@@ -146,15 +146,14 @@ CONTROL_PORT=$(get_port "${CONTROL_CONTAINER}" 8080) \
 MANAGEMENT_PORT=$(get_port "${MANAGEMENT_CONTAINER}" 8080) \
   || error_exit 'Cannot get management port number.'
 
-
+wait_for "${METADATA_PORT}/computeMetadata/v1/instance/service-accounts/default/token" \
+  || error_exit 'Metadata container failed to start.'
 wait_for "${APP_PORT}/shelves" \
   || error_exit 'Gaeapp failed to start.'
 wait_for "${CONTROL_PORT}/" \
   || error_exit 'Service control failed to start.'
 wait_for "${MANAGEMENT_PORT}/" \
   || error_exit 'Management failed to start.'
-wait_for "${METADATA_PORT}/computeMetadata/v1/instance/service-accounts/default/token" \
-  || error_exit 'Metadata container failed to start.'
 
 printf "\nCalling metadata.\n"
 curl -v ${METADATA_PORT}/computeMetadata/v1/instance/service-accounts/default/token
