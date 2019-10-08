@@ -37,6 +37,9 @@ events { worker_connections 10240; }
 
 % if enable_debug:
 error_log /var/log/nginx/error.log debug;
+# Cloud Run doesn't have a way to get file from container.
+# stderr is routed to Cloud Run logging.
+error_log stderr debug;
 # enable core dump
 worker_rlimit_core 512m;
 working_directory /tmp;
