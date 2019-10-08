@@ -74,15 +74,23 @@ def main():
         serve_error_msg(error.message)
     ARGS.append("--service={}".format(os.environ["ENDPOINTS_SERVICE_NAME"]))
 
-    if "ENDPOINTS_SERVICE_VERSION" in os.environ:
+    if "ENDPOINTS_SERVICE_PATH" in os.environ:
         ARGS.extend(
             [
                 "--rollout_strategy=fixed",
-                "--version={}".format(os.environ["ENDPOINTS_SERVICE_VERSION"]),
+                "--service_json_path={}".format(os.environ["ENDPOINTS_SERVICE_PATH"]),
             ]
         )
     else:
-        ARGS.append("--rollout_strategy=managed")
+        if "ENDPOINTS_SERVICE_VERSION" in os.environ:
+            ARGS.extend(
+                [
+                    "--rollout_strategy=fixed",
+                    "--version={}".format(os.environ["ENDPOINTS_SERVICE_VERSION"]),
+                ]
+             )
+        else:
+            ARGS.append("--rollout_strategy=managed")
 
     if "CORS_PRESET" in os.environ:
         ARGS.append("--cors_preset={}".format(os.environ["CORS_PRESET"]))
