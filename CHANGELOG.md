@@ -1,6 +1,6 @@
 # Release 1.41.0 09-10-2019
 
-- Replace oauth2client with google-auth&Remove presubmit docker test (#706)
+- Replace oauth2client with google-auth (#706)
 - Update doc for secure image using custom nginx config (#703)
 - metadata: add fetch failure status timeout (#701)
 
