@@ -1,3 +1,9 @@
+# Release 1.41.0 09-10-2019
+
+- Replace oauth2client with google-auth (#706)
+- Update doc for secure image using custom nginx config (#703)
+- metadata: add fetch failure status timeout (#701)
+
 # Release 1.40.0 16-09-2019
 
 - start_esp adds 2 more values to nginx config template(#694)
