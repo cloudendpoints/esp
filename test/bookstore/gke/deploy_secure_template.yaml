@@ -51,6 +51,9 @@ spec:
       - emptyDir:
           medium: Memory
         name: home-for-nginx        
+      - name: sa-file
+        secret:
+          secretName: sa-file
       containers:
       # [START esp]
       - name: esp
@@ -60,6 +63,7 @@ spec:
           "--backend=127.0.0.1:8081",
           "--service=${ENDPOINT_SERVICE}",
           "--rollout_strategy=managed",
+          "--service_account_key=/etc/safile/service_account_key.json",
         ]
       # [END esp]
         ports:
@@ -79,6 +83,9 @@ spec:
           - mountPath: /home/nginx
             name: home-for-nginx
             readOnly: false
+          - mountPath: /etc/safile
+            name: sa-file
+            readOnly: true
       - name: bookstore
         image: $BACKEND_IMAGE
         ports:

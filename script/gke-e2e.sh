@@ -105,6 +105,11 @@ if [[ "${BACKEND}" == 'interop' ]]; then
     --from-file=${ESP_ROOT}/src/nginx/t/testdata/grpc/serverkey.pem
 fi
 
+run gsutil cp gs://esp-testing-secret-files/endpoints-jenkins-ea2e9cc046a6.json \
+    /tmp/service_account_key.json
+run kubectl -n "${NAMESPACE}" create secret generic sa-file \
+    --from-file=/tmp/service_account_key.json
+
 run kubectl create -f ${YAML_FILE}          --namespace "${NAMESPACE}"
 run kubectl get services -o yaml            --namespace "${NAMESPACE}"
 run kubectl get deployments -o yaml         --namespace "${NAMESPACE}"
