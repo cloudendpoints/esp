@@ -62,11 +62,14 @@ def main():
     PLATFORM = "Cloud Run"
 
     # The command being run must be the 0th arg.
-    ARGS = [CMD, "--enable_backend_routing", "--compute_platform_override='{}'".format(PLATFORM)]
+    ARGS = [CMD, "--compute_platform_override='{}'".format(PLATFORM)]
 
     # Uncaught KeyError; if no port, we can't serve a nice error handler. Crash instead.
     assert_env_var("PORT")
-    ARGS.append("--http_port={}".format(os.environ["PORT"]))
+    if "ESP_USE_HTTP2" in os.environ:
+        ARGS.append("--http2_port={}".format(os.environ["PORT"]))
+    else:
+        ARGS.append("--http_port={}".format(os.environ["PORT"]))
 
     try:
         assert_env_var("ENDPOINTS_SERVICE_NAME")
@@ -103,6 +106,9 @@ def main():
             serve_error_msg("Malformed ESP_ARGS environment variable.")
 
         ARGS.extend(arg_value.split(delim))
+
+    if not filter(lambda x: x.startswith("--backend="), ARGS):
+        ARGS.append("--enable_backend_routing")
 
     os.execv(CMD, ARGS)
 
