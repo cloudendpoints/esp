@@ -53,7 +53,10 @@ pex_binary(
     reqs = [
         "certifi",
         "mako>=1.0.4",
-        "google-auth>=1.6.3",
+        "google-auth",
+        "google-auth-httplib2",
+        "google-api-python-client",
+        "requests",
         "pyasn1>=0.1.9",
         "pyasn1-modules>=0.0.8",
         "urllib3>=1.16",
