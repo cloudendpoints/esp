@@ -44,6 +44,12 @@ beta_settings:
   allow_ssh: true
   gae_nginx_proxy_image_name: ${IMAGE_NAME}
 
+liveness_check:
+  path: "/version"
+
+readiness_check:
+  path: "/version"
+
 skip_files:
 - ^(.*/)?#.*#$
 - ^(.*/)?.*~$
