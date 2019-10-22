@@ -98,6 +98,18 @@ function bookstore(options) {
     });
   }
 
+  app.get('/readiness_check', function(req, res) {
+    res.status(200).json({
+      msg: 'ready'
+    });
+  });
+
+  app.get('/liveness_check', function(req, res) {
+    res.status(200).json({
+      msg: 'alive'
+    });
+  });
+
 
   if (options.swagger) {
     // Initialize the Swagger UI middleware.
