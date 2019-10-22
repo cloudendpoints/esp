@@ -2,6 +2,6 @@
 FROM _SERVERLESS_IMAGE
 
 ENV ENDPOINTS_SERVICE_PATH /etc/nginx/service.json
-ADD service.json ${ENDPOINTS_SERVICE_PATH}
+COPY service.json ${ENDPOINTS_SERVICE_PATH}
 
 ENTRYPOINT ["/env-start-esp.py"]
