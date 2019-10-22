@@ -44,6 +44,12 @@ beta_settings:
   allow_ssh: true
   ${CUSTOM_IMAGE}
 
+liveness_check:
+  path: "/liveness_check"
+
+readiness_check:
+  path: "/readiness_check"
+
 skip_files:
 - ^(.*/)?#.*#$
 - ^(.*/)?.*~$
