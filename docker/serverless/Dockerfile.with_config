@@ -1,0 +1,7 @@
+# Serverless ESP docker image with build-in service config
+FROM _SERVERLESS_IMAGE
+
+ENV ENDPOINTS_SERVICE_PATH /etc/nginx/service.json
+COPY service.json ${ENDPOINTS_SERVICE_PATH}
+
+ENTRYPOINT ["/env-start-esp.py"]

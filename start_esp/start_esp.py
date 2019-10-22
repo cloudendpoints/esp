@@ -968,8 +968,6 @@ def enforce_conflict_args(args):
             return "Flag --enable_backend_routing cannot be used together with --service_control_url_override."
         if args.metadata != METADATA_ADDRESS:
             return "Flag --enable_backend_routing cannot be used together with --metadata."
-        if args.service_json_path:
-            return "Flag --enable_backend_routing cannot be used together with --service_json_path."
         if args.worker_processes != DEFAULT_WORKER_PROCESSES:
             return "Flag --enable_backend_routing cannot be used together with --worker_processes."
         if args.rewrite:
