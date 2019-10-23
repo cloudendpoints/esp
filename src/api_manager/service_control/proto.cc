@@ -1470,9 +1470,31 @@ Status Proto::ConvertCheckResponse(const CheckResponse& check_response,
                     std::string("API ") + service_name +
                         " has billing disabled. Please enable it.",
                     Status::SERVICE_CONTROL);
+    case CheckError::SECURITY_POLICY_VIOLATED:
+      return Status(Code::PERMISSION_DENIED,
+                    "Request is not allowed as per security policies.",
+                    Status::SERVICE_CONTROL);
+    case CheckError::INVALID_CREDENTIAL:
+      return Status(Code::PERMISSION_DENIED,
+                    "The credential in the request can not be verified",
+                    Status::SERVICE_CONTROL);
+    case CheckError::LOCATION_POLICY_VIOLATED:
+      return Status(Code::PERMISSION_DENIED,
+                    "Request is not allowed as per location policies.",
+                    Status::SERVICE_CONTROL);
+    case CheckError::CONSUMER_INVALID:
+      return Status(Code::PERMISSION_DENIED,
+                    "The consumer from the API key does not represent"
+                    " a valid consumer folder or organization",
+                    Status::SERVICE_CONTROL);
+
     case CheckError::NAMESPACE_LOOKUP_UNAVAILABLE:
     case CheckError::SERVICE_STATUS_UNAVAILABLE:
     case CheckError::BILLING_STATUS_UNAVAILABLE:
+    case CheckError::QUOTA_CHECK_UNAVAILABLE:
+    case CheckError::CLOUD_RESOURCE_MANAGER_BACKEND_UNAVAILABLE:
+    case CheckError::SECURITY_POLICY_BACKEND_UNAVAILABLE:
+    case CheckError::LOCATION_POLICY_BACKEND_UNAVAILABLE:
       // Fail open for internal server errors per recommendation
       return Status::OK;
     default:

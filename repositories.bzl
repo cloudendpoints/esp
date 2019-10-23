@@ -511,8 +511,6 @@ cc_proto_library(
         "google/api/log.proto",
         "google/api/logging.proto",
         "google/api/metric.proto",
-        "google/api/experimental/experimental.proto",
-        "google/api/experimental/authorization_config.proto",
         "google/api/monitored_resource.proto",
         "google/api/monitoring.proto",
         "google/api/resource.proto",
@@ -551,9 +549,9 @@ cc_proto_library(
         name = "googleapis_git",
         build_file_content = BUILD,
         patch_cmds = ["find . -type f -name '*BUILD*' | xargs rm"],
-        strip_prefix = "googleapis-32a10f69e2c9ce15bba13ab1ff928bacebb25160",  # May 20, 2019
-        url = "https://github.com/googleapis/googleapis/archive/32a10f69e2c9ce15bba13ab1ff928bacebb25160.tar.gz",
-        sha256 = "6861efa8619579e06e70dd4765cdf6cef1ecad6a1a2026ad750541e99552bf71",
+        strip_prefix = "googleapis-ae7a4cc69cc1e206b16f1b9db803907d7a3d97c8",  # Oct 22, 2019
+        url = "https://github.com/googleapis/googleapis/archive/ae7a4cc69cc1e206b16f1b9db803907d7a3d97c8.tar.gz",
+        sha256 = "f96e11515c302045e8ab6708ba68d7cea8a02e2a96add92033315ff894076980",
     )
 
     if bind:
