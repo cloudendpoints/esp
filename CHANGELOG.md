@@ -1,7 +1,12 @@
-# Release 1.41.0 09-10-2019
+# Release 1.42.0 23-10-2019
 
-- Replace oauth2client with google-auth (#706)
-- Update doc for secure image using custom nginx config (#703)
+- Update googleapis with latest CheckError codes (#722)
+- Fix e2e echo test failure (#721)
+- Get ready for building service config into serverless docker image (#719)
+- Fix flex e2e test by adding health check. (#718)
+- Add a service account json e2e test (#716)
+- fix google-auth bug (#714)
+- Replace oauth2client with google-auth&Remove presubmit docker test (#706)
 - metadata: add fetch failure status timeout (#701)
 
 # Release 1.40.0 16-09-2019
