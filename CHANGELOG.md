@@ -1,3 +1,27 @@
+# Release 1.42.0 23-10-2019
+
+TODO: Edit the section below before submitting! DIRECTORY /usr/local/google/home/jilinxia/go/src/github.com/esp
+===============================================
+
+- Update googleapis with latest CheckError codes (#722)
+
+- Fix e2e echo test failure (#721)
+
+- Get ready for building service config into serverless docker image (#719)
+
+- Fix flex e2e test by adding health check. (#718)
+
+- Add a service account json e2e test (#716)
+
+- fix google-auth bug (#714)
+
+- Update CHANGELOG to 1.41.0 (#711)
+
+- Update version number to 1.42.0. (#710)
+
+
+TODO: Edit the section above before submitting! DIRECTORY /usr/local/google/home/jilinxia/go/src/github.com/esp
+===============================================
 # Release 1.41.0 09-10-2019
 
 - Replace oauth2client with google-auth (#706)
