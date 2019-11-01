@@ -148,6 +148,11 @@ class TestStartEsp(unittest.TestCase):
         config_generator = self.basic_config_generator + " --large_client_header_buffers='4 32k'"
         self.run_test_with_expectation(expected_config_file, self.generated_nginx_config_file, config_generator)
 
+    def test_keepalive_timeout_output_is_as_expected(self):
+        expected_config_file = "./start_esp/test/testdata/expected_keepalive_timeout_nginx.conf"
+        config_generator = self.basic_config_generator + " --keepalive_timeout=600s"
+        self.run_test_with_expectation(expected_config_file, self.generated_nginx_config_file, config_generator)
+
     def test_allow_invalid_headers_arg_output_is_as_expected(self):
         expected_config_file = "./start_esp/test/testdata/expected_allow_invalid_headers_nginx.conf"
         config_generator = self.basic_config_generator + " --allow_invalid_headers"
