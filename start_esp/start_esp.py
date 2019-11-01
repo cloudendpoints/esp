@@ -151,6 +151,7 @@ def write_nginx_conf(ingress, nginx_conf, args):
             client_max_body_size=args.client_max_body_size,
             client_body_buffer_size=args.client_body_buffer_size,
             large_client_header_buffers=args.large_client_header_buffers,
+            keepalive_timeout=args.keepalive_timeout,
             worker_processes=args.worker_processes,
             cors_preset=args.cors_preset,
             cors_allow_origin=args.cors_allow_origin,
@@ -643,6 +644,11 @@ config file.'''.format(
       --large_client_header_buffers="4 32k"
     ''')
 
+    parser.add_argument('--keepalive_timeout', default=None, help='''
+    Sets the server keepalive timeout. This flag will pass to Nginx config directly.
+    http://nginx.org/en/docs/http/ngx_http_core_module.html#keepalive_timeout.
+    ''')
+
     parser.add_argument('--rewrite', action='append', help=
     '''Internally redirect the request uri with a pair of pattern and
     replacement. Pattern and replacement should be separated by whitespace.
@@ -978,6 +984,8 @@ def enforce_conflict_args(args):
             return "Flag --enable_backend_routing cannot be used together with --client_max_body_size."
         if args.large_client_header_buffers is not None:
             return "Flag --enable_backend_routing cannot be used together with --large_client_header_buffers."
+        if args.keepalive_timeout is not None:
+            return "Flag --enable_backend_routing cannot be used together with --keepalive_timeout."
         if args.generate_self_signed_cert:
             return "Flag --enable_backend_routing cannot be used together with --generate_self_signed_cert."
         if args.enable_strict_transport_security:
