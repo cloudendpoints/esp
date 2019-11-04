@@ -1,8 +1,3 @@
-# Release 1.43.0 04-11-2019
-
-- add flag --keepalive_timeout (#727)
-- Add a script to build service config into image (#725)
-
 # Release 1.42.0 23-10-2019
 
 - Update googleapis with latest CheckError codes (#722)
