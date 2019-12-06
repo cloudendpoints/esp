@@ -77,8 +77,8 @@ def fetch_metadata(metadata, attr_path, required):
     status_code = response.status
     if status_code != 200:
       if required:
-        message_template = "Failed fetching metadata attribute: {}, status code {}"
-        raise FetchError(1, message_template.format(url, status_code))
+        message_template = "Failed fetching metadata attribute: {}, status code {}, reason {}"
+        raise FetchError(1, message_template.format(url, status_code, response.data))
       else:
         return None
     return response.data
@@ -185,7 +185,7 @@ def fetch_latest_rollout(management_service, service_name, access_token):
         message_template = ("Fetching rollouts failed "\
                             "(status code {}, reason {}, url {})")
         raise FetchError(1, message_template.format(status_code,
-                                                    response.reason,
+                                                    response.data,
                                                     service_mgmt_url))
     rollouts = json.loads(response.data)
     # No valid rollouts
@@ -217,7 +217,7 @@ def fetch_service_json(service_mgmt_url, access_token):
 
     if status_code != 200:
         message_template = "Fetching service config failed (status code {}, reason {}, url {})"
-        raise FetchError(1, message_template.format(status_code, response.reason, service_mgmt_url))
+        raise FetchError(1, message_template.format(status_code, response.data, service_mgmt_url))
 
     service_config = json.loads(response.data)
     return service_config
