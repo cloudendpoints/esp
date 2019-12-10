@@ -156,7 +156,7 @@ TEST(MethodInfo, PreservesBackendAddress_Constant2) {
   method_info->process_backend_rule(rule);
   ASSERT_EQ(method_info->backend_address(),
             "http://example.cloudfunctions.net");
-  ASSERT_EQ(method_info->backend_path(), "");
+  ASSERT_EQ(method_info->backend_path(), "/");
   ASSERT_EQ(method_info->backend_jwt_audience(), "");
 }
 
@@ -168,7 +168,7 @@ TEST(MethodInfo, PreservesBackendAddress_Constant3) {
       ::google::api::BackendRule_PathTranslation_CONSTANT_ADDRESS);
   method_info->process_backend_rule(rule);
   ASSERT_EQ(method_info->backend_address(), "backend");
-  ASSERT_EQ(method_info->backend_path(), "");
+  ASSERT_EQ(method_info->backend_path(), "/");
 }
 
 TEST(MethodInfo, PreservesBackendAddress_Append) {

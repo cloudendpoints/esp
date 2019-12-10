@@ -479,15 +479,23 @@ static const char backends_config[] =
     "name: \"backends-config\"\n"
     "backend {\n"
     "  rules {\n"
-    "    selector: \"test.api.MethodWithBackend\"\n"
+    "    selector: \"test.api.MethodWithBackendConstant\"\n"
     "    address: \"TestBackend:TestPort\"\n"
     "    path_translation: CONSTANT_ADDRESS\n"
+    "  }\n"
+    "  rules {\n"
+    "    selector: \"test.api.MethodWithBackendAppend\"\n"
+    "    address: \"TestBackend:TestPort\"\n"
+    "    path_translation: APPEND_PATH_TO_ADDRESS\n"
     "  }\n"
     "}\n"
     "apis {\n"
     "  name: \"test.api\"\n"
     "  methods {\n"
-    "    name: \"MethodWithBackend\"\n"
+    "    name: \"MethodWithBackendConstant\"\n"
+    "  }\n"
+    "  methods {\n"
+    "    name: \"MethodWithBackendAppend\"\n"
     "  }\n"
     "  methods {\n"
     "    name: \"MethodWithoutBackend\"\n"
@@ -501,10 +509,18 @@ TEST(Config, LoadBackends) {
   ASSERT_TRUE(config);
 
   const MethodInfo *method_with_backend =
-      config->GetMethodInfo("POST", "/test.api/MethodWithBackend");
+      config->GetMethodInfo("POST", "/test.api/MethodWithBackendConstant");
   ASSERT_NE(nullptr, method_with_backend);
   EXPECT_EQ("TestBackend:TestPort", method_with_backend->backend_address());
+  EXPECT_EQ("/", method_with_backend->backend_path());
   EXPECT_EQ(1, method_with_backend->backend_path_translation());
+
+  method_with_backend =
+      config->GetMethodInfo("POST", "/test.api/MethodWithBackendAppend");
+  ASSERT_NE(nullptr, method_with_backend);
+  EXPECT_EQ("TestBackend:TestPort", method_with_backend->backend_address());
+  EXPECT_EQ("", method_with_backend->backend_path());
+  EXPECT_EQ(2, method_with_backend->backend_path_translation());
 
   const MethodInfo *method_without_backend =
       config->GetMethodInfo("POST", "/test.api/MethodWithoutBackend");
