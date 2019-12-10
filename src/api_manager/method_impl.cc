@@ -134,6 +134,14 @@ void MethodInfoImpl::process_backend_rule(
     backend_path_ = backend_address_.substr(i);
     backend_address_ = backend_address_.substr(0, i);
   }
+
+  // For constant_address, backend_path should not be empty.
+  // An empty backend_path should be treated as "/".
+  if (backend_path_.empty() &&
+      backend_path_translation_ ==
+          ::google::api::BackendRule_PathTranslation_CONSTANT_ADDRESS) {
+    backend_path_ = "/";
+  }
 }
 
 void MethodInfoImpl::process_system_parameters() {

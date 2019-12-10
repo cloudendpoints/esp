@@ -5,6 +5,10 @@ http {
     get: "/shelves"
   }
   rules {
+    selector: "ListAllBooks"
+    get: "/allbooks"
+  }
+  rules {
     selector: "CorsShelves"
     custom: {
       kind: "OPTIONS"
@@ -62,6 +66,10 @@ usage {
   }
   rules {
     selector: "GetShelf"
+    allow_unregistered_calls: true
+  }
+  rules {
+    selector: "ListAllBooks"
     allow_unregistered_calls: true
   }
   rules {

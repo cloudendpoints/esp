@@ -42,7 +42,7 @@ my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $MetadataPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(18);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(20);
 
 # Save service name in the service configuration protocol buffer file.
 
@@ -74,6 +74,12 @@ backend {
   rules {
     selector: "GetBookId"
     address: "http://127.0.0.1:$BackendPort/getBookId"
+    path_translation: CONSTANT_ADDRESS
+    jwt_audience: "test-audience"
+  }
+  rules {
+    selector: "ListAllBooks"
+    address: "http://127.0.0.1:$BackendPort"
     path_translation: CONSTANT_ADDRESS
     jwt_audience: "test-audience"
   }
@@ -156,6 +162,9 @@ my $response4 = ApiManager::http_get($NginxPort,'/shelves/123/books/info/1234?ke
 # also, {foo.bar} style path is supported.
 my $response5 = ApiManager::http_get($NginxPort,'/shelves/123/books/id/1234?key=this-is-an-api-key');
 
+# Test address only has host name.
+my $response6 = ApiManager::http_get($NginxPort,'/allbooks');
+
 $t->stop_daemons();
 
 my ($response_headers1, $response_body1) = split /\r\n\r\n/, $response1, 2;
@@ -195,9 +204,15 @@ is($response_body5, <<'EOF', 'Book Info returned in the response body.');
 { "id": "1234" }
 EOF
 
+my ($response_headers6, $response_body6) = split /\r\n\r\n/, $response6, 2;
+like($response_headers6, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');
+is($response_body6, <<'EOF', 'ListAllBooks returned in the response body.');
+{ "allbooks" }
+EOF
+
 # Check Authorization header is added into requests.
 my @bookstore_requests = ApiManager::read_http_stream($t, 'bookstore.log');
-is(scalar @bookstore_requests, 5, 'Bookstore received 5 requests.');
+is(scalar @bookstore_requests, 6, 'Bookstore received 6 requests.');
 
 my $request = shift @bookstore_requests;
 is($request->{headers}->{'authorization'}, 'Bearer test_audience_override',
@@ -263,6 +278,13 @@ HTTP/1.1 200 OK
 Connection: close
 
 { "id": "1234" }
+EOF
+
+  $server->on('GET', '/', <<'EOF');
+HTTP/1.1 200 OK
+Connection: close
+
+{ "allbooks" }
 EOF
 
   $server->run();
