@@ -14,16 +14,16 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
+#include "src/api_manager/auth/lib/auth_token.h"
 #include "src/api_manager/auth/lib/json.h"
 #include "gtest/gtest.h"
-#include "src/api_manager/auth/lib/auth_token.h"
 
 namespace google {
 namespace api_manager {
 namespace auth {
 
-void VerifyWriteUserInfo(const char* expected_json, const UserInfo& user_info) {
-  char* json_str = WriteUserInfoToJson(user_info);
+void VerifyWriteUserInfo(const char *expected_json, const UserInfo &user_info) {
+  char *json_str = WriteUserInfoToJson(user_info);
   ASSERT_STREQ(expected_json, json_str);
   esp_grpc_free(json_str);
 }
@@ -31,15 +31,17 @@ void VerifyWriteUserInfo(const char* expected_json, const UserInfo& user_info) {
 TEST(EspJsonTest, NormalDataTest) {
   UserInfo user_info{"id", "email", "consumer_id", "iss", {"aud"}};
   static const char expected_json[] =
-      "{\"audiences\":\"[\\\"aud\\\"]\",\"issuer\":\"iss\",\"id\":\"id\",\"email\":\"email\",\"consumer_id\":"
+      "{\"audiences\":\"[\\\"aud\\\"]\",\"issuer\":\"iss\",\"id\":\"id\","
+      "\"email\":\"email\",\"consumer_id\":"
       "\"consumer_id\"}";
   VerifyWriteUserInfo(expected_json, user_info);
 }
 
 TEST(EspJsonTest, MultipleAudiencesTest) {
-  UserInfo user_info{"id", "email", "consumer_id", "iss", {"aud0","aud1"}};
+  UserInfo user_info{"id", "email", "consumer_id", "iss", {"aud0", "aud1"}};
   static const char expected_json[] =
-      "{\"audiences\":\"[\\\"aud0\\\",\\\"aud1\\\"]\",\"issuer\":\"iss\",\"id\":\"id\",\"email\":\"email\",\"consumer_id\":"
+      "{\"audiences\":\"[\\\"aud0\\\",\\\"aud1\\\"]\",\"issuer\":\"iss\","
+      "\"id\":\"id\",\"email\":\"email\",\"consumer_id\":"
       "\"consumer_id\"}";
   VerifyWriteUserInfo(expected_json, user_info);
 }
@@ -68,6 +70,6 @@ TEST(EspJsonTest, SlashTest) {
   VerifyWriteUserInfo(expected_json, user_info);
 }
 
-}  // namespace auth
-}  // namespace api_manager
-}  // namespace google
+} // namespace auth
+} // namespace api_manager
+} // namespace google
