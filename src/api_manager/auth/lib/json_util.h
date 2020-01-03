@@ -20,6 +20,7 @@
 // A public header file should not include any grpc header files.
 
 #include "src/api_manager/auth/lib/grpc_internals.h"
+#include <set>
 
 namespace google {
 namespace api_manager {
@@ -45,6 +46,9 @@ const char *GetNumberValue(const grpc_json *json, const char *key);
 // brother/parents.
 void FillChild(grpc_json *child, grpc_json *brother, grpc_json *parent,
                const char *key, const char *value, grpc_json_type type);
+
+// Serialize set of string. If it is empty set, do nothing.
+void SerializeStringSet(const std::set<std::string>& strSet, std::string& result);
 
 }  // namespace auth
 }  // namespace api_manager

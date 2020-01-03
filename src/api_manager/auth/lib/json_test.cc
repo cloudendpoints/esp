@@ -31,7 +31,15 @@ void VerifyWriteUserInfo(const char* expected_json, const UserInfo& user_info) {
 TEST(EspJsonTest, NormalDataTest) {
   UserInfo user_info{"id", "email", "consumer_id", "iss", {"aud"}};
   static const char expected_json[] =
-      "{\"issuer\":\"iss\",\"id\":\"id\",\"email\":\"email\",\"consumer_id\":"
+      "{\"audiences\":\"[\\\"aud\\\"]\",\"issuer\":\"iss\",\"id\":\"id\",\"email\":\"email\",\"consumer_id\":"
+      "\"consumer_id\"}";
+  VerifyWriteUserInfo(expected_json, user_info);
+}
+
+TEST(EspJsonTest, MultipleAudiencesTest) {
+  UserInfo user_info{"id", "email", "consumer_id", "iss", {"aud0","aud1"}};
+  static const char expected_json[] =
+      "{\"audiences\":\"[\\\"aud0\\\",\\\"aud1\\\"]\",\"issuer\":\"iss\",\"id\":\"id\",\"email\":\"email\",\"consumer_id\":"
       "\"consumer_id\"}";
   VerifyWriteUserInfo(expected_json, user_info);
 }

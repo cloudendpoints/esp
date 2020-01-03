@@ -18,6 +18,8 @@
 #include <stddef.h>
 #include <string.h>
 #include "src/api_manager/utils/str_util.h"
+#include "absl/strings/str_cat.h"
+
 
 extern "C" {
 #include "grpc/support/log.h"
@@ -129,6 +131,22 @@ void FillChild(grpc_json *child, grpc_json *brother, grpc_json *parent,
   child->value = value;
   child->type = type;
 }
+
+void SerializeStringSet(const std::set<std::string>& strSet, std::string& result) {
+  if (strSet.size() == 0) {
+    return;
+  }
+  absl::StrAppend(&result, "[\"");
+  for (auto it = std::begin(strSet), first = it, end = std::end(strSet); it != end; ++it){
+    if (it == first) {
+        absl::StrAppend(&result, *it);
+    } else {
+      absl::StrAppend(&result,"\",\"", *it);
+    }
+  }
+  absl::StrAppend(&result, "\"]");
+}
+
 
 }  // namespace auth
 }  // namespace api_manager

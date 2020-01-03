@@ -18,7 +18,6 @@
 
 #include <cstring>
 #include <string>
-
 #include "src/api_manager/auth/lib/json_util.h"
 
 namespace google {
@@ -34,8 +33,15 @@ char *WriteUserInfoToJson(const UserInfo &user_info) {
   FillChild(&json_all_claims, nullptr, &json_top, "claims",
             user_info.claims.c_str(), GRPC_JSON_STRING);
 
+  std::string audienceSetStr =  "";
+  SerializeStringSet(user_info.audiences, audienceSetStr);
+
+  grpc_json json_audiences;
+  FillChild(&json_audiences, &json_all_claims, &json_top, "audiences",
+      audienceSetStr.c_str(), GRPC_JSON_STRING);
+
   grpc_json json_issuer;
-  FillChild(&json_issuer, &json_all_claims, &json_top, "issuer",
+  FillChild(&json_issuer, &json_audiences, &json_top, "issuer",
             user_info.issuer.c_str(), GRPC_JSON_STRING);
 
   grpc_json json_id;

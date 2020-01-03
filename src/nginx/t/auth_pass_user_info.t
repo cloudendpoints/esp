@@ -150,6 +150,7 @@ $user_info = encode_base64(encode_json($user_info_json));
 my $expected_user_info = {
    'issuer' => '628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com',
    'id' => '628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l@developer.gserviceaccount.com',
+   'audiences' => '["endpoints-test.cloudendpointsapis.com"]',
 };
 ok(ApiManager::compare_user_info($user_info, $expected_user_info), 'Passed user_info is correct.');
 

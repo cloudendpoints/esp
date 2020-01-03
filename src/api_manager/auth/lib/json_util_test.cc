@@ -145,6 +145,21 @@ TEST(JsonUtil, GetPrimitiveFieldValue) {
   ASSERT_FALSE(GetPrimitiveFieldValue(json_input_2, "array", &value));
 }
 
+TEST(JsonUtil, SerializeStringSet) {
+  std::string value;
+  SerializeStringSet({}, value);
+  EXPECT_EQ(value, "");
+
+  value = "";
+  SerializeStringSet({"aud"}, value);
+  EXPECT_EQ(value,  "[\"aud\"]");
+
+  value = "";
+  SerializeStringSet({"aud0", "aud1"}, value);
+  EXPECT_EQ(value,  "[\"aud0\",\"aud1\"]");
+}
+
+
 }  // namespace
 }  // namespace auth
 }  // namespace api_manager

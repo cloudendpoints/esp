@@ -301,8 +301,9 @@ const char kEndpointApiUserInfo[] = "X-Endpoint-API-UserInfo";
 const char kUserInfo_kSub_kIss[] =
     "eyJjbGFpbXMiOiJ7XCJpc3NcIjpcImh0dHBzOi8vaXNzdWVyMS5jb21cIixcInN1YlwiOlwiZW"
     "5kLXVzZXItaWRcIixcImF1ZFwiOlwiZW5kcG9pbnRzLXRlc3QuY2xvdWRlbmRwb2ludHNhcGlz"
-    "LmNvbVwiLFwiaWF0XCI6MTQ2MTc3OTMyMSxcImV4cFwiOjI0NjE3ODI5MjF9IiwiaXNzdWVyIj"
-    "oiaHR0cHM6Ly9pc3N1ZXIxLmNvbSIsImlkIjoiZW5kLXVzZXItaWQifQ==";
+    "LmNvbVwiLFwiaWF0XCI6MTQ2MTc3OTMyMSxcImV4cFwiOjI0NjE3ODI5MjF9IiwiYXVkaWVuY2"
+    "VzIjoiW1wiZW5kcG9pbnRzLXRlc3QuY2xvdWRlbmRwb2ludHNhcGlzLmNvbVwiXSIsImlzc3Vl"
+    "ciI6Imh0dHBzOi8vaXNzdWVyMS5jb20iLCJpZCI6ImVuZC11c2VyLWlkIn0=";
 
 // Base64 encoded string of
 // {
@@ -312,14 +313,16 @@ const char kUserInfo_kSub_kIss[] =
 const char kUserInfo_kSub2_kIss[] =
     "eyJjbGFpbXMiOiJ7XCJpc3NcIjpcImh0dHBzOi8vaXNzdWVyMS5jb21cIixcInN1YlwiOlwiZW"
     "5kLXVzZXItaWRcIixcImF1ZFwiOlwiZW5kcG9pbnRzLXRlc3QuY2xvdWRlbmRwb2ludHNhcGlz"
-    "LmNvbVwiLFwiaWF0XCI6MTQ2MTc3OTMyMSxcImV4cFwiOjI0NjE3ODI5MjF9IiwiaXNzdWVyIj"
-    "oiaHR0cHM6Ly9pc3N1ZXIxLmNvbSIsImlkIjoiZW5kLXVzZXItaWQifQ==";
+    "LmNvbVwiLFwiaWF0XCI6MTQ2MTc3OTMyMSxcImV4cFwiOjI0NjE3ODI5MjF9IiwiYXVkaWVuY2"
+    "VzIjoiW1wiZW5kcG9pbnRzLXRlc3QuY2xvdWRlbmRwb2ludHNhcGlzLmNvbVwiXSIsImlzc3Vl"
+    "ciI6Imh0dHBzOi8vaXNzdWVyMS5jb20iLCJpZCI6ImVuZC11c2VyLWlkIn0=";
 
 const char kUserInfo_kSub2_kIss2[] =
     "eyJjbGFpbXMiOiJ7XCJpc3NcIjpcImh0dHBzOi8vaXNzdWVyMS5jb21cIixcInN1YlwiOlwiYW"
     "5vdGhlci11c2VyLWlkXCIsXCJhdWRcIjpcImVuZHBvaW50cy10ZXN0LmNsb3VkZW5kcG9pbnRz"
-    "YXBpcy5jb21cIixcImlhdFwiOjE0NjE3NzkzMjEsXCJleHBcIjoyNDYxNzgyOTIxfSIsImlzc3"
-    "VlciI6Imh0dHBzOi8vaXNzdWVyMS5jb20iLCJpZCI6ImFub3RoZXItdXNlci1pZCJ9";
+    "YXBpcy5jb21cIixcImlhdFwiOjE0NjE3NzkzMjEsXCJleHBcIjoyNDYxNzgyOTIxfSIsImF1ZG"
+    "llbmNlcyI6IltcImVuZHBvaW50cy10ZXN0LmNsb3VkZW5kcG9pbnRzYXBpcy5jb21cIl0iLCJp"
+    "c3N1ZXIiOiJodHRwczovL2lzc3VlcjEuY29tIiwiaWQiOiJhbm90aGVyLXVzZXItaWQifQ==";
 
 // Base64 encoded string of
 // {
@@ -329,35 +332,44 @@ const char kUserInfo_kSub2_kIss2[] =
 const char kUserInfo_kSub_kIss2[] =
     "eyJjbGFpbXMiOiJ7XCJpc3NcIjpcImh0dHBzOi8vaXNzdWVyMi5jb21cIixcInN1YlwiOlwiZW"
     "5kLXVzZXItaWRcIixcImF1ZFwiOlwiZW5kcG9pbnRzLXRlc3QuY2xvdWRlbmRwb2ludHNhcGlz"
-    "LmNvbVwiLFwiaWF0XCI6MTQ2MTc3OTMyMSxcImV4cFwiOjI0NjE3ODI5MjF9IiwiaXNzdWVyIj"
-    "oiaHR0cHM6Ly9pc3N1ZXIyLmNvbSIsImlkIjoiZW5kLXVzZXItaWQifQ==";
+    "LmNvbVwiLFwiaWF0XCI6MTQ2MTc3OTMyMSxcImV4cFwiOjI0NjE3ODI5MjF9IiwiYXVkaWVuY2"
+    "VzIjoiW1wiZW5kcG9pbnRzLXRlc3QuY2xvdWRlbmRwb2ludHNhcGlzLmNvbVwiXSIsImlzc3Vl"
+    "ciI6Imh0dHBzOi8vaXNzdWVyMi5jb20iLCJpZCI6ImVuZC11c2VyLWlkIn0=";
 
 const char kUserInfo_kSub2_kIss3[] =
     "eyJjbGFpbXMiOiJ7XCJpc3NcIjpcImh0dHBzOi8vaXNzdWVyMS5jb21cIixcInN1YlwiOlwiZW"
     "5kLXVzZXItaWRcIixcImF1ZFwiOlwiaHR0cHM6Ly9lbmRwb2ludHMtdGVzdC5jbG91ZGVuZHBv"
     "aW50c2FwaXMuY29tXCIsXCJpYXRcIjoxNDYxNzc5MzIxLFwiZXhwXCI6MjQ2MTc4MjkyMX0iLC"
-    "Jpc3N1ZXIiOiJodHRwczovL2lzc3VlcjEuY29tIiwiaWQiOiJlbmQtdXNlci1pZCJ9";
+    "JhdWRpZW5jZXMiOiJbXCJodHRwczovL2VuZHBvaW50cy10ZXN0LmNsb3VkZW5kcG9pbnRzYXBp"
+    "cy5jb21cIl0iLCJpc3N1ZXIiOiJodHRwczovL2lzc3VlcjEuY29tIiwiaWQiOiJlbmQtdXNlci"
+    "1pZCJ9";
 
 const char kUserInfo_kSub2_kIss4[] =
     "eyJjbGFpbXMiOiJ7XCJpc3NcIjpcImh0dHBzOi8vaXNzdWVyMS5jb21cIixcInN1YlwiOlwiZW"
     "5kLXVzZXItaWRcIixcImF1ZFwiOlwiaHR0cHM6Ly9lbmRwb2ludHMtdGVzdC5jbG91ZGVuZHBv"
     "aW50c2FwaXMuY29tL1wiLFwiaWF0XCI6MTQ2MTc3OTMyMSxcImV4cFwiOjI0NjE3ODI5MjF9Ii"
-    "wiaXNzdWVyIjoiaHR0cHM6Ly9pc3N1ZXIxLmNvbSIsImlkIjoiZW5kLXVzZXItaWQifQ==";
+    "wiYXVkaWVuY2VzIjoiW1wiaHR0cHM6Ly9lbmRwb2ludHMtdGVzdC5jbG91ZGVuZHBvaW50c2Fw"
+    "aXMuY29tL1wiXSIsImlzc3VlciI6Imh0dHBzOi8vaXNzdWVyMS5jb20iLCJpZCI6ImVuZC11c2"
+    "VyLWlkIn0=";
 
 const char kUserInfo_kSub2_kIss5[] =
     "eyJjbGFpbXMiOiJ7XCJpc3NcIjpcImh0dHBzOi8vaXNzdWVyMS5jb21cIixcInN1YlwiOlwiZW"
     "5kLXVzZXItaWRcIixcImF1ZFwiOlwiaHR0cHM6Ly9lbmRwb2ludHMtdGVzdC5jbG91ZGVuZHBv"
     "aW50c2FwaXMuY29tXCIsXCJpYXRcIjoxNDYxNzc5MzIxLFwiZXhwXCI6MjQ2MTc4MjkyMX0iLC"
-    "Jpc3N1ZXIiOiJodHRwczovL2lzc3VlcjEuY29tIiwiaWQiOiJlbmQtdXNlci1pZCJ9";
+    "JhdWRpZW5jZXMiOiJbXCJodHRwczovL2VuZHBvaW50cy10ZXN0LmNsb3VkZW5kcG9pbnRzYXBp"
+    "cy5jb21cIl0iLCJpc3N1ZXIiOiJodHRwczovL2lzc3VlcjEuY29tIiwiaWQiOiJlbmQtdXNlci"
+    "1pZCJ9";
 
 const char kUserInfo_kSub2_kIss6[] =
     "eyJjbGFpbXMiOiJ7XCJpc3NcIjpcImh0dHBzOi8vaXNzdWVyMS5jb21cIixcInN1YlwiOlwiZW"
     "5kLXVzZXItaWRcIixcImF1ZFwiOlwiaHR0cHM6Ly9lbmRwb2ludHMtdGVzdC5jbG91ZGVuZHBv"
     "aW50c2FwaXMuY29tL1wiLFwiaWF0XCI6MTQ2MTc3OTMyMSxcImV4cFwiOjI0NjE3ODI5MjF9Ii"
-    "wiaXNzdWVyIjoiaHR0cHM6Ly9pc3N1ZXIxLmNvbSIsImlkIjoiZW5kLXVzZXItaWQifQ==";
+    "wiYXVkaWVuY2VzIjoiW1wiaHR0cHM6Ly9lbmRwb2ludHMtdGVzdC5jbG91ZGVuZHBvaW50c2Fw"
+    "aXMuY29tL1wiXSIsImlzc3VlciI6Imh0dHBzOi8vaXNzdWVyMS5jb20iLCJpZCI6ImVuZC11c2"
+    "VyLWlkIn0=";
 
 class CheckAuthTest : public ::testing::Test {
- public:
+public:
   void SetUp() {
     std::unique_ptr<MockApiManagerEnvironment> env(
         new ::testing::NiceMock<MockApiManagerEnvironment>());
@@ -540,9 +552,8 @@ TEST_F(CheckAuthTest, TestOpenIdFailed) {
 
   CheckAuth(context_, [](Status status) {
     ASSERT_EQ(status.code(), Code::UNAUTHENTICATED);
-    ASSERT_EQ(status.message(),
-              "JWT validation failed: Unable to parse "
-              "URI of the key via OpenID discovery");
+    ASSERT_EQ(status.message(), "JWT validation failed: Unable to parse "
+                                "URI of the key via OpenID discovery");
   });
 
   EXPECT_TRUE(Mock::VerifyAndClearExpectations(raw_request_));
@@ -565,9 +576,8 @@ TEST_F(CheckAuthTest, TestOpenIdFailed) {
 
   CheckAuth(context_, [](Status status) {
     ASSERT_EQ(status.code(), Code::UNAUTHENTICATED);
-    ASSERT_EQ(status.message(),
-              "JWT validation failed: "
-              "Cannot determine the URI of the key");
+    ASSERT_EQ(status.message(), "JWT validation failed: "
+                                "Cannot determine the URI of the key");
   });
 }
 
@@ -615,9 +625,8 @@ TEST_F(CheckAuthTest, TestInvalidToken) {
 
   CheckAuth(context_, [](Status status) {
     ASSERT_EQ(status.code(), Code::UNAUTHENTICATED);
-    ASSERT_EQ(status.message(),
-              "JWT validation failed: "
-              "Bad JWT format: should have 2 dots");
+    ASSERT_EQ(status.message(), "JWT validation failed: "
+                                "Bad JWT format: should have 2 dots");
   });
 
   EXPECT_TRUE(Mock::VerifyAndClearExpectations(raw_request_));
@@ -710,7 +719,7 @@ TEST_F(CheckAuthTest, TestHttpSlashAudience) {
   TestValidToken(kTokenHttpSlashAud, kUserInfo_kSub2_kIss6);
 }
 
-}  // namespace
+} // namespace
 
-}  // namespace api_manager
-}  // namespace google
+} // namespace api_manager
+} // namespace google
