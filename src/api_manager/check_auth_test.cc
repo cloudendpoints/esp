@@ -302,7 +302,8 @@ const char kUserInfo_kSub_kIss[] =
     "eyJjbGFpbXMiOiJ7XCJpc3NcIjpcImh0dHBzOi8vaXNzdWVyMS5jb21cIixcInN1YlwiOlwiZW"
     "5kLXVzZXItaWRcIixcImF1ZFwiOlwiZW5kcG9pbnRzLXRlc3QuY2xvdWRlbmRwb2ludHNhcGlz"
     "LmNvbVwiLFwiaWF0XCI6MTQ2MTc3OTMyMSxcImV4cFwiOjI0NjE3ODI5MjF9IiwiaXNzdWVyIj"
-    "oiaHR0cHM6Ly9pc3N1ZXIxLmNvbSIsImlkIjoiZW5kLXVzZXItaWQifQ==";
+    "oiaHR0cHM6Ly9pc3N1ZXIxLmNvbSIsImlkIjoiZW5kLXVzZXItaWQiLCJhdWRpZW5jZXMiOlsi"
+    "ZW5kcG9pbnRzLXRlc3QuY2xvdWRlbmRwb2ludHNhcGlzLmNvbSJdfQ==";
 
 // Base64 encoded string of
 // {
@@ -313,13 +314,15 @@ const char kUserInfo_kSub2_kIss[] =
     "eyJjbGFpbXMiOiJ7XCJpc3NcIjpcImh0dHBzOi8vaXNzdWVyMS5jb21cIixcInN1YlwiOlwiZW"
     "5kLXVzZXItaWRcIixcImF1ZFwiOlwiZW5kcG9pbnRzLXRlc3QuY2xvdWRlbmRwb2ludHNhcGlz"
     "LmNvbVwiLFwiaWF0XCI6MTQ2MTc3OTMyMSxcImV4cFwiOjI0NjE3ODI5MjF9IiwiaXNzdWVyIj"
-    "oiaHR0cHM6Ly9pc3N1ZXIxLmNvbSIsImlkIjoiZW5kLXVzZXItaWQifQ==";
+    "oiaHR0cHM6Ly9pc3N1ZXIxLmNvbSIsImlkIjoiZW5kLXVzZXItaWQiLCJhdWRpZW5jZXMiOlsi"
+    "ZW5kcG9pbnRzLXRlc3QuY2xvdWRlbmRwb2ludHNhcGlzLmNvbSJdfQ==";
 
 const char kUserInfo_kSub2_kIss2[] =
     "eyJjbGFpbXMiOiJ7XCJpc3NcIjpcImh0dHBzOi8vaXNzdWVyMS5jb21cIixcInN1YlwiOlwiYW"
     "5vdGhlci11c2VyLWlkXCIsXCJhdWRcIjpcImVuZHBvaW50cy10ZXN0LmNsb3VkZW5kcG9pbnRz"
     "YXBpcy5jb21cIixcImlhdFwiOjE0NjE3NzkzMjEsXCJleHBcIjoyNDYxNzgyOTIxfSIsImlzc3"
-    "VlciI6Imh0dHBzOi8vaXNzdWVyMS5jb20iLCJpZCI6ImFub3RoZXItdXNlci1pZCJ9";
+    "VlciI6Imh0dHBzOi8vaXNzdWVyMS5jb20iLCJpZCI6ImFub3RoZXItdXNlci1pZCIsImF1ZGll"
+    "bmNlcyI6WyJlbmRwb2ludHMtdGVzdC5jbG91ZGVuZHBvaW50c2FwaXMuY29tIl19";
 
 // Base64 encoded string of
 // {
@@ -330,31 +333,40 @@ const char kUserInfo_kSub_kIss2[] =
     "eyJjbGFpbXMiOiJ7XCJpc3NcIjpcImh0dHBzOi8vaXNzdWVyMi5jb21cIixcInN1YlwiOlwiZW"
     "5kLXVzZXItaWRcIixcImF1ZFwiOlwiZW5kcG9pbnRzLXRlc3QuY2xvdWRlbmRwb2ludHNhcGlz"
     "LmNvbVwiLFwiaWF0XCI6MTQ2MTc3OTMyMSxcImV4cFwiOjI0NjE3ODI5MjF9IiwiaXNzdWVyIj"
-    "oiaHR0cHM6Ly9pc3N1ZXIyLmNvbSIsImlkIjoiZW5kLXVzZXItaWQifQ==";
+    "oiaHR0cHM6Ly9pc3N1ZXIyLmNvbSIsImlkIjoiZW5kLXVzZXItaWQiLCJhdWRpZW5jZXMiOlsi"
+    "ZW5kcG9pbnRzLXRlc3QuY2xvdWRlbmRwb2ludHNhcGlzLmNvbSJdfQ==";
 
 const char kUserInfo_kSub2_kIss3[] =
     "eyJjbGFpbXMiOiJ7XCJpc3NcIjpcImh0dHBzOi8vaXNzdWVyMS5jb21cIixcInN1YlwiOlwiZW"
     "5kLXVzZXItaWRcIixcImF1ZFwiOlwiaHR0cHM6Ly9lbmRwb2ludHMtdGVzdC5jbG91ZGVuZHBv"
     "aW50c2FwaXMuY29tXCIsXCJpYXRcIjoxNDYxNzc5MzIxLFwiZXhwXCI6MjQ2MTc4MjkyMX0iLC"
-    "Jpc3N1ZXIiOiJodHRwczovL2lzc3VlcjEuY29tIiwiaWQiOiJlbmQtdXNlci1pZCJ9";
+    "Jpc3N1ZXIiOiJodHRwczovL2lzc3VlcjEuY29tIiwiaWQiOiJlbmQtdXNlci1pZCIsImF1ZGll"
+    "bmNlcyI6WyJodHRwczovL2VuZHBvaW50cy10ZXN0LmNsb3VkZW5kcG9pbnRzYXBpcy5jb20iXX"
+    "0=";
 
 const char kUserInfo_kSub2_kIss4[] =
     "eyJjbGFpbXMiOiJ7XCJpc3NcIjpcImh0dHBzOi8vaXNzdWVyMS5jb21cIixcInN1YlwiOlwiZW"
     "5kLXVzZXItaWRcIixcImF1ZFwiOlwiaHR0cHM6Ly9lbmRwb2ludHMtdGVzdC5jbG91ZGVuZHBv"
     "aW50c2FwaXMuY29tL1wiLFwiaWF0XCI6MTQ2MTc3OTMyMSxcImV4cFwiOjI0NjE3ODI5MjF9Ii"
-    "wiaXNzdWVyIjoiaHR0cHM6Ly9pc3N1ZXIxLmNvbSIsImlkIjoiZW5kLXVzZXItaWQifQ==";
+    "wiaXNzdWVyIjoiaHR0cHM6Ly9pc3N1ZXIxLmNvbSIsImlkIjoiZW5kLXVzZXItaWQiLCJhdWRp"
+    "ZW5jZXMiOlsiaHR0cHM6Ly9lbmRwb2ludHMtdGVzdC5jbG91ZGVuZHBvaW50c2FwaXMuY29tLy"
+    "JdfQ==";
 
 const char kUserInfo_kSub2_kIss5[] =
     "eyJjbGFpbXMiOiJ7XCJpc3NcIjpcImh0dHBzOi8vaXNzdWVyMS5jb21cIixcInN1YlwiOlwiZW"
     "5kLXVzZXItaWRcIixcImF1ZFwiOlwiaHR0cHM6Ly9lbmRwb2ludHMtdGVzdC5jbG91ZGVuZHBv"
     "aW50c2FwaXMuY29tXCIsXCJpYXRcIjoxNDYxNzc5MzIxLFwiZXhwXCI6MjQ2MTc4MjkyMX0iLC"
-    "Jpc3N1ZXIiOiJodHRwczovL2lzc3VlcjEuY29tIiwiaWQiOiJlbmQtdXNlci1pZCJ9";
+    "Jpc3N1ZXIiOiJodHRwczovL2lzc3VlcjEuY29tIiwiaWQiOiJlbmQtdXNlci1pZCIsImF1ZGll"
+    "bmNlcyI6WyJodHRwczovL2VuZHBvaW50cy10ZXN0LmNsb3VkZW5kcG9pbnRzYXBpcy5jb20iXX"
+    "0=";
 
 const char kUserInfo_kSub2_kIss6[] =
     "eyJjbGFpbXMiOiJ7XCJpc3NcIjpcImh0dHBzOi8vaXNzdWVyMS5jb21cIixcInN1YlwiOlwiZW"
     "5kLXVzZXItaWRcIixcImF1ZFwiOlwiaHR0cHM6Ly9lbmRwb2ludHMtdGVzdC5jbG91ZGVuZHBv"
     "aW50c2FwaXMuY29tL1wiLFwiaWF0XCI6MTQ2MTc3OTMyMSxcImV4cFwiOjI0NjE3ODI5MjF9Ii"
-    "wiaXNzdWVyIjoiaHR0cHM6Ly9pc3N1ZXIxLmNvbSIsImlkIjoiZW5kLXVzZXItaWQifQ==";
+    "wiaXNzdWVyIjoiaHR0cHM6Ly9pc3N1ZXIxLmNvbSIsImlkIjoiZW5kLXVzZXItaWQiLCJhdWRp"
+    "ZW5jZXMiOlsiaHR0cHM6Ly9lbmRwb2ludHMtdGVzdC5jbG91ZGVuZHBvaW50c2FwaXMuY29tLy"
+    "JdfQ==";
 
 class CheckAuthTest : public ::testing::Test {
  public:
@@ -444,6 +456,7 @@ void CheckAuthTest::TestValidToken(const std::string &auth_token,
         std::map<std::string, std::string> empty;
         req->OnComplete(Status::OK, std::move(empty), std::move(body));
       }));
+  std::cout << "need be replaced: " << user_info << std::endl;
   EXPECT_CALL(*raw_request_,
               AddHeaderToBackend(kEndpointApiUserInfo, user_info))
       .WillOnce(Return(utils::Status::OK));

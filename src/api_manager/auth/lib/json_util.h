@@ -19,6 +19,7 @@
 // since it directly includes a grpc header file.
 // A public header file should not include any grpc header files.
 
+#include <set>
 #include "src/api_manager/auth/lib/grpc_internals.h"
 
 namespace google {
@@ -43,8 +44,14 @@ const char *GetNumberValue(const grpc_json *json, const char *key);
 
 // Fill grpc_child with key, value and type, and setup links from/to
 // brother/parents.
-void FillChild(grpc_json *child, grpc_json *brother, grpc_json *parent,
-               const char *key, const char *value, grpc_json_type type);
+grpc_json *FillChild(grpc_json *child, grpc_json *brother, grpc_json *parent,
+                     const char *key, const char *value, grpc_json_type type);
+
+// Create a grpc json array by a set of string
+grpc_json *CreateGrpcJsonArray(const std::set<std::string> &strSet,
+                               grpc_json *brother, grpc_json *parent,
+                               const char *key, grpc_json *child,
+                               grpc_json *array_elem);
 
 }  // namespace auth
 }  // namespace api_manager

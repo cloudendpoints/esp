@@ -15,7 +15,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 #include "src/api_manager/auth/lib/json_util.h"
-#include <stddef.h>
 #include <string.h>
 #include "src/api_manager/utils/str_util.h"
 
@@ -113,21 +112,46 @@ const char *GetNumberValue(const grpc_json *json, const char *key) {
   return GetPropertyValue(json, key, GRPC_JSON_NUMBER);
 }
 
-void FillChild(grpc_json *child, grpc_json *brother, grpc_json *parent,
-               const char *key, const char *value, grpc_json_type type) {
-  if (isNullOrEmpty(key) || isNullOrEmpty(value)) {
-    return;
+grpc_json *FillChild(grpc_json *child, grpc_json *brother, grpc_json *parent,
+                     const char *key, const char *value, grpc_json_type type) {
+  if (isNullOrEmpty(value)) {
+    return nullptr;
   }
 
   memset(child, 0, sizeof(grpc_json));
 
-  if (brother) brother->next = child;
-  if (!parent->child) parent->child = child;
+  grpc_json_link_child(parent, child, brother);
 
-  child->parent = parent;
   child->key = key;
   child->value = value;
   child->type = type;
+  return child;
+}
+
+grpc_json *CreateGrpcJsonArray(const std::set<std::string> &strSet,
+                               grpc_json *brother, grpc_json *parent,
+                               const char *key, grpc_json *child,
+                               grpc_json *array_elem) {
+  if (strSet.size() == 0) {
+    return nullptr;
+  }
+
+  memset(child, 0, sizeof(grpc_json));
+
+  grpc_json_link_child(parent, child, brother);
+
+  child->key = key;
+  child->owns_value = false;
+  child->type = GRPC_JSON_ARRAY;
+
+  grpc_json *prev = nullptr;
+  int idx = 0;
+  for (const std::string &elem : strSet) {
+    grpc_json *cur = &array_elem[idx++];
+    memset(cur, 0, sizeof(grpc_json));
+    prev = FillChild(cur, prev, child, nullptr, elem.c_str(), GRPC_JSON_STRING);
+  }
+  return child;
 }
 
 }  // namespace auth
