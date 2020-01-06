@@ -15,10 +15,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 #include "src/api_manager/auth/lib/json_util.h"
-#include <stddef.h>
 #include <string.h>
 #include "src/api_manager/utils/str_util.h"
-#include "absl/strings/str_cat.h"
 
 
 extern "C" {
@@ -36,7 +34,7 @@ const char kJwtPayloadsDelimeter = '.';
 
 bool isNullOrEmpty(const char *str) { return str == nullptr || *str == '\0'; }
 
-}  // namespace
+} // namespace
 
 const grpc_json *GetProperty(const grpc_json *json, const char *key) {
   if (json == nullptr || key == nullptr) {
@@ -44,7 +42,8 @@ const grpc_json *GetProperty(const grpc_json *json, const char *key) {
   }
   const grpc_json *cur;
   for (cur = json->child; cur != nullptr; cur = cur->next) {
-    if (strcmp(cur->key, key) == 0) return cur;
+    if (strcmp(cur->key, key) == 0)
+      return cur;
   }
   return nullptr;
 }
@@ -87,20 +86,20 @@ bool GetPrimitiveFieldValue(const std::string &json_str,
   }
 
   switch (json->type) {
-    case GRPC_JSON_STRING:
-    case GRPC_JSON_NUMBER:
-      *payload_value = json->value;
-      break;
-    case GRPC_JSON_TRUE:
-      *payload_value = "true";
-      break;
-    case GRPC_JSON_FALSE:
-      *payload_value = "false";
-      break;
-    default:
-      grpc_json_destroy(json_root);
-      gpr_free(json_copy);
-      return false;
+  case GRPC_JSON_STRING:
+  case GRPC_JSON_NUMBER:
+    *payload_value = json->value;
+    break;
+  case GRPC_JSON_TRUE:
+    *payload_value = "true";
+    break;
+  case GRPC_JSON_FALSE:
+    *payload_value = "false";
+    break;
+  default:
+    grpc_json_destroy(json_root);
+    gpr_free(json_copy);
+    return false;
   }
   grpc_json_destroy(json_root);
   gpr_free(json_copy);
@@ -115,39 +114,49 @@ const char *GetNumberValue(const grpc_json *json, const char *key) {
   return GetPropertyValue(json, key, GRPC_JSON_NUMBER);
 }
 
-void FillChild(grpc_json *child, grpc_json *brother, grpc_json *parent,
-               const char *key, const char *value, grpc_json_type type) {
-  if (isNullOrEmpty(key) || isNullOrEmpty(value)) {
-    return;
+grpc_json *FillChild(grpc_json *child, grpc_json *brother, grpc_json *parent,
+                     const char *key, const char *value, grpc_json_type type) {
+  if (isNullOrEmpty(value)) {
+    return nullptr;
   }
 
   memset(child, 0, sizeof(grpc_json));
 
-  if (brother) brother->next = child;
-  if (!parent->child) parent->child = child;
+  grpc_json_link_child(parent, child, brother);
 
-  child->parent = parent;
   child->key = key;
   child->value = value;
   child->type = type;
+  return child;
 }
 
-void SerializeStringSet(const std::set<std::string>& strSet, std::string& result) {
+grpc_json *CreateGrpcJsonArrayByStringSet(const std::set<std::string> &strSet,
+                                          grpc_json array_elem[],
+                                          grpc_json *brother, grpc_json *parent,
+                                          const char *key, grpc_json *child) {
   if (strSet.size() == 0) {
-    return;
+    return nullptr;
   }
-  absl::StrAppend(&result, "[\"");
-  for (auto it = std::begin(strSet), first = it, end = std::end(strSet); it != end; ++it){
-    if (it == first) {
-        absl::StrAppend(&result, *it);
-    } else {
-      absl::StrAppend(&result,"\",\"", *it);
-    }
+
+  memset(child, 0, sizeof(grpc_json));
+
+  grpc_json_link_child(parent, child, brother);
+
+  child->key = key;
+  child->owns_value = false;
+  child->type = GRPC_JSON_ARRAY;
+
+  grpc_json *prev = nullptr;
+  int idx = 0;
+  for (const std::string &elem : strSet) {
+    grpc_json *cur = &array_elem[idx++];
+    memset(cur, 0, sizeof(grpc_json));
+    FillChild(cur, prev, child, nullptr, elem.c_str(), GRPC_JSON_STRING);
+    prev = cur;
   }
-  absl::StrAppend(&result, "\"]");
+  return child;
 }
 
-
-}  // namespace auth
-}  // namespace api_manager
-}  // namespace google
+} // namespace auth
+} // namespace api_manager
+} // namespace google

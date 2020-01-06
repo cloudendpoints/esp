@@ -29,37 +29,38 @@ char *WriteUserInfoToJson(const UserInfo &user_info) {
   grpc_json json_top;
   memset(&json_top, 0, sizeof(json_top));
   json_top.type = GRPC_JSON_OBJECT;
+  grpc_json *prev_child = nullptr;
 
   grpc_json json_all_claims;
-  FillChild(&json_all_claims, nullptr, &json_top, "claims",
-            user_info.claims.c_str(), GRPC_JSON_STRING);
-
-  std::string audienceSetStr =  "";
-  SerializeStringSet(user_info.audiences, audienceSetStr);
-
-  grpc_json json_audiences;
-  FillChild(&json_audiences, &json_all_claims, &json_top, "audiences",
-      audienceSetStr.c_str(), GRPC_JSON_STRING);
+  prev_child = FillChild(&json_all_claims, prev_child, &json_top, "claims",
+                         user_info.claims.c_str(), GRPC_JSON_STRING);
 
   grpc_json json_issuer;
-  FillChild(&json_issuer, &json_audiences, &json_top, "issuer",
-            user_info.issuer.c_str(), GRPC_JSON_STRING);
+  prev_child = FillChild(&json_issuer, prev_child, &json_top, "issuer",
+                         user_info.issuer.c_str(), GRPC_JSON_STRING);
 
   grpc_json json_id;
-  FillChild(&json_id, &json_issuer, &json_top, "id", user_info.id.c_str(),
-            GRPC_JSON_STRING);
+  prev_child = FillChild(&json_id, prev_child, &json_top, "id",
+                         user_info.id.c_str(), GRPC_JSON_STRING);
 
   grpc_json json_email;
-  FillChild(&json_email, &json_id, &json_top, "email", user_info.email.c_str(),
-            GRPC_JSON_STRING);
+  prev_child = FillChild(&json_email, prev_child, &json_top, "email",
+                         user_info.email.c_str(), GRPC_JSON_STRING);
 
   grpc_json json_consumer_id;
-  FillChild(&json_consumer_id, &json_email, &json_top, "consumer_id",
-            user_info.consumer_id.c_str(), GRPC_JSON_STRING);
+  prev_child =
+      FillChild(&json_consumer_id, prev_child, &json_top, "consumer_id",
+                user_info.consumer_id.c_str(), GRPC_JSON_STRING);
+
+  grpc_json json_audiences;
+  grpc_json json_audience_array[user_info.audiences.size()];
+  CreateGrpcJsonArrayByStringSet(
+      user_info.audiences, json_audience_array, prev_child, &json_top,
+      "audiences", &json_audiences);
 
   return grpc_json_dump_to_string(&json_top, 0);
 }
 
-}  // namespace auth
-}  // namespace api_manager
-}  // namespace google
+} // namespace auth
+} // namespace api_manager
+} // namespace google

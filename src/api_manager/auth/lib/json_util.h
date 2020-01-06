@@ -44,14 +44,18 @@ const char *GetNumberValue(const grpc_json *json, const char *key);
 
 // Fill grpc_child with key, value and type, and setup links from/to
 // brother/parents.
-void FillChild(grpc_json *child, grpc_json *brother, grpc_json *parent,
-               const char *key, const char *value, grpc_json_type type);
+grpc_json *FillChild(grpc_json *child, grpc_json *brother, grpc_json *parent,
+                     const char *key, const char *value, grpc_json_type type);
 
-// Serialize set of string. If it is empty set, do nothing.
-void SerializeStringSet(const std::set<std::string>& strSet, std::string& result);
+// Create a grpc json array by a set of string
+grpc_json *CreateGrpcJsonArrayByStringSet(const std::set<std::string> &strSet,
+                                          grpc_json array_elem[],
+                                          grpc_json *brother, grpc_json *parent,
+                                          const char *key,
+                                          grpc_json *json_array);
 
-}  // namespace auth
-}  // namespace api_manager
-}  // namespace google
+} // namespace auth
+} // namespace api_manager
+} // namespace google
 
-#endif  // API_MANAGER_AUTH_LIB_JSON_UTIL_H_
+#endif // API_MANAGER_AUTH_LIB_JSON_UTIL_H_

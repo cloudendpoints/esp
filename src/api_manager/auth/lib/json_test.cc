@@ -29,20 +29,36 @@ void VerifyWriteUserInfo(const char *expected_json, const UserInfo &user_info) {
 }
 
 TEST(EspJsonTest, NormalDataTest) {
-  UserInfo user_info{"id", "email", "consumer_id", "iss", {"aud"}};
+  UserInfo user_info{"id",
+                     "email",
+                     "consumer_id",
+                     "iss",
+                     {"endpoints-test.cloudendpointsapis.com"}};
   static const char expected_json[] =
-      "{\"audiences\":\"[\\\"aud\\\"]\",\"issuer\":\"iss\",\"id\":\"id\","
+      "{\"issuer\":\"iss\",\"id\":\"id\","
       "\"email\":\"email\",\"consumer_id\":"
-      "\"consumer_id\"}";
+      "\"consumer_id\",\"audiences\":[\"endpoints-test.cloudendpointsapis."
+      "com\"]}";
+  VerifyWriteUserInfo(expected_json, user_info);
+}
+
+TEST(EspJsonTest, MissingFieldsTest) {
+  UserInfo user_info{
+      "", "email", "", "iss", {"endpoints-test.cloudendpointsapis.com"}};
+  static const char expected_json[] =
+      "{\"issuer\":\"iss\","
+      "\"email\":\"email\",\"audiences\":[\"endpoints-test.cloudendpointsapis."
+      "com\"]}";
   VerifyWriteUserInfo(expected_json, user_info);
 }
 
 TEST(EspJsonTest, MultipleAudiencesTest) {
-  UserInfo user_info{"id", "email", "consumer_id", "iss", {"aud0", "aud1"}};
+  UserInfo user_info{
+      "id", "email", "consumer_id", "iss", {"aud0", "aud1", "aud2"}};
   static const char expected_json[] =
-      "{\"audiences\":\"[\\\"aud0\\\",\\\"aud1\\\"]\",\"issuer\":\"iss\","
+      "{\"issuer\":\"iss\","
       "\"id\":\"id\",\"email\":\"email\",\"consumer_id\":"
-      "\"consumer_id\"}";
+      "\"consumer_id\",\"audiences\":[\"aud0\",\"aud1\",\"aud2\"]}";
   VerifyWriteUserInfo(expected_json, user_info);
 }
 

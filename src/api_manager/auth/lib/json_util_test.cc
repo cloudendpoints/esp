@@ -24,16 +24,15 @@ namespace api_manager {
 namespace auth {
 namespace {
 
-const char json_input[] =
-    "{"
-    "  \"string\": \"string value\","
-    "  \"number\": 12345,"
-    "  \"null\": null,"
-    "  \"true\": true,"
-    "  \"false\": false,"
-    "  \"object\": { },"
-    "  \"array\": [ ],"
-    "}";
+const char json_input[] = "{"
+                          "  \"string\": \"string value\","
+                          "  \"number\": 12345,"
+                          "  \"null\": null,"
+                          "  \"true\": true,"
+                          "  \"false\": false,"
+                          "  \"object\": { },"
+                          "  \"array\": [ ],"
+                          "}";
 
 TEST(JsonUtil, GetPropertyValue) {
   char *json_copy = strdup(json_input);
@@ -107,18 +106,17 @@ TEST(JsonUtil, GetProperty) {
   free(json_copy);
 }
 
-const char json_input_2[] =
-    "{"
-    "  \"string\": \"string value\","
-    "  \"number\": 12345,"
-    "  \"null\": null,"
-    "  \"true\": true,"
-    "  \"false\": false,"
-    "  \"object\": {"
-    "    \"obj_string\": \"objS\","
-    "    \"sub_obj\":{\"obj_bool\": false}},"
-    "  \"array\": [ ],"
-    "}";
+const char json_input_2[] = "{"
+                            "  \"string\": \"string value\","
+                            "  \"number\": 12345,"
+                            "  \"null\": null,"
+                            "  \"true\": true,"
+                            "  \"false\": false,"
+                            "  \"object\": {"
+                            "    \"obj_string\": \"objS\","
+                            "    \"sub_obj\":{\"obj_bool\": false}},"
+                            "  \"array\": [ ],"
+                            "}";
 
 TEST(JsonUtil, GetPrimitiveFieldValue) {
   std::string value;
@@ -145,22 +143,7 @@ TEST(JsonUtil, GetPrimitiveFieldValue) {
   ASSERT_FALSE(GetPrimitiveFieldValue(json_input_2, "array", &value));
 }
 
-TEST(JsonUtil, SerializeStringSet) {
-  std::string value;
-  SerializeStringSet({}, value);
-  EXPECT_EQ(value, "");
-
-  value = "";
-  SerializeStringSet({"aud"}, value);
-  EXPECT_EQ(value,  "[\"aud\"]");
-
-  value = "";
-  SerializeStringSet({"aud0", "aud1"}, value);
-  EXPECT_EQ(value,  "[\"aud0\",\"aud1\"]");
-}
-
-
-}  // namespace
-}  // namespace auth
-}  // namespace api_manager
-}  // namespace google
+} // namespace
+} // namespace auth
+} // namespace api_manager
+} // namespace google

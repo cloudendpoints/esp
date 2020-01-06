@@ -25,8 +25,8 @@ namespace auth {
 // Returned buffer should be freed by esp_grpc_free.
 char *WriteUserInfoToJson(const UserInfo &user_info);
 
-}  // namespace auth
-}  // namespace api_manager
-}  // namespace google
+} // namespace auth
+} // namespace api_manager
+} // namespace google
 
 #endif /* API_MANAGER_AUTH_LIB_JSON_H_ */
