@@ -41,6 +41,12 @@ namespace google {
 namespace api_manager {
 namespace nginx {
 
+// A class to reset the pool pointer at destructor.
+struct NgxPoolReset {
+  ~NgxPoolReset() { pool = nullptr; }
+  ngx_pool_t* pool{};
+};
+
 // ngx_esp_http_connection contains all of the connection data necessary
 // to issue an HTTP request using NGINX's upstream module.
 //
@@ -50,6 +56,13 @@ namespace nginx {
 // is calculated exactly to fit any NGINX pool structures, this struct,
 // and pool cleanup callback (which will call the destructor).
 struct ngx_esp_http_connection {
+  // The pool owns this data structure.
+  ngx_pool_t* esp_pool;
+  // The pool for the fake connection.
+  NgxPoolReset connection_pool_reset;
+  // The pool for the request
+  NgxPoolReset request_pool_reset;
+
   // A 'fake' client NGINX connection object.
   //
   // Because NGINX is primarily a proxy, it usually has two connections:
@@ -78,7 +91,7 @@ struct ngx_esp_http_connection {
   // Request information.
 
   // The nginx_http_request_t used to handle the HTTP request.
-  ngx_http_request_t *request;
+  ngx_http_request_t* request;
 
   // Target URL path and host. Host will be used to send 'Host' header.
   ngx_str_t url_path;
