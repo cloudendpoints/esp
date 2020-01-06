@@ -493,21 +493,30 @@ void wakeup_event_handler(ngx_event_t *ev) {
                  "wakeup_event_handler called: %V%V",
                  &http_connection->host_header, &http_connection->url_path);
 
+  // Move all pointers to the local variables because once we destroy the
+  // pools we can no longer access the memory.
+
   // Request and a connection pools.
-  ngx_pool_t *ep = http_connection->esp_pool;
-  ngx_pool_t *cp = http_connection->connection_pool_reset.pool;
-  ngx_pool_t *rp = http_connection->request_pool_reset.pool;
+  ngx_pool_t *rp = http_connection->request->pool;
+  ngx_pool_t *cp = http_connection->connection.pool;
 
-  ngx_log_debug3(NGX_LOG_DEBUG_HTTP, ev->log, 0,
-                 "esp: destroying pools ep=%p, cp=%p, rp=%p", ep, cp, rp);
+  ngx_log_debug2(NGX_LOG_DEBUG_HTTP, ev->log, 0,
+                 "esp: destroying pools c=%p, r=%p", cp, rp);
 
-  if (cp != nullptr) {
-    ngx_destroy_pool(cp);
+  // If the connection is reset by peer, somehow rp or cp is 0.
+  // Not sure if any of pools have been freed. But trying to free
+  // a nullptr pool definitely will cause crash.
+  // Here, choose the least of evil, memory leak over crash.
+  if (rp == nullptr || cp == nullptr) {
+    ngx_log_debug2(NGX_LOG_DEBUG_HTTP, ev->log, 0,
+                   "esp memory pools may not be freed: pools c=%p, r=%p", cp,
+                   rp);
+    return;
   }
-  if (rp != nullptr) {
-    ngx_destroy_pool(rp);
-  }
-  ngx_destroy_pool(ep);
+
+  // Destroy the pools.
+  ngx_destroy_pool(rp);
+  ngx_destroy_pool(cp);
 }
 
 // A finalize handler. Called by NGINX when request is complete (success)
@@ -603,11 +612,6 @@ void ngx_esp_upstream_finalize_request(ngx_http_request_t *r, ngx_int_t rc) {
 
   // Schedule the wakeup call with NGINX.
   ngx_post_event(&http_connection->wakeup_event, &ngx_posted_events);
-
-  // upstream will call output filter chain. Its postpone filter checks
-  // content_length with subrequest_output_buffer_size. By clearing it
-  // to make sure it passes the postone filter.
-  ngx_http_clear_content_length(r);
 }
 
 // An input filter initialization handler.
@@ -750,38 +754,36 @@ class ngx_pool_t_deleter {
 // over them (the subrequest code has less control over pools than we have
 // here), a single pool could work as well.
 Status allocate_pools(
-    ngx_log_t *log, std::unique_ptr<ngx_pool_t, ngx_pool_t_deleter> &esp_pool,
-    std::unique_ptr<ngx_pool_t, ngx_pool_t_deleter> &connection_pool,
-    std::unique_ptr<ngx_pool_t, ngx_pool_t_deleter> &request_pool) {
-  // Only esp_http_connection will be allocated from the pool. No need to
-  // allocate pool bigger than necessary.
-  const size_t kEspPoolSize = sizeof(ngx_pool_t) + sizeof(ngx_pool_cleanup_t) +
-                              sizeof(ngx_esp_http_connection);
-  esp_pool.reset(ngx_create_pool(kEspPoolSize, log));
-  if (esp_pool == nullptr) {
-    return Status(NGX_ERROR, "Out of memory");
-  }
+    ngx_log_t *log,
+    std::unique_ptr<ngx_pool_t, ngx_pool_t_deleter> *out_connection_pool,
+    std::unique_ptr<ngx_pool_t, ngx_pool_t_deleter> *out_request_pool) {
+  // Only these structures will be allocated from the pool. No need to allocate
+  // pool bigger than necessary.
+  const size_t kConnectionPoolSize = sizeof(ngx_pool_t) +
+                                     sizeof(ngx_pool_cleanup_t) +
+                                     sizeof(ngx_esp_http_connection);
 
-  // Only a clean up is allocated from list pool
-  const size_t kConnectionPoolSize =
-      sizeof(ngx_pool_t) + sizeof(ngx_pool_cleanup_t);
-  connection_pool.reset(ngx_create_pool(kConnectionPoolSize, log));
+  // Create the connection pool.
+  std::unique_ptr<ngx_pool_t, ngx_pool_t_deleter> connection_pool(
+      ngx_create_pool(kConnectionPoolSize, log));
   if (connection_pool == nullptr) {
     return Status(NGX_ERROR, "Out of memory");
   }
 
   // Allocate the request pool.
-  request_pool.reset(ngx_create_pool(kRequestPoolSize, log));
+  std::unique_ptr<ngx_pool_t, ngx_pool_t_deleter> request_pool(
+      ngx_create_pool(kRequestPoolSize, log));
   if (request_pool == nullptr) {
     return Status(NGX_ERROR, "Out of memory");
   }
 
-  ngx_log_debug1(NGX_LOG_DEBUG_HTTP, log, 0, "created HTTP ESP pool: %p",
-                 esp_pool.get());
   ngx_log_debug1(NGX_LOG_DEBUG_HTTP, log, 0, "created HTTP connection pool: %p",
                  connection_pool.get());
   ngx_log_debug1(NGX_LOG_DEBUG_HTTP, log, 0, "created HTTP request pool: %p",
                  request_pool.get());
+
+  *out_connection_pool = std::move(connection_pool);
+  *out_request_pool = std::move(request_pool);
 
   return Status::OK;
 }
@@ -1102,11 +1104,10 @@ Status ngx_esp_create_http_request(
     ngx_log_t *log, HTTPRequest *request,
     ngx_esp_http_connection **out_http_connection) {
   // Create the connection pool and request pools.
-  std::unique_ptr<ngx_pool_t, ngx_pool_t_deleter> esp_pool;
   std::unique_ptr<ngx_pool_t, ngx_pool_t_deleter> connection_pool;
   std::unique_ptr<ngx_pool_t, ngx_pool_t_deleter> request_pool;
 
-  Status status = allocate_pools(log, esp_pool, connection_pool, request_pool);
+  Status status = allocate_pools(log, &connection_pool, &request_pool);
   if (!status.ok()) {
     return status;
   }
@@ -1114,8 +1115,9 @@ Status ngx_esp_create_http_request(
   // Allocate the HTTP connection state in one go.
   // Because we custom-fit the pool size to match this one allocation, the
   // alloction will not fail.
-  ngx_esp_http_connection *http_connection = RegisterPoolCleanup(
-      esp_pool.get(), new (esp_pool.get()) ngx_esp_http_connection());
+  ngx_esp_http_connection *http_connection =
+      RegisterPoolCleanup(connection_pool.get(), new (connection_pool.get())
+                                                     ngx_esp_http_connection());
   ngx_log_debug1(NGX_LOG_DEBUG_HTTP, log, 0,
                  "esp: allocated http_connection %p", http_connection);
   if (http_connection == nullptr) {
@@ -1158,15 +1160,6 @@ Status ngx_esp_create_http_request(
     return status;
   }
 
-  // connection_pool and request_pool can be freed by Nginx.
-  // If the pool is freed, the cleanup function will reset the pointer.
-  http_connection->esp_pool = esp_pool.get();
-  http_connection->connection_pool_reset.pool = connection_pool.get();
-  http_connection->request_pool_reset.pool = request_pool.get();
-  RegisterPoolCleanup(connection_pool.get(),
-                      &http_connection->connection_pool_reset);
-  RegisterPoolCleanup(request_pool.get(), &http_connection->request_pool_reset);
-
   // Success. Release the pool smart pointers.
   //
   // The pools are now owned by the connection and request objects
@@ -1177,7 +1170,6 @@ Status ngx_esp_create_http_request(
   //     connection pool: http_connection->connection.pool
   //
   // They will be destroyed in wakeup_event_handler.
-  esp_pool.release();
   connection_pool.release();
   request_pool.release();
 
