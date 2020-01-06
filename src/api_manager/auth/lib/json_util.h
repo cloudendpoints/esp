@@ -50,7 +50,7 @@ grpc_json *FillChild(grpc_json *child, grpc_json *brother, grpc_json *parent,
 // Create a grpc json array by a set of string
 grpc_json *CreateGrpcJsonArray(const std::set<std::string> &strSet,
                                grpc_json *brother, grpc_json *parent,
-                               const char *key, grpc_json *json_array,
+                               const char *key, grpc_json *child,
                                grpc_json *array_elem);
 
 }  // namespace auth
