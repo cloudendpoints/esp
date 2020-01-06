@@ -18,7 +18,6 @@
 #include <string.h>
 #include "src/api_manager/utils/str_util.h"
 
-
 extern "C" {
 #include "grpc/support/log.h"
 }
@@ -34,7 +33,7 @@ const char kJwtPayloadsDelimeter = '.';
 
 bool isNullOrEmpty(const char *str) { return str == nullptr || *str == '\0'; }
 
-} // namespace
+}  // namespace
 
 const grpc_json *GetProperty(const grpc_json *json, const char *key) {
   if (json == nullptr || key == nullptr) {
@@ -42,8 +41,7 @@ const grpc_json *GetProperty(const grpc_json *json, const char *key) {
   }
   const grpc_json *cur;
   for (cur = json->child; cur != nullptr; cur = cur->next) {
-    if (strcmp(cur->key, key) == 0)
-      return cur;
+    if (strcmp(cur->key, key) == 0) return cur;
   }
   return nullptr;
 }
@@ -86,20 +84,20 @@ bool GetPrimitiveFieldValue(const std::string &json_str,
   }
 
   switch (json->type) {
-  case GRPC_JSON_STRING:
-  case GRPC_JSON_NUMBER:
-    *payload_value = json->value;
-    break;
-  case GRPC_JSON_TRUE:
-    *payload_value = "true";
-    break;
-  case GRPC_JSON_FALSE:
-    *payload_value = "false";
-    break;
-  default:
-    grpc_json_destroy(json_root);
-    gpr_free(json_copy);
-    return false;
+    case GRPC_JSON_STRING:
+    case GRPC_JSON_NUMBER:
+      *payload_value = json->value;
+      break;
+    case GRPC_JSON_TRUE:
+      *payload_value = "true";
+      break;
+    case GRPC_JSON_FALSE:
+      *payload_value = "false";
+      break;
+    default:
+      grpc_json_destroy(json_root);
+      gpr_free(json_copy);
+      return false;
   }
   grpc_json_destroy(json_root);
   gpr_free(json_copy);
@@ -130,10 +128,10 @@ grpc_json *FillChild(grpc_json *child, grpc_json *brother, grpc_json *parent,
   return child;
 }
 
-grpc_json *CreateGrpcJsonArrayByStringSet(const std::set<std::string> &strSet,
-                                          grpc_json array_elem[],
-                                          grpc_json *brother, grpc_json *parent,
-                                          const char *key, grpc_json *child) {
+grpc_json *CreateGrpcJsonArray(const std::set<std::string> &strSet,
+                               grpc_json *brother, grpc_json *parent,
+                               const char *key, grpc_json *child,
+                               grpc_json *array_elem) {
   if (strSet.size() == 0) {
     return nullptr;
   }
@@ -151,12 +149,11 @@ grpc_json *CreateGrpcJsonArrayByStringSet(const std::set<std::string> &strSet,
   for (const std::string &elem : strSet) {
     grpc_json *cur = &array_elem[idx++];
     memset(cur, 0, sizeof(grpc_json));
-    FillChild(cur, prev, child, nullptr, elem.c_str(), GRPC_JSON_STRING);
-    prev = cur;
+    prev = FillChild(cur, prev, child, nullptr, elem.c_str(), GRPC_JSON_STRING);
   }
   return child;
 }
 
-} // namespace auth
-} // namespace api_manager
-} // namespace google
+}  // namespace auth
+}  // namespace api_manager
+}  // namespace google

@@ -54,13 +54,12 @@ char *WriteUserInfoToJson(const UserInfo &user_info) {
 
   grpc_json json_audiences;
   grpc_json json_audience_array[user_info.audiences.size()];
-  CreateGrpcJsonArrayByStringSet(
-      user_info.audiences, json_audience_array, prev_child, &json_top,
-      "audiences", &json_audiences);
+  CreateGrpcJsonArray(user_info.audiences, prev_child, &json_top, "audiences",
+                      &json_audiences, json_audience_array);
 
   return grpc_json_dump_to_string(&json_top, 0);
 }
 
-} // namespace auth
-} // namespace api_manager
-} // namespace google
+}  // namespace auth
+}  // namespace api_manager
+}  // namespace google
