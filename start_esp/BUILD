@@ -25,7 +25,7 @@
 ###############################################################################
 #
 
-load("@bazel_tools//tools/build_defs/pkg:pkg.bzl", "pkg_tar", "pkg_deb")
+load("@bazel_tools//tools/build_defs/pkg:pkg.bzl", "pkg_deb", "pkg_tar")
 load("@io_bazel_rules_pex//pex:pex_rules.bzl", "pex_binary")
 
 package(default_visibility = ["//visibility:public"])
@@ -53,7 +53,7 @@ pex_binary(
     reqs = [
         "certifi",
         "mako>=1.0.4",
-        "google-auth",
+        "google-auth==1.7.0",
         "google-auth-httplib2",
         "google-api-python-client",
         "requests",
