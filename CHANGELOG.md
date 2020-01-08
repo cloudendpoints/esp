@@ -1,3 +1,11 @@
+# Release 1.44.0 08-01-2020
+
+- Add audiences in userInfo (#744)
+- Fix ESP crash when fetching large jwt public keys (#745)
+- Fix backend routing with CONSTANT_ADDRESS (#736)
+- Log service config rollout fetching error (#734)
+- fixed option description for disable sampling (#733)
+
 # Release 1.43.0 04-11-2019
 
 - add flag --keepalive_timeout (#727)
