@@ -48,7 +48,6 @@ TEST_ID = 'testId'
 RUN_TESTS = [
     'asan',
     'check-files',
-    'docker-tests',
     'flex-on-endpoints-on',
     'gke-custom-http-bookstore',
     'gke-loose-http-bookstore',
