@@ -139,7 +139,7 @@ void GlobalFetchServiceAccountToken(
                     std::string &&body) {
                   // fetch failed
                   if (!status.ok()) {
-                    env->LogDebug("Failed to fetch service account token");
+                    env->LogError("Failed to fetch service account token");
                     token->set_last_failed_fetch_time(system_clock::now());
                     token->set_state(auth::ServiceAccountToken::FAILED);
                     continuation(Status(Code::INTERNAL, kFailedTokenFetch));
@@ -147,7 +147,7 @@ void GlobalFetchServiceAccountToken(
                   }
                   if (audience.empty()) {
                     if (!token->SetTokenJsonResponse(body)) {
-                      env->LogDebug("Failed to parse token response body");
+                      env->LogError("Failed to parse token response body");
                       continuation(Status(Code::INTERNAL, kFailedTokenParse));
                       return;
                     }
