@@ -46,7 +46,7 @@ my $ServiceControlPort = ApiManager::pick_port();
 my $GrpcServerPort = ApiManager::pick_port();
 my $PubkeyPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(14);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(15);
 
 $t->write_file('service.pb.txt',
         ApiManager::get_grpc_test_service_config($GrpcServerPort) .
@@ -122,6 +122,7 @@ my $response = ApiManager::http($NginxPort,<<EOF . $request);
 POST /echo?key=api-key HTTP/1.0
 Host: 127.0.0.1:${NginxPort}
 Authorization: Bearer $auth_token
+User-Agent: original-user-agent
 Content-Type: application/json
 Content-Length: $content_length
 client-text: text
@@ -135,8 +136,15 @@ my ($headers, $actual_body) = split /\r\n\r\n/, $response, 2;
 
 my $json_response = decode_json($actual_body);
 
+# EachResponse.received_metadata is a map<string, bytes>,
+# when transcoding EachResponse to JSON, "bytes" data type is base64 encoded.
+# 'dGV4dA==' is base64('text')
 is('dGV4dA==', $json_response->{receivedMetadata}->{'client-text'}, "Received client-text metadata");
 is('YmluYXJ5', $json_response->{receivedMetadata}->{'client-binary-bin'}, "Received client-binary metadata");
+
+# 'User-Agent' has been forwarded to grpc server as 'x-forwarded-user-agent'
+# 'b3JpZ2luYWwtdXNlci1hZ2VudA==' is base64('original-user-agent')
+is('b3JpZ2luYWwtdXNlci1hZ2VudA==', $json_response->{receivedMetadata}->{'x-forwarded-user-agent'}, "Received x-forwarded-user-agent metadata");
 
 # Check X-Endpoint-API-UserInfo header.
 my $user_info = $json_response->{receivedMetadata}->{'x-endpoint-api-userinfo'};

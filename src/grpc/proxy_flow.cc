@@ -142,6 +142,13 @@ const std::unordered_set<std::string> kHeadersToSkip = {
     "grpc-accept-encoding",
 };
 
+// The headers to prefix with "x-forwarded-"
+// grpc client addes these headers, it will override the original
+// headers. The original headers should be prefixed with "x-forwarded-".
+const std::unordered_set<std::string> kHeadersToAddPrefix = {
+    "user-agent",
+};
+
 Status ProcessDownstreamHeaders(
     const std::multimap<std::string, std::string> &headers,
     ::grpc::ClientContext *context) {
@@ -166,7 +173,11 @@ Status ProcessDownstreamHeaders(
           value_slice.size());
       context->AddMetadata(it.first, std::move(binary_value));
     } else {
-      context->AddMetadata(it.first, it.second);
+      if (kHeadersToAddPrefix.find(it.first) != kHeadersToSkip.end()) {
+        context->AddMetadata("x-forwarded-" + it.first, it.second);
+      } else {
+        context->AddMetadata(it.first, it.second);
+      }
     }
   }
   return Status::OK;
