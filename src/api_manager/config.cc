@@ -136,11 +136,11 @@ bool Config::LoadHttpMethods(ApiManagerEnvInterface *env,
                              PathMatcherBuilder<MethodInfo *> *pmb) {
   std::set<std::string> all_urls;
 
-  // HttpRules are allowed additonal bindings, but only at the top level.
-  // If the top level rule has failed to register, this means the addtional
-  // bindings won't be registered.
+  // A HttpRule may have additional bindings, but only at the top level.
+  // If the top level rule fails to register, its additional bindings
+  // won't be registered.
   for (const auto &rule : service_.http().rules()) {
-    // addtional_bindings use the same top level selector.
+    // additional bindings use the same top level selector.
     MethodInfoImpl *mi = GetOrCreateMethodInfoImpl(rule.selector(), "", "");
 
     if (!RegisterHttpRule(env, pmb, mi, all_urls, rule)) {
