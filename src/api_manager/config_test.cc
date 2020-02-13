@@ -900,6 +900,36 @@ TEST(Config, TestHttpOptions) {
   ASSERT_EQ(nullptr, method2);
 }
 
+TEST(Config, TestAdditionalBindings) {
+  MockApiManagerEnvironmentWithLog env;
+
+  static const char config_text[] = R"(
+ name: "Service.Name"
+ http {
+   rules {
+     selector: "GetMessages"
+     get: "/v1/messages/{message_id}"
+     additional_bindings {
+         get: "/v1/users/{user_id}/messages/{message_id}"
+     }
+     additional_bindings {
+         get: "/v2/messages/{user_id}/{message_id}"
+     }
+   }
+ }
+)";
+
+  std::unique_ptr<Config> config = Config::Create(&env, config_text, "");
+  ASSERT_TRUE(config);
+
+  auto method = config->GetMethodInfo("GET", "/v1/messages/1234");
+  ASSERT_NE(nullptr, method);
+
+  ASSERT_EQ(method,
+            config->GetMethodInfo("GET", "/v1/users/123/messages/1234"));
+  ASSERT_EQ(method, config->GetMethodInfo("GET", "/v2/messages/123/1234"));
+}
+
 TEST(Config, TestHttpOptionsSelector) {
   MockApiManagerEnvironmentWithLog env;
 

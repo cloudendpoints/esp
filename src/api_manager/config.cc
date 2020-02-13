@@ -140,12 +140,18 @@ bool Config::LoadHttpMethods(ApiManagerEnvInterface *env,
   // If the top level rule has failed to register, this means the addtional
   // bindings won't be registered.
   for (const auto &rule : service_.http().rules()) {
-    if(!RegisterHttpMethods(env, pmb, all_urls, rule)) {
-      env->LogDebug("Skipping aditional rule bindings.");
-      continue;
-    }
-    for (const auto &additional_rule : rule.additional_bindings()) {
-      RegisterHttpMethods(env, pmb, all_urls, additional_rule);
+    // addtional_bindings use the same top level selector.
+    MethodInfoImpl *mi = GetOrCreateMethodInfoImpl(rule.selector(), "", "");
+
+    if (!RegisterHttpRule(env, pmb, mi, all_urls, rule)) {
+      env->LogError("Failed to add http rule: " + rule.DebugString());
+    } else {
+      for (const auto &additional_rule : rule.additional_bindings()) {
+        if (!RegisterHttpRule(env, pmb, mi, all_urls, additional_rule)) {
+          env->LogError("Failed to add additional_binding rule: " +
+                        additional_rule.DebugString());
+        }
+      }
     }
   }
 
@@ -154,7 +160,7 @@ bool Config::LoadHttpMethods(ApiManagerEnvInterface *env,
   // CORS, they need to set "allow_cors" to true in swagger config.
   for (const auto &endpoint : service_.endpoints()) {
     if (endpoint.name() == service_.name() && endpoint.allow_cors()) {
-      env->LogDebug("CORS is allowed.");
+      env->LogInfo("CORS is allowed.");
       return AddOptionsMethodForAllUrls(env, pmb, all_urls);
     }
   }
@@ -162,11 +168,11 @@ bool Config::LoadHttpMethods(ApiManagerEnvInterface *env,
   return true;
 }
 
-bool Config::RegisterHttpMethods(ApiManagerEnvInterface *env,
-                                 PathMatcherBuilder<MethodInfo *> *pmb,
-                                 std::set<std::string> &all_urls,
-                                 const ::google::api::HttpRule &rule) {
-
+bool Config::RegisterHttpRule(ApiManagerEnvInterface *env,
+                              PathMatcherBuilder<MethodInfo *> *pmb,
+                              MethodInfoImpl *mi,
+                              std::set<std::string> &all_urls,
+                              const ::google::api::HttpRule &rule) {
   const string *url = nullptr;
   const char *http_method = nullptr;
 
@@ -204,17 +210,15 @@ bool Config::RegisterHttpMethods(ApiManagerEnvInterface *env,
     return false;
   }
 
-  MethodInfoImpl *mi = GetOrCreateMethodInfoImpl(rule.selector(), "", "");
-
-  if (!pmb->Register(http_method, *url, rule.body(), mi)) {
-    env->LogError(std::string("Invalid HTTP template: " + *url));
+  auto status = pmb->Register(http_method, *url, rule.body(), mi);
+  if (!status.ok()) {
+    env->LogError(status.message());
     return false;
   }
 
   if (strcmp(http_method, http_options) != 0) {
     all_urls.insert(*url);
   }
-
   return true;
 }
 
