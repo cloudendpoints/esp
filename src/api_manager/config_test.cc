@@ -950,7 +950,7 @@ TEST(Config, TestAdditionalBindingsFailedTopLevel) {
   std::unique_ptr<Config> config = Config::Create(&env, config_text, "");
   ASSERT_TRUE(config);
 
-  // addtional_bindings is not added since top level rule fails
+  // The additional bindings is not added since top level rule fails
   auto method = config->GetMethodInfo("GET", "/v1/users");
   ASSERT_EQ(nullptr, method);
 }
