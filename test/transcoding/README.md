@@ -49,12 +49,16 @@ producer_project_id: "<YOUR_PROJECT_ID>"
 name: "<YOUR_PROJECT_ID>.appspot.com"
 id: "2016-08-25r1"
 ```
-   * add following rules to http rule:
+   * add following additional_bindings to CreateBook http rule:
  ```
   rules {
     selector: "endpoints.examples.bookstore.Bookstore.CreateBook"
-    post: "/shelves/{shelf}/books/{book.id}/{book.author}"
-    body: "book.title"
+    post: "/shelves/{shelf}/books"
+    body: "book"
++   additional_bindings {
++      post: "/shelves/{shelf}/books/{book.id}/{book.author}"
++      body: "book.title"
++    }
   }
  ```
  - Replace /tmp/out.txt with test/transcoding/service.pb.txt

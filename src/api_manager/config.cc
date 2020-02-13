@@ -134,80 +134,92 @@ bool Config::LoadQuotaRule(ApiManagerEnvInterface *env) {
 
 bool Config::LoadHttpMethods(ApiManagerEnvInterface *env,
                              PathMatcherBuilder<MethodInfo *> *pmb) {
-  std::set<std::string> all_urls, urls_with_options;
-  // By default, allow_cors is false. This means that the default behavior
-  // of ESP is to reject all "OPTIONS" requests. If customers want to enable
-  // CORS, they need to set "allow_cors" to true in swagger config.
-  bool allow_cors = false;
-  for (const auto &endpoint : service_.endpoints()) {
-    if (endpoint.name() == service_.name() && endpoint.allow_cors()) {
-      allow_cors = true;
-      env->LogDebug("CORS is allowed.");
-      break;
-    }
-  }
+  std::set<std::string> all_urls;
 
+  // A HttpRule may have additional bindings, but only at the top level.
+  // If the top level rule fails to register, its additional bindings
+  // won't be registered.
   for (const auto &rule : service_.http().rules()) {
-    const string &selector = rule.selector();
-    const string *url = nullptr;
-    const char *http_method = nullptr;
+    // additional bindings use the same top level selector.
+    MethodInfoImpl *mi = GetOrCreateMethodInfoImpl(rule.selector(), "", "");
 
-    switch (rule.pattern_case()) {
-      case ::google::api::HttpRule::kGet:
-        url = &rule.get();
-        http_method = http_get;
-        break;
-      case ::google::api::HttpRule::kPut:
-        url = &rule.put();
-        http_method = http_put;
-        break;
-      case ::google::api::HttpRule::kPost:
-        url = &rule.post();
-        http_method = http_post;
-        break;
-      case ::google::api::HttpRule::kDelete:
-        url = &rule.delete_();
-        http_method = http_delete;
-        break;
-      case ::google::api::HttpRule::kPatch:
-        url = &rule.patch();
-        http_method = http_patch;
-        break;
-      case ::google::api::HttpRule::kCustom:
-        url = &rule.custom().path();
-        http_method = rule.custom().kind().c_str();
-        break;
-      default:
-        break;
-    }
-
-    if (http_method == nullptr || url == nullptr || url->empty()) {
-      env->LogError("Invalid HTTP binding encountered.");
-      continue;
-    }
-
-    MethodInfoImpl *mi = GetOrCreateMethodInfoImpl(selector, "", "");
-
-    auto status = pmb->Register(http_method, *url, rule.body(), mi);
-    if (!status.ok()) {
-      env->LogError(status.message());
-    } else if (allow_cors) {
-      all_urls.insert(*url);
-      if (strcmp(http_method, http_options) == 0) {
-        urls_with_options.insert(*url);
+    if (!RegisterHttpRule(env, pmb, mi, all_urls, rule)) {
+      env->LogError("Failed to add http rule: " + rule.DebugString());
+    } else {
+      for (const auto &additional_rule : rule.additional_bindings()) {
+        if (!RegisterHttpRule(env, pmb, mi, all_urls, additional_rule)) {
+          env->LogError("Failed to add additional_binding rule: " +
+                        additional_rule.DebugString());
+        }
       }
     }
   }
 
-  if (!allow_cors) {
-    return true;
+  // By default, allow_cors is false. This means that the default behavior
+  // of ESP is to reject all "OPTIONS" requests. If customers want to enable
+  // CORS, they need to set "allow_cors" to true in swagger config.
+  for (const auto &endpoint : service_.endpoints()) {
+    if (endpoint.name() == service_.name() && endpoint.allow_cors()) {
+      env->LogInfo("CORS is allowed.");
+      return AddOptionsMethodForAllUrls(env, pmb, all_urls);
+    }
   }
 
-  // Remove urls with options.
-  for (auto url : urls_with_options) {
-    all_urls.erase(url);
+  return true;
+}
+
+bool Config::RegisterHttpRule(ApiManagerEnvInterface *env,
+                              PathMatcherBuilder<MethodInfo *> *pmb,
+                              MethodInfoImpl *mi,
+                              std::set<std::string> &all_urls,
+                              const ::google::api::HttpRule &rule) {
+  const string *url = nullptr;
+  const char *http_method = nullptr;
+
+  switch (rule.pattern_case()) {
+    case ::google::api::HttpRule::kGet:
+      url = &rule.get();
+      http_method = http_get;
+      break;
+    case ::google::api::HttpRule::kPut:
+      url = &rule.put();
+      http_method = http_put;
+      break;
+    case ::google::api::HttpRule::kPost:
+      url = &rule.post();
+      http_method = http_post;
+      break;
+    case ::google::api::HttpRule::kDelete:
+      url = &rule.delete_();
+      http_method = http_delete;
+      break;
+    case ::google::api::HttpRule::kPatch:
+      url = &rule.patch();
+      http_method = http_patch;
+      break;
+    case ::google::api::HttpRule::kCustom:
+      url = &rule.custom().path();
+      http_method = rule.custom().kind().c_str();
+      break;
+    default:
+      break;
   }
-  return AddOptionsMethodForAllUrls(env, pmb, all_urls);
+
+  if (http_method == nullptr || url == nullptr || url->empty()) {
+    env->LogError("Invalid HTTP binding encountered.");
+    return false;
+  }
+
+  auto status = pmb->Register(http_method, *url, rule.body(), mi);
+  if (!status.ok()) {
+    env->LogError(status.message());
+    return false;
+  }
+
+  if (strcmp(http_method, http_options) != 0) {
+    all_urls.insert(*url);
+  }
+  return true;
 }
 
 bool Config::AddOptionsMethodForAllUrls(ApiManagerEnvInterface *env,

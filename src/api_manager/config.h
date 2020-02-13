@@ -106,9 +106,15 @@ class Config {
   bool LoadService(ApiManagerEnvInterface *env,
                    const std::string &service_config);
 
-  // Create MethodInfo for HTTP methods, register them to PathMatcher.
+  // Loads the Http rules, registers and adds CORS support if required.
   bool LoadHttpMethods(ApiManagerEnvInterface *env,
                        PathMatcherBuilder<MethodInfo *> *pmb);
+
+  // Register a Http rule to the path matcher builder.
+  bool RegisterHttpRule(ApiManagerEnvInterface *env,
+                        PathMatcherBuilder<MethodInfo *> *pmb,
+                        MethodInfoImpl *mi, std::set<std::string> &all_urls,
+                        const ::google::api::HttpRule &rule);
 
   // Add a special option method info for all URLs to support CORS.
   bool AddOptionsMethodForAllUrls(ApiManagerEnvInterface *env,

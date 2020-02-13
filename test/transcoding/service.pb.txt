@@ -837,11 +837,10 @@ http {
     selector: "endpoints.examples.bookstore.Bookstore.CreateBook"
     post: "/shelves/{shelf}/books"
     body: "book"
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.Bookstore.CreateBook"
-    post: "/shelves/{shelf}/books/{book.id}/{book.author}"
-    body: "book.title"
+    additional_bindings {
+      post: "/shelves/{shelf}/books/{book.id}/{book.author}"
+      body: "book.title"
+    }
   }
   rules {
     selector: "endpoints.examples.bookstore.Bookstore.GetBook"
