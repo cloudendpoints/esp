@@ -930,6 +930,62 @@ TEST(Config, TestAdditionalBindings) {
   ASSERT_EQ(method, config->GetMethodInfo("GET", "/v2/messages/123/1234"));
 }
 
+TEST(Config, TestAdditionalBindingsFailedTopLevel) {
+  MockApiManagerEnvironmentWithLog env;
+
+  // Top level rule has empty url, so it will fail to add
+  static const char config_text[] = R"(
+ name: "Service.Name"
+ http {
+   rules {
+     selector: "GetMessages"
+     get: ""
+     additional_bindings {
+         get: "/v1/users"
+     }
+   }
+ }
+)";
+
+  std::unique_ptr<Config> config = Config::Create(&env, config_text, "");
+  ASSERT_TRUE(config);
+
+  // addtional_bindings is not added since top level rule fails
+  auto method = config->GetMethodInfo("GET", "/v1/users");
+  ASSERT_EQ(nullptr, method);
+}
+
+TEST(Config, TestAdditionalBindingsFailOne) {
+  MockApiManagerEnvironmentWithLog env;
+
+  // one of additional_bindings fails with empty url
+  // but other additional_bindings is added
+  static const char config_text[] = R"(
+ name: "Service.Name"
+ http {
+   rules {
+     selector: "GetMessages"
+     get: "/v1/messages/{message_id}"
+     additional_bindings {
+         get: ""
+     }
+     additional_bindings {
+         get: "/v1/users/{user_id}/messages/{message_id}"
+     }
+   }
+ }
+)";
+
+  std::unique_ptr<Config> config = Config::Create(&env, config_text, "");
+  ASSERT_TRUE(config);
+
+  auto method = config->GetMethodInfo("GET", "/v1/messages/1234");
+  ASSERT_NE(nullptr, method);
+
+  ASSERT_EQ(method,
+            config->GetMethodInfo("GET", "/v1/users/123/messages/1234"));
+}
+
 TEST(Config, TestHttpOptionsSelector) {
   MockApiManagerEnvironmentWithLog env;
 
