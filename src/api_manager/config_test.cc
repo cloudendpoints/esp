@@ -905,6 +905,10 @@ TEST(Config, TestAdditionalBindings) {
 
   static const char config_text[] = R"(
  name: "Service.Name"
+ endpoints {
+   name: "Service.Name"
+   allow_cors: true
+ }
  http {
    rules {
      selector: "GetMessages"
@@ -928,6 +932,17 @@ TEST(Config, TestAdditionalBindings) {
   ASSERT_EQ(method,
             config->GetMethodInfo("GET", "/v1/users/123/messages/1234"));
   ASSERT_EQ(method, config->GetMethodInfo("GET", "/v2/messages/123/1234"));
+
+  // OPTIONS added
+  for (auto path : {"/v1/messages/1234", "/v1/users/123/messages/1234",
+                    "/v2/messages/123/1234"}) {
+    auto method = config->GetMethodInfo("OPTIONS", path);
+    ASSERT_NE(nullptr, method);
+    ASSERT_EQ("CORS", method->name());
+    ASSERT_FALSE(method->auth());
+    // For all added OPTIONS methods, allow_unregistered_calls is true.
+    ASSERT_TRUE(method->allow_unregistered_calls());
+  }
 }
 
 TEST(Config, TestAdditionalBindingsFailedTopLevel) {
@@ -984,6 +999,11 @@ TEST(Config, TestAdditionalBindingsFailOne) {
 
   ASSERT_EQ(method,
             config->GetMethodInfo("GET", "/v1/users/123/messages/1234"));
+
+  // OPTIONS are not added
+  ASSERT_EQ(nullptr, config->GetMethodInfo("OPTIONS", "/v1/messages/1234"));
+  ASSERT_EQ(nullptr,
+            config->GetMethodInfo("OPTIONS", "/v1/users/123/messages/1234"));
 }
 
 TEST(Config, TestHttpOptionsSelector) {
