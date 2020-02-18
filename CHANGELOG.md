@@ -1,3 +1,9 @@
+# Release 1.45.0 18-02-2020
+
+- Add support for Http rule additional_bindings (#761)
+- forward the User-Agent header to grpc backend (#760)
+- Log error log for access token fetching failure (#754)
+
 # Release 1.44.0 08-01-2020
 
 - Add audiences in userInfo (#744)
