@@ -150,6 +150,7 @@ def write_nginx_conf(ingress, nginx_conf, args):
             enable_backend_routing=args.enable_backend_routing,
             client_max_body_size=args.client_max_body_size,
             client_body_buffer_size=args.client_body_buffer_size,
+            client_body_timeout=args.client_body_timeout,
             large_client_header_buffers=args.large_client_header_buffers,
             keepalive_timeout=args.keepalive_timeout,
             worker_processes=args.worker_processes,
@@ -647,6 +648,11 @@ config file.'''.format(
     parser.add_argument('--keepalive_timeout', default=None, help='''
     Sets the server keepalive timeout. This flag will pass to Nginx config directly.
     http://nginx.org/en/docs/http/ngx_http_core_module.html#keepalive_timeout.
+    ''')
+
+    parser.add_argument('--client_body_timeout', default=None, help='''
+    Sets the timeout for reading client request body. This flag will pass to Nginx config directly.
+    http://nginx.org/en/docs/http/ngx_http_core_module.html#client_body_timeout.
     ''')
 
     parser.add_argument('--rewrite', action='append', help=
