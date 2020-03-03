@@ -1,3 +1,7 @@
+# Release 1.46.0 02-03-2020
+
+- Add flag --client_body_timeout (#765)
+
 # Release 1.45.0 18-02-2020
 
 - Add support for Http rule additional_bindings (#761)
