@@ -26,7 +26,7 @@ const int kFetchThrottleWindowInS = 300;
 const char kRolloutStrategyManaged[] = "managed";
 
 // The default periodical interval to detect rollout changes. Unit: seconds.
-const int kDetectRolloutChangeIntervalInS = 300;
+const int kDetectRolloutChangeIntervalInS = 60;
 
 }  // namespace
 
