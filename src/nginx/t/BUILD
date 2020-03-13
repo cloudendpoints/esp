@@ -25,7 +25,7 @@
 ################################################################################
 #
 load("@io_bazel_rules_perl//perl:perl.bzl", "perl_library")
-load("//:nginx.bzl", "nginx_test", "nginx_suite")
+load("//:nginx.bzl", "nginx_suite", "nginx_test")
 
 perl_library(
     name = "perl_library",
@@ -211,6 +211,7 @@ nginx_suite(
         "check_with_token.t",
         "config_extra_field.t",
         "config_missing.t",
+        "config_rollouts_by_timer.t",
         "config_rollouts_managed.t",
         "cors.t",
         "cors_disabled.t",

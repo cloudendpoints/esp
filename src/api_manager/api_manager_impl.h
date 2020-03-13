@@ -94,6 +94,9 @@ class ApiManagerImpl : public ApiManager {
   utils::Status AddAndDeployConfigs(
       std::vector<std::pair<std::string, int>> &&configs, bool initialize);
 
+  // Send empty report to detect rollout ID change
+  void DetectRolloutIDChange();
+
   // The check work flow.
   std::shared_ptr<CheckWorkflow> check_workflow_;
 

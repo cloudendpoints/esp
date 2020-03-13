@@ -305,6 +305,16 @@ Status Aggregated::Close() {
   return Status::OK;
 }
 
+void Aggregated::SendEmptyReport() {
+  ReportRequest request;
+  ReportResponse* response = new ReportResponse;
+  Call(request, response,
+       [this, response](const ::google::protobuf::util::Status&) {
+         delete response;
+       },
+       nullptr);
+}
+
 Status Aggregated::Report(const ReportRequestInfo& info) {
   if (!client_) {
     return Status(Code::INTERNAL, "Missing service control client");

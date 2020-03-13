@@ -225,7 +225,8 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, VerifyTimerIntervalDistribution) {
       [this, &sequence](const utils::Status&,
                         const std::vector<std::pair<std::string, int>>&) {
         sequence++;
-      }));
+      },
+      nullptr));
   config_manager->set_current_rollout_id("2017-05-01r0");
 
   // Default is 5 minute interval. Use 5 slot for each minute.
@@ -283,7 +284,8 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutSingleServiceConfig) {
         EXPECT_EQ(kServiceConfig1, list[0].first);
         EXPECT_EQ(100, list[0].second);
         sequence++;
-      }));
+      },
+      nullptr));
 
   config_manager->SetLatestRolloutId("2017-05-01r0",
                                      std::chrono::system_clock::now());
@@ -306,7 +308,8 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutIDNotChanged) {
       [this, &sequence](const utils::Status& status,
                         const std::vector<std::pair<std::string, int>>& list) {
         sequence++;
-      }));
+      },
+      nullptr));
 
   // set rollout_id to 2017-05-01r0 which is same as kRolloutsResponse1
   config_manager->set_current_rollout_id("2017-05-01r0");
@@ -327,7 +330,8 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RepeatedTrigger) {
         EXPECT_EQ(kServiceConfig1, list[0].first);
         EXPECT_EQ(100, list[0].second);
         sequence++;
-      }));
+      },
+      nullptr));
   config_manager->set_current_rollout_id("2017-05-01r0");
 
   auto now = std::chrono::system_clock::now();
@@ -416,7 +420,8 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutMultipleServiceConfig) {
         EXPECT_EQ(kServiceConfig2, list[1].first);
         EXPECT_EQ(20, list[1].second);
         sequence++;
-      }));
+      },
+      nullptr));
 
   config_manager->SetLatestRolloutId("2017-05-01r0",
                                      std::chrono::system_clock::now());
@@ -487,7 +492,8 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
       [this, &sequence](const utils::Status& status,
                         const std::vector<std::pair<std::string, int>>& list) {
         sequence++;
-      }));
+      },
+      nullptr));
 
   config_manager->SetLatestRolloutId("2017-05-01r0",
                                      std::chrono::system_clock::now());
@@ -553,7 +559,8 @@ TEST_F(ConfigManagerServiceNameConfigIdTest, RolloutSingleServiceConfigUpdate) {
         EXPECT_EQ(100, list[0].second);
 
         sequence++;
-      }));
+      },
+      nullptr));
 
   config_manager->SetLatestRolloutId("2017-05-01r0",
                                      std::chrono::system_clock::now());
@@ -600,7 +607,8 @@ TEST_F(ConfigManagerServiceNameConfigIdTest,
         EXPECT_EQ(100, list[0].second);
 
         sequence++;
-      }));
+      },
+      nullptr));
 
   config_manager->SetLatestRolloutId("2017-05-01r0",
                                      std::chrono::system_clock::now());

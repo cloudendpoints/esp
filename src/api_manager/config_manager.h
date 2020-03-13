@@ -72,7 +72,8 @@ class ConfigManager {
   // rollout_apply_function when it successfully downloads the latest successful
   // rollout
   ConfigManager(std::shared_ptr<context::GlobalContext> global_context,
-                RolloutApplyFunction rollout_apply_function);
+                RolloutApplyFunction rollout_apply_function,
+                std::function<void()> detect_rollout_func);
   virtual ~ConfigManager();
 
  public:
@@ -122,6 +123,9 @@ class ConfigManager {
   // The random objects to throttle the timer
   std::default_random_engine random_generator_;
   std::unique_ptr<std::uniform_int_distribution<int>> random_dist_;
+
+  // Periodic timer to send empty report to detect latest rollout change.
+  std::unique_ptr<PeriodicTimer> detect_rollout_change_timer_;
 };
 
 }  // namespace api_manager
