@@ -144,9 +144,10 @@ $t->run();
 
 ################################################################################
 
-# By not sending any traffic, this test is relies on detect_rollout_timer
-# to detect rollout changes. Interval is 1s, then it will send empty report
-# which will return new rollout id, it will trigger a new config fetch.
+# By not sending any traffic, this test relies on detect_rollout_timer
+# to detect rollout changes. Its interval is 1s, it will send an empty report every second
+# The report will return the latest rollout id. If it is changed, it will trigger a new
+# config fetch.
 
 # waiting for the first report request is done
 is($t->waitforfile($t->{_testdir}."/".${report_done} . ".0"), 1, 'Report1 body file ready.');
