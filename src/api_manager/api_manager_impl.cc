@@ -211,7 +211,8 @@ utils::Status ApiManagerImpl::Init() {
           if (status.ok()) {
             AddAndDeployConfigs(std::move(configs), true);
           }
-        }));
+        },
+        [this]() { DetectRolloutIDChange(); }));
 
     if (global_context_->server_config()->has_service_config_rollout()) {
       config_manager_->set_current_rollout_id(global_context_->server_config()
@@ -221,6 +222,13 @@ utils::Status ApiManagerImpl::Init() {
   }
 
   return utils::Status::OK;
+}
+
+void ApiManagerImpl::DetectRolloutIDChange() {
+  if (!service_context_map_.empty()) {
+    const auto &it = service_context_map_.begin();
+    it->second->service_control()->SendEmptyReport();
+  }
 }
 
 utils::Status ApiManagerImpl::Close() {

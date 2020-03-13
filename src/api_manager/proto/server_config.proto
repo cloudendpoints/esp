@@ -236,6 +236,10 @@ message ServiceManagementConfig {
   // at the same time to exceed its quota.
   // If not specified, or 0, default is 300 (5 minutes).
   int32 fetch_throttle_window_s = 2;
+
+  // The periodical timer interval in seconds to detect rollout changes.
+  // If not specified, or 0, default is 60s (1 minute).
+  int32 detect_rollout_interval_s = 3;
 }
 
 // Maps service configuration files to their corresponding traffic percentage.

@@ -58,6 +58,9 @@ class Interface {
   // is enabled. HTTP request errors carry Nginx error code.
   virtual utils::Status Report(const ReportRequestInfo& info) = 0;
 
+  // Send an empty report to get the latest rollout_id.
+  virtual void SendEmptyReport() = 0;
+
   // Sends ServiceControl Check asynchronously.
   // on_done() function will be called once it is completed.
   // utils::Status in the on_done callback:

@@ -49,6 +49,8 @@ class Aggregated : public Interface {
 
   virtual ~Aggregated();
 
+  void SendEmptyReport() override;
+
   virtual utils::Status Report(const ReportRequestInfo& info);
 
   virtual void Check(

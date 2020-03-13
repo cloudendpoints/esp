@@ -138,12 +138,10 @@ if [[ ("${ESP_ROLLOUT_STRATEGY}" == "managed") && ("${BACKEND}" == "bookstore") 
   create_service "${ESP_SERVICE}" "${SERVICE_IDL}"
 
   # Need to wait for ServiceControl to detect new rollout
-  # Need to run some traffic in order for ServiceControl to send the new rollout.
   # Here wait for 200 seconds.
   for l in {1..20}
   do
     echo "Wait for the new config to propagate: ${l}"
-    check_http_service "${HOST}/shelves" 200
     sleep 10
   done
 

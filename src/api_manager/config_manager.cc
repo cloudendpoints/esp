@@ -25,23 +25,29 @@ const int kFetchThrottleWindowInS = 300;
 
 const char kRolloutStrategyManaged[] = "managed";
 
+// The default periodical interval to detect rollout changes. Unit: seconds.
+const int kDetectRolloutChangeIntervalInS = 60;
+
 }  // namespace
 
 ConfigManager::ConfigManager(
     std::shared_ptr<context::GlobalContext> global_context,
-    RolloutApplyFunction rollout_apply_function)
+    RolloutApplyFunction rollout_apply_function,
+    std::function<void()> detect_rollout_func)
     : global_context_(global_context),
       rollout_apply_function_(rollout_apply_function),
       fetch_throttle_window_in_s_(kFetchThrottleWindowInS) {
+  int detect_rollout_interval_s = kDetectRolloutChangeIntervalInS;
   if (global_context_->server_config() &&
       global_context_->server_config()->has_service_management_config()) {
+    const auto& cfg =
+        global_context_->server_config()->service_management_config();
     // update fetch_throttle_window
-    if (global_context_->server_config()
-            ->service_management_config()
-            .fetch_throttle_window_s() > 0) {
-      fetch_throttle_window_in_s_ = global_context_->server_config()
-                                        ->service_management_config()
-                                        .fetch_throttle_window_s();
+    if (cfg.fetch_throttle_window_s() > 0) {
+      fetch_throttle_window_in_s_ = cfg.fetch_throttle_window_s();
+    }
+    if (cfg.detect_rollout_interval_s() > 0) {
+      detect_rollout_interval_s = cfg.detect_rollout_interval_s();
     }
   }
   static std::random_device random_device;
@@ -52,11 +58,19 @@ ConfigManager::ConfigManager(
       0, fetch_throttle_window_in_s_ * 1000));
 
   service_management_fetch_.reset(new ServiceManagementFetch(global_context));
+
+  if (detect_rollout_func) {
+    detect_rollout_change_timer_ = global_context_->env()->StartPeriodicTimer(
+        std::chrono::seconds(detect_rollout_interval_s), detect_rollout_func);
+  }
 }
 
 ConfigManager::~ConfigManager() {
   if (fetch_timer_) {
     fetch_timer_->Stop();
+  }
+  if (detect_rollout_change_timer_) {
+    detect_rollout_change_timer_->Stop();
   }
 };
 
