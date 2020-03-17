@@ -1,3 +1,7 @@
+# Release 1.47.0 17-03-2020
+
+- Periodically send empty report to detect rollout changes (#769)
+
 # Release 1.46.0 02-03-2020
 
 - Add flag --client_body_timeout (#765)
