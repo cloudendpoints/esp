@@ -150,6 +150,7 @@ my $response2 = ApiManager::http_get($NginxPort,'/shelves/123/books?key=this-is-
 
 # PathTranslation is set as CONSTANT_ADDRESS, with binding variables and parameters.
 # Authorization header is added from cached token, with audience override.
+# Original request has Authorization header too
 my $response3 = ApiManager::http($NginxPort,<<"EOF");
 GET /shelves/123/books/1234?key=this-is-an-api-key&timezone=EST HTTP/1.0
 Authorization: Bearer origin.token
@@ -158,6 +159,7 @@ Host: localhost
 EOF
 
 # if the path field is snake case, need to replace with jsonName instead.
+# Original request has Authorization header too
 my $response4 = ApiManager::http($NginxPort,<<"EOF");
 GET /shelves/123/books/info/1234?key=this-is-an-api-key HTTP/1.0
 Authorization: Bearer origin.token
@@ -224,22 +226,27 @@ is(scalar @bookstore_requests, 6, 'Bookstore received 6 requests.');
 my $request1 = shift @bookstore_requests;
 is($request1->{headers}->{'authorization'}, 'Bearer test_audience_override',
     'request1: Authorization header is received.');
+# Original request doesn't have Authorization header
 is($request1->{headers}->{'x-forwarded-authorization'}, undef,
     'request1: X-Forwarded-Authorization header is not received.');
 
 my $request2 = shift @bookstore_requests;
 is($request2->{headers}->{'authorization'}, undef,
     'request2: Authorization header is not received.');
+# Original request doesn't have Authorization header
 is($request2->{headers}->{'x-forwarded-authorization'}, undef,
     'request2: X-Forwarded-Authorization header is not received.');
 
 my $request3 = shift @bookstore_requests;
+# Original request has Authorization header, it is overrided.
 is($request3->{headers}->{'authorization'}, 'Bearer test_audience_override',
     'request3: Authorization header is received.');
+# Original request has Authorization header, it is copied here.
 is($request3->{headers}->{'x-forwarded-authorization'}, 'Bearer origin.token',
     'request3: X-Forwarded-Authorization header is received.');
 
 my $request4 = shift @bookstore_requests;
+# Original request has Authorization header, it is NOT overrided
 is($request4->{headers}->{'authorization'}, 'Bearer origin.token',
     'request4: Authorization header is received.' );
 is($request4->{headers}->{'x-forwarded-authorization'}, undef,
