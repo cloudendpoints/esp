@@ -42,7 +42,7 @@ my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $MetadataPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(20);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(25);
 
 # Save service name in the service configuration protocol buffer file.
 
@@ -69,19 +69,16 @@ backend {
     selector: "GetBookInfo"
     address: "http://127.0.0.1:$BackendPort/getBookInfo"
     path_translation: CONSTANT_ADDRESS
-    jwt_audience: "test-audience"
   }
   rules {
     selector: "GetBookId"
     address: "http://127.0.0.1:$BackendPort/getBookId"
     path_translation: CONSTANT_ADDRESS
-    jwt_audience: "test-audience"
   }
   rules {
     selector: "ListAllBooks"
     address: "http://127.0.0.1:$BackendPort"
     path_translation: CONSTANT_ADDRESS
-    jwt_audience: "test-audience"
   }
 }
 types {
@@ -153,10 +150,20 @@ my $response2 = ApiManager::http_get($NginxPort,'/shelves/123/books?key=this-is-
 
 # PathTranslation is set as CONSTANT_ADDRESS, with binding variables and parameters.
 # Authorization header is added from cached token, with audience override.
-my $response3 = ApiManager::http_get($NginxPort,'/shelves/123/books/1234?key=this-is-an-api-key&timezone=EST');
+my $response3 = ApiManager::http($NginxPort,<<"EOF");
+GET /shelves/123/books/1234?key=this-is-an-api-key&timezone=EST HTTP/1.0
+Authorization: Bearer origin.token
+Host: localhost
+
+EOF
 
 # if the path field is snake case, need to replace with jsonName instead.
-my $response4 = ApiManager::http_get($NginxPort,'/shelves/123/books/info/1234?key=this-is-an-api-key');
+my $response4 = ApiManager::http($NginxPort,<<"EOF");
+GET /shelves/123/books/info/1234?key=this-is-an-api-key HTTP/1.0
+Authorization: Bearer origin.token
+Host: localhost
+
+EOF
 
 # if not found corresponding jsonName, origin snake case path is used.
 # also, {foo.bar} style path is supported.
@@ -214,17 +221,29 @@ EOF
 my @bookstore_requests = ApiManager::read_http_stream($t, 'bookstore.log');
 is(scalar @bookstore_requests, 6, 'Bookstore received 6 requests.');
 
-my $request = shift @bookstore_requests;
-is($request->{headers}->{'authorization'}, 'Bearer test_audience_override',
-    'Authorization header is received.' );
+my $request1 = shift @bookstore_requests;
+is($request1->{headers}->{'authorization'}, 'Bearer test_audience_override',
+    'request1: Authorization header is received.');
+is($request1->{headers}->{'x-forwarded-authorization'}, undef,
+    'request1: X-Forwarded-Authorization header is not received.');
 
-my $request = shift @bookstore_requests;
-is($request->{headers}->{'authorization'}, undef);
+my $request2 = shift @bookstore_requests;
+is($request2->{headers}->{'authorization'}, undef,
+    'request2: Authorization header is not received.');
+is($request2->{headers}->{'x-forwarded-authorization'}, undef,
+    'request2: X-Forwarded-Authorization header is not received.');
 
-my $request = shift @bookstore_requests;
-is($request->{headers}->{'authorization'}, 'Bearer test_audience_override',
-    'Authorization header is received.' );
+my $request3 = shift @bookstore_requests;
+is($request3->{headers}->{'authorization'}, 'Bearer test_audience_override',
+    'request3: Authorization header is received.');
+is($request3->{headers}->{'x-forwarded-authorization'}, 'Bearer origin.token',
+    'request3: X-Forwarded-Authorization header is received.');
 
+my $request4 = shift @bookstore_requests;
+is($request4->{headers}->{'authorization'}, 'Bearer origin.token',
+    'request4: Authorization header is received.' );
+is($request4->{headers}->{'x-forwarded-authorization'}, undef,
+    'request4: X-Forwarded-Authorization header is not received.');
 
 # Check metadata server log.
 my @metadata_requests = ApiManager::read_http_stream($t, 'metadata.log');
@@ -338,12 +357,11 @@ Content-Type: application/json
 }
 EOF
 
-  $server->on('GET', '/computeMetadata/v1/instance/service-accounts/default/identity?format=full&audience=test-audience',  <<"EOF");
+  $server->on('GET', '/computeMetadata/v1/instance/service-accounts/default/identity?format=full&audience=test-audience',  <<"EOF"."test_audience_override");
 HTTP/1.1 200 OK
 Metadata-Flavor: Google
 Content-Type: application/json
 
-test_audience_override\r\n\r\n
 EOF
 
   $server->run();
