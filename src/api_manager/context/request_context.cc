@@ -534,7 +534,7 @@ void RequestContext::AddInstanceIdentityToken() {
             kXForwardedAuthorizationHeader, origin_auth_header);
         if (!status.ok()) {
           service_context()->env()->LogError(
-              "Failed to set x-forwarded-authorization header to backend.");
+              "Failed to set X-Forwarded-Authorization header to backend.");
         }
       }
       Status status = request()->AddHeaderToBackend(kAuthorizationHeader,
