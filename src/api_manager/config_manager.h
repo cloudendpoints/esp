@@ -97,7 +97,9 @@ class ConfigManager {
   // Fetch ServiceConfig details from the latest successful rollouts
   // https://goo.gl/I2nD4M
   void FetchConfigs(std::shared_ptr<ConfigsFetchInfo> config_fetch_info);
-  // Period timer task
+  // Periodical timer to detect rollout changes
+  void OnDetectRolloutChangeTimer();
+  // One time timer to throttle service fetching time.
   void OnRolloutsRefreshTimer();
   // Rollout response handler
   void OnRolloutResponse(const utils::Status& status, std::string&& rollouts);
@@ -124,6 +126,8 @@ class ConfigManager {
   std::default_random_engine random_generator_;
   std::unique_ptr<std::uniform_int_distribution<int>> random_dist_;
 
+  // the callback function to detect rollout change.
+  std::function<void()> detect_rollout_func_;
   // Periodic timer to send empty report to detect latest rollout change.
   std::unique_ptr<PeriodicTimer> detect_rollout_change_timer_;
 };

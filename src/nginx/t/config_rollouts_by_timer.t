@@ -45,8 +45,9 @@ my $NginxPort          = ApiManager::pick_port();
 my $BackendPort        = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $ServiceManagementPort = ApiManager::pick_port();
+my $MetadataPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(7);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(9);
 
 # Save service configuration that disables the report cache.
 # Report request will be sent for each client request
@@ -109,6 +110,9 @@ events {
 http {
   %%TEST_GLOBALS_HTTP%%
   server_tokens off;
+  endpoints {
+    metadata_server http://127.0.0.1:${MetadataPort};
+  }
   server {
     listen 127.0.0.1:${NginxPort};
     server_name localhost;
@@ -135,11 +139,14 @@ $t->run_daemon( \&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log',
   $report_done);
 $t->run_daemon( \&servicemanagement, $t, $ServiceManagementPort,
   'servicemanagement.log', $rollout_done);
+$t->run_daemon(\&metadata, $t, $MetadataPort, 'metadata.log');
   
 is( $t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1,
   'Service control socket ready.' );
 is( $t->waitforsocket("127.0.0.1:${ServiceManagementPort}"), 1,
   'Service management socket ready.' );
+is($t->waitforsocket("127.0.0.1:${MetadataPort}"), 1, 'Metadata socket ready.');
+
 $t->run();
 
 ################################################################################
@@ -177,6 +184,12 @@ is($endpoints_status->{processes}[0]->{espStatus}[0]->{serviceConfigRollouts}->
 
 $t->stop_daemons();
 
+# Check service control requests...
+my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
+my $request = shift @servicecontrol_requests;
+is($request->{headers}->{authorization},
+    'Bearer ya29.7gFRTEGmovWacYDnQIpC9X9Qp8cH0sgQyWVrZaB1Eg1WoAhQMSG4L2rtaHk1',
+    'empty report was authenticated');
 
 ################################################################################
 
@@ -258,6 +271,27 @@ EOF
 
     $t->write_file($done, ':rollout done');
   });
+
+  $server->run();
+}
+
+sub metadata {
+  my ($t, $port, $file) = @_;
+  my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
+    or die "Can't create test server socket: $!\n";
+  local $SIG{PIPE} = 'IGNORE';
+
+  $server->on('GET', '/computeMetadata/v1/instance/service-accounts/default/token', <<'EOF');
+HTTP/1.1 200 OK
+Metadata-Flavor: Google
+Content-Type: application/json
+
+{
+ "access_token":"ya29.7gFRTEGmovWacYDnQIpC9X9Qp8cH0sgQyWVrZaB1Eg1WoAhQMSG4L2rtaHk1",
+ "expires_in":200,
+ "token_type":"Bearer"
+}
+EOF
 
   $server->run();
 }
