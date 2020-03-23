@@ -42,6 +42,7 @@ const char kGRpcTraceContextHeader[] = "grpc-trace-bin";
 
 // Authorization Header
 const char kAuthorizationHeader[] = "Authorization";
+const char kXForwardedAuthorizationHeader[] = "X-Forwarded-Authorization";
 
 const char kBearerPrefix[] = "Bearer ";
 
@@ -527,6 +528,15 @@ void RequestContext::AddInstanceIdentityToken() {
                       ->GetInstanceIdentityToken(audience)
                       ->GetAuthToken();
     if (!token.empty()) {
+      std::string origin_auth_header;
+      if (request()->FindHeader(kAuthorizationHeader, &origin_auth_header)) {
+        Status status = request()->AddHeaderToBackend(
+            kXForwardedAuthorizationHeader, origin_auth_header);
+        if (!status.ok()) {
+          service_context()->env()->LogError(
+              "Failed to set X-Forwarded-Authorization header to backend.");
+        }
+      }
       Status status = request()->AddHeaderToBackend(kAuthorizationHeader,
                                                     kBearerPrefix + token);
       if (!status.ok()) {
