@@ -36,7 +36,8 @@ ConfigManager::ConfigManager(
     std::function<void()> detect_rollout_func)
     : global_context_(global_context),
       rollout_apply_function_(rollout_apply_function),
-      fetch_throttle_window_in_s_(kFetchThrottleWindowInS) {
+      fetch_throttle_window_in_s_(kFetchThrottleWindowInS),
+      detect_rollout_func_(detect_rollout_func) {
   int detect_rollout_interval_s = kDetectRolloutChangeIntervalInS;
   if (global_context_->server_config() &&
       global_context_->server_config()->has_service_management_config()) {
@@ -59,9 +60,10 @@ ConfigManager::ConfigManager(
 
   service_management_fetch_.reset(new ServiceManagementFetch(global_context));
 
-  if (detect_rollout_func) {
+  if (detect_rollout_func_) {
     detect_rollout_change_timer_ = global_context_->env()->StartPeriodicTimer(
-        std::chrono::seconds(detect_rollout_interval_s), detect_rollout_func);
+        std::chrono::seconds(detect_rollout_interval_s),
+        [this]() { OnDetectRolloutChangeTimer(); });
   }
 }
 
@@ -92,6 +94,20 @@ void ConfigManager::SetLatestRolloutId(
   fetch_timer_ = global_context_->env()->StartPeriodicTimer(
       std::chrono::milliseconds(throttled_time_in_ms),
       [this]() { OnRolloutsRefreshTimer(); });
+}
+
+void ConfigManager::OnDetectRolloutChangeTimer() {
+  global_context_->env()->LogDebug("Detect rollout change timer starts");
+  std::string audience;
+  GlobalFetchServiceAccountToken(
+      global_context_, audience, [this](utils::Status status) {
+        if (!status.ok()) {
+          global_context_->env()->LogError(
+              "Fetch access token unexpected status: " + status.ToString());
+          return;
+        }
+        detect_rollout_func_();
+      });
 }
 
 void ConfigManager::OnRolloutsRefreshTimer() {
