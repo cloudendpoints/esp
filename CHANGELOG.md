@@ -1,3 +1,8 @@
+# Release 1.48.0 24-03-2020
+
+- Copy the original `Authorization` header to `X-Forwarded-Authorization` for backend auth (#772)
+- Fetch access token for rollout change timer (#774)
+
 # Release 1.47.0 17-03-2020
 
 - Periodically send empty report to detect rollout changes (#769)
