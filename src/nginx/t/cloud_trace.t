@@ -46,7 +46,7 @@ my $ServiceControlPort = ApiManager::pick_port();
 my $CloudTracePort = ApiManager::pick_port();
 my $MetadataPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(30);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(32);
 
 my $config = ApiManager::get_bookstore_service_config_allow_some_unregistered .
     ApiManager::read_test_file('testdata/logs_metrics.pb.txt') . <<"EOF";
@@ -137,14 +137,14 @@ print Dumper $json_obj;
 
 is($json_obj->{traces}->[0]->{projectId}, 'api-manager-project', 'Project ID in body is correct.');
 is($json_obj->{traces}->[0]->{traceId}, $trace_id, 'Trace ID matches the provided one.');
+
+# span 0: root
 is($json_obj->{traces}->[0]->{spans}->[0]->{name},
     'endpoints-test.cloudendpointsapis.com/ListShelves',
     'Root trace span name is set to method name of ListShelves');
 is($json_obj->{traces}->[0]->{spans}->[0]->{kind}, 'RPC_SERVER', 'Trace span kind is RPC_SERVER');
 is($json_obj->{traces}->[0]->{spans}->[0]->{parentSpanId}, $parent_span_id,
     'Parent span of root should be the provided one');
-
-# span 0: root
 my $agent = $json_obj->{traces}->[0]->{spans}->[0]->{labels}->{'trace.cloud.google.com/agent'};
 is($agent, 'esp/' . ServiceControl::get_version(), 'Agent is set to "esp/xxx".');
 my $rootid = $json_obj->{traces}->[0]->{spans}->[0]->{spanId};
@@ -175,12 +175,18 @@ is($json_obj->{traces}->[0]->{spans}->[4]->{name}, 'Call ServiceControl server',
 is($json_obj->{traces}->[0]->{spans}->[4]->{parentSpanId}, $check_service_control_cache_id,
     'Parent of Call ServiceControl sever span is CheckServiceControlCache');
 
-# span 5: Backend
-is($json_obj->{traces}->[0]->{spans}->[5]->{name}, 'Backend',
-    'Next trace span is Backend');
+# span 5: QuotaControl
+is($json_obj->{traces}->[0]->{spans}->[5]->{name}, 'QuotaControl',
+    'Next trace span is QuotaControl');
 is($json_obj->{traces}->[0]->{spans}->[5]->{parentSpanId}, $rootid,
+    'Parent of QuotaControl span is root');
+
+# span 6: Backend
+is($json_obj->{traces}->[0]->{spans}->[6]->{name}, 'Backend',
+    'Next trace span is Backend');
+is($json_obj->{traces}->[0]->{spans}->[6]->{parentSpanId}, $rootid,
     'Parent of Beckend span is root');
-my $backend_span_id = $json_obj->{traces}->[0]->{spans}->[5]->{spanId};
+my $backend_span_id = $json_obj->{traces}->[0]->{spans}->[6]->{spanId};
 
 my @bookstore_requests = ApiManager::read_http_stream($t, 'bookstore.log');
 is(scalar @bookstore_requests, 1, 'Bookstore received 1 request.');

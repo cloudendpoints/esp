@@ -28,14 +28,15 @@ namespace api_manager {
 
 void QuotaControl(std::shared_ptr<context::RequestContext> context,
                   std::function<void(Status status)> continuation) {
+  std::shared_ptr<cloud_trace::CloudTraceSpan> trace_span(
+      CreateSpan(context->cloud_trace(), "QuotaControl"));
+
   if (context->method()->metric_cost_vector().size() == 0 ||
       context->method()->skip_service_control()) {
+    TRACE(trace_span) << "Quota control check is not needed";
     continuation(Status::OK);
     return;
   }
-
-  std::shared_ptr<cloud_trace::CloudTraceSpan> trace_span(
-      CreateSpan(context->cloud_trace(), "QuotaControl"));
 
   service_control::QuotaRequestInfo info;
   context->FillAllocateQuotaRequestInfo(&info);

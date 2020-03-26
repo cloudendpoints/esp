@@ -31,20 +31,25 @@ const std::string kConsumerProjecId = "X-Endpoint-API-Project-ID";
 
 void CheckServiceControl(std::shared_ptr<context::RequestContext> context,
                          std::function<void(Status status)> continuation) {
+  std::shared_ptr<cloud_trace::CloudTraceSpan> trace_span(
+      CreateSpan(context->cloud_trace(), "CheckServiceControl"));
   // If the method is not configured from the service config.
   // or if not need to check service control, skip it.
   if (!context->method()) {
     if (context->GetRequestHTTPMethodWithOverride() == "OPTIONS") {
+      TRACE(trace_span) << "OPTIONS request is rejected";
       continuation(Status(Code::PERMISSION_DENIED,
                           "The service does not allow CORS traffic.",
                           Status::SERVICE_CONTROL));
     } else {
+      TRACE(trace_span) << "Method is not configured in the service config";
       continuation(Status(Code::NOT_FOUND, "Method does not exist.",
                           Status::SERVICE_CONTROL));
     }
     return;
   } else if (!context->service_context()->service_control() ||
              context->method()->skip_service_control()) {
+    TRACE(trace_span) << "Service control check is not needed";
     continuation(Status::OK);
     return;
   }
@@ -52,10 +57,12 @@ void CheckServiceControl(std::shared_ptr<context::RequestContext> context,
   if (context->api_key().empty()) {
     if (context->method()->allow_unregistered_calls()) {
       // Not need to call Check.
+      TRACE(trace_span) << "Service control check is not needed";
       continuation(Status::OK);
       return;
     }
 
+    TRACE(trace_span) << "Failed at checking caller identity.";
     continuation(
         Status(Code::UNAUTHENTICATED,
                "Method doesn't allow unregistered callers (callers without "
@@ -64,9 +71,6 @@ void CheckServiceControl(std::shared_ptr<context::RequestContext> context,
                Status::SERVICE_CONTROL));
     return;
   }
-
-  std::shared_ptr<cloud_trace::CloudTraceSpan> trace_span(
-      CreateSpan(context->cloud_trace(), "CheckServiceControl"));
 
   service_control::CheckRequestInfo info;
   context->FillCheckRequestInfo(&info);
