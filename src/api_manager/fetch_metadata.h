@@ -25,6 +25,7 @@ namespace api_manager {
 // Fetchs service account token from metadata server.
 void GlobalFetchServiceAccountToken(std::shared_ptr<context::GlobalContext>,
                                     const std::string &,
+                                    cloud_trace::CloudTrace *,
                                     std::function<void(utils::Status)>);
 
 // Fetchs service account token from metadata server.

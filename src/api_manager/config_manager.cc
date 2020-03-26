@@ -100,7 +100,7 @@ void ConfigManager::OnDetectRolloutChangeTimer() {
   global_context_->env()->LogDebug("Detect rollout change timer starts");
   std::string audience;
   GlobalFetchServiceAccountToken(
-      global_context_, audience, [this](utils::Status status) {
+      global_context_, audience, nullptr, [this](utils::Status status) {
         if (!status.ok()) {
           global_context_->env()->LogError(
               "Fetch access token unexpected status: " + status.ToString());
@@ -118,7 +118,7 @@ void ConfigManager::OnRolloutsRefreshTimer() {
 
   std::string audience;
   GlobalFetchServiceAccountToken(
-      global_context_, audience, [this](utils::Status status) {
+      global_context_, audience, nullptr, [this](utils::Status status) {
         if (!status.ok()) {
           global_context_->env()->LogError("Unexpected status: " +
                                            status.ToString());
