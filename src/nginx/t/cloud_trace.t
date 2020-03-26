@@ -32,6 +32,7 @@ use warnings;
 use src::nginx::t::ApiManager;   # Must be first (sets up import path to the Nginx test module)
 use src::nginx::t::HttpServer;
 use src::nginx::t::ServiceControl;
+use src::nginx::t::Auth;
 use Test::Nginx;  # Imports Nginx's test module
 use Test::More;   # And the test framework
 use JSON::PP;
@@ -45,16 +46,31 @@ my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $CloudTracePort = ApiManager::pick_port();
 my $MetadataPort = ApiManager::pick_port();
+my $PubkeyPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(32);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(39);
 
-my $config = ApiManager::get_bookstore_service_config_allow_some_unregistered .
-    ApiManager::read_test_file('testdata/logs_metrics.pb.txt') . <<"EOF";
+my $config = ApiManager::get_bookstore_service_config . <<"EOF";
+authentication {
+  providers {
+    id: "test_auth"
+    issuer: "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l\@developer.gserviceaccount.com"
+    jwks_uri: "http://127.0.0.1:${PubkeyPort}/pubkey"
+  }
+  rules {
+    selector: "ListShelves"
+    requirements {
+      provider_id: "test_auth"
+      audiences: "ok_audience_1,ok_audience_2"
+    }
+  }
+}
 producer_project_id: "api-manager-project"
 control {
   environment: "http://127.0.0.1:${ServiceControlPort}"
 }
 EOF
+
 $t->write_file('service.pb.txt', $config);
 
 $t->write_file('server_config.pb.txt', <<"EOF");
@@ -97,11 +113,14 @@ $t->run_daemon(\&bookstore, $t, $BackendPort, 'bookstore.log');
 $t->run_daemon(\&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log', $report_done);
 $t->run_daemon(\&cloudtrace, $t, $CloudTracePort, 'cloudtrace.log', $trace_done);
 $t->run_daemon(\&metadata, $t, $MetadataPort, 'metadata.log');
+my $pkey_x509 = Auth::get_public_key_x509;
+$t->run_daemon(\&pubkey, $t, $PubkeyPort, $pkey_x509, 'pubkey.log');
 
 is($t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'Bookstore socket ready.');
 is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control socket ready.');
 is($t->waitforsocket("127.0.0.1:${CloudTracePort}"), 1, 'Cloud trace socket ready.');
 is($t->waitforsocket("127.0.0.1:${MetadataPort}"), 1, 'Metadata socket ready.');
+is($t->waitforsocket("127.0.0.1:${PubkeyPort}"), 1, 'Pubkey socket ready.');
 
 $t->run();
 
@@ -110,11 +129,19 @@ $t->run();
 # This request triggers trace.
 my $trace_id = 'e133eacd437d8a12068fd902af3962d8';
 my $parent_span_id = '12345678';
+my $token = Auth::get_auth_token('./src/nginx/t/matching-client-secret.json', 'ok_audience_1');
 my $response = ApiManager::http($NginxPort,<<"EOF");
 GET /shelves?key=this-is-an-api-key HTTP/1.0
 Host: localhost
+Authorization: Bearer $token
 X-Cloud-Trace-Context: ${trace_id}/${parent_span_id};o=1
 
+EOF
+
+my ($response_headers, $response_body) = split /\r\n\r\n/, $response, 2;
+like($response_headers, qr/HTTP\/1\.1 200 OK/, 'Returned HTTP 200.');
+is($response_body, <<'EOF', 'Shelves returned in the response body.');
+Shelves data.
 EOF
 
 is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');
@@ -155,38 +182,51 @@ is($json_obj->{traces}->[0]->{spans}->[1]->{name}, 'FetchAccessToken',
 is($json_obj->{traces}->[0]->{spans}->[1]->{parentSpanId}, $rootid,
     'Parent of FetchAccessToken span is root');
 
-# span 2: CheckServiceControl
-is($json_obj->{traces}->[0]->{spans}->[2]->{name}, 'CheckServiceControl',
-    'Next trace span is CheckServiceControl');
+# span 2: CheckAuth
+is($json_obj->{traces}->[0]->{spans}->[2]->{name}, 'CheckAuth',
+    'Next trace span is CheckAuth');
 is($json_obj->{traces}->[0]->{spans}->[2]->{parentSpanId}, $rootid,
+    'Parent of CheckAuth span is root');
+my $check_auth_id = $json_obj->{traces}->[0]->{spans}->[2]->{spanId};
+
+# span 2: HttpFetch
+is($json_obj->{traces}->[0]->{spans}->[3]->{name}, 'HttpFetch',
+    'Next trace span is HttpFetch');
+is($json_obj->{traces}->[0]->{spans}->[3]->{parentSpanId}, $check_auth_id,
+    'Parent of HttpFetch span is CheckAuth');
+
+# span 4: CheckServiceControl
+is($json_obj->{traces}->[0]->{spans}->[4]->{name}, 'CheckServiceControl',
+    'Next trace span is CheckServiceControl');
+is($json_obj->{traces}->[0]->{spans}->[4]->{parentSpanId}, $rootid,
     'Parent of CheckServiceControl span is root');
-my $check_service_control_id = $json_obj->{traces}->[0]->{spans}->[2]->{spanId};
+my $check_service_control_id = $json_obj->{traces}->[0]->{spans}->[4]->{spanId};
 
-# span 3: CheckServiceControlCache
-is($json_obj->{traces}->[0]->{spans}->[3]->{name}, 'CheckServiceControlCache',
+# span 5: CheckServiceControlCache
+is($json_obj->{traces}->[0]->{spans}->[5]->{name}, 'CheckServiceControlCache',
     'Next trace span is CheckServiceControlCache');
-is($json_obj->{traces}->[0]->{spans}->[3]->{parentSpanId}, $check_service_control_id,
+is($json_obj->{traces}->[0]->{spans}->[5]->{parentSpanId}, $check_service_control_id,
     'Parent of CheckServiceControlCache span is CheckServiceControl');
-my $check_service_control_cache_id = $json_obj->{traces}->[0]->{spans}->[3]->{spanId};
+my $check_service_control_cache_id = $json_obj->{traces}->[0]->{spans}->[5]->{spanId};
 
-# span 4: Call ServiceControl server
-is($json_obj->{traces}->[0]->{spans}->[4]->{name}, 'Call ServiceControl server',
+# span 6: Call ServiceControl server
+is($json_obj->{traces}->[0]->{spans}->[6]->{name}, 'Call ServiceControl server',
     'Next trace span is Call ServiceControl server');
-is($json_obj->{traces}->[0]->{spans}->[4]->{parentSpanId}, $check_service_control_cache_id,
+is($json_obj->{traces}->[0]->{spans}->[6]->{parentSpanId}, $check_service_control_cache_id,
     'Parent of Call ServiceControl sever span is CheckServiceControlCache');
 
-# span 5: QuotaControl
-is($json_obj->{traces}->[0]->{spans}->[5]->{name}, 'QuotaControl',
+# span 7: QuotaControl
+is($json_obj->{traces}->[0]->{spans}->[7]->{name}, 'QuotaControl',
     'Next trace span is QuotaControl');
-is($json_obj->{traces}->[0]->{spans}->[5]->{parentSpanId}, $rootid,
+is($json_obj->{traces}->[0]->{spans}->[7]->{parentSpanId}, $rootid,
     'Parent of QuotaControl span is root');
 
-# span 6: Backend
-is($json_obj->{traces}->[0]->{spans}->[6]->{name}, 'Backend',
+# span 8: Backend
+is($json_obj->{traces}->[0]->{spans}->[8]->{name}, 'Backend',
     'Next trace span is Backend');
-is($json_obj->{traces}->[0]->{spans}->[6]->{parentSpanId}, $rootid,
+is($json_obj->{traces}->[0]->{spans}->[8]->{parentSpanId}, $rootid,
     'Parent of Beckend span is root');
-my $backend_span_id = $json_obj->{traces}->[0]->{spans}->[6]->{spanId};
+my $backend_span_id = $json_obj->{traces}->[0]->{spans}->[8]->{spanId};
 
 my @bookstore_requests = ApiManager::read_http_stream($t, 'bookstore.log');
 is(scalar @bookstore_requests, 1, 'Bookstore received 1 request.');
@@ -291,6 +331,24 @@ Content-Type: application/json
  "expires_in":200,
  "token_type":"Bearer"
 }
+EOF
+
+  $server->run();
+}
+
+################################################################################
+
+sub pubkey {
+  my ($t, $port, $pkey, $file) = @_;
+  my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
+    or die "Can't create test server socket: $!\n";
+  local $SIG{PIPE} = 'IGNORE';
+
+  $server->on('GET', '/pubkey', <<"EOF");
+HTTP/1.1 200 OK
+Connection: close
+
+$pkey
 EOF
 
   $server->run();

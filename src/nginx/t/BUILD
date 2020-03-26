@@ -265,6 +265,9 @@ nginx_suite(
 )
 
 nginx_suite(
+    data = [
+        "matching-client-secret.json",
+    ],
     nginx = "//src/nginx/main:nginx-esp",
     tests = [
         "cloud_trace.t",
