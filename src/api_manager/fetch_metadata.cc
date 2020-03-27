@@ -73,18 +73,20 @@ void FetchMetadata(
 
 void GlobalFetchServiceAccountToken(
     std::shared_ptr<context::GlobalContext> context,
-    const std::string &audience,
+    const std::string &audience, cloud_trace::CloudTrace *cloud_trace,
     std::function<void(Status status)> continuation) {
   const auto env = context->env();
 
   auth::ServiceAccountToken *token;
-  std::string path;
+  std::string path, trace_name;
   if (audience.empty()) {
     token = context->service_account_token();
     path = kMetadataServiceAccountToken;
+    trace_name = "FetchAccessToken";
   } else {
     path = kMetadataInstanceIdentityToken + audience;
     token = context->GetInstanceIdentityToken(audience);
+    trace_name = "FetchIdentityToken";
   }
 
   // If metadata server is not configured, skip it
@@ -132,32 +134,35 @@ void GlobalFetchServiceAccountToken(
       env->LogDebug("Need to fetch service account token");
   }
 
+  std::shared_ptr<cloud_trace::CloudTraceSpan> trace_span(
+      CreateSpan(cloud_trace, trace_name));
   token->set_state(auth::ServiceAccountToken::FETCHING);
-  FetchMetadata(context.get(), path, kMetadataTokenFetchRetries,
-                [env, token, continuation, audience](
-                    Status status, std::map<std::string, std::string> &&,
-                    std::string &&body) {
-                  // fetch failed
-                  if (!status.ok()) {
-                    env->LogError("Failed to fetch service account token");
-                    token->set_last_failed_fetch_time(system_clock::now());
-                    token->set_state(auth::ServiceAccountToken::FAILED);
-                    continuation(Status(Code::INTERNAL, kFailedTokenFetch));
-                    return;
-                  }
-                  if (audience.empty()) {
-                    if (!token->SetTokenJsonResponse(body)) {
-                      env->LogError("Failed to parse token response body");
-                      continuation(Status(Code::INTERNAL, kFailedTokenParse));
-                      return;
-                    }
-                  } else {
-                    // TODO: parse JWT to get expiration time.
-                    token->set_access_token(body,
-                                            kInstanceIdentityTokenExpiration);
-                  }
-                  continuation(Status::OK);
-                });
+  FetchMetadata(
+      context.get(), path, kMetadataTokenFetchRetries,
+      [env, token, continuation, audience, trace_span](
+          Status status, std::map<std::string, std::string> &&,
+          std::string &&body) {
+        TRACE(trace_span) << "Returned with status " << status.ToString();
+        // fetch failed
+        if (!status.ok()) {
+          env->LogError("Failed to fetch service account token");
+          token->set_last_failed_fetch_time(system_clock::now());
+          token->set_state(auth::ServiceAccountToken::FAILED);
+          continuation(Status(Code::INTERNAL, kFailedTokenFetch));
+          return;
+        }
+        if (audience.empty()) {
+          if (!token->SetTokenJsonResponse(body)) {
+            env->LogError("Failed to parse token response body");
+            continuation(Status(Code::INTERNAL, kFailedTokenParse));
+            return;
+          }
+        } else {
+          // TODO: parse JWT to get expiration time.
+          token->set_access_token(body, kInstanceIdentityTokenExpiration);
+        }
+        continuation(Status::OK);
+      });
 }
 
 // Fetchs service account token from metadata server.
@@ -166,7 +171,8 @@ void FetchServiceAccountToken(
     std::function<void(utils::Status)> on_done) {
   std::string audience;
   GlobalFetchServiceAccountToken(
-      request_context->service_context()->global_context(), audience, on_done);
+      request_context->service_context()->global_context(), audience,
+      request_context->cloud_trace(), on_done);
 }
 
 // Fetches instance identity token from metadata server.
@@ -183,8 +189,10 @@ void FetchInstanceIdentityToken(
     on_done(Status::OK);
     return;
   }
+
   GlobalFetchServiceAccountToken(
-      request_context->service_context()->global_context(), audience, on_done);
+      request_context->service_context()->global_context(), audience,
+      request_context->cloud_trace(), on_done);
 }
 
 }  // namespace api_manager
