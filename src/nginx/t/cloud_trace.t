@@ -48,7 +48,7 @@ my $CloudTracePort = ApiManager::pick_port();
 my $MetadataPort = ApiManager::pick_port();
 my $PubkeyPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(39);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(41);
 
 my $config = ApiManager::get_bookstore_service_config . <<"EOF";
 authentication {
@@ -64,6 +64,23 @@ authentication {
       audiences: "ok_audience_1,ok_audience_2"
     }
   }
+}
+quota {
+ metric_rules [
+   {
+     selector: "ListShelves"
+     metric_costs: [
+       {
+         key: "metrics_first"
+         value: 2
+       },
+       {
+         key: "metrics_second"
+         value: 1
+       }
+     ]
+   }
+ ]
 }
 producer_project_id: "api-manager-project"
 control {
@@ -220,13 +237,20 @@ is($json_obj->{traces}->[0]->{spans}->[7]->{name}, 'QuotaControl',
     'Next trace span is QuotaControl');
 is($json_obj->{traces}->[0]->{spans}->[7]->{parentSpanId}, $rootid,
     'Parent of QuotaControl span is root');
+my $quota_control_id = $json_obj->{traces}->[0]->{spans}->[7]->{spanId};
 
-# span 8: Backend
-is($json_obj->{traces}->[0]->{spans}->[8]->{name}, 'Backend',
+# span 8: QuotaServiceControlCache
+is($json_obj->{traces}->[0]->{spans}->[8]->{name}, 'QuotaServiceControlCache',
+    'Next trace span is QuotaServiceControlCache');
+is($json_obj->{traces}->[0]->{spans}->[8]->{parentSpanId}, $quota_control_id,
+    'Parent of QuotaServiceControlCache span is QuotaControl');
+
+# span 9: Backend
+is($json_obj->{traces}->[0]->{spans}->[9]->{name}, 'Backend',
     'Next trace span is Backend');
-is($json_obj->{traces}->[0]->{spans}->[8]->{parentSpanId}, $rootid,
+is($json_obj->{traces}->[0]->{spans}->[9]->{parentSpanId}, $rootid,
     'Parent of Beckend span is root');
-my $backend_span_id = $json_obj->{traces}->[0]->{spans}->[8]->{spanId};
+my $backend_span_id = $json_obj->{traces}->[0]->{spans}->[9]->{spanId};
 
 my @bookstore_requests = ApiManager::read_http_stream($t, 'bookstore.log');
 is(scalar @bookstore_requests, 1, 'Bookstore received 1 request.');
@@ -249,6 +273,15 @@ sub servicecontrol {
   local $SIG{PIPE} = 'IGNORE';
 
   $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:check', sub {
+    my ($headers, $body, $client) = @_;
+    print $client <<'EOF';
+HTTP/1.1 200 OK
+Connection: close
+
+EOF
+  });
+
+  $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:allocateQuota', sub {
     my ($headers, $body, $client) = @_;
     print $client <<'EOF';
 HTTP/1.1 200 OK
