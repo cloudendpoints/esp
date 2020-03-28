@@ -371,8 +371,9 @@ void Aggregated::Check(
           *response, service_control_proto_.service_name(), &response_info);
       on_done(status, response_info);
     } else {
-      // If network_fail_open is true, it is always OK to proceed.
-      if (network_fail_open_) {
+      // Only Code::UNAVAILABLE error is network failure.
+      // If network_fail_open is true, it is OK to proceed
+      if (network_fail_open_ && status.error_code() == Code::UNAVAILABLE) {
         on_done(Status::OK, response_info);
       } else {
         on_done(Status(status.error_code(), status.error_message(),
@@ -608,10 +609,16 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
             status = Status(Code::UNAVAILABLE,
                             "Failed to connect to service control");
           } else {
-            status = Status(
-                Code::UNAVAILABLE,
-                "Service control request failed with HTTP response code " +
-                    std::to_string(status.code()));
+            std::string error_msg;
+            if (body.empty()) {
+              error_msg =
+                  "Service control request failed with HTTP response code " +
+                  std::to_string(status.code());
+            } else {
+              // Pass the body as error message to client.
+              error_msg = body;
+            }
+            status = Status(status.code(), error_msg);
           }
         }
         on_done(status.ToProto());

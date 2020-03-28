@@ -39,20 +39,25 @@ use Test::More;   # And the test framework
 
 # Port assignments
 my $NginxPort = ApiManager::pick_port();
-my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
+my $BackendPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(7);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(4);
 
-# Save service name in the service configuration protocol buffer file.
-my $config = ApiManager::get_bookstore_service_config_allow_some_unregistered .
-             ApiManager::read_test_file('testdata/logs_metrics.pb.txt') . <<"EOF";
-producer_project_id: "endpoints-test"
+my $config = ApiManager::get_bookstore_service_config . <<"EOF";
 control {
   environment: "http://127.0.0.1:${ServiceControlPort}"
 }
 EOF
+
 $t->write_file('service.pb.txt', $config);
+
+ApiManager::write_file_expand($t, 'sc_timeout.pb.txt', <<"EOF");
+service_control_config {
+  network_fail_open: true
+}
+EOF
+
 ApiManager::write_file_expand($t, 'nginx.conf', <<"EOF");
 %%TEST_GLOBALS%%
 daemon off;
@@ -68,7 +73,7 @@ http {
     location / {
       endpoints {
         api service.pb.txt;
-        %%TEST_CONFIG%%
+        server_config sc_timeout.pb.txt;
         on;
       }
       proxy_pass http://127.0.0.1:${BackendPort};
@@ -80,51 +85,22 @@ EOF
 my $report_done = 'report_done';
 
 $t->run_daemon(\&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log', $report_done);
+
 is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control socket ready.');
+
 $t->run();
 
 ################################################################################
 
 my $response = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key');
 
-is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');
 $t->stop_daemons();
 
 my ($response_headers, $response_body) = split /\r\n\r\n/, $response, 2;
+like($response, qr/HTTP\/1\.1 403 Forbidden/, 'Returned HTTP 403');
+like($response, qr/detail error message line1/, 'error body line 1 is included');
+like($response, qr/detail error message line2/, 'error body line 2 is included');
 
-like($response_headers, qr/HTTP\/1\.1 403 Forbidden/, 'Returned HTTP 403.');
-
-my @servicecontrol_requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
-is(scalar @servicecontrol_requests, 2, 'Service control was called twice.');
-
-# :check
-my $r = shift @servicecontrol_requests;
-like($r->{uri}, qr/:check$/, ':check was called');
-
-# :report
-$r = shift @servicecontrol_requests;
-like($r->{uri}, qr/:report$/, ':check was called');
-
-my $report_body = ServiceControl::convert_proto($r->{body}, 'report_request', 'json');
-my $expected_report_body = ServiceControl::gen_report_body({
-  'serviceConfigId' => '2016-08-25r1',
-  'serviceName' =>  'endpoints-test.cloudendpointsapis.com',
-  'url' => '/shelves?key=this-is-an-api-key',
-  'api_key' => 'this-is-an-api-key',
-  'api_method' =>  'ListShelves',
-  'http_method' => 'GET',
-  'log_message' => 'Method: ListShelves failed: PERMISSION_DENIED: Service control request failed with HTTP response code 403',
-  'response_code' => '403',
-  'error_cause' => 'service_control',
-  'error_type' => '4xx',
-  'request_size' => 62,
-  'response_size' => 380,
-  'request_bytes' => 62,
-  'response_bytes' => 380,
-  'producer_project_id' => 'endpoints-test',
-  });
-
-ok(ServiceControl::compare_json($report_body, $expected_report_body), 'Report body is received.');
 
 ################################################################################
 
@@ -137,9 +113,11 @@ sub servicecontrol {
   $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:check', sub {
     my ($headers, $body, $client) = @_;
     print $client <<'EOF';
-HTTP/1.1 403 Forbidden
+HTTP/1.1 403 OK
 Connection: close
 
+detail error message line1
+detail error message line2
 EOF
   });
 
@@ -150,7 +128,6 @@ HTTP/1.1 200 OK
 Connection: close
 
 EOF
-    $t->write_file($done, ':report done');
   });
 
   $server->run();
