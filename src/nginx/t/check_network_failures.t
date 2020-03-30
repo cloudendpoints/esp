@@ -41,7 +41,7 @@ my $NginxPort = ApiManager::pick_port();
 my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(13);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(18);
 
 ApiManager::write_file_expand($t, 'sc_timeout.pb.txt', <<"EOF");
 service_control_config {
@@ -144,7 +144,7 @@ is($bookstore_requests2, '', 'Request did not reach the backend.');
 ################################################################################
 
 $t->run_daemon(\&bookstore, $t, $BackendPort, 'bookstore.log');
-$t->run_daemon(\&servicecontrol, $t, $ServiceControlPort, 'servicecontrol.log');
+$t->run_daemon(\&servicecontrol_sleep, $t, $ServiceControlPort, 'servicecontrol.log');
 is($t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'Bookstore socket ready.');
 is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control socket ready.');
 $t->run();
@@ -161,8 +161,32 @@ my $bookstore_requests3 = $t->read_file('bookstore.log');
 is($bookstore_requests3, '', 'Request did not reach the backend.');
 
 ################################################################################
+#
+#  service_control check return 502
+#  starts Nginx, service_control and backend.
+#
+################################################################################
 
-sub servicecontrol {
+$t->run_daemon(\&bookstore, $t, $BackendPort, 'bookstore.log');
+$t->run_daemon(\&servicecontrol_502, $t, $ServiceControlPort, 'servicecontrol.log');
+is($t->waitforsocket("127.0.0.1:${BackendPort}"), 1, 'Bookstore socket ready.');
+is($t->waitforsocket("127.0.0.1:${ServiceControlPort}"), 1, 'Service control socket ready.');
+$t->run();
+
+my $response4 = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key');
+
+$t->stop();
+$t->stop_daemons();
+
+like($response4, qr/HTTP\/1\.1 500 Internal Server Error/, 'Returned HTTP 500.');
+like($response4, qr/Server error messages/i, 'Client received failed check response body');
+
+my $bookstore_requests3 = $t->read_file('bookstore.log');
+is($bookstore_requests3, '', 'Request did not reach the backend.');
+
+################################################################################
+
+sub servicecontrol_sleep {
   my ($t, $port, $file) = @_;
   my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
     or die "Can't create test server socket: $!\n";
@@ -178,6 +202,26 @@ sub servicecontrol {
 HTTP/1.1 200 OK
 Connection: close
 
+EOF
+  });
+
+  $server->run();
+}
+
+sub servicecontrol_502 {
+  my ($t, $port, $file) = @_;
+  my $server = HttpServer->new($port, $t->testdir() . '/' . $file)
+    or die "Can't create test server socket: $!\n";
+  local $SIG{PIPE} = 'IGNORE';
+
+  $server->on_sub('POST', '/v1/services/endpoints-test.cloudendpointsapis.com:check', sub {
+    my ($headers, $body, $client) = @_;
+
+    print $client <<'EOF';
+HTTP/1.1 502 OK
+Connection: close
+
+Server error messages
 EOF
   });
 
