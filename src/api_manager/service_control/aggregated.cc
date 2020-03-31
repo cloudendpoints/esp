@@ -94,7 +94,7 @@ const char quotacontrol_service[] =
     "/google.api.servicecontrol.v1.QuotaController";
 
 // Define network failure error codes:
-// All 500 Http status codes are maked as network failure.
+// All 500 Http status codes are marked as network failure.
 // Http status code is converted to Status::code as:
 // https://github.com/cloudendpoints/esp/blob/master/src/api_manager/utils/status.cc#L364
 // which is called by Status.ToProto() at Aggregated::Call() on_done function.
