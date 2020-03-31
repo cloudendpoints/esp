@@ -93,6 +93,16 @@ const char servicecontrol_service[] =
 const char quotacontrol_service[] =
     "/google.api.servicecontrol.v1.QuotaController";
 
+// Define network failure error codes:
+// All 5xx Http status codes are marked as network failure.
+// Http status code is converted to Status::code as:
+// https://github.com/cloudendpoints/esp/blob/master/src/api_manager/utils/status.cc#L364
+// which is called by Status.ToProto() at Aggregated::Call() on_done function.
+bool IsErrorCodeNetworkFailure(int code) {
+  return code == Code::UNAVAILABLE || code == Code::INTERNAL ||
+         code == Code::UNIMPLEMENTED || code == Code::DEADLINE_EXCEEDED;
+}
+
 // Generates CheckAggregationOptions.
 CheckAggregationOptions GetCheckAggregationOptions(
     const ServerConfig* server_config) {
@@ -371,8 +381,13 @@ void Aggregated::Check(
           *response, service_control_proto_.service_name(), &response_info);
       on_done(status, response_info);
     } else {
-      // If network_fail_open is true, it is always OK to proceed.
-      if (network_fail_open_) {
+      // If network_fail_open is true, it is OK to proceed
+      if (network_fail_open_ &&
+          IsErrorCodeNetworkFailure(status.error_code())) {
+        env_->LogError(
+            std::string("With network fail open policy, the request is allowed "
+                        "even the service control check failed with: " +
+                        status.ToString()));
         on_done(Status::OK, response_info);
       } else {
         on_done(Status(status.error_code(), status.error_message(),
@@ -608,10 +623,16 @@ void Aggregated::Call(const RequestType& request, ResponseType* response,
             status = Status(Code::UNAVAILABLE,
                             "Failed to connect to service control");
           } else {
-            status = Status(
-                Code::UNAVAILABLE,
-                "Service control request failed with HTTP response code " +
-                    std::to_string(status.code()));
+            std::string error_msg;
+            if (body.empty()) {
+              error_msg =
+                  "Service control request failed with HTTP response code " +
+                  std::to_string(status.code());
+            } else {
+              // Pass the body as error message to client.
+              error_msg = body;
+            }
+            status = Status(status.code(), error_msg);
           }
         }
         on_done(status.ToProto());
