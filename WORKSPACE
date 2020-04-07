@@ -136,7 +136,7 @@ load(
     "protobuf_repositories",
     "servicecontrol_client_repositories",
     "transcoding_repositories",
-    "nginx_repositories_brotli"
+    "nginx_repositories_brotli_module"
 )
 
 bind(
@@ -177,7 +177,7 @@ googletest_repositories()
 
 transcoding_repositories()
 
-nginx_repositories_brotli(
+nginx_repositories_brotli_module(
     bind = True,
     nginx = "@nginx//",
 )

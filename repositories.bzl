@@ -703,6 +703,6 @@ cc_binary(
         remote = "https://nginx.googlesource.com/ngx_brotli",
     )
 
-def nginx_repositories_brotli(bind = False, nginx = "@nginx//"):
+def nginx_repositories_brotli_module(bind = False, nginx = "@nginx//"):
     nginx_repositories_ngx_brotli(nginx)
     nginx_repositories_brotli(bind)
