@@ -1,3 +1,8 @@
+# Release 1.49.0 07-04-2020
+
+- Only apply network_fail_open policy to 5xx Http status code (#779)
+- Add trace span for metadata fetching (#778)
+
 # Release 1.48.0 24-03-2020
 
 - Copy the original `Authorization` header to `X-Forwarded-Authorization` for backend auth (#772)
