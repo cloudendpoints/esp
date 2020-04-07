@@ -25,6 +25,7 @@
 ###############################################################################
 #
 load("@protobuf_git//:protobuf.bzl", "cc_proto_library")
+load("@nginx//:build.bzl", "nginx_copts")
 
 exports_files(["version"])
 
@@ -48,6 +49,44 @@ cc_library(
         "version.h",
     ],
     visibility = [":__subpackages__"],
+)
+
+
+cc_library(
+    name = "http_brotli_filter",
+    srcs = [
+        "src/nginx/main/ngx_http_brotli_filter_module.c",
+    ],
+    copts = nginx_copts,
+    defines = [
+        "NGX_HTTP_BROTLI_FILTER",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//external:brotli_enc",
+        "@nginx//:core",
+        "@nginx//:http",
+    ],
+)
+
+cc_library(
+    name = "http_brotli_static",
+    srcs = [
+        "src/nginx/main/ngx_http_brotli_static_module.c",
+    ],
+    copts = nginx_copts,
+    defines = [
+        "NGX_HTTP_BROTLI_STATIC",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "@nginx//:core",
+        "@nginx//:http",
+    ],
 )
 
 cc_proto_library(

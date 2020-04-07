@@ -36,6 +36,8 @@ cc_binary(
     linkstatic = 1,
     deps = [
         "//src/nginx:ngx_esp",
+        "//src/nginx:http_brotli_filter",
+        "//src/nginx:http_brotli_static",
         "@nginx//:http",
         "@nginx//:http_access",
         "@nginx//:http_addition",
@@ -87,8 +89,6 @@ cc_binary(
         "@nginx//:stream_split_clients",
         "@nginx//:stream_upstream_hash",
         "@nginx//:stream_upstream_least_conn",
-        "@ngx_brotli//:http_brotli_filter",
-        "@ngx_brotli//:http_brotli_static",
     ],
 )
 
@@ -104,6 +104,8 @@ cc_binary(
     deps = [
         "//src/nginx:ngx_esp",
         "//src/nginx:version_header",
+        "//src/nginx:http_brotli_filter",
+        "//src/nginx:http_brotli_static",
         "@iap_jwt_verify_nginx//third_party/iap_jwt_verify_nginx/src:ngx_iap_jwt_verify",
         "@nginx//:http",
         "@nginx//:http_access",
@@ -140,8 +142,6 @@ cc_binary(
         "@nginx//:stream_split_clients",
         "@nginx//:stream_upstream_hash",
         "@nginx//:stream_upstream_least_conn",
-        "@ngx_brotli//:http_brotli_filter",
-        "@ngx_brotli//:http_brotli_static",
     ],
 )
 
