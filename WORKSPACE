@@ -42,22 +42,6 @@ http_archive(
 )
 
 git_repository(
-    name = "org_brotli",
-    commit = "f83aa5169e3c09afa8db84d1180fd1fe8813118a",
-    remote = "https://github.com/google/brotli.git",
-)
-
-bind(
-    name = "brotli_enc",
-    actual = "@org_brotli//:brotlienc"
-)
-
-bind(
-    name = "brotli_dec",
-    actual = "@org_brotli//:brotlidec"
-)
-
-git_repository(
     name = "nginx",
     commit = "2746d4169f5376bb24c119e45aabe4fb70ca7150",  # nginx-1.15.9
     remote = "https://nginx.googlesource.com/nginx",
