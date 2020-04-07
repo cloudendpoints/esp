@@ -51,6 +51,7 @@ cc_binary(
         "@nginx//:http_geo",
         "@nginx//:http_gunzip",
         "@nginx//:http_gzip_filter",
+        "@nginx//:http_brotli_filter",
         "@nginx//:http_gzip_static",
         "@nginx//:http_limit_conn",
         "@nginx//:http_limit_req",
@@ -87,6 +88,8 @@ cc_binary(
         "@nginx//:stream_split_clients",
         "@nginx//:stream_upstream_hash",
         "@nginx//:stream_upstream_least_conn",
+        "@ngx_brotli//:http_brotli_filter",
+        "@ngx_brotli//:http_brotli_static",
     ],
 )
 
@@ -138,6 +141,8 @@ cc_binary(
         "@nginx//:stream_split_clients",
         "@nginx//:stream_upstream_hash",
         "@nginx//:stream_upstream_least_conn",
+        "@ngx_brotli//:http_brotli_filter",
+        "@ngx_brotli//:http_brotli_static",
     ],
 )
 
@@ -156,6 +161,7 @@ genrule(
         "//:LICENSE",
         "@nginx//:LICENSE",
         "@boringssl//:LICENSE",
+        "@org_brotli//:LICENSE",
         "@com_github_grpc_grpc//:LICENSE",
         "@com_github_grpc_grpc//third_party/nanopb:LICENSE.txt",
         "@nginx_pcre//:LICENCE",
@@ -169,10 +175,12 @@ genrule(
     cmd = "cat $(location //:LICENSE) > $(@);" +
           "echo \"\n\" >> $(@);" +
           "echo \"This NGINX binary is statically linked against:\" >> $(@);" +
-          "echo \"BoringSSL, gRPC, Nanopb, PCRE, Protocol Buffers," +
+          "echo \"BoringSSL, gRPC, Brotli, Nanopb, PCRE, Protocol Buffers," +
           " Istio Proxy, Service Control Client & zlib.\" >> $(@);" +
           "echo \"\n\nBoringSSL license:\n==================\n\" >> $(@);" +
           "cat $(location @boringssl//:LICENSE) >> $(@);" +
+          "echo \"\n\nBrotli license:\n===============\n\" >> $(@);" +
+          "cat $(location @org_brotli//:LICENSE) >> $(@);" +
           "echo \"\n\ngRPC license:\n=============\n\" >> $(@);" +
           "cat $(location @com_github_grpc_grpc//:LICENSE) >> $(@);" +
           "echo \"\n\nNanopb license:\n===============\n\" >> $(@);" +

@@ -136,6 +136,7 @@ load(
     "protobuf_repositories",
     "servicecontrol_client_repositories",
     "transcoding_repositories",
+    "nginx_repositories_brotli"
 )
 
 bind(
@@ -175,6 +176,11 @@ protobuf_repositories()
 googletest_repositories()
 
 transcoding_repositories()
+
+nginx_repositories_brotli(
+    bind = True,
+    nginx = "@nginx//",
+)
 
 git_repository(
     name = "gflags_git",
