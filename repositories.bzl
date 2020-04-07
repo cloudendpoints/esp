@@ -603,8 +603,8 @@ def servicecontrol_client_repositories(bind = True):
             actual = "@servicecontrol_client_git//proto:quotacontrol_genproto",
         )
 
-def nginx_repositories_brotli(bind):
 
+def nginx_repositories_brotli(bind):
     native.git_repository(
         name = "org_brotli",
         commit = "f83aa5169e3c09afa8db84d1180fd1fe8813118a",
@@ -707,5 +707,5 @@ cc_binary(
     )
 
 def nginx_repositories_brotli(bind = False, nginx = "@nginx//"):
-    nginx_repositories_brotli(bind)
     nginx_repositories_ngx_brotli(nginx)
+    nginx_repositories_brotli(bind)
