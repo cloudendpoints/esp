@@ -52,6 +52,7 @@ load("@nginx//:build.bzl", "nginx_repositories")
 nginx_repositories(
     bind = True,
     nginx = "@nginx//",
+    ngx_brotli = True,
 )
 
 # Needs to come after nginx
