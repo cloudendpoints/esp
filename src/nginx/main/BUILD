@@ -51,7 +51,6 @@ cc_binary(
         "@nginx//:http_geo",
         "@nginx//:http_gunzip",
         "@nginx//:http_gzip_filter",
-        "@nginx//:http_brotli_filter",
         "@nginx//:http_gzip_static",
         "@nginx//:http_limit_conn",
         "@nginx//:http_limit_req",
