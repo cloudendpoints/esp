@@ -121,5 +121,7 @@ cc_library(
         "//src/grpc:zero_copy_stream",
         "@nginx//:core",
         "@nginx//:http",
+        "@ngx_brotli//:http_brotli_filter",
+        "@ngx_brotli//:http_brotli_static",
     ],
 )

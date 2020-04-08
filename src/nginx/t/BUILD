@@ -196,6 +196,7 @@ nginx_suite(
         "backend_routing_append_path.t",
         "backend_routing_constant_address.t",
         "by_consumer_metrics.t",
+        "brotli.t",
         "check.t",
         "check_api_key.t",
         "check_api_target_blocked.t",
