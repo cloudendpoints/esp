@@ -97,7 +97,7 @@ my $response = ApiManager::http_get($NginxPort,'/shelves?key=this-is-an-api-key'
 $t->stop_daemons();
 
 my ($response_headers, $response_body) = split /\r\n\r\n/, $response, 2;
-like($response, qr/HTTP\/1\.1 403 Forbidden/, 'Returned HTTP 403');
+like($response, qr/HTTP\/1\.1 500 Internal Server Error/, 'Returned HTTP 500');
 like($response, qr/detail error message line1/, 'error body line 1 is included');
 like($response, qr/detail error message line2/, 'error body line 2 is included');
 
