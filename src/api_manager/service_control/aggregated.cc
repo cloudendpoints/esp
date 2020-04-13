@@ -93,12 +93,10 @@ const char servicecontrol_service[] =
 const char quotacontrol_service[] =
     "/google.api.servicecontrol.v1.QuotaController";
 
-// Define network failure error codes:
-// All 5xx Http status codes are marked as network failure.
 // Http status code is converted to Status::code as:
 // https://github.com/cloudendpoints/esp/blob/master/src/api_manager/utils/status.cc#L364
 // which is called by Status.ToProto() at Aggregated::Call() on_done function.
-bool IsErrorCodeNetworkFailure(int code) {
+bool StatusCodeIs5xxHttpCode(int code) {
   return code == Code::UNAVAILABLE || code == Code::INTERNAL ||
          code == Code::UNIMPLEMENTED || code == Code::DEADLINE_EXCEEDED;
 }
@@ -381,18 +379,29 @@ void Aggregated::Check(
           *response, service_control_proto_.service_name(), &response_info);
       on_done(status, response_info);
     } else {
-      // If network_fail_open is true, it is OK to proceed
-      if (network_fail_open_ &&
-          IsErrorCodeNetworkFailure(status.error_code())) {
+      // All 5xx Http status codes are treated as network failure.
+      // If network_fail_open is true, it is OK to proceed with these errors.
+      if (network_fail_open_ && StatusCodeIs5xxHttpCode(status.error_code())) {
         env_->LogError(
             std::string("With network fail open policy, the request is allowed "
                         "even the service control check failed with: " +
                         status.ToString()));
         on_done(Status::OK, response_info);
       } else {
-        on_done(Status(status.error_code(), status.error_message(),
-                       Status::SERVICE_CONTROL),
-                response_info);
+        // Preserve ServiceControl 5xx Http response code, especially 500 and
+        // 503. Convert non-5xx Http resonse code to 500 since they are most
+        // likely from API producer config errors. For example, wrong service
+        // account permission, or some key services are not enabled.
+        int error_code;
+        if (StatusCodeIs5xxHttpCode(status.error_code())) {
+          error_code = status.error_code();
+        } else {
+          error_code = Code::INTERNAL;
+        }
+
+        on_done(
+            Status(error_code, status.error_message(), Status::SERVICE_CONTROL),
+            response_info);
       }
     }
     delete response;
