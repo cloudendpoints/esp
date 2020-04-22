@@ -52,7 +52,7 @@ SUPPORTED_STAGES = [
 ]
 
 // Supported VM Images
-SLAVE_IMAGE = 'gcr.io/endpoints-jenkins/debian-9:0.12'
+SLAVE_IMAGE = 'gcr.io/endpoints-jenkins/debian-9:0.13'
 
 // Release Qualification end to end tests.
 // If RAPTURE_REPO build parameter is set only those test will run.
@@ -221,7 +221,6 @@ def presubmit() {
       'release': {
         BuildNode {
           presubmitTests('release')
-          presubmitTests('docker-tests', false)
         }
       },
       'tsan': {
