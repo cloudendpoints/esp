@@ -101,7 +101,7 @@ ${SUDO} apt-get clean
 retry install_packages || error_exit 'Cannot install required packages.'
 retry ${SUDO} pip install --upgrade python-gflags || error_exit 'Cannot install gflags.'
 retry ${SUDO} pip install --upgrade certifi || error_exit 'Cannot install certifi.'
-retry ${SUDO} pip install --upgrade requests google-auth google-auth-httplib2 google-api-python-client || error_exit 'Cannot install google-auth.'
+retry ${SUDO} pip install --upgrade oauth2client || error_exit 'Cannot install oauth2client.'
 retry ${SUDO} pip install --upgrade urllib3 || error_exit 'Cannot install urllib3.'
 retry ${SUDO} pip install --upgrade prettytable Mako pyaml dateutils || error_exit 'Cannot install prettytable Mako pyaml dateutils.'
 
