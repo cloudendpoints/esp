@@ -147,7 +147,7 @@ def make_access_token(secret_token_json):
     credentials = ServiceAccountCredentials.from_json_keyfile_name(
         secret_token_json,
         scopes=[_GOOGLE_API_SCOPE])
-    logging.info("Service account email: " + cred.service_account_email)
+    logging.info("Service account email: " + credentials.service_account_email)
     token = credentials.get_access_token().access_token
     return token
 
