@@ -10,7 +10,7 @@ RUN apt-get update && \
     apt-get -y -q upgrade && \
     apt-get install -y -q --no-install-recommends \
       apt-utils adduser python \
-      libc6 libgcc1 libstdc++6 libuuid1 && \
+      libc6 libgcc1 libstdc++6 libuuid1 lsb-base && \
     apt-get clean && rm /var/lib/apt/lists/*_* && \
     dpkg -i /endpoints-runtime.deb && rm /endpoints-runtime.deb
 
