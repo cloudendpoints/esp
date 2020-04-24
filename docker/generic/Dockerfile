@@ -1,5 +1,5 @@
 # ESP Proxy that forwards requests into the application server.
-FROM debian:stretch
+FROM debian:buster
 
 # Copy the Endpoints runtime Debian package.
 ADD endpoints-runtime.deb endpoints-runtime.deb
