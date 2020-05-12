@@ -1,3 +1,6 @@
+# Release 1.51.0 12-05-2020
+- replace docker base with debian:buster (#792)
+
 # Release 1.50.0 21-04-2020
 
 - Convert 4xx ServiceControl failures to 500 (#785)
