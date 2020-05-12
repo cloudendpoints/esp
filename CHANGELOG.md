@@ -1,4 +1,5 @@
 # Release 1.51.0 12-05-2020
+
 - Replace docker base with debian:buster (#792)
 
 # Release 1.50.0 21-04-2020
