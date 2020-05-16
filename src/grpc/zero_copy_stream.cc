@@ -33,8 +33,11 @@ namespace api_manager {
 namespace grpc {
 
 GrpcZeroCopyInputStream::GrpcZeroCopyInputStream()
-    : current_buffer_(nullptr), current_buffer_size_(0), position_(0),
-      bytes_read_(0), finished_(false) {}
+    : current_buffer_(nullptr),
+      current_buffer_size_(0),
+      position_(0),
+      bytes_read_(0),
+      finished_(false) {}
 
 void GrpcZeroCopyInputStream::AddMessage(grpc_byte_buffer *message,
                                          bool take_ownership) {
@@ -103,6 +106,6 @@ int64_t GrpcZeroCopyInputStream::BytesAvailable() const {
   return (current_buffer_size_ - position_) + serializer_.ByteCount();
 }
 
-} // namespace grpc
-} // namespace api_manager
-} // namespace google
+}  // namespace grpc
+}  // namespace api_manager
+}  // namespace google

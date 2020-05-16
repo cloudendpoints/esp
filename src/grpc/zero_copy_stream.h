@@ -40,7 +40,7 @@ namespace grpc {
 // ZeroCopyInputStream implementation over a stream of gRPC messages.
 class GrpcZeroCopyInputStream
     : public ::google::grpc::transcoding::TranscoderInputStream {
-public:
+ public:
   GrpcZeroCopyInputStream();
 
   // Add a message to the end of the stream
@@ -59,7 +59,7 @@ public:
   int64_t BytesAvailable() const;
   bool Finished() const { return finished_; }
 
-private:
+ private:
   GrpcMessageSerializer serializer_;
   const unsigned char *current_buffer_;
   size_t current_buffer_size_;
@@ -68,8 +68,8 @@ private:
   bool finished_;
 };
 
-} // namespace grpc
-} // namespace api_manager
-} // namespace google
+}  // namespace grpc
+}  // namespace api_manager
+}  // namespace google
 
-#endif // GRPC_ZERO_COPY_STREAM_H_
+#endif  // GRPC_ZERO_COPY_STREAM_H_

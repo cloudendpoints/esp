@@ -39,7 +39,7 @@ namespace testing {
 namespace {
 
 class GrpcZeroCopyInputStreamTest : public ::testing::Test {
-public:
+ public:
   GrpcZeroCopyInputStreamTest() {}
 };
 
@@ -95,7 +95,7 @@ TEST_F(GrpcZeroCopyInputStreamTest, SimpleRead) {
 
   // Test BytesAvailable() and ByteCount()
   EXPECT_EQ(slice11.size() + slice12.size() + slice21.size() + slice22.size() +
-                10, // +10 bytes for two delimiters
+                10,  // +10 bytes for two delimiters
             stream.BytesAvailable());
   EXPECT_EQ(0, stream.ByteCount());
 
@@ -107,7 +107,7 @@ TEST_F(GrpcZeroCopyInputStreamTest, SimpleRead) {
 
   // Test BytesAvailable() and ByteCount()
   EXPECT_EQ(slice11.size() + slice12.size() + slice21.size() + slice22.size() +
-                5, // +5 bytes for one delimiter
+                5,  // +5 bytes for one delimiter
             stream.BytesAvailable());
   EXPECT_EQ(5, stream.ByteCount());
 
@@ -118,7 +118,7 @@ TEST_F(GrpcZeroCopyInputStreamTest, SimpleRead) {
 
   // Test BytesAvailable() and ByteCount()
   EXPECT_EQ(slice12.size() + slice21.size() + slice22.size() +
-                5, // +5 bytes for one delimiter
+                5,  // +5 bytes for one delimiter
             stream.BytesAvailable());
   EXPECT_EQ(5 + slice11.size(), stream.ByteCount());
 
@@ -127,7 +127,7 @@ TEST_F(GrpcZeroCopyInputStreamTest, SimpleRead) {
   EXPECT_EQ(slice12, std::string(reinterpret_cast<const char *>(data), size));
 
   // Test BytesAvailable() and ByteCount()
-  EXPECT_EQ(slice21.size() + slice22.size() + 5, // +5 bytes for one delimiter
+  EXPECT_EQ(slice21.size() + slice22.size() + 5,  // +5 bytes for one delimiter
             stream.BytesAvailable());
   EXPECT_EQ(5 + slice11.size() + slice12.size(), stream.ByteCount());
 
@@ -157,9 +157,9 @@ TEST_F(GrpcZeroCopyInputStreamTest, SimpleRead) {
 
   // Test the end of the stream
   EXPECT_EQ(0, stream.BytesAvailable());
-  EXPECT_EQ(5 + slice11.size() + slice12.size() + 5 + slice21.size() +
-                slice22.size(),
-            stream.ByteCount());
+  EXPECT_EQ(
+      5 + slice11.size() + slice12.size() + 5 + slice21.size() + slice22.size(),
+      stream.ByteCount());
   EXPECT_FALSE(stream.Next(&data, &size));
 }
 
@@ -185,7 +185,7 @@ TEST_F(GrpcZeroCopyInputStreamTest, Backups) {
   stream.BackUp(5);
 
   // Test BytesAvailable() and ByteCount()
-  EXPECT_EQ(slice1.size() + slice2.size() + 5, // +5 bytes for the delimiter
+  EXPECT_EQ(slice1.size() + slice2.size() + 5,  // +5 bytes for the delimiter
             stream.BytesAvailable());
   EXPECT_EQ(0, stream.ByteCount());
 
@@ -289,9 +289,9 @@ TEST_F(GrpcZeroCopyInputStreamTest, Skips) {
   const int kSkip1 = slice1.size() - 10;
   EXPECT_TRUE(stream.Skip(kSkip1));
 
-  EXPECT_EQ(slice1.size() - kSkip1 + slice2.size() + slice3.size() +
-                slice4.size(),
-            stream.BytesAvailable());
+  EXPECT_EQ(
+      slice1.size() - kSkip1 + slice2.size() + slice3.size() + slice4.size(),
+      stream.BytesAvailable());
   EXPECT_EQ(kFrameSize + kSkip1, stream.ByteCount());
 
   EXPECT_TRUE(stream.Next(&data, &size));
@@ -422,8 +422,8 @@ TEST_F(GrpcZeroCopyInputStreamTest, NotOwnedMessages) {
   grpc_byte_buffer_destroy(message2);
 }
 
-} // namespace
-} // namespace testing
-} // namespace grpc
-} // namespace api_manager
-} // namespace google
+}  // namespace
+}  // namespace testing
+}  // namespace grpc
+}  // namespace api_manager
+}  // namespace google
