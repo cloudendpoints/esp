@@ -361,6 +361,21 @@ class BookstoreServiceImpl : public Bookstore::Service {
     return ::grpc::Status::OK;
   }
 
+  ::grpc::Status GetUnknownBook(::grpc::ServerContext* ctx,
+                             const ::google::protobuf::Empty* request,
+                             UnknownBook* reply) {
+    std::cerr << "GRPC-BACKEND: UnknownBook" << std::endl;
+    PrintRequest(*request, *ctx, printmetadata_);
+
+    reply->mutable_unknown()->set_unknown_int(1000);
+    // Have to send a very big message in order to call Skip()
+    // Otherwise it is handled by CodedInputStream which read in one slice at time
+    reply->mutable_unknown()->set_unknown_str(std::string(32*1024, '0'));
+    reply->set_known_int(100);
+    reply->set_known_str("Book");
+    return ::grpc::Status::OK;
+  }
+
  private:
   // A helper to create shelves
   static Shelf CreateShelfObject(std::string theme) {

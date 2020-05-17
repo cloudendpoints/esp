@@ -63,6 +63,8 @@ http:
   - selector: "endpoints.examples.bookstore.Bookstore.EchoShelfId"
     post: "/echoshelfid"
     body: "*"
+  - selector: "endpoints.examples.bookstore.Bookstore.GetUnknownBook"
+    get: "/unknownbook"
 system_parameters:
   rules:
   - selector: "endpoints.examples.bookstore.Bookstore.*"
