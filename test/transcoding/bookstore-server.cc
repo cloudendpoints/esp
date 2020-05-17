@@ -362,15 +362,17 @@ class BookstoreServiceImpl : public Bookstore::Service {
   }
 
   ::grpc::Status GetUnknownBook(::grpc::ServerContext* ctx,
-                             const ::google::protobuf::Empty* request,
-                             UnknownBook* reply) {
+                                const ::google::protobuf::Empty* request,
+                                UnknownBook* reply) {
     std::cerr << "GRPC-BACKEND: UnknownBook" << std::endl;
     PrintRequest(*request, *ctx, printmetadata_);
 
     reply->mutable_unknown()->set_unknown_int(1000);
-    // Have to send a very big message in order to call Skip()
-    // Otherwise it is handled by CodedInputStream which read in one slice at time
-    reply->mutable_unknown()->set_unknown_str(std::string(32*1024, '0'));
+    // Have to send a big message in order to trigger a call to Skip()
+    // in src/grpc/zero_copy_stream.h which is not implemented.
+    // Otherwise it is handled by CodedInputStream which read in one slice
+    // buffer and handle it.
+    reply->mutable_unknown()->set_unknown_str(std::string(32 * 1024, '0'));
     reply->set_known_int(100);
     reply->set_known_str("Book");
     return ::grpc::Status::OK;
