@@ -109,11 +109,9 @@ ok(ApiManager::verify_http_json_response($response,
 my $response1 = ApiManager::http_get($NginxPort,'/unknownbook?key=this-is-an-api-key');
 
 # With bug in https://github.com/cloudendpoints/esp/issues/795, the first field
-# after the uknown is discarded. Once the bug is fixed, use follow correct result.
-#ok(ApiManager::verify_http_json_response($response1,
-#    {'knownInt'=>'100', 'knownStr' => 'Book'}), "Got the unknown book successfully.");
+# after the uknown is discarded. Once the bug is fixed, should get all known fields.
 ok(ApiManager::verify_http_json_response($response1,
-    {'knownStr' => 'Book'}), "Got the unknown book successfully.");
+    {'knownInt'=>'100', 'knownStr' => 'Book'}), "Got the unknown book successfully.");
 
 $t->stop_daemons();
 
