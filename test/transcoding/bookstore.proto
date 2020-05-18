@@ -78,6 +78,9 @@ service Bookstore {
   // EchoShelfId
   rpc EchoShelfId(ShelfId) returns (ShelfId) {
   }
+  // Returns the special UnknownBook message with an unknown field to ESP
+  rpc GetUnknownBook(google.protobuf.Empty) returns (UnknownBook) {
+  }
 }
 
 // A shelf resource.
@@ -188,4 +191,21 @@ message ShelfNotFoundDetail {
 // original name
 message ShelfId {
   int64 shelf_id = 1;
+}
+
+// This message is unknown to ESP
+message UnknownMsg {
+  int64 unknown_int = 1;
+  // The ID of the book to retrieve.
+  string unknown_str = 2;
+}
+
+// This Book message has a unknown field for ESP
+message UnknownBook {
+  // This field is removed for ESP, but used by gRPC server
+  UnknownMsg unknown = 1;
+  // known int
+  int64 known_int = 2;
+  // known string
+  string known_str = 3;
 }

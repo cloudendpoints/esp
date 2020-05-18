@@ -71,6 +71,11 @@ apis {
     request_type_url: "type.googleapis.com/endpoints.examples.bookstore.ShelfId"
     response_type_url: "type.googleapis.com/endpoints.examples.bookstore.ShelfId"
   }
+  methods {
+    name: "GetUnknownBook"
+    request_type_url: "type.googleapis.com/google.protobuf.Empty"
+    response_type_url: "type.googleapis.com/endpoints.examples.bookstore.UnknownBook"
+  }
   version: "v1"
   source_context {
     file_name: "bookstore.proto"
@@ -481,6 +486,27 @@ types {
   }
   syntax: SYNTAX_PROTO3
 }
+types {
+  name: "endpoints.examples.bookstore.UnknownBook"
+  fields {
+    kind: TYPE_INT64
+    cardinality: CARDINALITY_OPTIONAL
+    number: 2
+    name: "known_int"
+    json_name: "knownInt"
+  }
+  fields {
+    kind: TYPE_STRING
+    cardinality: CARDINALITY_OPTIONAL
+    number: 3
+    name: "known_str"
+    json_name: "knownStr"
+  }
+  source_context {
+    file_name: "bookstore.proto"
+  }
+  syntax: SYNTAX_PROTO3
+}
 enums {
   name: "google.protobuf.NullValue"
   enumvalue {
@@ -490,280 +516,6 @@ enums {
     file_name: "google/protobuf/struct.proto"
   }
   syntax: SYNTAX_PROTO3
-}
-documentation {
-  rules {
-    selector: "google.protobuf.Empty"
-    description: "A generic empty message that you can re-use to avoid defining duplicated\nempty messages in your APIs. A typical example is to use it as the request\nor the response type of an API method. For instance:\n\n    service Foo {\n      rpc Bar(google.protobuf.Empty) returns (google.protobuf.Empty);\n    }\n\nThe JSON representation for `Empty` is empty JSON object `{}`."
-  }
-  rules {
-    selector: "google.protobuf.Struct"
-    description: "`Struct` represents a structured data value, consisting of fields\nwhich map to dynamically typed values. In some languages, `Struct`\nmight be supported by a native representation. For example, in\nscripting languages like JS a struct is represented as an\nobject. The details of that representation are described together\nwith the proto support for the language.\n\nThe JSON representation for `Struct` is JSON object."
-  }
-  rules {
-    selector: "google.protobuf.Struct.fields"
-    description: "Unordered map of dynamically typed values."
-  }
-  rules {
-    selector: "google.protobuf.Value"
-    description: "`Value` represents a dynamically typed value which can be either\nnull, a number, a string, a boolean, a recursive struct value, or a\nlist of values. A producer of value is expected to set one of that\nvariants, absence of any variant indicates an error.\n\nThe JSON representation for `Value` is JSON value."
-  }
-  rules {
-    selector: "google.protobuf.Value.null_value"
-    description: "Represents a null value."
-  }
-  rules {
-    selector: "google.protobuf.kind"
-    description: "The kind of value."
-  }
-  rules {
-    selector: "google.protobuf.Value.number_value"
-    description: "Represents a double value."
-  }
-  rules {
-    selector: "google.protobuf.Value.string_value"
-    description: "Represents a string value."
-  }
-  rules {
-    selector: "google.protobuf.Value.bool_value"
-    description: "Represents a boolean value."
-  }
-  rules {
-    selector: "google.protobuf.Value.struct_value"
-    description: "Represents a structured value."
-  }
-  rules {
-    selector: "google.protobuf.Value.list_value"
-    description: "Represents a repeated `Value`."
-  }
-  rules {
-    selector: "google.protobuf.ListValue"
-    description: "`ListValue` is a wrapper around a repeated field of values.\n\nThe JSON representation for `ListValue` is JSON array."
-  }
-  rules {
-    selector: "google.protobuf.ListValue.values"
-    description: "Repeated field of dynamically typed values."
-  }
-  rules {
-    selector: "google.protobuf.NullValue"
-    description: "`NullValue` is a singleton enumeration to represent the null value for the\n`Value` type union.\n\n The JSON representation for `NullValue` is JSON `null`."
-  }
-  rules {
-    selector: "google.protobuf.NullValue.NULL_VALUE"
-    description: "Null value."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore"
-    description: "Copyright (C) Extensible Service Proxy Authors\nAll rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions\nare met:\n1. Redistributions of source code must retain the above copyright\n   notice, this list of conditions and the following disclaimer.\n2. Redistributions in binary form must reproduce the above copyright\n   notice, this list of conditions and the following disclaimer in the\n   documentation and/or other materials provided with the distribution.\n\nTHIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS\'\' AND\nANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE\nIMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE\nARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE\nFOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL\nDAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS\nOR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)\nHOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT\nLIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY\nOUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF\nSUCH DAMAGE.\n\n//////////////////////////////////////////////////////////////////////////////"
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.Shelf"
-    description: "A shelf resource."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.Shelf.id"
-    description: "A unique shelf id."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.Shelf.theme"
-    description: "A theme of the shelf (fiction, poetry, etc)."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.Book"
-    description: "A book resource."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.Book.id"
-    description: "A unique book id."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.Book.author"
-    description: "An author of the book."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.Book.title"
-    description: "A book title."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.Book.quotes"
-    description: "Quotes from the book."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.ListShelvesResponse"
-    description: "Response to ListShelves call."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.ListShelvesResponse.shelves"
-    description: "Shelves in the bookstore."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.CreateShelfRequest"
-    description: "Request message for CreateShelf method."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.CreateShelfRequest.shelf"
-    description: "The shelf resource to create."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.GetShelfRequest"
-    description: "Request message for GetShelf method."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.GetShelfRequest.shelf"
-    description: "The ID of the shelf resource to retrieve."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.DeleteShelfRequest"
-    description: "Request message for DeleteShelf method."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.DeleteShelfRequest.shelf"
-    description: "The ID of the shelf to delete."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.ListBooksRequest"
-    description: "Request message for ListBooks method."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.ListBooksRequest.shelf"
-    description: "ID of the shelf which books to list."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.ListBooksResponse"
-    description: "Response message to ListBooks method."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.ListBooksResponse.books"
-    description: "The books on the shelf."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.CreateBookRequest"
-    description: "Request message for CreateBook method."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.CreateBookRequest.shelf"
-    description: "The ID of the shelf on which to create a book."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.CreateBookRequest.book"
-    description: "A book resource to create on the shelf."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.GetBookRequest"
-    description: "Request message for GetBook method."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.GetBookRequest.shelf"
-    description: "The ID of the shelf from which to retrieve a book."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.GetBookRequest.book"
-    description: "The ID of the book to retrieve."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.DeleteBookRequest"
-    description: "Request message for DeleteBook method."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.DeleteBookRequest.shelf"
-    description: "The ID of the shelf from which to delete a book."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.DeleteBookRequest.book"
-    description: "The ID of the book to delete."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.QueryShelvesRequest"
-    description: "Request message for QueryShelves method."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.QueryShelvesRequest.shelf"
-    description: "The shelf to match"
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.QueryBooksRequest"
-    description: "Request message for QueryBooks method."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.QueryBooksRequest.shelf"
-    description: "The shelf to look in"
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.QueryBooksRequest.book"
-    description: "The book to match"
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.ShelfNotFoundDetail"
-    description: "The custom error message returned in status \"details\""
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.ShelfNotFoundDetail.for_shelf_id"
-    description: "the sheld ID that trying to find."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.ShelfNotFoundDetail.why"
-    description: "the why message."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.ShelfId"
-    description: "This message is used to test preserve_proto_field_name flag\nNormally, shelf_id is converted to ShelfId in proto field name\nBut if preserve_proto_field_name is set, it will keep the\noriginal name"
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.Bookstore"
-    description: "A simple Bookstore API.\n\nThe API manages shelves and books resources. Shelves contain books."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.Bookstore.ListShelves"
-    description: "Returns a list of all shelves in the bookstore."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.Bookstore.CreateShelf"
-    description: "Creates a new shelf in the bookstore."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.Bookstore.BulkCreateShelf"
-    description: "Creates multiple shelves with one streaming call"
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.Bookstore.GetShelf"
-    description: "Returns a specific bookstore shelf."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.Bookstore.DeleteShelf"
-    description: "Deletes a shelf, including all books that are stored on the shelf."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.Bookstore.ListBooks"
-    description: "Returns a list of books on a shelf."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.Bookstore.CreateBook"
-    description: "Creates a new book."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.Bookstore.GetBook"
-    description: "Returns a specific book."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.Bookstore.DeleteBook"
-    description: "Deletes a book from a shelf."
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.Bookstore.QueryShelves"
-    description: "Query for matching shelves"
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.Bookstore.QueryBooks"
-    description: "Query for matching books"
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.Bookstore.EchoStruct"
-    description: "Echo with a struct"
-  }
-  rules {
-    selector: "endpoints.examples.bookstore.Bookstore.EchoShelfId"
-    description: "EchoShelfId"
-  }
 }
 backend {
   rules {
@@ -804,6 +556,9 @@ backend {
   }
   rules {
     selector: "endpoints.examples.bookstore.Bookstore.EchoShelfId"
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.Bookstore.GetUnknownBook"
   }
 }
 http {
@@ -868,10 +623,10 @@ http {
     post: "/echoshelfid"
     body: "*"
   }
-}
-endpoints {
-  name: "bookstore.endpoints.qiwzhang-authz.cloud.goog"
-  features: "googleapis.com/endpoint/grpc-autobahn"
+  rules {
+    selector: "endpoints.examples.bookstore.Bookstore.GetUnknownBook"
+    get: "/unknownbook"
+  }
 }
 config_version {
   value: 3
@@ -1062,6 +817,21 @@ system_parameters {
   }
   rules {
     selector: "endpoints.examples.bookstore.Bookstore.EchoShelfId"
+    parameters {
+      name: "api_key"
+      http_header: "x-api-key"
+    }
+    parameters {
+      name: "api_key"
+      url_query_parameter: "key"
+    }
+    parameters {
+      name: "api_key"
+      url_query_parameter: "api_key"
+    }
+  }
+  rules {
+    selector: "endpoints.examples.bookstore.Bookstore.GetUnknownBook"
     parameters {
       name: "api_key"
       http_header: "x-api-key"

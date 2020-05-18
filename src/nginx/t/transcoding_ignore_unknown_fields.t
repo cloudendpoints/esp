@@ -40,7 +40,7 @@ my $NginxPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 my $GrpcServerPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(5);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(6);
 
 $t->write_file('service.pb.txt',
   ApiManager::get_transcoding_test_service_config(
@@ -102,6 +102,16 @@ EOF
 
 ok(ApiManager::verify_http_json_response($response,
     {'id'=>'100', 'theme' => 'Classics'}), "The shelf was created successfully.");
+
+# Test unknown field in response. ResponseMessage UnknownBook has a field "unknown"
+# which is known to gRPC server, but not to ESP.
+# Expected result is: only that field is skipped, other fields should be fine.
+my $response1 = ApiManager::http_get($NginxPort,'/unknownbook?key=this-is-an-api-key');
+
+# With bug in https://github.com/cloudendpoints/esp/issues/795, the first field
+# after the uknown is discarded. Once the bug is fixed, should get all known fields.
+ok(ApiManager::verify_http_json_response($response1,
+    {'knownInt'=>'100', 'knownStr' => 'Book'}), "Got the unknown book successfully.");
 
 $t->stop_daemons();
 

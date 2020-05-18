@@ -44,7 +44,7 @@ class GrpcZeroCopyInputStream
   GrpcZeroCopyInputStream();
 
   // Add a message to the end of the stream
-  void AddMessage(grpc_byte_buffer* message, bool take_ownership);
+  void AddMessage(grpc_byte_buffer *message, bool take_ownership);
 
   // Marks the end of the stream, which means that ZeroCopyInputStream will
   // return false after all the existing messages are consumed.
@@ -52,18 +52,19 @@ class GrpcZeroCopyInputStream
 
   // ZeroCopyInputStream implementation
 
-  bool Next(const void** data, int* size);
+  bool Next(const void **data, int *size);
   void BackUp(int count);
-  bool Skip(int count) { return false; }                     // not supported
-  ::google::protobuf::int64 ByteCount() const { return 0; }  // Not implemented
+  bool Skip(int count);
+  ::google::protobuf::int64 ByteCount() const;
   int64_t BytesAvailable() const;
   bool Finished() const { return finished_; }
 
  private:
   GrpcMessageSerializer serializer_;
-  const unsigned char* current_buffer_;
+  const unsigned char *current_buffer_;
   size_t current_buffer_size_;
   size_t position_;
+  size_t bytes_read_;
   bool finished_;
 };
 

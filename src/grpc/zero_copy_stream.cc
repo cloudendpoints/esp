@@ -36,26 +36,29 @@ GrpcZeroCopyInputStream::GrpcZeroCopyInputStream()
     : current_buffer_(nullptr),
       current_buffer_size_(0),
       position_(0),
+      bytes_read_(0),
       finished_(false) {}
 
-void GrpcZeroCopyInputStream::AddMessage(grpc_byte_buffer* message,
+void GrpcZeroCopyInputStream::AddMessage(grpc_byte_buffer *message,
                                          bool take_ownership) {
   serializer_.AddMessage(message, take_ownership);
 }
 
-bool GrpcZeroCopyInputStream::Next(const void** data, int* size) {
+bool GrpcZeroCopyInputStream::Next(const void **data, int *size) {
   if (position_ >= current_buffer_size_) {
+    position_ = 0;
     if (!serializer_.Next(&current_buffer_, &current_buffer_size_)) {
       // No data
       *size = 0;
+      current_buffer_size_ = 0;
       return !finished_;
     }
-    position_ = 0;
   }
 
   // Return [position_, current_buffer_size_) interval of the current buffer
   *data = current_buffer_ + position_;
   *size = static_cast<int>(current_buffer_size_ - position_);
+  bytes_read_ += *size;
 
   // Move the position to the end of the current buffer
   position_ = current_buffer_size_;
@@ -65,7 +68,38 @@ bool GrpcZeroCopyInputStream::Next(const void** data, int* size) {
 void GrpcZeroCopyInputStream::BackUp(int count) {
   if (0 < count && static_cast<size_t>(count) <= position_) {
     position_ -= count;
+    bytes_read_ -= count;
   }
+}
+
+bool GrpcZeroCopyInputStream::Skip(int count) {
+  if (count < 0) {
+    // Safe guard against wrong usage.
+    return false;
+  }
+  size_t count_left = static_cast<size_t>(count);
+  while (position_ + count_left > current_buffer_size_) {
+    // Skipping past the current buffer, read the next one.
+    int delta = static_cast<int>(current_buffer_size_ - position_);
+    count_left -= delta;
+    bytes_read_ += delta;
+    position_ = 0;
+    if (!serializer_.Next(&current_buffer_, &current_buffer_size_)) {
+      // No data. We are potentially not at the end of the stream yet, but we
+      // don't know that and can only skip to the end and return an error.
+      current_buffer_size_ = 0;
+      return false;
+    }
+  }
+
+  // Move the position ahead the requested number of bytes.
+  position_ += count_left;
+  bytes_read_ += count_left;
+  return true;
+}
+
+::google::protobuf::int64 GrpcZeroCopyInputStream::ByteCount() const {
+  return static_cast<::google::protobuf::int64>(bytes_read_);
 }
 
 int64_t GrpcZeroCopyInputStream::BytesAvailable() const {

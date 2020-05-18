@@ -61,5 +61,7 @@ id: "2016-08-25r1"
 +    }
   }
  ```
- - Replace /tmp/out.txt with test/transcoding/service.pb.txt
+   * remove type `endpoints.examples.bookstore.UnknownMsg`
+   * remove `unknown` field in type `endpoints.examples.bookstore.UnknownBook`
 
+ - Replace /tmp/out.txt with test/transcoding/service.pb.txt
