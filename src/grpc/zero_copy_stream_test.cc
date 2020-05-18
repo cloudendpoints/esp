@@ -38,6 +38,9 @@ namespace grpc {
 namespace testing {
 namespace {
 
+// gRPC frame size is 5 bytes: 1 byte flag + 4 byte data length
+const int kFrameSize = 5;
+
 class GrpcZeroCopyInputStreamTest : public ::testing::Test {
  public:
   GrpcZeroCopyInputStreamTest() {}
@@ -101,15 +104,15 @@ TEST_F(GrpcZeroCopyInputStreamTest, SimpleRead) {
 
   // Test the message1 delimiter
   EXPECT_TRUE(stream.Next(&data, &size));
-  EXPECT_EQ(5, size);
+  EXPECT_EQ(kFrameSize, size);
   EXPECT_EQ(slice11.size() + slice12.size(),
             DelimiterToSize(reinterpret_cast<const unsigned char *>(data)));
 
   // Test BytesAvailable() and ByteCount()
   EXPECT_EQ(slice11.size() + slice12.size() + slice21.size() + slice22.size() +
-                5,  // +5 bytes for one delimiter
+                kFrameSize,  // +kFrameSize bytes for one delimiter
             stream.BytesAvailable());
-  EXPECT_EQ(5, stream.ByteCount());
+  EXPECT_EQ(kFrameSize, stream.ByteCount());
 
   // Test the slices
   EXPECT_TRUE(stream.Next(&data, &size));
@@ -118,28 +121,30 @@ TEST_F(GrpcZeroCopyInputStreamTest, SimpleRead) {
 
   // Test BytesAvailable() and ByteCount()
   EXPECT_EQ(slice12.size() + slice21.size() + slice22.size() +
-                5,  // +5 bytes for one delimiter
+                kFrameSize,  // +kFrameSize bytes for one delimiter
             stream.BytesAvailable());
-  EXPECT_EQ(5 + slice11.size(), stream.ByteCount());
+  EXPECT_EQ(kFrameSize + slice11.size(), stream.ByteCount());
 
   EXPECT_TRUE(stream.Next(&data, &size));
   EXPECT_EQ(slice12.size(), size);
   EXPECT_EQ(slice12, std::string(reinterpret_cast<const char *>(data), size));
 
   // Test BytesAvailable() and ByteCount()
-  EXPECT_EQ(slice21.size() + slice22.size() + 5,  // +5 bytes for one delimiter
+  EXPECT_EQ(slice21.size() + slice22.size() +
+                kFrameSize,  // +kFrameSize bytes for one delimiter
             stream.BytesAvailable());
-  EXPECT_EQ(5 + slice11.size() + slice12.size(), stream.ByteCount());
+  EXPECT_EQ(kFrameSize + slice11.size() + slice12.size(), stream.ByteCount());
 
   // Test the message2 delimiter
   EXPECT_TRUE(stream.Next(&data, &size));
-  EXPECT_EQ(5, size);
+  EXPECT_EQ(kFrameSize, size);
   EXPECT_EQ(slice21.size() + slice22.size(),
             DelimiterToSize(reinterpret_cast<const unsigned char *>(data)));
 
   // Test BytesAvailable() and ByteCount()
   EXPECT_EQ(slice21.size() + slice22.size(), stream.BytesAvailable());
-  EXPECT_EQ(5 + slice11.size() + slice12.size() + 5, stream.ByteCount());
+  EXPECT_EQ(kFrameSize + slice11.size() + slice12.size() + kFrameSize,
+            stream.ByteCount());
 
   // Test the slices
   EXPECT_TRUE(stream.Next(&data, &size));
@@ -148,7 +153,8 @@ TEST_F(GrpcZeroCopyInputStreamTest, SimpleRead) {
 
   // Test BytesAvailable() and ByteCount()
   EXPECT_EQ(slice22.size(), stream.BytesAvailable());
-  EXPECT_EQ(5 + slice11.size() + slice12.size() + 5 + slice21.size(),
+  EXPECT_EQ(kFrameSize + slice11.size() + slice12.size() + kFrameSize +
+                slice21.size(),
             stream.ByteCount());
 
   EXPECT_TRUE(stream.Next(&data, &size));
@@ -157,9 +163,9 @@ TEST_F(GrpcZeroCopyInputStreamTest, SimpleRead) {
 
   // Test the end of the stream
   EXPECT_EQ(0, stream.BytesAvailable());
-  EXPECT_EQ(
-      5 + slice11.size() + slice12.size() + 5 + slice21.size() + slice22.size(),
-      stream.ByteCount());
+  EXPECT_EQ(kFrameSize + slice11.size() + slice12.size() + kFrameSize +
+                slice21.size() + slice22.size(),
+            stream.ByteCount());
   EXPECT_FALSE(stream.Next(&data, &size));
 }
 
@@ -177,21 +183,22 @@ TEST_F(GrpcZeroCopyInputStreamTest, Backups) {
   const void *data = nullptr;
   int size = -1;
   EXPECT_TRUE(stream.Next(&data, &size));
-  EXPECT_EQ(5, size);
+  EXPECT_EQ(kFrameSize, size);
   EXPECT_EQ(slice1.size() + slice2.size(),
             DelimiterToSize(reinterpret_cast<const unsigned char *>(data)));
 
   // Back up
-  stream.BackUp(5);
+  stream.BackUp(kFrameSize);
 
   // Test BytesAvailable() and ByteCount()
-  EXPECT_EQ(slice1.size() + slice2.size() + 5,  // +5 bytes for the delimiter
+  EXPECT_EQ(slice1.size() + slice2.size() +
+                kFrameSize,  // +kFrameSize bytes for the delimiter
             stream.BytesAvailable());
   EXPECT_EQ(0, stream.ByteCount());
 
   // Test the slice again
   EXPECT_TRUE(stream.Next(&data, &size));
-  EXPECT_EQ(5, size);
+  EXPECT_EQ(kFrameSize, size);
   EXPECT_EQ(slice1.size() + slice2.size(),
             DelimiterToSize(reinterpret_cast<const unsigned char *>(data)));
 
@@ -203,7 +210,7 @@ TEST_F(GrpcZeroCopyInputStreamTest, Backups) {
   // Back up & test again
   stream.BackUp(size);
   EXPECT_EQ(slice1.size() + slice2.size(), stream.BytesAvailable());
-  EXPECT_EQ(5, stream.ByteCount());
+  EXPECT_EQ(kFrameSize, stream.ByteCount());
   EXPECT_TRUE(stream.Next(&data, &size));
   EXPECT_EQ(slice1.size(), size);
   EXPECT_EQ(slice1, std::string(reinterpret_cast<const char *>(data), size));
@@ -211,7 +218,7 @@ TEST_F(GrpcZeroCopyInputStreamTest, Backups) {
   // Now Back up 10 bytes & test again
   stream.BackUp(10);
   EXPECT_EQ(10 + slice2.size(), stream.BytesAvailable());
-  EXPECT_EQ(5 + slice1.size() - 10, stream.ByteCount());
+  EXPECT_EQ(kFrameSize + slice1.size() - 10, stream.ByteCount());
   EXPECT_TRUE(stream.Next(&data, &size));
   EXPECT_EQ(10, size);
   EXPECT_EQ(slice1.substr(slice1.size() - 10),
@@ -225,7 +232,7 @@ TEST_F(GrpcZeroCopyInputStreamTest, Backups) {
   // Back up and test again
   stream.BackUp(size);
   EXPECT_EQ(slice2.size(), stream.BytesAvailable());
-  EXPECT_EQ(5 + slice1.size(), stream.ByteCount());
+  EXPECT_EQ(kFrameSize + slice1.size(), stream.ByteCount());
   EXPECT_TRUE(stream.Next(&data, &size));
   EXPECT_EQ(slice2.size(), size);
   EXPECT_EQ(slice2, std::string(reinterpret_cast<const char *>(data), size));
@@ -233,7 +240,7 @@ TEST_F(GrpcZeroCopyInputStreamTest, Backups) {
   // Now Back up size - 1 bytes (all but 1) and check again
   stream.BackUp(size - 1);
   EXPECT_EQ(slice2.size() - 1, stream.BytesAvailable());
-  EXPECT_EQ(5 + slice1.size() + 1, stream.ByteCount());
+  EXPECT_EQ(kFrameSize + slice1.size() + 1, stream.ByteCount());
   EXPECT_TRUE(stream.Next(&data, &size));
   EXPECT_EQ(slice2.size() - 1, size);
   EXPECT_EQ(slice2.substr(1),
@@ -251,7 +258,6 @@ TEST_F(GrpcZeroCopyInputStreamTest, Skips) {
   std::string slice2 = "This is the second slice of the message.";
   std::string slice3 = "This is the third slice of the message.";
   std::string slice4 = "This is the fourth slice of the message.";
-  const int kFrameSize = 5;
 
   stream.AddMessage(CreateByteBuffer(SliceData{slice1, slice2, slice3, slice4}),
                     true);
@@ -393,7 +399,7 @@ TEST_F(GrpcZeroCopyInputStreamTest, NotOwnedMessages) {
     const void *data = nullptr;
     int size = -1;
     EXPECT_TRUE(stream.Next(&data, &size));
-    EXPECT_EQ(5, size);
+    EXPECT_EQ(kFrameSize, size);
     EXPECT_EQ(slice1.size(),
               DelimiterToSize(reinterpret_cast<const unsigned char *>(data)));
 
@@ -404,7 +410,7 @@ TEST_F(GrpcZeroCopyInputStreamTest, NotOwnedMessages) {
 
     // Test the message2 delimiter
     EXPECT_TRUE(stream.Next(&data, &size));
-    EXPECT_EQ(5, size);
+    EXPECT_EQ(kFrameSize, size);
     EXPECT_EQ(slice2.size(),
               DelimiterToSize(reinterpret_cast<const unsigned char *>(data)));
 
