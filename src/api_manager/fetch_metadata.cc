@@ -42,10 +42,11 @@ const char kMetadataInstanceIdentityToken[] =
 const int kInstanceIdentityTokenExpiration = 3500;
 // Time window (in seconds) of failure status after a failed fetch.
 const int kFailureStatusWindow = 5;
-// Initial metadata fetch timeout (1s)
-const int kMetadataFetchTimeout = 1000;
+// GKE metadata server may take >2s to fetch access token.
+// Initial metadata fetch timeout (5s)
+const int kMetadataFetchTimeout = 5000;
 // Maximum number of retries to fetch token from metadata
-const int kMetadataTokenFetchRetries = 5;
+const int kMetadataTokenFetchRetries = 3;
 // External status message for failure to fetch service account token
 const char kFailedTokenFetch[] = "Failed to fetch service account token";
 // External status message for token fetch in progress
