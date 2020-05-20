@@ -208,7 +208,7 @@ sub metadata {
     $request_count++;
     if ($request_count == 1) {
         # Trigger a timeout for the first request.
-        sleep 2;
+        sleep 7;
     }
 
     print $client <<'EOF';
