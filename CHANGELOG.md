@@ -1,3 +1,8 @@
+# Release 1.52.0 27-05-2020
+
+- Increase timeout of fetching access token from metadata server to 5s (#798)
+- Fix grpc transcoding bugs for unknown fields (#797)
+
 # Release 1.51.0 12-05-2020
 
 - Replace docker base with debian:buster (#792)
