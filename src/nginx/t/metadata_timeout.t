@@ -96,7 +96,7 @@ $t->run();
 
 ################################################################################
 
-my $shelves = ApiManager::http_get($NginxPort,'/shelves');
+my $shelves = ApiManager::http_get($NginxPort,'/shelves', (timeout => 40));
 my $books = ApiManager::http_get($NginxPort,'/shelves/Musicals/books');
 
 is($t->waitforfile("$t->{_testdir}/${report_done}"), 1, 'Report body file ready.');
@@ -207,8 +207,8 @@ sub metadata {
 
     $request_count++;
     if ($request_count == 1) {
-        # Trigger a timeout for the first request.
-        sleep 7;
+        # Trigger a timeout for the first request. timeout is 30s.
+        sleep 32;
     }
 
     print $client <<'EOF';
