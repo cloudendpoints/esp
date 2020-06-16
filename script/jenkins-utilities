@@ -119,15 +119,15 @@ function set_esp_service_version() {
   local esp_service="${1}"
   local json_path="$(mktemp /tmp/XXXXX.json)"
   local version=''
-  ${GCLOUD} endpoints services describe \
-    ${esp_service} --format=json > "${json_path}" || return 1
+  ${GCLOUD} endpoints configs list \
+    --service=${esp_service} --format=json > "${json_path}" || return 1
   version="$(python - << __EOF__ "${json_path}"
 import json
 import sys
 json_path = sys.argv[1]
 with open(json_path, 'r') as f:
   result = json.load(f)
-print str(result['serviceConfig']['id'])
+print str(result[0]['id'])
 __EOF__
   )" || version=''
   rm -f "${json_path}"
