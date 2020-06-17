@@ -580,7 +580,7 @@ sub http($;$;%) {
   my $s = http_start($port, $request, %extra);
 
   return $s if $extra{start} or !defined $s;
-  return http_end($s);
+  return http_end($s, %extra);
 }
 
 sub http_start($;$;%) {
@@ -590,7 +590,9 @@ sub http_start($;$;%) {
   eval {
     local $SIG{ALRM} = sub { die "timeout\n" };
     local $SIG{PIPE} = sub { die "sigpipe\n" };
-    alarm(8);
+    my $timeout = 8;
+    $timeout = $extra{timeout} if $extra{timeout};
+    alarm($timeout);
 
     $s = $extra{socket} || IO::Socket::INET->new(
       Proto => 'tcp',
@@ -621,13 +623,15 @@ sub http_start($;$;%) {
 }
 
 sub http_end($;%) {
-  my ($s) = @_;
+  my ($s, %extra) = @_;
   my $reply;
 
   eval {
     local $SIG{ALRM} = sub { die "timeout\n" };
     local $SIG{PIPE} = sub { die "sigpipe\n" };
-    alarm(8);
+    my $timeout = 8;
+    $timeout = $extra{timeout} if $extra{timeout};
+    alarm($timeout);
 
     local $/;
     $reply = $s->getline();

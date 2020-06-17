@@ -60,7 +60,8 @@ def fetch_metadata(metadata, attr_path, required):
     headers = {"Metadata-Flavor": "Google"}
     client = urllib3.PoolManager(ca_certs=certifi.where())
     if required:
-      timeout = 1.0
+      # GKE metadata server may take up to 30s to get access token.
+      timeout = 30.0
       retries = True
     else:
       timeout = 0.1
