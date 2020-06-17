@@ -57,6 +57,8 @@ pex_binary(
         "pyasn1>=0.1.9",
         "pyasn1-modules>=0.0.8",
         "urllib3>=1.16",
+        # rsa 4.3 is the last version support Python 2
+        "rsa==4.3",
     ],
 )
 
