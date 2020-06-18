@@ -1,3 +1,7 @@
+# Release 1.53.0 18-06-2020
+
+- Increase metadata fetch timeout to 30s (#803)
+
 # Release 1.52.0 27-05-2020
 
 - Increase timeout of fetching access token from metadata server to 5s (#798)
