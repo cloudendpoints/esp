@@ -58,9 +58,8 @@ nginx_repositories(
 # Needs to come after nginx
 git_repository(
     name = "appengine_nginx",
-    commit = "37b3a04da390ec8c9b3ae1a4745fe0d27f2a9e6e",  # TODO: update date Jan 8, 2018
-    remote = "https://github.com/imccarten1/appengine-sidecars-docker",
-    #branch = "esp-integration",
+    commit = "da931aa1a2a28b2e05f616889f998072e30aabee",  # Aug 11, 2020
+    remote = "https://github.com/GoogleCloudPlatform/appengine-sidecars-docker",
 )
 
 load("@appengine_nginx//:appengine_nginx.bzl", "appengine_nginx_repositories")
