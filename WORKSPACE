@@ -58,7 +58,7 @@ nginx_repositories(
 # Needs to come after nginx
 git_repository(
     name = "appengine_nginx",
-    commit = "da931aa1a2a28b2e05f616889f998072e30aabee",  # Aug 11, 2020
+    commit = "3dfd01355392215ab26501678e87029fdf2cb1b0",  # Aug 11, 2020
     remote = "https://github.com/GoogleCloudPlatform/appengine-sidecars-docker",
 )
 
