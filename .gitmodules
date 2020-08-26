@@ -2,3 +2,6 @@
 	path = third_party/nginx-tests
 	url = https://nginx.googlesource.com/nginx-tests
 	ignore = untracked
+[submodule "third_party/appengine-nginx-tests"]
+	path = third_party/appengine-nginx-tests
+	url = https://github.com/GoogleCloudPlatform/appengine-sidecars-docker.git
