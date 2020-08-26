@@ -41,8 +41,10 @@ perl_library(
 nginx_suite(
     nginx = "//src/nginx/main:nginx-esp",
     tags = ["exclusive"],
-    tests = glob(
-        ["nginx-tests/*.t"],
+    tests = glob([
+            "nginx-tests/*.t",
+            "http_latency_status.t",
+        ],
         exclude = [
             # ssl.t, ssl_certificates.t, ssl_stapling are excluded from the
             # test suite because boring ssl does not support renegotiation
