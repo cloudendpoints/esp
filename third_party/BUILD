@@ -70,19 +70,3 @@ nginx_suite(
         ":nginx_test",
     ],
 )
-
-nginx_suite(
-    nginx = "//src/nginx/main:nginx-esp",
-    data = glob(
-         ["nginx-tests/lib/Test/*.pm",
-          "nginx-tests/lib/Test/Nginx/*.pm"
-          ],
-         ),
-    tests = [
-         "appengine-nginx-tests/third_party/nginx_latency_status_module/test/http_latency_status.t",
-    ],
-    deps = [
-        ":nginx_test",
-    ],
-    env = {"LIB_LOCATION": "third_party/nginx-tests/lib"},
-)
