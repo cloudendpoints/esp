@@ -27,47 +27,12 @@
 load("@io_bazel_rules_perl//perl:perl.bzl", "perl_library")
 load("//:nginx.bzl", "nginx_suite")
 
-perl_library(
-    name = "nginx_test",
-    srcs = glob([
-        "nginx-tests/lib/Test/**/*.pm",
-    ]),
-    visibility = ["//visibility:public"],
-)
-
-# Nginx test suite containing all of the integration tests
-# included with Nginx.
+licenses(["notice"])
 
 nginx_suite(
     nginx = "//src/nginx/main:nginx-esp",
-    tags = ["exclusive"],
-    tests = glob([
-            "nginx-tests/*.t",
-        ],
-        exclude = [
-            # ssl.t, ssl_certificates.t, ssl_stapling are excluded from the
-            # test suite because boring ssl does not support renegotiation
-            # feature required by the test.
-            "nginx-tests/h2_ssl_verify_client.t",
-            "nginx-tests/ssl.t",
-            "nginx-tests/ssl_certificates.t",
-            "nginx-tests/ssl_stapling.t",
-            "nginx-tests/ssl_certificate_chain.t",
-            "nginx-tests/ssl_client_escaped_cert.t",
-            "nginx-tests/ssl_crl.t",
-            "nginx-tests/ssl_verify_client.t",
-            "nginx-tests/ssl_verify_depth.t",
-            "nginx-tests/stream_proxy_protocol_ssl.t",
-            "nginx-tests/stream_ssl_verify_client.t",
-            # Jenkins tests require root so env(TEST_NGINX_GLOBALS) adds
-            # "user root;" in nginx.bzl. But this test also adds "user root;"
-            # so it fails. Just skip it for now.
-            "nginx-tests/proxy_bind_transparent.t",
-            # Not sure why this one fails
-            "nginx-tests/proxy_variables.t",
-        ],
-    ),
+    tests = ["http_latency_status.t"],
     deps = [
-        ":nginx_test",
+        "//third_party:nginx_test",
     ],
 )

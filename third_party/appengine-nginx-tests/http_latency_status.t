@@ -38,7 +38,7 @@ use Test::More;
 
 BEGIN { use FindBin; chdir($FindBin::Bin); }
 
-use lib "nginx-tests/lib";
+use lib "../nginx-tests/lib";
 use Test::Nginx;
 use JSON::PP qw(decode_json);
 ###############################################################################
