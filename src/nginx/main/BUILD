@@ -102,7 +102,8 @@ cc_binary(
     deps = [
         "//src/nginx:ngx_esp",
         "//src/nginx:version_header",
-        "@iap_jwt_verify_nginx//third_party/iap_jwt_verify_nginx/src:ngx_iap_jwt_verify",
+        "@appengine_nginx//third_party/iap_jwt_verify_nginx/src:ngx_iap_jwt_verify",
+        "@appengine_nginx//third_party/nginx_latency_status_module/src:ngx_latency_status_module",
         "@nginx//:http",
         "@nginx//:http_access",
         "@nginx//:http_addition",

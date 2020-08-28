@@ -57,14 +57,14 @@ nginx_repositories(
 
 # Needs to come after nginx
 git_repository(
-    name = "iap_jwt_verify_nginx",
-    commit = "cbdfb7aa74897230c23a46162e3fbe0209cb659a",  # Jan 8, 2018
+    name = "appengine_nginx",
+    commit = "6e2854c62b9c456e3ac42b78981fa374373a519f",  # Aug 21, 2020
     remote = "https://github.com/GoogleCloudPlatform/appengine-sidecars-docker",
 )
 
-load("@iap_jwt_verify_nginx//:iap_jwt_verify_nginx.bzl", "iap_jwt_verify_nginx_repositories")
+load("@appengine_nginx//:appengine_nginx.bzl", "appengine_nginx_repositories")
 
-iap_jwt_verify_nginx_repositories(True)
+appengine_nginx_repositories(True)
 
 git_repository(
     name = "com_github_grpc_grpc",
