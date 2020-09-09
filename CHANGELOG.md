@@ -1,3 +1,7 @@
+# Release 1.54.0 09-09-2020
+
+- Add appengine's nginx latency status module (#810)
+
 # Release 1.53.0 18-06-2020
 
 - Increase metadata fetch timeout to 30s (#803)
