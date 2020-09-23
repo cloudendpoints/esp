@@ -924,9 +924,16 @@ config file.'''.format(
         help='''The file path for gRPC backend SSL client certificate chain.''')
 
     parser.add_argument('--service_control_network_fail_open',
-        default=True, action='store_true', help='''
-        In case of network failures when connecting to Google service control,
-        the requests will be allowed if this flag is on. Default is on.
+        action='store_true', help='''
+        This flag is deprecated, it is kept here for backward compatibility.
+        Please use flag --service_control_network_fail_policy.
+        ''')
+
+    parser.add_argument('--service_control_network_fail_policy',
+        default='open',  choices=['open', 'close'], help='''
+        Specify the policy to handle the request in case of network failures when
+        connecting to Google service control. If it is `open`, the request will be allowed,
+        otherwise, it will be rejected. Default is `open`.
         ''')
 
     parser.add_argument('--jwks_cache_duration_in_s', default=None, type=int, help='''
@@ -1094,6 +1101,8 @@ if __name__ == '__main__':
         ensure(args.config_dir)
         if not args.generate_config_file_only:
             fetch_service_config(args)
+
+    args.service_control_network_fail_open = (args.service_control_network_fail_policy == "open")
 
     # Generate server_config
     args.metadata_attributes = fetch.fetch_metadata_attributes(args.metadata)
