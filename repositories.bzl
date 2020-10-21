@@ -549,9 +549,9 @@ cc_proto_library(
         name = "googleapis_git",
         build_file_content = BUILD,
         patch_cmds = ["find . -type f -name '*BUILD*' | xargs rm"],
-        strip_prefix = "googleapis-ae7a4cc69cc1e206b16f1b9db803907d7a3d97c8",  # Oct 22, 2019
-        url = "https://github.com/googleapis/googleapis/archive/ae7a4cc69cc1e206b16f1b9db803907d7a3d97c8.tar.gz",
-        sha256 = "f96e11515c302045e8ab6708ba68d7cea8a02e2a96add92033315ff894076980",
+        strip_prefix = "googleapis-11fd1fb53d03cf4852d3f63d679292e3c7b6e7c8",  # Oct 21, 2020
+        url = "https://github.com/googleapis/googleapis/archive/11fd1fb53d03cf4852d3f63d679292e3c7b6e7c8.tar.gz",
+        sha256 = "a14e0bc8ff5f67207f82e509d75fcd3d6e8a87f29f413e00ac5f4238009bf179",
     )
 
     if bind:
