@@ -247,8 +247,8 @@ bool Config::AddOptionsMethodForAllUrls(ApiManagerEnvInterface *env,
   for (auto url : all_urls) {
     auto status = pmb->Register(http_options, url, std::string(), mi);
     if (!status.ok()) {
-      env->LogError(std::string("Failed to add http options template: " +
-                                status.message()));
+      env->LogWarning(std::string("Failed to add http options template: " +
+                                  status.message()));
     }
   }
 
