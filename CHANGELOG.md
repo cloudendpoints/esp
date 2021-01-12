@@ -1,6 +1,6 @@
 # Release 1.55.0 12-01-2021
 
-- remove authorizationUrl redirect (#824)
+- Remove authorizationUrl redirect (#824)
 - Change to warning for duplicated http options template (#820)
 - Replace flag service_control_network_fail_open with service_control_network_fail_policy (#818)
 
