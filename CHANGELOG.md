@@ -4,8 +4,6 @@
 - Change to warning for duplicated http options template (#820)
 - Replace flag service_control_network_fail_open with service_control_network_fail_policy (#818)
 
-TODO: Edit the section above before submitting! DIRECTORY /usr/local/google/home/nareddyt/workspace/esp
-===============================================
 # Release 1.54.0 09-09-2020
 
 - Add appengine's nginx latency status module (#810)
