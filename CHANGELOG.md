@@ -1,3 +1,9 @@
+# Release 1.55.0 12-01-2021
+
+- Remove authorizationUrl redirect (#824)
+- Change to warning for duplicated http options template (#820)
+- Replace flag service_control_network_fail_open with service_control_network_fail_policy (#818)
+
 # Release 1.54.0 09-09-2020
 
 - Add appengine's nginx latency status module (#810)
