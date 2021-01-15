@@ -56,7 +56,8 @@ GlobalContext::GlobalContext(std::unique_ptr<ApiManagerEnvInterface> env,
       preserve_proto_field_names_(false),
       intermediate_report_interval_(kIntermediateReportInterval),
       platform_(ComputePlatform::kUnknown),
-      jwks_cache_duration_in_s_(kPubKeyCacheDurationInSecond) {
+      jwks_cache_duration_in_s_(kPubKeyCacheDurationInSecond),
+      redirect_authorization_url_(false) {
   // Need to load server config first.
   server_config_ = Config::LoadServerConfig(env_.get(), server_config);
 
@@ -79,6 +80,7 @@ GlobalContext::GlobalContext(std::unique_ptr<ApiManagerEnvInterface> env,
       if (auth_config.jwks_cache_duration_in_s() > 0) {
         jwks_cache_duration_in_s_ = auth_config.jwks_cache_duration_in_s();
       }
+      redirect_authorization_url_ = auth_config.redirect_authorization_url();
     }
 
     // Check server_config override.

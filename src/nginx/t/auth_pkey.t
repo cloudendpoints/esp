@@ -52,6 +52,7 @@ authentication {
     id: "test_auth"
     issuer: "628645741881-noabiu23f5a8m8ovd8ucv698lj78vv0l\@developer.gserviceaccount.com"
     jwks_uri: "http://127.0.0.1:${PubkeyPort}/pubkey"
+    authorization_url: "http://dummy-redirect-url"
   }
   rules {
     selector: "ListShelves"

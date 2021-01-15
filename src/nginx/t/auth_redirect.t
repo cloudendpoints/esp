@@ -67,6 +67,13 @@ control {
 EOF
 $t->write_file('service.pb.txt', $config);
 
+# enable the redirect_authorization_url flag
+ApiManager::write_file_expand($t, 'server_config.txt', <<"EOF");
+api_authentication_config {
+  redirect_authorization_url: true
+}
+EOF
+
 $t->write_file_expand('nginx.conf', <<"EOF");
 %%TEST_GLOBALS%%
 daemon off;
@@ -82,6 +89,7 @@ http {
     location / {
       endpoints {
         api service.pb.txt;
+        server_config server_config.txt;
         on;
       }
       proxy_pass http://127.0.0.1:3000;

@@ -98,6 +98,9 @@ class GlobalContext {
   const std::string &location() const { return location_; }
 
   int jwks_cache_duration_in_s() const { return jwks_cache_duration_in_s_; }
+  bool redirect_authorization_url() const {
+    return redirect_authorization_url_;
+  }
 
   void set_rollout_id_func(SetRolloutIdFunc rollout_id_func) {
     rollout_id_func_ = rollout_id_func;
@@ -151,6 +154,9 @@ class GlobalContext {
 
   // The jwks public key cache duration.
   int jwks_cache_duration_in_s_;
+
+  // enable to redirect to authorizationUrl
+  bool redirect_authorization_url_;
 
   // The function to set rollout id fetched from Check and Report response.
   SetRolloutIdFunc rollout_id_func_;

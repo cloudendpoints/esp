@@ -214,6 +214,10 @@ message ApiAuthenticationConfig {
   // Specify the JWKS public key cache duration in seconds.
   // If not specified, or 0, default is 300 (5 minutes).
   int32 jwks_cache_duration_in_s = 2;
+
+  // If true, authentication failed requests will be redirected to
+  // the URL specified by "authorizationUrl" field in OpenAPI spec.
+  bool redirect_authorization_url = 3;
 }
 
 // Server config for API Authorization via Firebase Rules

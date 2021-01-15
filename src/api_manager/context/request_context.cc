@@ -445,6 +445,10 @@ std::string RequestContext::GetAuthorizationUrl() const {
   if (method_call_.method_info == nullptr) {
     return "";
   }
+  // This feature has to be enabled from the flag
+  if (!service_context()->global_context()->redirect_authorization_url()) {
+    return "";
+  }
   if (auth_issuer_.empty()) {
     return method_call_.method_info->first_authorization_url();
   } else {

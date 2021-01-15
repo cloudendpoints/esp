@@ -67,10 +67,13 @@ service_control_config {
   % endif
 }
 % endif
-% if jwks_cache_duration_in_s:
+% if jwks_cache_duration_in_s or redirect_authorization_url:
 api_authentication_config {
   % if jwks_cache_duration_in_s:
   jwks_cache_duration_in_s: ${jwks_cache_duration_in_s}
+  % endif
+  % if redirect_authorization_url:
+  redirect_authorization_url: true
   % endif
 }
 % endif
