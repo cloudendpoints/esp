@@ -344,7 +344,7 @@ class TestStartEsp(unittest.TestCase):
 
     def test_redirect_authorization_url(self):
         expected_config_file = "./start_esp/test/testdata/expected_redirect_authorization_url.json"
-        config_generator = self.basic_config_generator + " --redirect_authorization_url"
+        config_generator = self.basic_config_generator + " --enable_jwt_authorization_url_redirect"
         self.run_test_with_expectation(expected_config_file, self.generated_server_config_file, config_generator)
 
     ########## The tests for validating it should generate failure on conflict flags ##########

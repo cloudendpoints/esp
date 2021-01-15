@@ -208,7 +208,7 @@ def write_server_config_template(server_config_path, args):
                 compute_platform_override=args.compute_platform_override,
                 grpc_backend_ssl_credentials=args.grpc_backend_ssl_credentials,
                 jwks_cache_duration_in_s=args.jwks_cache_duration_in_s,
-                redirect_authorization_url=args.redirect_authorization_url,
+                redirect_authorization_url=args.enable_jwt_authorization_url_redirect,
                 rollout_fetch_throttle_window_in_s=args.rollout_fetch_throttle_window_in_s)
 
         server_config_file = server_config_path
@@ -940,10 +940,10 @@ config file.'''.format(
     parser.add_argument('--jwks_cache_duration_in_s', default=None, type=int, help='''
         Specify JWT public key cache duration in seconds. Default is 5 minutes.''')
 
-    parser.add_argument('--redirect_authorization_url', action='store_true',
-                        help='''If specified, authentication failed requests will be redirected
-                        to the URL specified by the `authorizationUrl` field in OpenAPI spec.
-                        ''')
+    parser.add_argument('--enable_jwt_authorization_url_redirect', action='store_true',
+                        help='''If set to true, authentication failed requests will be redirected
+                        to the URL specified by the `authorizationUrl` field in OpenAPI specification.
+                        The default is false.''')
 
     parser.add_argument('--rollout_fetch_throttle_window_in_s', default=None, type=int, help='''
         When a new rollout is detected, ESP will call ServiceManagement to get the
