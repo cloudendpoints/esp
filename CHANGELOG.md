@@ -1,3 +1,7 @@
+# Release 1.56.0 26-01-2021
+
+- Add back `authorizationUrl` redirect feature with a flag (#828)
+
 # Release 1.55.0 12-01-2021
 
 - Remove authorizationUrl redirect (#824)
