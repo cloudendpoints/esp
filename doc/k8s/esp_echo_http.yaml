@@ -37,12 +37,15 @@ spec:
   # Change this type to NodePort if you use Minikube.
   type: LoadBalancer
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: esp-echo
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: esp-echo
   template:
     metadata:
       labels:

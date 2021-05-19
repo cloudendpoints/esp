@@ -10,12 +10,15 @@ spec:
   selector:
     app: bookstore
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: bookstore
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: bookstore
   template:
     metadata:
       labels:
