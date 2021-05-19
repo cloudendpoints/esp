@@ -1402,7 +1402,14 @@ Status Proto::ConvertCheckResponse(const CheckResponse& check_response,
   // TODO: report a detailed status to the producer project, but hide it from
   // consumer
   // TODO: unless they are the same entity
+
+  // If status() is available, use it.
   const CheckError& error = check_response.check_errors(0);
+  if (error.has_status()) {
+    return Status(error.status().code(), error.status().message(),
+                  Status::SERVICE_CONTROL);
+  }
+
   switch (error.code()) {
     case CheckError::NOT_FOUND:  // The consumer's project id is not found.
       return Status(Code::INVALID_ARGUMENT,
@@ -1470,17 +1477,9 @@ Status Proto::ConvertCheckResponse(const CheckResponse& check_response,
                     std::string("API ") + service_name +
                         " has billing disabled. Please enable it.",
                     Status::SERVICE_CONTROL);
-    case CheckError::SECURITY_POLICY_VIOLATED:
-      return Status(Code::PERMISSION_DENIED,
-                    "Request is not allowed as per security policies.",
-                    Status::SERVICE_CONTROL);
     case CheckError::INVALID_CREDENTIAL:
       return Status(Code::PERMISSION_DENIED,
                     "The credential in the request can not be verified",
-                    Status::SERVICE_CONTROL);
-    case CheckError::LOCATION_POLICY_VIOLATED:
-      return Status(Code::PERMISSION_DENIED,
-                    "Request is not allowed as per location policies.",
                     Status::SERVICE_CONTROL);
     case CheckError::CONSUMER_INVALID:
       return Status(Code::PERMISSION_DENIED,
@@ -1491,10 +1490,7 @@ Status Proto::ConvertCheckResponse(const CheckResponse& check_response,
     case CheckError::NAMESPACE_LOOKUP_UNAVAILABLE:
     case CheckError::SERVICE_STATUS_UNAVAILABLE:
     case CheckError::BILLING_STATUS_UNAVAILABLE:
-    case CheckError::QUOTA_CHECK_UNAVAILABLE:
     case CheckError::CLOUD_RESOURCE_MANAGER_BACKEND_UNAVAILABLE:
-    case CheckError::SECURITY_POLICY_BACKEND_UNAVAILABLE:
-    case CheckError::LOCATION_POLICY_BACKEND_UNAVAILABLE:
       // Fail open for internal server errors per recommendation
       return Status::OK;
     default:
