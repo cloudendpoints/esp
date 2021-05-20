@@ -27,6 +27,15 @@
 use strict;
 use warnings;
 
+#### HELLO, FUTURE MAINTAINER OF THIS CODE!
+#### READ THIS IF THE TEST IS FAILING AND THE OTHER TESTS ARE ALL WORKING
+
+# This test depends on a self-signed certificate.  It might fail if
+# the certificate expires.  So you might need to periodically
+# regenerate the certificate.  This is pretty easy, just run this script
+# "testdata/grpc/certs.sh", it will re-generate all certificate files.
+
+
 ################################################################################
 
 use src::nginx::t::ApiManager;   # Must be first (sets up import path to the Nginx test module)
