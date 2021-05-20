@@ -56,6 +56,7 @@ pex_binary(
         "oauth2client>=3.0.0",
         "pyasn1>=0.1.9",
         "pyasn1-modules>=0.0.8",
+        "markupsafe==1.1.1",
         "urllib3>=1.16",
         # rsa 4.3 is the last version support Python 2
         "rsa==4.3",
