@@ -41,8 +41,6 @@ function check_files() {
     || { echo 'Code style check failed.'; return 1; }
 }
 
-# TODO(qiwzhang): //start_esp/test/... failed with pex error
-# removed for now, need to manually run it for release
 function build_and_test() {
   local config="${1}"
   local config_flag=''
@@ -54,9 +52,13 @@ function build_and_test() {
     error="${message} with config ${config}"
   fi
   echo "${message}..."
-  retry -n 3 ${BAZEL} ${BAZEL_ARGS} fetch //src/... //third_party:all \
-    && retry -n 2 ${BAZEL} ${BAZEL_ARGS} build ${BAZEL_BUILD_ARGS} ${config_flag} //src/... //third_party:all \
-    && ${BAZEL} ${BAZEL_ARGS} test --test_output=errors ${config_flag} //src/... //third_party:all \
+  retry -n 3 ${BAZEL} ${BAZEL_ARGS} fetch \
+    //src/... //third_party:all //start_esp/test/... \
+    && retry -n 2 ${BAZEL} ${BAZEL_ARGS} build \
+      ${BAZEL_BUILD_ARGS} ${config_flag} \
+      //src/... //third_party:all //start_esp/test/... \
+    && ${BAZEL} ${BAZEL_ARGS} test --test_output=errors ${config_flag} \
+      //src/... //third_party:all //start_esp/test/... \
     || { echo "${error}..."; return 1; }
 }
 
