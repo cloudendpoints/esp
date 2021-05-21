@@ -280,7 +280,7 @@ function activate_service_account() {
   local local_json="$(mktemp /tmp/XXXXXX.secret.json)"
   case "${project}" in
     esp-load-test)
-      remote_json_name='esp-load-test-82cfd7979030.json'
+      remote_json_name='esp-load-test-d07065e7da9063cc.json'
       service_account='service-control-in-load-test@esp-load-test.iam.gserviceaccount.com'
       ;;
     esp-long-run)
