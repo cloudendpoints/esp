@@ -283,11 +283,6 @@ def e2eTest() {
           e2eGKE('tight', 'http', 'managed')
         }
       }],
-      ['gke-loose-http', {
-        DefaultNode {
-          e2eGKE('loose', 'http', 'fixed')
-        }
-      }],
       ['gke-custom-http', {
         DefaultNode {
           e2eGKE('custom', 'http', 'fixed')
@@ -296,11 +291,6 @@ def e2eTest() {
       ['gke-tight-https', {
         DefaultNode {
           e2eGKE('tight', 'https', 'fixed')
-        }
-      }],
-      ['gke-loose-https', {
-        DefaultNode {
-          e2eGKE('loose', 'https', 'fixed')
         }
       }],
       ['flex', {
