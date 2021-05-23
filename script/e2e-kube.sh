@@ -33,6 +33,8 @@ YAML_FILE=${ESP_ROOT}/test/bookstore/backend.yaml
 
 . ${ESP_ROOT}/script/jenkins-utilities || { echo "Cannot load Jenkins Bash utilities" ; exit 1 ; }
 
+set -x
+
 e2e_options "${@}"
 
 TEST_ID="gke-${COUPLING_OPTION}-${TEST_TYPE}-${BACKEND}"
@@ -131,7 +133,7 @@ if [[ ("${ESP_ROLLOUT_STRATEGY}" == "managed") && ("${BACKEND}" == "bookstore") 
     || error_exit 'Rollouts update was failed'
 fi
 
-run ${CLI} logs bookstore --namespace ${NAMESPACE} --project ${PROJECT_ID} --active=false \
+run kubectl logs $(kubectl get pods -n ${NAMESPACE} --no-headers|awk '{print $1}') -c esp -n ${NAMESPACE} \
   | tee ${LOG_DIR}/error.log
 
 if [[ -n $REMOTE_LOG_DIR ]]; then
