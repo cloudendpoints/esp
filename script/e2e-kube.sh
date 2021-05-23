@@ -30,6 +30,7 @@ SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ESP_ROOT="$(cd "${SCRIPT_PATH}/../" && pwd)"
 YAML_TEMP_FILE=${ESP_ROOT}/test/bookstore/backend.yaml_temp
 YAML_FILE=${ESP_ROOT}/test/bookstore/backend.yaml
+ESP_GKE_SERVICE=bookstore
 
 . ${ESP_ROOT}/script/jenkins-utilities || { echo "Cannot load Jenkins Bash utilities" ; exit 1 ; }
 
@@ -93,8 +94,8 @@ run kubectl create secret generic esp-ssl \
 
 run kubectl create --validate=false -f ${YAML_FILE}          --namespace "${NAMESPACE}"
 
-SERVICE_IP=$(get_gke_service_ip "${NAMESPACE}" "bookstore") || {
-    run kubectl -n "${NAMESPACE}" get service "bookstore "
+SERVICE_IP=$(get_gke_service_ip "${NAMESPACE}" "${ESP_GKE_SERVICE}") || {
+    run kubectl -n "${NAMESPACE}" get service "${ESP_GKE_SERVICE}"
     run kubectl logs $(kubectl get pods -n ${NAMESPACE} --no-headers|awk '{print $1}') -c esp -n ${NAMESPACE}
     error_exit "Failed to get external_ip"
 }

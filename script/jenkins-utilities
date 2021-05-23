@@ -423,7 +423,7 @@ function gke_namespace_cleanup {
 function get_gke_service_ip () {
   local ns="${1}"
   local name="${2}"
-  local COUNT=10
+  local COUNT=30
   local SLEEP=15
   for i in $( seq 1 ${COUNT} ); do
     local host=$(kubectl -n "${ns}" get service "${name}" | awk '{print $4}' | grep -v EXTERNAL-IP)
