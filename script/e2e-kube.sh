@@ -93,7 +93,12 @@ run kubectl create secret generic esp-ssl \
 
 run kubectl create --validate=false -f ${YAML_FILE}          --namespace "${NAMESPACE}"
 
-SERVICE_IP=$(get_gke_service_ip "${NAMESPACE}" "bookstore")
+SERVICE_IP=$(get_gke_service_ip "${NAMESPACE}" "bookstore") || {
+    run kubectl -n "${NAMESPACE}" get service "bookstore "
+    run kubectl logs $(kubectl get pods -n ${NAMESPACE} --no-headers|awk '{print $1}') -c esp -n ${NAMESPACE}
+    error_exit "Failed to get external_ip"
+}
+
 case "${TEST_TYPE}" in
   'http'  ) HOST="http://${SERVICE_IP}";;
   'http2' ) HOST="${SERVICE_IP}:80";;

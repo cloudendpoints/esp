@@ -1,7 +1,7 @@
 type: google.api.Service
 config_version: 3
 title: GRPC Interop Test
-name: ${ENDPOINT_SERVICE}
+name: gke-tight-http2-interop.endpoints-jenkins.appspot.com
 apis:
 - name: grpc.testing.TestService
 usage:
