@@ -33,8 +33,6 @@ YAML_FILE=${ESP_ROOT}/test/bookstore/backend.yaml
 
 . ${ESP_ROOT}/script/jenkins-utilities || { echo "Cannot load Jenkins Bash utilities" ; exit 1 ; }
 
-set -x
-
 e2e_options "${@}"
 
 TEST_ID="gke-${COUPLING_OPTION}-${TEST_TYPE}-${BACKEND}"
