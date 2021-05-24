@@ -28,27 +28,11 @@
 #
 SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ESP_ROOT="$(cd "${SCRIPT_PATH}/../" && pwd)"
-CLI="$ESP_ROOT/espcli"
-YAML_FILE=${ESP_ROOT}/test/bookstore/bookstore.yaml
-ESP_APP="esp"
+YAML_TEMP_FILE=${ESP_ROOT}/test/bookstore/backend.yaml_temp
+YAML_FILE=${ESP_ROOT}/test/bookstore/backend.yaml
+ESP_GKE_SERVICE=bookstore
 
 . ${ESP_ROOT}/script/jenkins-utilities || { echo "Cannot load Jenkins Bash utilities" ; exit 1 ; }
-
-# Fetch CLI tool if it is not available
-if [[ ! -f $CLI ]]; then
-  OSNAME=`uname | tr "[:upper:]" "[:lower:]"`
-  URL="https://storage.googleapis.com/endpoints-release/v1.0.4/bin/${OSNAME}/amd64/espcli"
-  curl -o ${CLI} ${URL}
-  chmod +x ${CLI}
-fi
-
-function cleanup {
-  if [[ "${SKIP_CLEANUP}" == 'false' ]]; then
-    run kubectl delete namespace "${NAMESPACE}"
-    # Uncomment this line when the limit on #services is lifted or increased to > 20
-    # run gcloud endpoints services delete ${ESP_SERVICE} --quiet
-  fi
-}
 
 e2e_options "${@}"
 
@@ -61,63 +45,67 @@ fi
 ESP_SERVICE="${TEST_ID}.${PROJECT_ID}.appspot.com"
 
 NAMESPACE="${UNIQUE_ID}"
-ARGS="\
-  -N 8090 \
-  --access_log off \
-  --service ${ESP_SERVICE} \
-  --project ${PROJECT_ID} \
-  --image ${ESP_IMAGE} \
-  --sslCert ${ESP_ROOT}/tools/src/testdata/nginx.crt \
-  --sslKey ${ESP_ROOT}/tools/src/testdata/nginx.key \
-"
-run sed_i "s|image:.*|image: ${BOOKSTORE_IMAGE}|g" ${YAML_FILE}
-run cat ${YAML_FILE}
+ARGS="\"--status_port=8090\", \"--access_log=off\", \"--service=${ESP_SERVICE}\""
 
 case "${BACKEND}" in
   'bookstore' )
     SERVICE_IDL="${ESP_ROOT}/test/bookstore/swagger_template.json"
-    CREATE_SERVICE_ARGS="${SERVICE_IDL}";;
+    CREATE_SERVICE_ARGS="${SERVICE_IDL}"
+    ARGS="$ARGS, \"--backend=127.0.0.1:8081\"";;
   'echo'      )
     SERVICE_IDL="${ESP_ROOT}/test/grpc/grpc-test.yaml"
     CREATE_SERVICE_ARGS="${SERVICE_IDL} ${ESP_ROOT}/bazel-genfiles/test/grpc/grpc-test.descriptor"
-    ARGS="$ARGS -g";;
+    ARGS="$ARGS, \"--backend=grpc://127.0.0.1:8081\"";;
   'interop'   )
     SERVICE_IDL="${ESP_ROOT}/test/grpc/grpc-interop.yaml"
     CREATE_SERVICE_ARGS="${SERVICE_IDL} ${ESP_ROOT}/bazel-genfiles/test/grpc/grpc-interop.descriptor"
-    ARGS="$ARGS -g";;
+    ARGS="$ARGS, \"--backend=grpc://127.0.0.1:8081\"";;
   *           ) e2e_usage "Invalid backend option";;
 esac
 
 run sed -i "s|\${ENDPOINT_SERVICE}|${ESP_SERVICE}|g" ${SERVICE_IDL}
 create_service "${ESP_SERVICE}" "${CREATE_SERVICE_ARGS}"
-ARGS="$ARGS --version ${ESP_SERVICE_VERSION}"
+ARGS="$ARGS, \"--version=${ESP_SERVICE_VERSION}\", \"--rollout_strategy=${ESP_ROLLOUT_STRATEGY}\""
 
-case "${COUPLING_OPTION}" in
-  'loose' ) ARGS="$ARGS -d loose";;
-  'tight' ) ARGS="$ARGS -d tight";;
-  'custom') ARGS="$ARGS -d tight -n ${ESP_ROOT}/test/bookstore/gke/nginx.conf";;
-  *       ) e2e_usage "Invalid test option";;
-esac
-
-HOST="${ESP_APP}.${NAMESPACE}.svc.cluster.local"
 case "${TEST_TYPE}" in
-  'http'  ) ARGS="$ARGS -p 80";         HOST="http://${HOST}";;
-  'http2' ) ARGS="$ARGS -P 80 -p 8080"; HOST="${HOST}:80";;
-  'https' ) ARGS="$ARGS -S 443";        HOST="https://${HOST}";;
+  'http'  ) ARGS="$ARGS, \"--http_port=80\"";;
+  'http2' ) ARGS="$ARGS, \"--http2_port=80\", \"--http_port=8080\"";;
+  'https' ) ARGS="$ARGS, \"--ssl_port=443\"";;
   *       ) e2e_usage "Invalid test type";;
 esac
 
-# set rollout strategy
-ARGS="$ARGS --rollout_strategy ${ESP_ROLLOUT_STRATEGY}"
+if [[ "${COUPLING_OPTION}" == 'custom' ]]; then
+    ARGS="$ARGS, \"-n=/etc/nginx/ssl/nginx.conf\""
+fi
 
-trap cleanup EXIT
+sed -e "s|BACKEND_IMAGE|${BOOKSTORE_IMAGE}|g" \
+    -e "s|ESP_IMAGE|${ESP_IMAGE}|g" \
+    -e "s|ESP_ARGS|${ARGS}|g" ${YAML_TEMP_FILE} | tee ${YAML_FILE}
+
+trap gke_namespace_cleanup EXIT
 
 # Testing protocol
 run kubectl create namespace "${NAMESPACE}" || error_exit "Namespace already exists"
-run kubectl create -f ${YAML_FILE}          --namespace "${NAMESPACE}"
-run $CLI deploy bookstore ${ESP_APP} $ARGS  --namespace "${NAMESPACE}"
-run kubectl get services -o yaml            --namespace "${NAMESPACE}"
-run kubectl get deployments -o yaml         --namespace "${NAMESPACE}"
+
+run kubectl create secret generic esp-ssl \
+    --from-file=${ESP_ROOT}/tools/src/testdata/nginx.crt \
+    --from-file=${ESP_ROOT}/tools/src/testdata/nginx.key \
+    --from-file=${ESP_ROOT}/test/bookstore/gke/nginx.conf  --namespace "${NAMESPACE}"
+
+run kubectl create --validate=false -f ${YAML_FILE}          --namespace "${NAMESPACE}"
+
+SERVICE_IP=$(get_gke_service_ip "${NAMESPACE}" "${ESP_GKE_SERVICE}") || {
+    run kubectl -n "${NAMESPACE}" get service "${ESP_GKE_SERVICE}"
+    run kubectl logs $(kubectl get pods -n ${NAMESPACE} --no-headers|awk '{print $1}') -c esp -n ${NAMESPACE}
+    error_exit "Failed to get external_ip"
+}
+
+case "${TEST_TYPE}" in
+  'http'  ) HOST="http://${SERVICE_IP}";;
+  'http2' ) HOST="${SERVICE_IP}:80";;
+  'https' ) HOST="https://${SERVICE_IP}";;
+  *       ) e2e_usage "Invalid test type";;
+esac
 
 LOG_DIR="$(mktemp -d /tmp/log.XXXX)"
 
@@ -149,7 +137,7 @@ if [[ ("${ESP_ROLLOUT_STRATEGY}" == "managed") && ("${BACKEND}" == "bookstore") 
     || error_exit 'Rollouts update was failed'
 fi
 
-run ${CLI} logs bookstore --namespace ${NAMESPACE} --project ${PROJECT_ID} --active=false \
+run kubectl logs $(kubectl get pods -n ${NAMESPACE} --no-headers|awk '{print $1}') -c esp -n ${NAMESPACE} \
   | tee ${LOG_DIR}/error.log
 
 if [[ -n $REMOTE_LOG_DIR ]]; then

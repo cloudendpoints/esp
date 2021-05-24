@@ -412,6 +412,34 @@ function get_host_ip() {
   return 0
 }
 
+function gke_namespace_cleanup {
+  if [[ "${SKIP_CLEANUP}" == 'false' ]]; then
+    run kubectl delete namespace "${NAMESPACE}"
+    # Uncomment this line when the limit on #services is lifted or increased to > 20
+    # run gcloud endpoints services delete ${ESP_SERVICE} --quiet
+  fi
+}
+
+function get_gke_service_ip () {
+  local ns="${1}"
+  local name="${2}"
+  local COUNT=30
+  local SLEEP=15
+  for i in $( seq 1 ${COUNT} ); do
+    local host=$(kubectl -n "${ns}" get service "${name}" | awk '{print $4}' | grep -v EXTERNAL-IP)
+      [ '<pending>' != $host ] && break
+      echo "Waiting for server external ip. Attempt  #$i/${COUNT}... will try again in ${SLEEP} seconds" >&2
+      sleep ${SLEEP}
+  done
+  if [[ '<pending>' == $host ]]; then
+    echo 'Failed to get the GKE cluster host.'
+    return 1
+  else
+    echo "$host"
+    return 0
+  fi
+}
+
 function e2e_usage() {
   local error_message="${1}"
   [[ -n "${error_message}" ]] && echo "${error_message}"

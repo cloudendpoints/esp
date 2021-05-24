@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: bookstore
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+    name: http
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http2
+  - port: 8090
+    targetPort: 8090
+    protocol: TCP
+    name: status
+  - port: 443
+    targetPort: 443
+    protocol: TCP
+    name: ssl
+  selector:
+    app: bookstore
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bookstore
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bookstore
+  template:
+    metadata:
+      labels:
+        app: bookstore
+    spec:
+      volumes:
+        - name: esp-ssl
+          secret:
+            secretName: esp-ssl
+      containers:
+      - name: esp
+        image: ESP_IMAGE
+        args: [ESP_ARGS]
+        ports:
+          - containerPort: 80
+          - containerPort: 8080
+          - containerPort: 8090
+          - containerPort: 443
+        volumeMounts:
+          - mountPath: /etc/nginx/ssl
+            name: esp-ssl
+            readOnly: true
+        imagePullPolicy: Always
+      - name: bookstore
+        image: BACKEND_IMAGE
+        ports:
+          - containerPort: 8081

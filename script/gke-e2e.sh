@@ -32,34 +32,6 @@ ESP_ROOT="$(cd "${SCRIPT_PATH}/../" && pwd)"
 
 . ${ESP_ROOT}/script/jenkins-utilities || { echo "Cannot load Jenkins Bash utilities" ; exit 1 ; }
 
-function cleanup {
-  if [[ "${SKIP_CLEANUP}" == 'false' ]]; then
-    run kubectl delete namespace "${NAMESPACE}"
-    # Uncomment this line when the limit on #services is lifted or increased to > 20
-    # run gcloud endpoints services delete ${ESP_SERVICE} --quiet
-  fi
-}
-
-function get_service_ip () {
-  local ns="${1}"
-  local name="${2}"
-  local COUNT=10
-  local SLEEP=15
-  for i in $( seq 1 ${COUNT} ); do
-    local host=$(kubectl -n "${ns}" get service "${name}" | awk '{print $4}' | grep -v EXTERNAL-IP)
-      [ '<pending>' != $host ] && break
-      echo "Waiting for server external ip. Attempt  #$i/${COUNT}... will try again in ${SLEEP} seconds" >&2
-      sleep ${SLEEP}
-  done
-  if [[ '<pending>' == $host ]]; then
-    echo 'Failed to get the GKE cluster host.'
-    return 1
-  else
-    echo "$host"
-    return 0
-  fi
-}
-
 e2e_options "${@}"
 
 if [[ "${BACKEND}" == 'bookstore' ]]; then
@@ -93,7 +65,7 @@ sed -e "s|\$BACKEND_IMAGE|${BOOKSTORE_IMAGE}|g" \
   ${YAML_FILE_TEMP} > ${YAML_FILE}
 cat ${YAML_FILE}
 
-trap cleanup EXIT
+trap gke_namespace_cleanup EXIT
 
 # Testing protocol
 run kubectl create namespace "${NAMESPACE}" || error_exit "Namespace already exists"
@@ -114,7 +86,7 @@ run kubectl create -f ${YAML_FILE}          --namespace "${NAMESPACE}"
 run kubectl get services -o yaml            --namespace "${NAMESPACE}"
 run kubectl get deployments -o yaml         --namespace "${NAMESPACE}"
 
-SERVICE_IP=$(get_service_ip "${NAMESPACE}" "${GKE_SERVICE_NAME}")
+SERVICE_IP=$(get_gke_service_ip "${NAMESPACE}" "${GKE_SERVICE_NAME}")
 if [[ "${BACKEND}" == 'bookstore' ]]; then
   HOST="http://${SERVICE_IP}"
 elif [[ "${BACKEND}" == 'interop' ]]; then
