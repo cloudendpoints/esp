@@ -39,8 +39,12 @@ TypeResolver* CreateTypeResolver() {
       kTypeUrlPrefix, ::google::protobuf::DescriptorPool::generated_pool());
 }
 
-// This variable is added to force linker to link VisibilityRule proto
-// descriptor It may be used in the new service config as "Any".
+// This variable is not used, but it is added to force linker to link
+// the "VisibilityRule" proto message into "DescriptorPool::generated_pool".
+// A newer version of service config downloaded from the ServiceManagment
+// service may have "VisibilityRule" embedded as "Any" in the" option"
+// annotation. If it is not in the "DescriptorPool::generated_pool", JsonToProto
+// will fail.
 ::google::api::VisibilityRule dummy_visibility_rule;
 
 }  // namespace

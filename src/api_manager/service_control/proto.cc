@@ -1402,14 +1402,7 @@ Status Proto::ConvertCheckResponse(const CheckResponse& check_response,
   // TODO: report a detailed status to the producer project, but hide it from
   // consumer
   // TODO: unless they are the same entity
-
-  // If status() is available, use it.
   const CheckError& error = check_response.check_errors(0);
-  if (error.has_status()) {
-    return Status(error.status().code(), error.status().message(),
-                  Status::SERVICE_CONTROL);
-  }
-
   switch (error.code()) {
     case CheckError::NOT_FOUND:  // The consumer's project id is not found.
       return Status(Code::INVALID_ARGUMENT,
