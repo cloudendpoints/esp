@@ -471,6 +471,7 @@ cc_proto_library(
     srcs = [
         "google/api/servicecontrol/v1/check_error.proto",
         "google/api/servicecontrol/v1/distribution.proto",
+        "google/api/servicecontrol/v1/http_request.proto",
         "google/api/servicecontrol/v1/log_entry.proto",
         "google/api/servicecontrol/v1/metric_value.proto",
         "google/api/servicecontrol/v1/operation.proto",
@@ -501,11 +502,13 @@ cc_proto_library(
         "google/api/auth.proto",
         "google/api/backend.proto",
         "google/api/billing.proto",
+        "google/api/client.proto",
         "google/api/consumer.proto",
         "google/api/context.proto",
         "google/api/control.proto",
         "google/api/documentation.proto",
         "google/api/endpoint.proto",
+        "google/api/field_behavior.proto",
         "google/api/label.proto",
         "google/api/launch_stage.proto",
         "google/api/log.proto",
@@ -519,6 +522,7 @@ cc_proto_library(
         "google/api/source_info.proto",
         "google/api/system_parameter.proto",
         "google/api/usage.proto",
+        "google/api/visibility.proto",
     ],
     include = ".",
     visibility = ["//visibility:public"],
@@ -549,9 +553,9 @@ cc_proto_library(
         name = "googleapis_git",
         build_file_content = BUILD,
         patch_cmds = ["find . -type f -name '*BUILD*' | xargs rm"],
-        strip_prefix = "googleapis-ae7a4cc69cc1e206b16f1b9db803907d7a3d97c8",  # Oct 22, 2019
-        url = "https://github.com/googleapis/googleapis/archive/ae7a4cc69cc1e206b16f1b9db803907d7a3d97c8.tar.gz",
-        sha256 = "f96e11515c302045e8ab6708ba68d7cea8a02e2a96add92033315ff894076980",
+        strip_prefix = "googleapis-c27d0463cc0097d7a64a7b108aca659df00d2e06",  # May 18, 2021
+        url = "https://github.com/googleapis/googleapis/archive/c27d0463cc0097d7a64a7b108aca659df00d2e06.tar.gz",
+        sha256 = "10333203467098e6af58242be3f780e509a09110a0d136ef7aba7fe75de33fd9",
     )
 
     if bind:

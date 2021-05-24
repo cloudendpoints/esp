@@ -123,20 +123,8 @@ TEST(CheckResponseTest,
   EXPECT_EQ(Code::PERMISSION_DENIED, result.code());
 }
 
-TEST(CheckResponseTest, WhenResponseIsBlockedWithSecurityPolicyViolated) {
-  Status result =
-      ConvertCheckErrorToStatus(CheckError::SECURITY_POLICY_VIOLATED);
-  EXPECT_EQ(Code::PERMISSION_DENIED, result.code());
-}
-
 TEST(CheckResponseTest, WhenResponseIsBlockedWithInvalidCredentail) {
   Status result = ConvertCheckErrorToStatus(CheckError::INVALID_CREDENTIAL);
-  EXPECT_EQ(Code::PERMISSION_DENIED, result.code());
-}
-
-TEST(CheckResponseTest, WhenResponseIsBlockedWithLocationPolicyViolated) {
-  Status result =
-      ConvertCheckErrorToStatus(CheckError::LOCATION_POLICY_VIOLATED);
   EXPECT_EQ(Code::PERMISSION_DENIED, result.code());
 }
 
@@ -155,17 +143,9 @@ TEST(CheckResponseTest, UnavailableCheckErrorStatus) {
       ConvertCheckErrorToStatus(CheckError::BILLING_STATUS_UNAVAILABLE).ok());
   EXPECT_TRUE(
       ConvertCheckErrorToStatus(CheckError::SERVICE_STATUS_UNAVAILABLE).ok());
-  EXPECT_TRUE(
-      ConvertCheckErrorToStatus(CheckError::QUOTA_CHECK_UNAVAILABLE).ok());
   EXPECT_TRUE(ConvertCheckErrorToStatus(
                   CheckError::CLOUD_RESOURCE_MANAGER_BACKEND_UNAVAILABLE)
                   .ok());
-  EXPECT_TRUE(
-      ConvertCheckErrorToStatus(CheckError::SECURITY_POLICY_BACKEND_UNAVAILABLE)
-          .ok());
-  EXPECT_TRUE(
-      ConvertCheckErrorToStatus(CheckError::LOCATION_POLICY_BACKEND_UNAVAILABLE)
-          .ok());
 }
 
 }  // namespace service_control

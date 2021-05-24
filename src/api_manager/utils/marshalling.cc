@@ -16,6 +16,7 @@
 //
 #include "src/api_manager/utils/marshalling.h"
 
+#include "google/api/visibility.pb.h"
 #include "google/protobuf/io/zero_copy_stream_impl_lite.h"
 #include "google/protobuf/util/json_util.h"
 #include "google/protobuf/util/type_resolver_util.h"
@@ -37,6 +38,14 @@ TypeResolver* CreateTypeResolver() {
   return ::google::protobuf::util::NewTypeResolverForDescriptorPool(
       kTypeUrlPrefix, ::google::protobuf::DescriptorPool::generated_pool());
 }
+
+// This variable is not used, but it is added to force linker to link
+// the "VisibilityRule" proto message into "DescriptorPool::generated_pool".
+// A newer version of service config downloaded from the ServiceManagment
+// service may have "VisibilityRule" embedded as "Any" in the" option"
+// annotation. If it is not in the "DescriptorPool::generated_pool", JsonToProto
+// will fail.
+::google::api::VisibilityRule dummy_visibility_rule;
 
 }  // namespace
 
