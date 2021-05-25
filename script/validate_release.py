@@ -50,8 +50,6 @@ RUN_TESTS = [
     'check-files',
     'flex-on-endpoints-on',
     'gke-custom-http-bookstore',
-    'gke-loose-http-bookstore',
-    'gke-loose-https-bookstore',
     'gke-tight-http-bookstore',
     'gke-tight-http2-echo',
     'gke-tight-http2-interop',
