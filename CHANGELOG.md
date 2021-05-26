@@ -1,3 +1,7 @@
+# Release 1.57.0 25-05-2021
+
+- Update googleapis to the 05/18/2021 (#837)
+
 # Release 1.56.0 26-01-2021
 
 - Add back `authorizationUrl` redirect feature with a flag (#828)
