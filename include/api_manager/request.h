@@ -74,7 +74,8 @@ class Request {
 
   // Adds a header to backend. If the header exists, overwrite its value
   virtual utils::Status AddHeaderToBackend(const std::string &key,
-                                           const std::string &value) = 0;
+                                           const std::string &value,
+                                           bool changeAllOccurrence) = 0;
 };
 
 }  // namespace api_manager

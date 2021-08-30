@@ -458,7 +458,7 @@ void CheckAuthTest::TestValidToken(const std::string &auth_token,
       }));
   std::cout << "need be replaced: " << user_info << std::endl;
   EXPECT_CALL(*raw_request_,
-              AddHeaderToBackend(kEndpointApiUserInfo, user_info))
+              AddHeaderToBackend(kEndpointApiUserInfo, user_info, false))
       .WillOnce(Return(utils::Status::OK));
 
   CheckAuth(context_, [](Status status) { ASSERT_TRUE(status.ok()); });
@@ -490,8 +490,8 @@ TEST_F(CheckAuthTest, TestOKAuth) {
       }));
   EXPECT_CALL(*raw_request_, SetAuthToken(kToken)).Times(1);
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_)).Times(0);
-  EXPECT_CALL(*raw_request_,
-              AddHeaderToBackend(kEndpointApiUserInfo, kUserInfo_kSub_kIss))
+  EXPECT_CALL(*raw_request_, AddHeaderToBackend(kEndpointApiUserInfo,
+                                                kUserInfo_kSub_kIss, false))
       .WillOnce(Return(utils::Status::OK));
 
   CheckAuth(context_, [](Status status) { ASSERT_TRUE(status.ok()); });
@@ -513,8 +513,8 @@ TEST_F(CheckAuthTest, TestOKAuth) {
       }));
   EXPECT_CALL(*raw_request_, SetAuthToken(kToken2)).Times(1);
   EXPECT_CALL(*raw_env_, DoRunHTTPRequest(_)).Times(0);
-  EXPECT_CALL(*raw_request_,
-              AddHeaderToBackend(kEndpointApiUserInfo, kUserInfo_kSub2_kIss2))
+  EXPECT_CALL(*raw_request_, AddHeaderToBackend(kEndpointApiUserInfo,
+                                                kUserInfo_kSub2_kIss2, false))
       .WillOnce(Return(utils::Status::OK));
 
   CheckAuth(context_, [](Status status) { ASSERT_TRUE(status.ok()); });
@@ -605,8 +605,8 @@ TEST_F(CheckAuthTest, TestNoOpenId) {
         std::map<std::string, std::string> empty;
         req->OnComplete(Status::OK, std::move(empty), std::move(body));
       }));
-  EXPECT_CALL(*raw_request_,
-              AddHeaderToBackend(kEndpointApiUserInfo, kUserInfo_kSub_kIss2))
+  EXPECT_CALL(*raw_request_, AddHeaderToBackend(kEndpointApiUserInfo,
+                                                kUserInfo_kSub_kIss2, false))
       .WillOnce(Return(utils::Status::OK));
 
   CheckAuth(context_, [](Status status) { ASSERT_TRUE(status.ok()); });

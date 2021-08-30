@@ -117,8 +117,8 @@ class MockRequest : public Request {
     return false;
   }
 
-  MOCK_METHOD2(AddHeaderToBackend,
-               utils::Status(const std::string &, const std::string &));
+  MOCK_METHOD3(AddHeaderToBackend,
+               utils::Status(const std::string &, const std::string &, bool));
   MOCK_METHOD1(SetAuthToken, void(const std::string &));
   MOCK_METHOD0(GetFrontendProtocol,
                ::google::api_manager::protocol::Protocol());

@@ -456,6 +456,7 @@ sub read_http_stream {
       'path' => $path,
       'uri' => $uri,
       'headers' => \%headers,
+      'header_lines' => \@header_lines,
       'body' => $body
     };
 
