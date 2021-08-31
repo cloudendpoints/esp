@@ -16,14 +16,16 @@
 //
 
 #include "src/api_manager/context/request_context.h"
-#include "google/api/backend.pb.h"
-#include "src/api_manager/auth/lib/json_util.h"
-#include "src/api_manager/utils/str_util.h"
 
 #include <uuid/uuid.h>
+
 #include <numeric>
 #include <sstream>
 #include <vector>
+
+#include "google/api/backend.pb.h"
+#include "src/api_manager/auth/lib/json_util.h"
+#include "src/api_manager/utils/str_util.h"
 
 using ::google::api_manager::auth::GetPrimitiveFieldValue;
 using ::google::api_manager::cloud_trace::HeaderType;
@@ -208,7 +210,7 @@ void RequestContext::ExtractApiKey() {
 }
 
 void RequestContext::SetApiKeyHeader() {
-  request_->AddHeaderToBackend(kDefaultApiKeyHeaderName, api_key_);
+  request_->AddHeaderToBackend(kDefaultApiKeyHeaderName, api_key_, false);
 }
 
 void RequestContext::CompleteCheck(Status status) {
@@ -434,7 +436,7 @@ void RequestContext::StartBackendSpanAndSetTraceContext() {
       cloud_trace()->header_type() == HeaderType::CLOUD_TRACE_CONTEXT
           ? kCloudTraceContextHeader
           : kGRpcTraceContextHeader,
-      trace_context_header);
+      trace_context_header, false);
   if (!status.ok()) {
     service_context()->env()->LogError(
         "Failed to set trace context header to backend.");
@@ -535,14 +537,14 @@ void RequestContext::AddInstanceIdentityToken() {
       std::string origin_auth_header;
       if (request()->FindHeader(kAuthorizationHeader, &origin_auth_header)) {
         Status status = request()->AddHeaderToBackend(
-            kXForwardedAuthorizationHeader, origin_auth_header);
+            kXForwardedAuthorizationHeader, origin_auth_header, false);
         if (!status.ok()) {
           service_context()->env()->LogError(
               "Failed to set X-Forwarded-Authorization header to backend.");
         }
       }
-      Status status = request()->AddHeaderToBackend(kAuthorizationHeader,
-                                                    kBearerPrefix + token);
+      Status status = request()->AddHeaderToBackend(
+          kAuthorizationHeader, kBearerPrefix + token, false);
       if (!status.ok()) {
         service_context()->env()->LogError(
             "Failed to set authorization header to backend.");

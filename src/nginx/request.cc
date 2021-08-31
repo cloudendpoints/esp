@@ -146,18 +146,21 @@ void NgxEspRequest::SetAuthToken(const std::string &auth_token) {
 }
 
 utils::Status NgxEspRequest::AddHeaderToBackend(const std::string &key,
-                                                const std::string &value) {
-  ngx_table_elt_t *h = nullptr;
+                                                const std::string &value,
+                                                bool changeAllOccurrence) {
+  std::vector<ngx_table_elt_t *> headers;
   for (auto &h_in : r_->headers_in) {
     if (key.size() == h_in.key.len &&
         strncasecmp(key.c_str(), reinterpret_cast<const char *>(h_in.key.data),
                     h_in.key.len) == 0) {
-      h = &h_in;
-      break;
+      headers.push_back(&h_in);
+      if (!changeAllOccurrence) {
+        break;
+      }
     }
   }
-  if (h == nullptr) {
-    h = reinterpret_cast<ngx_table_elt_t *>(
+  if (headers.empty()) {
+    ngx_table_elt_t *h = reinterpret_cast<ngx_table_elt_t *>(
         ngx_list_push(&r_->headers_in.headers));
     if (h == nullptr) {
       return utils::Status(Code::INTERNAL, "Out of memory");
@@ -172,14 +175,21 @@ utils::Status NgxEspRequest::AddHeaderToBackend(const std::string &key,
         h->lowcase_key,
         reinterpret_cast<u_char *>(const_cast<char *>(key.c_str())),
         key.size());
+    headers.push_back(h);
   }
 
-  if (ngx_str_copy_from_std(r_->pool, key, &h->key) != NGX_OK ||
-      ngx_str_copy_from_std(r_->pool, value, &h->value) != NGX_OK) {
-    return utils::Status(Code::INTERNAL, "Out of memory");
+  for (size_t i = 0; i < headers.size(); ++i) {
+    ngx_table_elt_t *it = headers[i];
+    if (ngx_str_copy_from_std(r_->pool, key, &it->key) != NGX_OK ||
+        ngx_str_copy_from_std(r_->pool, value, &it->value) != NGX_OK) {
+      return utils::Status(Code::INTERNAL, "Out of memory");
+    }
   }
-  ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r_->connection->log, 0,
-                 "updates header to backend: \"%V: %V\"", &h->key, &h->value);
+
+  ngx_log_debug3(
+      NGX_LOG_DEBUG_HTTP, r_->connection->log, 0,
+      "updates header to backend, changeAllOccurrence: '%t', \"%V: %V\"",
+      changeAllOccurrence, &h->key, &h->value);
   return utils::Status::OK;
 }
 

@@ -15,6 +15,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // includes should be ordered. This seems like a bug in clang-format?
 #include "src/api_manager/check_service_control.h"
+
 #include "google/protobuf/stubs/status.h"
 #include "src/api_manager/cloud_trace/cloud_trace.h"
 
@@ -85,8 +86,8 @@ void CheckServiceControl(std::shared_ptr<context::RequestContext> context,
 
         // update consumer_project_id to service context
         if (!info.consumer_project_id.empty()) {
-          context->request()->AddHeaderToBackend(kConsumerProjecId,
-                                                 info.consumer_project_id);
+          context->request()->AddHeaderToBackend(
+              kConsumerProjecId, info.consumer_project_id, false);
         }
 
         continuation(status);

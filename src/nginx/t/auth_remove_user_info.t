@@ -42,7 +42,7 @@ my $NginxPort = ApiManager::pick_port();
 my $BackendPort = ApiManager::pick_port();
 my $ServiceControlPort = ApiManager::pick_port();
 
-my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(14);
+my $t = Test::Nginx->new()->has(qw/http proxy/)->plan(15);
 
 # Save service name in the service configuration protocol buffer file.
 
@@ -88,6 +88,7 @@ my $response = ApiManager::http($NginxPort,<<'EOF');
 GET /shelves?key=this-is-an-api-key HTTP/1.0
 Host: localhost
 x-endpoint-api-userinfo: Should be removed
+x-endpoint-api-userinfo: Multiple userinfo should all be removed
 
 EOF
 
@@ -114,6 +115,14 @@ is($r->{uri}, '/shelves?key=this-is-an-api-key', 'Backend uri was /shelves');
 is($r->{headers}->{host}, "127.0.0.1:${BackendPort}", 'Host header was set');
 is($r->{headers}->{'x-endpoint-api-userinfo'}, '',
     'X-Endpoint-API-UserInfo should be removed from the request headers');
+my $arr = $r->{header_lines};
+my @userinfo_list = ();
+
+foreach (@$arr) {
+  push(@userinfo_list, $_) if index($_, 'X-Endpoint-API-UserInfo') != -1;
+}
+is(join(",", @userinfo_list), 'X-Endpoint-API-UserInfo: ,X-Endpoint-API-UserInfo: ',
+   "Multiple userinfo should all be removed");
 
 @requests = ApiManager::read_http_stream($t, 'servicecontrol.log');
 is(scalar @requests, 1, 'Service control received one request');

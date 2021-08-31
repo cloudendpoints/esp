@@ -43,7 +43,7 @@ RequestHandler::RequestHandler(
   if (context_->request()->FindHeader(
           google::api_manager::auth::kEndpointApiUserInfo, &buffer)) {
     context_->request()->AddHeaderToBackend(
-        google::api_manager::auth::kEndpointApiUserInfo, "");
+        google::api_manager::auth::kEndpointApiUserInfo, "", true);
   }
 }
 
