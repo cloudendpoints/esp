@@ -1,3 +1,7 @@
+# Release 1.58.0 01-09-2021
+
+- Remove X-Endpoint-API-UserInfo for all header occurrences. (#845)
+
 # Release 1.57.0 25-05-2021
 
 - Update googleapis to the 05/18/2021 (#837)
