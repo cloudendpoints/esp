@@ -1,3 +1,7 @@
+# Release 1.59.0 07-10-2021
+
+- Update to the latest root ca to fix Lets Encrypt cert expiration (#852)
+
 # Release 1.58.0 01-09-2021
 
 - Remove X-Endpoint-API-UserInfo for all header occurrences. (#845)
