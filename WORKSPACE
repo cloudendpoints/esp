@@ -47,7 +47,9 @@ git_repository(
     remote = "https://nginx.googlesource.com/nginx",
 )
 
-load("@nginx//:build.bzl", "nginx_repositories")
+# This nginx_build.bzl is copied from above nginx at nginx-1.15.9 and
+# replace nginx_pcre url with "https://sourceforge.net/projects/pcre/files/pcre/8.42/pcre-8.42.tar.gz"
+load("//:nginx_build.bzl", "nginx_repositories")
 
 nginx_repositories(
     bind = True,
