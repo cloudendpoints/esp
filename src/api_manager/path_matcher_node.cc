@@ -135,36 +135,36 @@ std::unique_ptr<PathMatcherNode> PathMatcherNode::Clone() const {
 // The receiver node matched the final part in |path|. If a WrapperGraph exists
 // for the given HTTP method, the method copies to the node's WrapperGraph to
 // result and returns true.
-void PathMatcherNode::LookupPath(const RequestPathParts::const_iterator current,
+void PathMatcherNode::LookupPath(RequestPathParts::const_iterator current,
                                  const RequestPathParts::const_iterator end,
                                  HttpMethod http_method,
                                  PathMatcherLookupResult* result) const {
-  // base case
-  if (current == end) {
-    if (!GetResultForHttpMethod(http_method, result)) {
-      // If we didn't find a wrapper graph at this node, check if we have one
-      // in a wildcard (**) child. If we do, use it. This will ensure we match
-      // the root with wildcard templates.
-      auto pair = children_.find(HttpTemplate::kWildCardPathKey);
-      if (pair != children_.end()) {
-        const auto& child = pair->second;
-        child->GetResultForHttpMethod(http_method, result);
+  // Loop is only used when matching a wildcard node.
+  // For a wild card, keeps advancing until all remaining segments match one of
+  // our child branches (to handle /foo/**/bar/xyz case).
+  for (;; ++current) {
+    if (current == end) {
+      if (!GetResultForHttpMethod(http_method, result)) {
+        // If we didn't find a wrapper graph at this node, check if we have one
+        // in a wildcard (**) child. If we do, use it. This will ensure we match
+        // the root with wildcard templates.
+        auto pair = children_.find(HttpTemplate::kWildCardPathKey);
+        if (pair != children_.end()) {
+          const auto& child = pair->second;
+          child->GetResultForHttpMethod(http_method, result);
+        }
       }
+      return;
     }
-    return;
+    if (LookupPathFromChild(*current, current, end, http_method, result)) {
+      return;
+    }
+    if (!wildcard_) {
+      break;
+    }
   }
-  if (LookupPathFromChild(*current, current, end, http_method, result)) {
-    return;
-  }
-  // For wild card node, keeps searching for next path segment until either
-  // 1) reaching the end (/foo/** case), or 2) all remaining segments match
-  // one of child branches (/foo/**/bar/xyz case).
-  if (wildcard_) {
-    LookupPath(current + 1, end, http_method, result);
-    // Since only constant segments are allowed after wild card, no need to
-    // search another wild card nodes from children, so bail out here.
-    return;
-  }
+  // No matching child, and this node isn't a wildcard.  Maybe it has a
+  // match-any child?
 
   for (const std::string& child_key :
        {HttpTemplate::kSingleParameterKey, HttpTemplate::kWildCardPathPartKey,

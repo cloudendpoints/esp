@@ -827,6 +827,17 @@ TEST_F(PathMatcherTest, VariableBindingsWithQueryParamsAndSystemParams) {
             bindings);
 }
 
+TEST_F(PathMatcherTest, WildCardMatchesManyWithoutStackOverflow) {
+  MethodInfo* a = AddGetPath("/a/**/x");
+  Build();
+
+  EXPECT_NE(nullptr, a);
+
+  std::string lotsOfSlashes(64000, '/');
+  EXPECT_EQ(LookupNoBindings("GET", "/a/" + lotsOfSlashes + "/x"), a);
+  EXPECT_EQ(LookupNoBindings("GET", "/a/" + lotsOfSlashes + "/y"), nullptr);
+}
+
 }  // namespace
 
 }  // namespace api_manager
