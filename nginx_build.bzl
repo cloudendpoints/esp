@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2018 Google Inc.
+# Copyright (C) Extensible Service Proxy Authors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
