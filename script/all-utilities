@@ -273,6 +273,7 @@ function extract_key_from_test_env_file() {
 # Current gcloud account may not have permission to deploy an GAE Flex
 # application in an esp-load-test project. The following will activate
 # esp-load-test service account.
+# The esp-load-test key will expire in 3 months, need to re-create a new one every 3 months.
 function activate_service_account() {
   local project="${1}"
   local remote_json_name=''
@@ -280,7 +281,7 @@ function activate_service_account() {
   local local_json="$(mktemp /tmp/XXXXXX.secret.json)"
   case "${project}" in
     esp-load-test)
-      remote_json_name='esp-load-test-8bf830ba292a.json'
+      remote_json_name='esp-load-test-9a393df12218.json'
       service_account='service-control-in-load-test@esp-load-test.iam.gserviceaccount.com'
       ;;
     esp-long-run)
