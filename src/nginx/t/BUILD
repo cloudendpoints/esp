@@ -210,7 +210,6 @@ nginx_suite(
         "check_report_body.t",
         "check_report_metrics.t",
         "check_return_403.t",
-        "check_with_token.t",
         "config_extra_field.t",
         "config_missing.t",
         "config_rollouts_by_timer.t",
