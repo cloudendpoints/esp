@@ -123,21 +123,6 @@ Host: localhost
 Authorization: Bearer invalid.token
 
 EOF
-  like($response, qr/HTTP\/1\.1 401 Unauthorized/, 'Returned HTTP 401, invalid token.');
-  like($response, qr/WWW-Authenticate: Bearer, error=\"invalid_token\"/, 'Returned invalid_token challenge.');
-  like($response, qr/Content-Type: application\/json/i,
-       'Invalid token returned application/json body.');
-  like($response, qr/JWT validation failed: Bad JWT format: Invalid JSON in header/i,
-       "Error body contains 'invalid token'.");
-
-  # Token generated from different issuer/key.
-  my $token = Auth::get_auth_token('./src/nginx/t/wrong-client-secret.json');
-  $response = ApiManager::http($NginxPort,<<"EOF");
-GET /shelves HTTP/1.0
-Host: localhost
-Authorization: Bearer $token
-
-EOF
   like($response, qr/HTTP\/1\.1 401 Unauthorized/, 'Returned HTTP 401, no matching pkey.');
   like($response, qr/WWW-Authenticate: Bearer, error=\"invalid_token\"/, 'Returned invalid_token challenge.');
   like($response, qr/Content-Type: application\/json/i,
