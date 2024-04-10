@@ -547,9 +547,8 @@ Status set_credential_id(const SupportedLabel& l, const ReportRequestInfo& info,
   // 2) If auth issuer and audience both are available, set it as:
   //    jwtAuth:issuer=base64(issuer)&audience=base64(audience)
   if (!info.api_key.empty()) {
-    std::string credential_id("apikey:");
-    credential_id += info.api_key;
-    (*labels)[l.name] = credential_id;
+    const char* kCredentialIdPrefix = "apikey:";
+    (*labels)[l.name] = absl::StrCat(kCredentialIdPrefix, info.check_response_info.api_key_uid.empty() ? info.api_key : info.check_response_info.api_key_uid);
   } else if (!info.auth_issuer.empty()) {
     // If auth is used, auth_issuer should NOT be empty since it is required.
     char* base64_issuer = auth::esp_base64_encode(
@@ -1393,6 +1392,8 @@ Status Proto::ConvertCheckResponse(const CheckResponse& check_response,
     check_response_info->consumer_project_id = std::to_string(
         check_response.check_info().consumer_info().project_number());
   }
+
+  check_response_info->api_key_uid = check_response.check_info().api_key_uid();
 
   if (check_response.check_errors().size() == 0) {
     return Status::OK;
