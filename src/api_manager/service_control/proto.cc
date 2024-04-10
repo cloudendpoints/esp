@@ -530,6 +530,7 @@ const char kServiceControlBackendProtocol[] =
     "servicecontrol.googleapis.com/backend_protocol";
 const char kServiceControlConsumerProject[] =
     "serviceruntime.googleapis.com/consumer_project";
+const char kApiKeyPrefix[] = "apikey:";
 
 // User agent label value
 // The value for kUserAgent should be configured at service control server.
@@ -547,8 +548,7 @@ Status set_credential_id(const SupportedLabel& l, const ReportRequestInfo& info,
   // 2) If auth issuer and audience both are available, set it as:
   //    jwtAuth:issuer=base64(issuer)&audience=base64(audience)
   if (!info.api_key.empty()) {
-    const char* kCredentialIdPrefix = "apikey:";
-    (*labels)[l.name] = absl::StrCat(kCredentialIdPrefix, info.check_response_info.api_key_uid.empty() ? info.api_key : info.check_response_info.api_key_uid);
+    (*labels)[l.name] = absl::StrCat(kApiKeyPrefix, info.check_response_info.api_key_uid.empty() ? info.api_key : info.check_response_info.api_key_uid);
   } else if (!info.auth_issuer.empty()) {
     // If auth is used, auth_issuer should NOT be empty since it is required.
     char* base64_issuer = auth::esp_base64_encode(
