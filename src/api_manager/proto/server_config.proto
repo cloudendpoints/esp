@@ -128,6 +128,10 @@ message ServiceControlConfig {
   // In case of failing to connect to service control service, the requests
   // are allowed if this field is true.  Default is false.
   bool network_fail_open = 16;
+
+  // If set to true, reports api_key_uid instead of api_key in ServiceControl
+  // report.
+  bool enable_api_key_uid_reporting = 17;
 }
 
 // Check aggregator config

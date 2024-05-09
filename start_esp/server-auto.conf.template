@@ -65,6 +65,9 @@ service_control_config {
   %if service_control_network_fail_open:
   network_fail_open: true
   % endif
+  % if enable_api_key_uid_reporting:
+  enable_api_key_uid_reporting: true
+% endif
 }
 % endif
 % if jwks_cache_duration_in_s or redirect_authorization_url:

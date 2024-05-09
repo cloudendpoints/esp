@@ -385,6 +385,31 @@ TEST_F(ProtoTest, CredentailIdApiKeyTest) {
             "apikey:api_key_x");
 }
 
+TEST_F(ProtoTest, CredentailIdApiKeyUidTest) {
+  ReportRequestInfo info;
+  FillOperationInfo(&info);
+  info.check_response_info.api_key_uid = "apikey:fake_uid";
+
+  gasv1::ReportRequest request;
+  ASSERT_TRUE(scp_.FillReportRequest(info, &request).ok());
+
+  ASSERT_EQ(request.operations(0).labels().at("/credential_id"),
+            "apikey:fake_uid");
+}
+
+TEST_F(ProtoTest, CredentailIdApiKeyUidUnknownTest) {
+  ReportRequestInfo info;
+  FillOperationInfo(&info);
+  info.check_response_info.is_network_failure = true;
+  info.check_response_info.api_key_uid = "apikey:fake_uid";
+
+  gasv1::ReportRequest request;
+  ASSERT_TRUE(scp_.FillReportRequest(info, &request).ok());
+
+  ASSERT_EQ(request.operations(0).labels().at("/credential_id"),
+            "apikey:UNKNOWN");
+}
+
 TEST_F(ProtoTest, CredentailIdIssuerOnlyTest) {
   ReportRequestInfo info;
   FillOperationInfo(&info);

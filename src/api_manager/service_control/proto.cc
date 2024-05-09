@@ -14,6 +14,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
+#include "absl/strings/str_cat.h"
+
 #include "src/api_manager/service_control/proto.h"
 
 #include <functional>
@@ -544,11 +546,20 @@ const char kServiceAgentPrefix[] = "ESP/";
 Status set_credential_id(const SupportedLabel& l, const ReportRequestInfo& info,
                          Map<std::string, std::string>* labels) {
   // The rule to set /credential_id is:
-  // 1) If api_key is available, set it as apiKey:API-KEY
+  // 1) If api_key is available.
+  //    1] if CheckRequest has RPC error, set it as "apikey:UNKNOWN".
+  //    2] if CheckRequest status is OK(RPC successful):
+  //          if api_key_uid present, set it as api_key_uid.
+  //                            else, set it as "apikey:<api_key>".
   // 2) If auth issuer and audience both are available, set it as:
   //    jwtAuth:issuer=base64(issuer)&audience=base64(audience)
   if (!info.api_key.empty()) {
-    (*labels)[l.name] = absl::StrCat(kApiKeyPrefix, info.check_response_info.api_key_uid.empty() ? info.api_key : info.check_response_info.api_key_uid);
+    if (info.check_response_info.is_network_failure) {
+      (*labels)[l.name] = absl::StrCat(kApiKeyPrefix, "UNKNOWN");
+    } else  {
+      (*labels)[l.name] = info.check_response_info.api_key_uid.empty() ? absl::StrCat(kApiKeyPrefix, info.api_key)
+                      : info.check_response_info.api_key_uid;
+    }
   } else if (!info.auth_issuer.empty()) {
     // If auth is used, auth_issuer should NOT be empty since it is required.
     char* base64_issuer = auth::esp_base64_encode(
@@ -1386,14 +1397,17 @@ Status Proto::ConvertAllocateQuotaResponse(
 
 Status Proto::ConvertCheckResponse(const CheckResponse& check_response,
                                    const std::string& service_name,
-                                   CheckResponseInfo* check_response_info) {
+                                   CheckResponseInfo* check_response_info,
+                                   bool enable_api_key_uid) {
   if (check_response.check_info().consumer_info().project_number() > 0) {
     // Store project id to check_response_info
     check_response_info->consumer_project_id = std::to_string(
         check_response.check_info().consumer_info().project_number());
   }
 
-  check_response_info->api_key_uid = check_response.check_info().api_key_uid();
+  if (enable_api_key_uid) {
+    check_response_info->api_key_uid = check_response.check_info().api_key_uid();
+  }
 
   if (check_response.check_errors().size() == 0) {
     return Status::OK;

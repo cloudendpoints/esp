@@ -75,7 +75,8 @@ class Proto final {
   // failures.
   static utils::Status ConvertCheckResponse(
       const ::google::api::servicecontrol::v1::CheckResponse& response,
-      const std::string& service_name, CheckResponseInfo* check_response_info);
+      const std::string& service_name, CheckResponseInfo* check_response_info,
+      bool enable_api_key_uid = false);
 
   static utils::Status ConvertAllocateQuotaResponse(
       const ::google::api::servicecontrol::v1::AllocateQuotaResponse& response,

@@ -375,10 +375,16 @@ void Aggregated::Check(
     TRACE(trace_span) << "Check returned with status: " << status.ToString();
     CheckResponseInfo response_info;
     if (status.ok()) {
+      bool enableApiKeyUid = server_config_
+        && server_config_->has_service_control_config()
+        && server_config_->service_control_config()
+                            .enable_api_key_uid_reporting();
       Status status = Proto::ConvertCheckResponse(
-          *response, service_control_proto_.service_name(), &response_info);
+          *response, service_control_proto_.service_name(), &response_info,
+           enableApiKeyUid);
       on_done(status, response_info);
     } else {
+      response_info.is_network_failure = true;
       // All 5xx Http status codes are treated as network failure.
       // If network_fail_open is true, it is OK to proceed with these errors.
       if (network_fail_open_ && StatusCodeIs5xxHttpCode(status.error_code())) {
