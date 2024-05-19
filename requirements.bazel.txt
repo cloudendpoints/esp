@@ -1,4 +1,5 @@
 # GRPC Python setup requirements
+# TODO(kangda): dynamically update the build dependency instead of using a static file.
 coverage>=4.0
 cython==0.28.3
 enum34>=1.0.4
