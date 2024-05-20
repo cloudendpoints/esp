@@ -209,7 +209,8 @@ def write_server_config_template(server_config_path, args):
                 grpc_backend_ssl_credentials=args.grpc_backend_ssl_credentials,
                 jwks_cache_duration_in_s=args.jwks_cache_duration_in_s,
                 redirect_authorization_url=args.enable_jwt_authorization_url_redirect,
-                rollout_fetch_throttle_window_in_s=args.rollout_fetch_throttle_window_in_s)
+                rollout_fetch_throttle_window_in_s=args.rollout_fetch_throttle_window_in_s,
+                enable_api_key_uid_reporting=args.enable_api_key_uid_reporting)
 
         server_config_file = server_config_path
         if server_config_file.endswith('/'):
@@ -951,6 +952,10 @@ config file.'''.format(
         to call at the same time to exceed the quota, the calling time is throttled within
         a window. This flag specifies the throttle window in seconds. Default is 5 minutes.
         If number of ESP instances for a service is big, please increase this number.''')
+    
+    parser.add_argument('--enable_api_key_uid_reporting', action='store_true',
+                        help='''If set to true, reports api_key_uid instead of api_key in
+                        ServiceControl report.''')
 
     return parser
 

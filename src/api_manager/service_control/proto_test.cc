@@ -374,7 +374,7 @@ TEST_F(ProtoTest, FillReportRequestEmptyOptionalTest) {
   ASSERT_EQ(expected_text, text);
 }
 
-TEST_F(ProtoTest, CredentailIdApiKeyTest) {
+TEST_F(ProtoTest, CredentialIdApiKeyTest) {
   ReportRequestInfo info;
   FillOperationInfo(&info);
 
@@ -385,7 +385,32 @@ TEST_F(ProtoTest, CredentailIdApiKeyTest) {
             "apikey:api_key_x");
 }
 
-TEST_F(ProtoTest, CredentailIdIssuerOnlyTest) {
+TEST_F(ProtoTest, CredentialIdApiKeyUidTest) {
+  ReportRequestInfo info;
+  FillOperationInfo(&info);
+  info.check_response_info.api_key_uid = "apikey:fake_uid";
+
+  gasv1::ReportRequest request;
+  ASSERT_TRUE(scp_.FillReportRequest(info, &request).ok());
+
+  ASSERT_EQ(request.operations(0).labels().at("/credential_id"),
+            "apikey:fake_uid");
+}
+
+TEST_F(ProtoTest, CredentialIdApiKeyUidUnknownTest) {
+  ReportRequestInfo info;
+  FillOperationInfo(&info);
+  info.check_response_info.is_network_failure = true;
+  info.check_response_info.api_key_uid = "apikey:fake_uid";
+
+  gasv1::ReportRequest request;
+  ASSERT_TRUE(scp_.FillReportRequest(info, &request).ok());
+
+  ASSERT_EQ(request.operations(0).labels().at("/credential_id"),
+            "apikey:UNKNOWN");
+}
+
+TEST_F(ProtoTest, CredentialIdIssuerOnlyTest) {
   ReportRequestInfo info;
   FillOperationInfo(&info);
   info.api_key = "";
@@ -398,7 +423,7 @@ TEST_F(ProtoTest, CredentailIdIssuerOnlyTest) {
             "jwtauth:issuer=YXV0aC1pc3N1ZXI");
 }
 
-TEST_F(ProtoTest, CredentailIdIssuerAudienceTest) {
+TEST_F(ProtoTest, CredentialIdIssuerAudienceTest) {
   ReportRequestInfo info;
   FillOperationInfo(&info);
   info.api_key = "";
