@@ -486,6 +486,7 @@ cc_proto_library(
         "google/rpc/error_details.proto",
         "google/rpc/status.proto",
         "google/type/money.proto",
+        "google/api/distribution.proto",
     ],
     include = ".",
     visibility = ["//visibility:public"],
@@ -506,6 +507,7 @@ cc_proto_library(
         "google/api/consumer.proto",
         "google/api/context.proto",
         "google/api/control.proto",
+        "google/api/policy.proto",
         "google/api/documentation.proto",
         "google/api/endpoint.proto",
         "google/api/field_behavior.proto",
@@ -553,9 +555,9 @@ cc_proto_library(
         name = "googleapis_git",
         build_file_content = BUILD,
         patch_cmds = ["find . -type f -name '*BUILD*' | xargs rm"],
-        strip_prefix = "googleapis-c27d0463cc0097d7a64a7b108aca659df00d2e06",  # May 18, 2021
-        url = "https://github.com/googleapis/googleapis/archive/c27d0463cc0097d7a64a7b108aca659df00d2e06.tar.gz",
-        sha256 = "10333203467098e6af58242be3f780e509a09110a0d136ef7aba7fe75de33fd9",
+        strip_prefix = "googleapis-f49123a39efc18f0a20a2183629c62830725343c", # May 27, 2024
+        url = "https://github.com/googleapis/googleapis/archive/f49123a39efc18f0a20a2183629c62830725343c.tar.gz",
+        sha256 = "993a7b56c68c6a900204ef6d1c1f22701433a77bcb37bab01e991d538d9a6bfc",
     )
 
     if bind:
