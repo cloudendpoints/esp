@@ -556,7 +556,8 @@ cc_proto_library(
         build_file_content = BUILD,
         patch_cmds = ["find . -type f -name '*BUILD*' | xargs rm"],
         strip_prefix = "googleapis-f49123a39efc18f0a20a2183629c62830725343c", # May 27, 2024
-        url = "https://github.com/googleapis/googleapis/archive/f49123a39efc18f0a20a2183629c62830725343c.tar.gz"
+        url = "https://github.com/googleapis/googleapis/archive/f49123a39efc18f0a20a2183629c62830725343c.tar.gz",
+        sha256 = "993a7b56c68c6a900204ef6d1c1f22701433a77bcb37bab01e991d538d9a6bfc",
     )
 
     if bind:
