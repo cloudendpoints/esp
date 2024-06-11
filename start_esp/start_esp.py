@@ -954,8 +954,9 @@ config file.'''.format(
         If number of ESP instances for a service is big, please increase this number.''')
 
     parser.add_argument('--enable_api_key_uid_reporting', default=True,
-                        help='''If set to true, reports api_key_uid instead of api_key in
-                        ServiceControl report.''')
+                        help='''Default to true to report api_key_uid.
+                        If set to false, reports api_key instead of api_key_uid
+                        in ServiceControl report.''')
 
     return parser
 
