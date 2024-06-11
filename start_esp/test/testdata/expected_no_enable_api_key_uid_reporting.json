@@ -33,7 +33,6 @@ service_management_config {
 }
 service_control_config {
     network_fail_open: true
-    enable_api_key_uid_reporting: true
 }
 experimental {
     disable_log_status: true
