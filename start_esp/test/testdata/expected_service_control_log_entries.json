@@ -39,6 +39,7 @@ service_control_config {
   log_jwt_payload: "foo"
   log_jwt_payload: "bar.sub_bar"
   network_fail_open: true
+  enable_api_key_uid_reporting: true
 }
 experimental {
   disable_log_status: true

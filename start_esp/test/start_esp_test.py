@@ -371,9 +371,9 @@ class TestStartEsp(unittest.TestCase):
             return_code = os.system(config_generator)
             self.assertEqual(return_code >> 8, 3)
 
-    def test_enable_api_key_uid_reporting(self):
-        expected_config_file = "./start_esp/test/testdata/expected_enable_api_key_uid_reporting.json"
-        config_generator = self.basic_config_generator + " --enable_api_key_uid_reporting"
+    def test_no_enable_api_key_uid_reporting(self):
+        expected_config_file = "./start_esp/test/testdata/expected_no_enable_api_key_uid_reporting.json"
+        config_generator = self.basic_config_generator + " --enable_api_key_uid_reporting False"
         self.run_test_with_expectation(expected_config_file, self.generated_server_config_file, config_generator)
 
 if __name__ == '__main__':

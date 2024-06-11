@@ -952,10 +952,11 @@ config file.'''.format(
         to call at the same time to exceed the quota, the calling time is throttled within
         a window. This flag specifies the throttle window in seconds. Default is 5 minutes.
         If number of ESP instances for a service is big, please increase this number.''')
-    
-    parser.add_argument('--enable_api_key_uid_reporting', action='store_true',
-                        help='''If set to true, reports api_key_uid instead of api_key in
-                        ServiceControl report.''')
+
+    parser.add_argument('--enable_api_key_uid_reporting', default=True,
+                        help='''Default to true to report api_key_uid.
+                        If set to false, reports api_key instead of api_key_uid
+                        in ServiceControl report.''')
 
     return parser
 
