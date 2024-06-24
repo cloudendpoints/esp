@@ -1,14 +1,8 @@
 # Release 1.60.0 24-06-2024
 
 - Default enable_api_key_uid_reporting to true (#871)
-- Fix build (#870)
 - Add flag enable_api_key_uid_reporting and report unknown when the check response status is not OK. (#865)
 - Propagates Api Key UID in ESP. (#864)
-- Remove the files and tests contains token and private key (#861)
-- fix performace test (#858)
-- fix flex e2e test (#857)
-- Fix path_matcher not to make recursive calls (#855)
-- fix broken build replace pcre downloading url (#856)
 
 # Release 1.59.0 07-10-2021
 
