@@ -1,3 +1,9 @@
+# Release 1.60.0 24-06-2024
+
+- Default enable_api_key_uid_reporting to true (#871)
+- Add flag enable_api_key_uid_reporting and report unknown when the check response status is not OK. (#865)
+- Propagates Api Key UID in ESP. (#864)
+
 # Release 1.59.0 07-10-2021
 
 - Update to the latest root ca to fix Lets Encrypt cert expiration (#852)
