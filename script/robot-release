@@ -89,7 +89,7 @@ TMP_DEBIAN_PACKAGE="${TMP_DEBIAN_DIR}/endpoints-server-proxy.deb"
 if [[ -n "${RELEASE_DEB}" ]]; then
   echo "Attempting to download ${RELEASE_DEB}."
   rm -f "${TMP_DEBIAN_PACKAGE}"
-  gsutil cp "${RELEASE_DEB}" "${TMP_DEBIAN_PACKAGE}" \
+  gcloud storage cp "${RELEASE_DEB}" "${TMP_DEBIAN_PACKAGE}" \
     || echo "Failed to download ${RELEASE_DEB}. Building it."
 fi
 
@@ -106,9 +106,10 @@ if ! [[ -e "${TMP_DEBIAN_PACKAGE}" ]]; then
 
   if [[ -n "${RELEASE_DEB}" ]]; then
     echo "Uploading ${DEB} to ${RELEASE_DEB}"
-    retry -n 3 gsutil -h Content-Type:application/x-deb cp \
+    retry -n 3 gcloud storage cp \
         ${DEB} \
         ${RELEASE_DEB} \
+        --content-type="application/x-deb" \
       || error_exit 'Debian package upload failed.'
   fi
   cp -f "${DEB}" "${TMP_DEBIAN_PACKAGE}" \
@@ -141,8 +142,9 @@ fi
 if [[ -n "${RELEASE_JSON}" ]]; then
   {
     echo "Uploading results to ${RELEASE_JSON}."
-    retry -n 3 gsutil -h Content-Type:application/json cp \
-      - "${RELEASE_JSON}" <<__EOF__
+    retry -n 3 gcloud storage cp \
+      - "${RELEASE_JSON}" \
+      --content-type="application/json" <<__EOF__
 {
   "docker": "${FLEX_IMAGE}",
   "flexDocker": "${FLEX_IMAGE}",
@@ -154,4 +156,3 @@ if [[ -n "${RELEASE_JSON}" ]]; then
 __EOF__
   } || error_exit 'Docker status upload failed.'
 fi
-
