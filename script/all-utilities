@@ -149,7 +149,7 @@ function retry() {
 # Download api Keys from Cloud storage and source the file.
 function set_api_keys() {
   local api_key_directory="$(mktemp -d)"
-  $GSUTIL cp gs://esp-testing-secret-files/api_keys \
+  $GCLOUD storage cp gs://esp-testing-secret-files/api_keys \
         "${api_key_directory}/api_keys" \
           || error_exit "Failed to download API key file."
 
@@ -159,8 +159,7 @@ function set_api_keys() {
 # Download test-client keys from Cloud storage
 function get_test_client_key() {
   local key_path=$1
-  [[ -e $key_path ]] || $GSUTIL \
-    cp gs://esp-testing-secret-files/esp-test-client-b1289e36f3df.json $key_path
+  [[ -e $key_path ]] || $GCLOUD storage cp gs://esp-testing-secret-files/esp-test-client-b1289e36f3df.json $key_path
   echo -n $key_path
   return 0
 }
@@ -294,7 +293,7 @@ function activate_service_account() {
       ;;
   esac
   echo "Downloading ${project} service account"
-  retry -n 5 -s 10 gsutil cp \
+  retry -n 5 -s 10 gcloud storage cp \
     "gs://esp-testing-secret-files/${remote_json_name}" "${local_json}" \
     || error_exit "Could not download secret keys for ${project}"
   echo "Gcloud auth activate ${project} service account."
@@ -319,7 +318,7 @@ function update_tool() {
 
   [[ -z "${TOOLS_BUCKET}" ]] && return 1
   echo "Uploading ${local_path} to ${remote_path}."
-  ${GSUTIL} cp "${local_path}" "${remote_path}" \
+  ${GCLOUD} storage cp "${local_path}" "${remote_path}" \
     || { echo "Failed to upload ${tool_name} to ${TOOLS_BUCKET}"; return 1; }
   return 0
 }
@@ -332,7 +331,7 @@ function get_tool() {
 
   [[ -z "${TOOLS_BUCKET}" ]] && return 1
   echo "Downloading ${remote_path} to ${local_path}."
-  ${GSUTIL} cp "${remote_path}" "${local_path}" \
+  ${GCLOUD} storage cp "${remote_path}" "${local_path}" \
     || { echo "Failed to upload ${tool_name} to ${TOOLS_BUCKET}"; return 1; }
   return 0
 }

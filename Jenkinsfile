@@ -824,7 +824,7 @@ def checkoutSourceCode() {
 }
 
 def pathExistsCloudStorage(filePath) {
-  def status = sh(returnStatus: true, script: "gsutil stat ${filePath}")
+  def status = sh(returnStatus: true, script: "gcloud storage objects list --stat ${filePath}")
   return status == 0
 }
 
@@ -839,8 +839,8 @@ def fastStash(name, stashPaths) {
   if (!pathExistsCloudStorage(archivePath)) {
     echo("Stashing ${stashPaths} to ${archivePath}")
     retry(5) {
-      sh("tar czf - ${stashPaths} | gsutil " +
-          "-h Content-Type:application/x-gtar cp - ${archivePath}")
+      sh("tar czf - ${stashPaths} | gcloud storage cp " +
+          " - ${archivePath} --content-type="application/x-gtar")
       sleep(5)
     }
   }
@@ -849,7 +849,7 @@ def fastStash(name, stashPaths) {
 def fastUnstash(name) {
   def archivePath = stashArchivePath(name)
   retry(5) {
-    sh("gsutil cp ${archivePath} - | tar zxf - ")
+    sh("gcloud storage cp ${archivePath} - | tar zxf - ")
     sleep(5)
   }
 }
