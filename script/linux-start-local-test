@@ -66,7 +66,7 @@ ${SUDO} sh -c 'echo "1024 65000" > /proc/sys/net/ipv4/ip_local_port_range'
 
 NGINX=${ROOT}/nginx-esp
 
-gsutil cp gs://esp-testing-secret-files/esp-load-test-9a393df12218.json \
+gcloud storage cp gs://esp-testing-secret-files/esp-load-test-9a393df12218.json \
     "${ROOT}/test/echo/gce-vm/client-secret.json" \
   || error_exit "Failed to download credentials."
 
@@ -176,7 +176,7 @@ if [[ -n "${BUCKET}" ]] ; then
     -r "${RUN_ID}" \
     || error_exit "Could not create ${JSON_FILE}."
   tar_logs "${LOG_DIRECTORY}/${RUN_ID}.tar.gz" "${PREFIX}/logs/"
-  gsutil -h 'Content-Type:text/plain' -m cp -r "${LOG_DIRECTORY}" "${BUCKET}/${RUN_ID}" \
+  gcloud storage cp --content-type='text/plain' --recursive "${LOG_DIRECTORY}" "${BUCKET}/${RUN_ID}" \
     || echo 'Cannot upload logs.'
 fi
 

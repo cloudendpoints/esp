@@ -51,14 +51,14 @@ ${ROOT}/script/linux-run-coverage \
 
 if [[ -n "${COVERAGE_DATA}" ]]; then
   echo "Uploading code coverage results."
-  gsutil -h Content-Type:application/x-gtar-compressed cp \
+  gcloud storage cp --content-type="application/x-gtar-compressed" \
       esp-code-coverage.tar.gz "${COVERAGE_DATA}" \
-    || error_exit "gsutil upload of coverage data failed."
+    || error_exit "gcloud storage upload of coverage data failed."
 fi
 
 if [[ -n "${COVERAGE_SUMMARY}" ]]; then
   echo "Uploading coverage summary."
-  gsutil -h Content-Type:text/plain cp \
+  gcloud storage cp --content-type="text/plain" \
       esp-code-coverage.summary "${COVERAGE_SUMMARY}" \
     || error_exit "Simple coverage summary failed."
 fi
@@ -85,7 +85,7 @@ if [[ -n "${COVERAGE_JSON}" ]]; then
         print "\n}"
       }
       ' \
-    | gsutil -h Content-Type:application/json cp - "${COVERAGE_JSON}"
+    | gcloud storage cp --content-type="application/json" - "${COVERAGE_JSON}"
 
   if [[ "${PIPESTATUS[0]}" -ne 0 \
      || "${PIPESTATUS[1]}" -ne 0 \

@@ -52,7 +52,7 @@ usage: ${BASH_SOURCE[0]} [options ...] <command>"
     -l ... skip activate_service_account step
     -p ... project id of the target project (default 'esp-load-test')
     -s ... app engine service (module) to use for deployment (default 'default')
-    -s ... path to gsutil tool (default 'gsutil')
+    -s ... path to gcloud storage tool (default 'gcloud storage')
     -v ... application version to deploy in GAE
 EOF
   exit 2
@@ -122,12 +122,12 @@ function set_ssh_keys() {
   local local_ssh_keys="${HOME}/.ssh"
   local private_ssh_key="${local_ssh_keys}/google_compute_engine"
   if ! [[ -a "${private_ssh_key}" ]]; then
-    ${GSUTIL} stat "${remote_ssh_keys}/google_compute_engine"
+    gcloud storage objects list --stat --fetch-encrypted-object-hashes "${remote_ssh_keys}/google_compute_engine"
     if [[ ${?} -eq 0 ]]; then
       mkdir -p "${local_ssh_keys}" \
         || error_exit "Cannot create ${local_ssh_keys}"
       echo "Getting ssh key from ${remote_ssh_keys}"
-      retry -n 3 ${GSUTIL} cp "${remote_ssh_keys}/*" "${local_ssh_keys}/" \
+      retry -n 3 gcloud storage cp "${remote_ssh_keys}/*" "${local_ssh_keys}/" \
         || error_exit "Could not set ssh keys"
       echo "Setting right permssion on ${local_ssh_keys}"
       chmod -R 700 "${local_ssh_keys}"
@@ -136,7 +136,7 @@ function set_ssh_keys() {
       ${GCLOUD} --project ${PROJECT} compute config-ssh -q || \
         error_exit 'Unable to generate ssh keys'
       echo "Uploading new ssh keys to ${remote_ssh_keys}"
-      retry -n 2 -s 10 ${GSUTIL} -h "Content-Type:text/plain" -m cp "${private_ssh_key}*" \
+      retry -n 2 -s 10 gcloud storage cp --content-type="text/plain" "${private_ssh_key}*" \
         "${remote_ssh_keys}/" \
         || error_exit "Failed to upload ssh keys to ${remote_ssh_keys}"
     fi
@@ -218,4 +218,3 @@ case "${COMMAND}" in
   nginx-logs     )  download_nginx_error_logs;;
   *              )  usage "Unknown command ${COMMAND}."
 esac
-
